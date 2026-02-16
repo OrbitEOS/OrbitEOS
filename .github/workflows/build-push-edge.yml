@@ -22,6 +22,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Lowercase Image Name
+        run: |
+          echo "IMAGE_NAME=${IMAGE_NAME,,}" >>${GITHUB_ENV}
+        env:
+          IMAGE_NAME: '${{ github.repository_owner }}/orbiteos-edge'
+
       - name: Log in to the Container registry
         uses: docker/login-action@v3
         with:
