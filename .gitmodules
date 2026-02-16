@@ -1,0 +1,6 @@
+[submodule "orbiteos-edge"]
+	path = orbiteos-edge
+	url = https://github.com/OrbitEOS/orbiteos-edge.git
+[submodule "orbiteos-core"]
+	path = orbiteos-core
+	url = https://github.com/OrbitEOS/orbiteos-core.git
