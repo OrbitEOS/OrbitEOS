@@ -10,15 +10,12 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: orbiteos-core
 
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout orbiteos-core
+      uses: actions/checkout@v4
       with:
-        submodules: recursive
-        token: ${{ secrets.GH_PAT }}
+        repository: OrbitEOS/orbiteos-core
 
     - name: Copy files to Core Server (Rockchip)
       uses: appleboy/scp-action@master
@@ -26,10 +23,9 @@ jobs:
         host: ${{ secrets.CORE_HOST }}
         username: ${{ secrets.CORE_USERNAME }}
         password: ${{ secrets.CORE_PASSWORD }}
-        # key: ${{ secrets.CORE_SSH_KEY }} # Usage of key is recommended over password
-        source: "orbiteos-core/*"
+        # key: ${{ secrets.CORE_SSH_KEY }}
+        source: "./*"
         target: "~/orbiteos-core"
-        strip_components: 1
 
     - name: Deploy with Docker Compose
       uses: appleboy/ssh-action@master
