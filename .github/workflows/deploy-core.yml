@@ -15,7 +15,10 @@ jobs:
         working-directory: orbiteos-core
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
+      with:
+        submodules: recursive
+        token: ${{ secrets.GH_PAT }}
 
     - name: Copy files to Core Server (Rockchip)
       uses: appleboy/scp-action@master
