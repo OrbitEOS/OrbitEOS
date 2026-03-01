@@ -12,7 +12,7 @@
 
 <br><br>
 
-**Monitor solar, battery, and grid in real time. Control everything through AI assistants.**
+**Real-time energy monitoring & AI-powered control for solar, battery, and grid.**
 
 </div>
 
