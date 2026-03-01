@@ -23,17 +23,8 @@ OrbitEOS is an intelligent energy management platform that combines **real-time 
 <table>
 <tr><td align="center">
 <br>
-
-| | | |
-|--:|:--:|:--|
-| **Solar** &nbsp; 7.2 kW | &rarr; | |
-| **Battery** &nbsp; 85% SoC | &rarr; | **OrbitEOS Smart Router** |
-| **Grid** &nbsp; Export 0.8 kW | &larr; | &darr; |
-| | | **Home** &nbsp; 4.1 kW demand |
-
-<sub>Solar powers home first &bull; Excess charges battery &bull; Surplus exported to grid &bull; AI optimizes every decision</sub>
-<br><br>
-
+<img src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&weight=500&size=15&duration=800&pause=5000&color=2DD4BF&center=true&vCenter=true&multiline=true&repeat=true&width=480&height=200&lines=%E2%98%80+Solar+7.2+kW+%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%AC%E2%94%80%E2%94%80%E2%94%80%E2%94%80+%F0%9F%8F%A0+Home;%F0%9F%94%8B+Battery+85%25+%E2%94%80%E2%94%80%E2%94%A4+OrbitEOS+%E2%94%9C%E2%94%80+4.1+kW;%E2%9A%A1+Grid+%E2%86%900.8+kW+%E2%94%80%E2%94%98+Router++%E2%94%82;%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%80;AI+optimizes+every+watt+%E2%9A%A1" alt="Energy Flow">
+<br>
 </td></tr>
 </table>
 </div>
