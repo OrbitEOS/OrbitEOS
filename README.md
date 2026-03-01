@@ -183,50 +183,49 @@ claude mcp add orbiteos https://mcp.orbiteos.cloud/mcp
 
 <table>
 <tr>
-<td align="center">
-<br>
+<th align="center" colspan="4">Clients</th>
+</tr>
+<tr>
+<td align="center" width="25%"><strong>Web App</strong><br><sub>Dashboard, analytics, configuration</sub></td>
+<td align="center" width="25%"><strong>Mobile App</strong><br><sub>Monitoring on the go</sub></td>
+<td align="center" width="25%"><strong>AI Assistants</strong><br><sub>Claude, ChatGPT, any MCP client</sub></td>
+<td align="center" width="25%"><strong>Custom Integrations</strong><br><sub>REST API &amp; WebSocket</sub></td>
+</tr>
+</table>
 
-**Client Layer**
+<div align="center">&darr;</div>
 
-<img src="https://img.shields.io/badge/Web_App-React-61DAFB?style=flat-square&logo=react&logoColor=white" alt="React">&nbsp;
-<img src="https://img.shields.io/badge/Mobile-React_Native-61DAFB?style=flat-square&logo=react&logoColor=white" alt="Mobile">&nbsp;
-<img src="https://img.shields.io/badge/AI-Claude_%7C_ChatGPT-8b5cf6?style=flat-square" alt="AI">&nbsp;
-<img src="https://img.shields.io/badge/API-REST_Clients-3b82f6?style=flat-square" alt="API">
-
-<br>
-
-&darr;&nbsp;&nbsp;&darr;&nbsp;&nbsp;&darr;&nbsp;&nbsp;&darr;
-
-<br>
-
-**Platform Layer**
-
-<img src="https://img.shields.io/badge/REST_API-/api/v1/*-10b981?style=flat-square" alt="REST">&nbsp;
-<img src="https://img.shields.io/badge/WebSocket-Real--time-f59e0b?style=flat-square" alt="WS">&nbsp;
-<img src="https://img.shields.io/badge/MCP-50+_Tools-8b5cf6?style=flat-square" alt="MCP">
-
-<br>
-
-| Auth | Sites & RBAC | Users | Marketplace |
-|:----:|:------------:|:-----:|:-----------:|
-
-<br>
-
-&darr;
-
-<br>
-
-**Edge Layer**
-
-<img src="https://img.shields.io/badge/Inverter-Driver-f59e0b?style=flat-square" alt="">&nbsp;
-<img src="https://img.shields.io/badge/Meter-Driver-2dd4bf?style=flat-square" alt="">&nbsp;
-<img src="https://img.shields.io/badge/Battery-Driver-10b981?style=flat-square" alt="">&nbsp;
-<img src="https://img.shields.io/badge/EV_Charger-Driver-6366f1?style=flat-square" alt="">
-
-<sub>Edge Controller &mdash; real-time optimization & control</sub>
-
-<br><br>
+<table>
+<tr>
+<th align="center" colspan="3">Platform</th>
+</tr>
+<tr>
+<td align="center" width="33%"><strong>REST API</strong><br><sub>Full CRUD for sites, users, roles, accounts, plugins</sub></td>
+<td align="center" width="33%"><strong>WebSocket</strong><br><sub>Real-time live data streaming &amp; push notifications</sub></td>
+<td align="center" width="33%"><strong>MCP Server</strong><br><sub>50+ tools for AI-native energy management</sub></td>
+</tr>
+<tr>
+<td align="center" colspan="3">
+<strong>Core Engine</strong><br>
+<sub>Authentication &nbsp;&bull;&nbsp; Role-Based Access Control &nbsp;&bull;&nbsp; Multi-Tenant Accounts &nbsp;&bull;&nbsp; Site Hierarchy &nbsp;&bull;&nbsp; Plugin Marketplace &nbsp;&bull;&nbsp; Audit Logging</sub>
 </td>
+</tr>
+</table>
+
+<div align="center">&darr;</div>
+
+<table>
+<tr>
+<th align="center" colspan="4">Edge</th>
+</tr>
+<tr>
+<td align="center" width="25%"><strong>Inverters</strong><br><sub>SMA, Fronius, Huawei, GoodWe, ...</sub></td>
+<td align="center" width="25%"><strong>Meters</strong><br><sub>Grid, production, consumption</sub></td>
+<td align="center" width="25%"><strong>Batteries</strong><br><sub>BYD, Tesla, LG, Sonnen, ...</sub></td>
+<td align="center" width="25%"><strong>EV Chargers</strong><br><sub>KEBA, Wallbox, ABL, ...</sub></td>
+</tr>
+<tr>
+<td align="center" colspan="4"><strong>Edge Controller</strong><br><sub>On-site optimization &nbsp;&bull;&nbsp; Peak shaving &nbsp;&bull;&nbsp; Self-consumption &nbsp;&bull;&nbsp; Smart charging &nbsp;&bull;&nbsp; Grid balancing</sub></td>
 </tr>
 </table>
 
