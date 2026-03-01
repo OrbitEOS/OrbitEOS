@@ -27,25 +27,6 @@ OrbitEOS is an intelligent energy management platform that combines **real-time 
 ## Platform Overview
 
 <table>
-<tr><td>
-
-<div align="center">
-
-<br>
-
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&size=14&duration=3000&pause=1000&color=2dd4bf&center=true&vCenter=true&multiline=true&repeat=false&width=600&height=230&lines=%E2%98%80+Solar+%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%AC%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%80+%F0%9F%8F%A0+Home;++++7.2+kW++++++%E2%94%82+++4.1+kW+demand;+++++++++++++++++%E2%94%82;%F0%9F%94%8B+Battery+%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%A4+++OrbitEOS;++++85%25+SoC++++++%E2%94%82+++Smart+Router;+++++++++++++++++%E2%94%82;%E2%9A%A1+Grid+%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%98++++Export+0.8+kW">
-  <img src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&size=14&duration=3000&pause=1000&color=2dd4bf&center=true&vCenter=true&multiline=true&repeat=false&width=600&height=230&lines=%E2%98%80+Solar+%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%AC%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%80+%F0%9F%8F%A0+Home;++++7.2+kW++++++%E2%94%82+++4.1+kW+demand;+++++++++++++++++%E2%94%82;%F0%9F%94%8B+Battery+%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%A4+++OrbitEOS;++++85%25+SoC++++++%E2%94%82+++Smart+Router;+++++++++++++++++%E2%94%82;%E2%9A%A1+Grid+%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%98++++Export+0.8+kW" alt="Energy Flow">
-</picture>
-
-<br><br>
-
-</div>
-
-</td></tr>
-</table>
-
-<table>
 <tr>
 <td align="center" width="33%">
 <br>
