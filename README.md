@@ -1,22 +1,15 @@
 <div align="center">
-<br>
 
 <img src="https://img.shields.io/badge/OrbitEOS-Energy_Management_for_the_AI_Era-000?style=for-the-badge&labelColor=0f172a&color=134e4a" alt="OrbitEOS" height="40">
-
+<br>
+<sub>Real-time energy monitoring & AI-powered control for solar, battery, and grid.</sub>
 <br><br>
-
 <a href="https://orbiteos.com"><img src="https://img.shields.io/badge/Website-orbiteos.com-2dd4bf?style=flat-square&logo=googlechrome&logoColor=white" alt="Website"></a>&nbsp;
 <a href="https://app.orbiteos.cloud"><img src="https://img.shields.io/badge/App-app.orbiteos.cloud-8b5cf6?style=flat-square&logo=rocket&logoColor=white" alt="App"></a>&nbsp;
 <a href="https://mcp.orbiteos.cloud/mcp"><img src="https://img.shields.io/badge/MCP_Server-Live-10b981?style=flat-square&logo=bolt&logoColor=white" alt="MCP"></a>&nbsp;
 <a href="https://mcp.orbiteos.cloud/docs"><img src="https://img.shields.io/badge/Docs-API-3b82f6?style=flat-square&logo=readthedocs&logoColor=white" alt="Docs"></a>
 
-<br><br>
-
-**Real-time energy monitoring & AI-powered control for solar, battery, and grid.**
-
 </div>
-
-<br>
 
 ## What is OrbitEOS?
 
@@ -25,6 +18,25 @@ OrbitEOS is an intelligent energy management platform that combines **real-time 
 <br>
 
 ## Platform Overview
+
+<div align="center">
+<table>
+<tr><td align="center">
+<br>
+
+| | | |
+|--:|:--:|:--|
+| **Solar** &nbsp; 7.2 kW | &rarr; | |
+| **Battery** &nbsp; 85% SoC | &rarr; | **OrbitEOS Smart Router** |
+| **Grid** &nbsp; Export 0.8 kW | &larr; | &darr; |
+| | | **Home** &nbsp; 4.1 kW demand |
+
+<sub>Solar powers home first &bull; Excess charges battery &bull; Surplus exported to grid &bull; AI optimizes every decision</sub>
+<br><br>
+
+</td></tr>
+</table>
+</div>
 
 <table>
 <tr>
