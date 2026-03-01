@@ -1,468 +1,343 @@
 <div align="center">
-
-<!-- Hero Banner -->
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://capsule-render.vercel.app/api?type=waving&color=0:09090b,50:1e1b4b,100:134e4a&height=300&section=header&text=OrbitEOS&fontSize=90&fontColor=f1f5f9&animation=fadeIn&fontAlignY=35&desc=Energy%20Management%20for%20the%20AI%20Era&descSize=22&descColor=94a3b8&descAlignY=55">
-  <img src="https://capsule-render.vercel.app/api?type=waving&color=0:09090b,50:1e1b4b,100:134e4a&height=300&section=header&text=OrbitEOS&fontSize=90&fontColor=f1f5f9&animation=fadeIn&fontAlignY=35&desc=Energy%20Management%20for%20the%20AI%20Era&descSize=22&descColor=94a3b8&descAlignY=55" width="100%" alt="OrbitEOS Banner">
-</picture>
-
 <br>
 
-<!-- Badges -->
-[![Website](https://img.shields.io/badge/Website-orbiteos.com-2dd4bf?style=for-the-badge&logo=googlechrome&logoColor=white)](https://orbiteos.com)
-[![App](https://img.shields.io/badge/Launch_App-app.orbiteos.cloud-8b5cf6?style=for-the-badge&logo=rocket&logoColor=white)](https://app.orbiteos.cloud)
-[![MCP Server](https://img.shields.io/badge/MCP_Server-Live-10b981?style=for-the-badge&logo=bolt&logoColor=white)](https://mcp.orbiteos.cloud/mcp)
-[![Docs](https://img.shields.io/badge/Documentation-API_Docs-3b82f6?style=for-the-badge&logo=readthedocs&logoColor=white)](https://mcp.orbiteos.cloud/docs)
+<img src="https://img.shields.io/badge/OrbitEOS-Energy_Management_for_the_AI_Era-000?style=for-the-badge&labelColor=0f172a&color=134e4a" alt="OrbitEOS" height="40">
 
-<br>
+<br><br>
 
-<!-- Tech badges -->
-![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white)
-![React](https://img.shields.io/badge/React_18-61DAFB?style=flat-square&logo=react&logoColor=black)
-![Node.js](https://img.shields.io/badge/Node.js-339933?style=flat-square&logo=node.js&logoColor=white)
-![MCP](https://img.shields.io/badge/MCP-Model_Context_Protocol-8b5cf6?style=flat-square)
-![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat-square&logo=docker&logoColor=white)
-![WebSocket](https://img.shields.io/badge/WebSocket-Real--time-f59e0b?style=flat-square)
+<a href="https://orbiteos.com"><img src="https://img.shields.io/badge/Website-orbiteos.com-2dd4bf?style=flat-square&logo=googlechrome&logoColor=white" alt="Website"></a>&nbsp;
+<a href="https://app.orbiteos.cloud"><img src="https://img.shields.io/badge/App-app.orbiteos.cloud-8b5cf6?style=flat-square&logo=rocket&logoColor=white" alt="App"></a>&nbsp;
+<a href="https://mcp.orbiteos.cloud/mcp"><img src="https://img.shields.io/badge/MCP_Server-Live-10b981?style=flat-square&logo=bolt&logoColor=white" alt="MCP"></a>&nbsp;
+<a href="https://mcp.orbiteos.cloud/docs"><img src="https://img.shields.io/badge/Docs-API-3b82f6?style=flat-square&logo=readthedocs&logoColor=white" alt="Docs"></a>
 
 <br><br>
 
 **Monitor solar, battery, and grid in real time. Control everything through AI assistants.**
 
-[Website](https://orbiteos.com) &nbsp;&bull;&nbsp; [App](https://app.orbiteos.cloud) &nbsp;&bull;&nbsp; [Documentation](https://mcp.orbiteos.cloud/docs) &nbsp;&bull;&nbsp; [MCP Server](https://mcp.orbiteos.cloud/mcp)
-
 </div>
 
----
+<br>
 
-## About
+## What is OrbitEOS?
 
-OrbitEOS is an intelligent energy management platform that combines **real-time monitoring**, **AI-powered control**, and **multi-site management** into a single, extensible system. It works natively with AI assistants like Claude and ChatGPT through the [Model Context Protocol (MCP)](https://modelcontextprotocol.io).
+OrbitEOS is an intelligent energy management platform that combines **real-time monitoring**, **AI-powered control**, and **multi-site management** into one extensible system. It works natively with AI assistants like Claude and ChatGPT through the [Model Context Protocol (MCP)](https://modelcontextprotocol.io).
+
+<br>
+
+## Platform Overview
 
 <table>
-<tr>
-<td width="50%">
-
-### The Problem
-
-Energy systems are complex. Solar panels, batteries, grid connections, EV chargers &mdash; each with their own monitoring tools, apps, and dashboards. Managing multiple sites means juggling multiple interfaces. Getting insights requires manual analysis.
-
-</td>
-<td width="50%">
-
-### The Solution
-
-OrbitEOS unifies everything into one platform. **One dashboard** for all your energy assets. **One AI conversation** to monitor, analyze, and control. **One API** to build on top of. Whether you have one home or a thousand sites.
-
-</td>
-</tr>
-</table>
-
----
-
-## Product Overview
+<tr><td>
 
 <div align="center">
 
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                        OrbitEOS Platform                            │
-├─────────────────────────────────────────────────────────────────────┤
-│                                                                     │
-│   ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐          │
-│   │  ☀ Solar │  │ 🔋Battery│  │ ⚡ Grid  │  │ 🔌 EV    │          │
-│   │  7.2 kW  │  │  85% SoC │  │ -1.3 kW  │  │  11 kW   │          │
-│   └────┬─────┘  └────┬─────┘  └────┬─────┘  └────┬─────┘          │
-│        │              │              │              │                │
-│        └──────────────┴──────┬───────┴──────────────┘                │
-│                              │                                       │
-│                    ┌─────────▼─────────┐                            │
-│                    │   Energy Manager  │                             │
-│                    │   ═══════════════ │                             │
-│                    │  Peak Shaving     │                             │
-│                    │  Self-Consumption │                             │
-│                    │  Smart Charging   │                             │
-│                    └─────────┬─────────┘                            │
-│                              │                                       │
-│              ┌───────────────┼───────────────┐                      │
-│              │               │               │                      │
-│       ┌──────▼──────┐ ┌─────▼─────┐ ┌──────▼──────┐               │
-│       │  Dashboard  │ │  REST API │ │  MCP / AI   │               │
-│       │  React App  │ │ WebSocket │ │  Claude     │               │
-│       │             │ │           │ │  ChatGPT    │               │
-│       └─────────────┘ └───────────┘ └─────────────┘               │
-│                                                                     │
-└─────────────────────────────────────────────────────────────────────┘
-```
+<br>
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&size=14&duration=3000&pause=1000&color=2dd4bf&center=true&vCenter=true&multiline=true&repeat=false&width=600&height=230&lines=%E2%98%80+Solar+%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%AC%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%80+%F0%9F%8F%A0+Home;++++7.2+kW++++++%E2%94%82+++4.1+kW+demand;+++++++++++++++++%E2%94%82;%F0%9F%94%8B+Battery+%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%A4+++OrbitEOS;++++85%25+SoC++++++%E2%94%82+++Smart+Router;+++++++++++++++++%E2%94%82;%E2%9A%A1+Grid+%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%98++++Export+0.8+kW">
+  <img src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&size=14&duration=3000&pause=1000&color=2dd4bf&center=true&vCenter=true&multiline=true&repeat=false&width=600&height=230&lines=%E2%98%80+Solar+%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%AC%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%80+%F0%9F%8F%A0+Home;++++7.2+kW++++++%E2%94%82+++4.1+kW+demand;+++++++++++++++++%E2%94%82;%F0%9F%94%8B+Battery+%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%A4+++OrbitEOS;++++85%25+SoC++++++%E2%94%82+++Smart+Router;+++++++++++++++++%E2%94%82;%E2%9A%A1+Grid+%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%98++++Export+0.8+kW" alt="Energy Flow">
+</picture>
+
+<br><br>
 
 </div>
 
----
-
-## Key Features
+</td></tr>
+</table>
 
 <table>
 <tr>
 <td align="center" width="33%">
-
-### ☀️ Live Energy Dashboard
-
-Real-time power flow visualization showing every watt moving through your system: solar, battery, grid, and consumption.
-
+<br>
+<img src="https://img.shields.io/badge/-%E2%98%80%EF%B8%8F-000?style=flat-square&labelColor=000&color=000" height="30"><br><br>
+<strong>Live Energy Dashboard</strong><br><br>
+<sub>Real-time power flow visualization showing every watt moving through your system: solar, battery, grid, and consumption.</sub>
+<br><br>
 </td>
 <td align="center" width="33%">
-
-### 🤖 AI-Powered Control
-
-Ask questions and give commands in natural language through Claude, ChatGPT, or any MCP-compatible AI assistant.
-
+<br>
+<img src="https://img.shields.io/badge/-%F0%9F%A4%96-000?style=flat-square&labelColor=000&color=000" height="30"><br><br>
+<strong>AI-Powered Control</strong><br><br>
+<sub>Ask questions and give commands in natural language through Claude, ChatGPT, or any MCP-compatible AI assistant.</sub>
+<br><br>
 </td>
 <td align="center" width="33%">
-
-### 🔋 Battery Intelligence
-
-Smart charge and discharge optimization that learns your patterns and maximizes self-consumption and battery lifespan.
-
+<br>
+<img src="https://img.shields.io/badge/-%F0%9F%94%8B-000?style=flat-square&labelColor=000&color=000" height="30"><br><br>
+<strong>Battery Intelligence</strong><br><br>
+<sub>Smart charge and discharge optimization that learns your patterns and maximizes self-consumption.</sub>
+<br><br>
 </td>
 </tr>
 <tr>
 <td align="center" width="33%">
-
-### ⚡ Grid Optimization
-
-Peak shaving, self-consumption maximization, and demand response to automatically reduce electricity costs.
-
+<br>
+<img src="https://img.shields.io/badge/-%E2%9A%A1-000?style=flat-square&labelColor=000&color=000" height="30"><br><br>
+<strong>Grid Optimization</strong><br><br>
+<sub>Peak shaving, self-consumption maximization, and demand response to automatically reduce electricity costs.</sub>
+<br><br>
 </td>
 <td align="center" width="33%">
-
-### 🏢 Multi-Site Management
-
-Hierarchical site tree with role-based access control. Manage regions, hubs, sites, and zones from a single pane.
-
+<br>
+<img src="https://img.shields.io/badge/-%F0%9F%8F%A2-000?style=flat-square&labelColor=000&color=000" height="30"><br><br>
+<strong>Multi-Site Management</strong><br><br>
+<sub>Hierarchical site tree with role-based access control. Manage regions, hubs, sites, and zones from one pane.</sub>
+<br><br>
 </td>
 <td align="center" width="33%">
-
-### 🧩 Marketplace
-
-Extend with plugins for device drivers, analytics, control strategies, notifications, and dashboard widgets.
-
+<br>
+<img src="https://img.shields.io/badge/-%F0%9F%A7%A9-000?style=flat-square&labelColor=000&color=000" height="30"><br><br>
+<strong>Marketplace</strong><br><br>
+<sub>Extend with plugins for device drivers, analytics, control strategies, notifications, and dashboard widgets.</sub>
+<br><br>
 </td>
 </tr>
 </table>
 
----
+<br>
 
-## Energy Flow
+## How It Works
 
-<div align="center">
+<table>
+<tr>
+<td align="center" width="33%">
+<br>
+<img src="https://img.shields.io/badge/1-Connect-2dd4bf?style=for-the-badge&labelColor=0f172a" alt="Step 1"><br><br>
+Link your energy system &mdash; inverters, meters, batteries, EV chargers. Supports all major brands through the marketplace.
+<br><br>
+</td>
+<td align="center" width="33%">
+<br>
+<img src="https://img.shields.io/badge/2-Monitor-8b5cf6?style=for-the-badge&labelColor=0f172a" alt="Step 2"><br><br>
+See real-time energy flows, historical analytics, and system health. Track performance across all your sites.
+<br><br>
+</td>
+<td align="center" width="33%">
+<br>
+<img src="https://img.shields.io/badge/3-Optimize-f59e0b?style=for-the-badge&labelColor=0f172a" alt="Step 3"><br><br>
+AI assistants analyze your patterns, suggest optimizations, and control your system through natural conversation.
+<br><br>
+</td>
+</tr>
+</table>
 
-```
-                    ☀️ SOLAR
-                    │ 7.2 kW
-                    ▼
-    ┌───────────────────────────────┐
-    │         SMART ROUTER          │
-    │     ┌─────────────────┐       │
-    │     │ OrbitEOS Engine │       │
-    │     └────────┬────────┘       │
-    └──────────────┼────────────────┘
-                   │
-       ┌───────────┼───────────┐
-       │           │           │
-       ▼           ▼           ▼
-  ┌─────────┐ ┌─────────┐ ┌─────────┐
-  │🔋BATTERY│ │🏠 HOME  │ │⚡ GRID  │
-  │  85%    │ │ 4.1 kW  │ │ Export  │
-  │ +2.3 kW │ │ demand  │ │ +0.8 kW │
-  └─────────┘ └─────────┘ └─────────┘
-
-  ━━━ Solar powers home first
-  ━━━ Excess charges battery
-  ━━━ Surplus exported to grid
-  ━━━ AI optimizes every decision
-```
-
-</div>
-
----
+<br>
 
 ## MCP Integration
 
 OrbitEOS exposes a full [Model Context Protocol](https://modelcontextprotocol.io) server, giving AI assistants direct access to your energy system. No custom code needed &mdash; just connect and talk.
 
-### Setup
+### Quick Setup
 
-<table>
-<tr>
-<td>
-
-**Claude Code / Claude Desktop**
-
+**Claude Code / Claude Desktop:**
 ```bash
 claude mcp add orbiteos https://mcp.orbiteos.cloud/mcp
 ```
 
-</td>
-<td>
-
-**Any MCP Client**
-
-```
-Endpoint: https://mcp.orbiteos.cloud/mcp
-Transport: Streamable HTTP
-```
-
-</td>
-</tr>
-</table>
+**Any MCP client:** Point to `https://mcp.orbiteos.cloud/mcp` (Streamable HTTP transport).
 
 **OpenAI ChatGPT:** Available as a ChatGPT action &mdash; search "OrbitEOS" in the GPT store.
 
-### What you can do with MCP
+### AI Conversation Example
 
-<div align="center">
+<table>
+<tr><td>
 
-```
-┌──────────────────────────────────────────────────────────────┐
-│                                                              │
-│  👤 "Is my system running normally?"                         │
-│                                                              │
-│  🤖 ✅ System Online                                        │
-│     ├── Solar: 7.2 kW (producing)                           │
-│     ├── Battery: 85% SoC (charging at 2.3 kW)              │
-│     ├── Grid: Exporting 0.8 kW                              │
-│     ├── Consumption: 4.1 kW                                 │
-│     └── All 12 components: healthy                          │
-│                                                              │
-│     Self-sufficiency today: 94%                              │
-│     No warnings or errors detected.                         │
-│                                                              │
-└──────────────────────────────────────────────────────────────┘
-```
+&nbsp;&nbsp; **You:** *"Is my system running normally?"*
 
-</div>
+&nbsp;&nbsp; **OrbitEOS:**
+> **System Online**
+> | Component | Status |
+> |-----------|--------|
+> | Solar | 7.2 kW (producing) |
+> | Battery | 85% SoC (charging +2.3 kW) |
+> | Grid | Exporting 0.8 kW |
+> | Consumption | 4.1 kW |
+> | Components | All 12 healthy |
+>
+> Self-sufficiency today: **94%** &mdash; No warnings or errors detected.
 
-| Category | Example prompts |
-|----------|----------------|
-| **System Health** | *"Is my system running normally?"* &mdash; checks online status, battery SoC, grid connection, component states |
-| **Live Monitoring** | *"What's my current solar production?"* &mdash; returns real-time power values for grid, solar, battery, consumption |
-| **Energy Analytics** | *"How much solar did I generate this month?"* &mdash; queries historical energy totals across any date range |
-| **Grid Analysis** | *"Why am I importing so much from the grid?"* &mdash; compares production vs consumption patterns, identifies causes |
-| **Solar Comparison** | *"Compare my solar output this week vs last week"* &mdash; period-over-period performance analysis |
-| **Battery Insights** | *"Should I get a bigger battery?"* &mdash; analyzes charge/discharge patterns, provides sizing recommendations |
-| **Control** | *"Set battery to charge from grid overnight"* &mdash; writes values to controllable channels (EV chargers, battery, etc.) |
-| **Configuration** | *"Add a new site called Munich Factory"* &mdash; creates sites, users, roles, and manages the full site hierarchy |
-| **Marketplace** | *"What plugins are available for SMA inverters?"* &mdash; browses, installs, and assigns plugins to sites |
-| **Diagnostics** | *"Show me error logs from today"* &mdash; retrieves system logs filtered by level and date |
+</td></tr>
+</table>
+
+### What You Can Do
+
+| Category | Example |
+|:---------|:--------|
+| **System Health** | *"Is my system running normally?"* &mdash; checks online status, battery SoC, grid connection |
+| **Live Monitoring** | *"What's my current solar production?"* &mdash; real-time power values |
+| **Energy Analytics** | *"How much solar did I generate this month?"* &mdash; historical energy totals |
+| **Grid Analysis** | *"Why am I importing so much from the grid?"* &mdash; production vs consumption patterns |
+| **Solar Comparison** | *"Compare my solar this week vs last week"* &mdash; period-over-period analysis |
+| **Battery Insights** | *"Should I get a bigger battery?"* &mdash; charge/discharge analysis, sizing recommendations |
+| **Control** | *"Set battery to charge from grid overnight"* &mdash; write to controllable channels |
+| **Configuration** | *"Add a new site called Munich Factory"* &mdash; create sites, users, roles |
+| **Marketplace** | *"What plugins are available for SMA inverters?"* &mdash; browse, install, assign |
+| **Diagnostics** | *"Show me error logs from today"* &mdash; system logs by level and date |
 
 ### 50+ MCP Tools
 
 <details>
-<summary><b>View all MCP tools by domain</b></summary>
+<summary>View all tools by domain</summary>
 <br>
 
 | Domain | Tools |
 |--------|-------|
-| **Live Data** | `get_live_data`, `get_channel_value`, `set_channel_value` |
-| **History** | `query_history`, `query_energy_totals`, `export_csv` |
-| **Diagnostics** | `check_system_health`, `analyze_grid_usage`, `compare_solar_performance`, `analyze_battery_usage`, `get_energy_summary` |
-| **Sites** | `list_sites`, `search_sites`, `create_site`, `update_site`, `delete_site`, `get_site`, `get_site_config`, `describe_site` |
-| **Users & Roles** | `list_users`, `get_user`, `create_user`, `update_user`, `delete_user`, `invite_user`, `list_roles`, `create_role`, `update_role`, `delete_role`, `list_permissions` |
-| **Accounts** | `list_accounts`, `create_account`, `update_account`, `list_sub_accounts`, `create_sub_account`, `update_sub_account`, `delete_sub_account` |
-| **Marketplace** | `list_marketplace_categories`, `browse_plugins`, `get_plugin_details`, `install_plugin`, `list_installed_plugins`, `update_plugin_config`, `uninstall_plugin`, `assign_plugin_to_site`, `remove_plugin_from_site`, `list_site_plugins` |
-| **Components** | `create_component`, `update_component`, `delete_component` |
-| **System** | `get_system_log`, `execute_command`, `get_audit_log`, `check_platform_health`, `describe_system` |
-| **Platform** | `get_platform_settings`, `update_platform_settings`, `test_smtp`, `universal_search` |
+| **Live Data** | `get_live_data` `get_channel_value` `set_channel_value` |
+| **History** | `query_history` `query_energy_totals` `export_csv` |
+| **Diagnostics** | `check_system_health` `analyze_grid_usage` `compare_solar_performance` `analyze_battery_usage` `get_energy_summary` |
+| **Sites** | `list_sites` `search_sites` `create_site` `update_site` `delete_site` `get_site` `get_site_config` `describe_site` |
+| **Users & Roles** | `list_users` `get_user` `create_user` `update_user` `delete_user` `invite_user` `list_roles` `create_role` `update_role` `delete_role` `list_permissions` |
+| **Accounts** | `list_accounts` `create_account` `update_account` `list_sub_accounts` `create_sub_account` `update_sub_account` `delete_sub_account` |
+| **Marketplace** | `list_marketplace_categories` `browse_plugins` `get_plugin_details` `install_plugin` `list_installed_plugins` `update_plugin_config` `uninstall_plugin` `assign_plugin_to_site` `remove_plugin_from_site` `list_site_plugins` |
+| **Components** | `create_component` `update_component` `delete_component` |
+| **System** | `get_system_log` `execute_command` `get_audit_log` `check_platform_health` `describe_system` |
+| **Platform** | `get_platform_settings` `update_platform_settings` `test_smtp` `universal_search` |
 
 </details>
 
----
+<br>
 
-## How It Works
+## Architecture
 
-<div align="center">
+<table>
+<tr>
+<td align="center">
+<br>
 
-```
-   ┌─────────┐          ┌─────────┐          ┌─────────┐
-   │         │          │         │          │         │
-   │   1.    │  ─────▶  │   2.    │  ─────▶  │   3.    │
-   │ CONNECT │          │ MONITOR │          │OPTIMIZE │
-   │         │          │         │          │         │
-   └─────────┘          └─────────┘          └─────────┘
-    Link your            See real-time        AI assistants
-    energy system:       energy flows,        analyze patterns,
-    inverters,           historical           suggest savings,
-    meters,              analytics,           and control
-    batteries,           and system           your system
-    EV chargers          health               automatically
-```
+**Client Layer**
 
-</div>
+<img src="https://img.shields.io/badge/Web_App-React-61DAFB?style=flat-square&logo=react&logoColor=white" alt="React">&nbsp;
+<img src="https://img.shields.io/badge/Mobile-React_Native-61DAFB?style=flat-square&logo=react&logoColor=white" alt="Mobile">&nbsp;
+<img src="https://img.shields.io/badge/AI-Claude_%7C_ChatGPT-8b5cf6?style=flat-square" alt="AI">&nbsp;
+<img src="https://img.shields.io/badge/API-REST_Clients-3b82f6?style=flat-square" alt="API">
 
-**1. Connect** &mdash; Link your energy system: inverters, meters, batteries, EV chargers. Supports all major brands through our marketplace.
+<br>
 
-**2. Monitor** &mdash; See real-time energy flows, historical analytics, and system health. Set alerts and track performance across all your sites.
+&darr;&nbsp;&nbsp;&darr;&nbsp;&nbsp;&darr;&nbsp;&nbsp;&darr;
 
-**3. Optimize** &mdash; AI assistants analyze your energy patterns, suggest optimizations, and control your system through natural conversation.
+<br>
 
----
+**Platform Layer**
+
+<img src="https://img.shields.io/badge/REST_API-/api/v1/*-10b981?style=flat-square" alt="REST">&nbsp;
+<img src="https://img.shields.io/badge/WebSocket-Real--time-f59e0b?style=flat-square" alt="WS">&nbsp;
+<img src="https://img.shields.io/badge/MCP-50+_Tools-8b5cf6?style=flat-square" alt="MCP">
+
+<br>
+
+| Auth | Sites & RBAC | Users | Marketplace |
+|:----:|:------------:|:-----:|:-----------:|
+
+<br>
+
+&darr;
+
+<br>
+
+**Edge Layer**
+
+<img src="https://img.shields.io/badge/Inverter-Driver-f59e0b?style=flat-square" alt="">&nbsp;
+<img src="https://img.shields.io/badge/Meter-Driver-2dd4bf?style=flat-square" alt="">&nbsp;
+<img src="https://img.shields.io/badge/Battery-Driver-10b981?style=flat-square" alt="">&nbsp;
+<img src="https://img.shields.io/badge/EV_Charger-Driver-6366f1?style=flat-square" alt="">
+
+<sub>Edge Controller &mdash; real-time optimization & control</sub>
+
+<br><br>
+</td>
+</tr>
+</table>
+
+<br>
 
 ## Use Cases
 
 <table>
 <tr>
 <td width="50%">
+<br>
 
-### 🏠 Residential
+**Residential**
 
 Maximize solar self-consumption with smart battery management. OrbitEOS learns your household patterns and optimizes when to store, use, or export energy &mdash; reducing your electricity bill automatically.
 
 > *"How can I reduce my grid import?"*
 
+<br>
 </td>
 <td width="50%">
+<br>
 
-### 🏭 Commercial & Industrial
+**Commercial & Industrial**
 
-Reduce peak demand charges with load management, peak shaving, and grid optimization strategies. Monitor multiple sites from a single dashboard.
+Reduce peak demand charges with load management, peak shaving, and grid optimization. Monitor multiple sites from a single dashboard.
 
 > *"What were my peak demand charges this month vs last month?"*
 
+<br>
 </td>
 </tr>
 <tr>
 <td width="50%">
+<br>
 
-### ⚡ Energy Communities
+**Energy Communities**
 
-Manage distributed assets at scale with hierarchical site management (regions &rarr; hubs &rarr; sites &rarr; zones). Aggregate analytics across hundreds of installations with a single query.
+Manage distributed assets at scale with hierarchical site management (regions &rarr; hubs &rarr; sites &rarr; zones). Aggregate analytics across hundreds of installations.
 
 > *"Summary of all sites with below-average solar performance this week."*
 
+<br>
 </td>
 <td width="50%">
+<br>
 
-### 🔧 Solar Installers & O&M
+**Solar Installers & O&M**
 
-Monitor your fleet of customer installations. Get proactive alerts when systems underperform. Use AI for rapid diagnostics across your entire portfolio.
+Monitor your fleet of customer installations. Get proactive alerts when systems underperform. Use AI for rapid diagnostics across your portfolio.
 
 > *"Check system health for all sites in the Munich region."*
 
-</td>
-</tr>
-<tr>
-<td colspan="2" align="center">
-
-### 🛠️ Energy Developers & Integrators
-
-Build on top of OrbitEOS with the REST API, WebSocket, and MCP. Create custom dashboards, automated control strategies, or integrate with billing systems. The plugin marketplace lets you package and distribute your integrations.
-
+<br>
 </td>
 </tr>
 </table>
 
----
+<br>
 
-## Architecture
-
-<div align="center">
-
-```
-┌─────────────────────────────────────────────────────────────────────────┐
-│                           CLIENT LAYER                                  │
-│                                                                         │
-│    ┌──────────┐    ┌──────────┐    ┌──────────┐    ┌──────────┐       │
-│    │  Web App │    │Mobile App│    │ Claude / │    │ REST API │       │
-│    │  React   │    │React Nat.│    │ ChatGPT  │    │ Clients  │       │
-│    └────┬─────┘    └────┬─────┘    └────┬─────┘    └────┬─────┘       │
-│         │               │               │               │              │
-└─────────┼───────────────┼───────────────┼───────────────┼──────────────┘
-          │               │               │               │
-          ▼               ▼               ▼               ▼
-┌─────────────────────────────────────────────────────────────────────────┐
-│                          PLATFORM LAYER                                 │
-│                                                                         │
-│    ┌────────────────┐  ┌────────────────┐  ┌────────────────┐          │
-│    │   REST API     │  │   WebSocket    │  │   MCP Server   │          │
-│    │   /api/v1/*    │  │   Real-time    │  │   50+ Tools    │          │
-│    └────────┬───────┘  └────────┬───────┘  └────────┬───────┘          │
-│             │                   │                    │                   │
-│             └───────────────────┴────────────────────┘                   │
-│                                 │                                        │
-│                    ┌────────────▼────────────┐                          │
-│                    │     Core Engine         │                           │
-│                    │  ┌─────┐ ┌──────────┐  │                           │
-│                    │  │Auth │ │Sites/RBAC│  │                           │
-│                    │  └─────┘ └──────────┘  │                           │
-│                    │  ┌─────┐ ┌──────────┐  │                           │
-│                    │  │Users│ │Marketplace│  │                           │
-│                    │  └─────┘ └──────────┘  │                           │
-│                    └────────────┬────────────┘                          │
-│                                 │                                        │
-└─────────────────────────────────┼────────────────────────────────────────┘
-                                  │
-                                  ▼
-┌─────────────────────────────────────────────────────────────────────────┐
-│                           EDGE LAYER                                    │
-│                                                                         │
-│    ┌──────────┐    ┌──────────┐    ┌──────────┐    ┌──────────┐       │
-│    │ Inverter │    │  Meter   │    │ Battery  │    │EV Charger│       │
-│    │  Driver  │    │  Driver  │    │  Driver  │    │  Driver  │       │
-│    └────┬─────┘    └────┬─────┘    └────┬─────┘    └────┬─────┘       │
-│         │               │               │               │              │
-│    ┌────▼───────────────▼───────────────▼───────────────▼────┐         │
-│    │              Edge Controller (OpenEMS)                   │         │
-│    │         Real-time optimization & control                │         │
-│    └─────────────────────────────────────────────────────────┘         │
-│                                                                         │
-└─────────────────────────────────────────────────────────────────────────┘
-```
-
-</div>
-
----
-
-## Platform
+## Tech Stack
 
 <div align="center">
 
-| | | |
-|:---:|:---:|:---:|
-| **REST API + WebSocket** | **MCP Integration** | **Plugin Marketplace** |
-| Full programmatic access to every feature | Native Model Context Protocol for AI assistants | Device drivers, analytics, control strategies |
+<img src="https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white" alt="">
+<img src="https://img.shields.io/badge/React_18-61DAFB?style=flat-square&logo=react&logoColor=black" alt="">
+<img src="https://img.shields.io/badge/Node.js-339933?style=flat-square&logo=node.js&logoColor=white" alt="">
+<img src="https://img.shields.io/badge/PostgreSQL-4169E1?style=flat-square&logo=postgresql&logoColor=white" alt="">
+<img src="https://img.shields.io/badge/Docker-2496ED?style=flat-square&logo=docker&logoColor=white" alt="">
+<img src="https://img.shields.io/badge/WebSocket-Real--time-f59e0b?style=flat-square" alt="">
+<img src="https://img.shields.io/badge/MCP-Model_Context_Protocol-8b5cf6?style=flat-square" alt="">
 
 </div>
 
----
+<br>
 
 ## Links
 
 <div align="center">
 
-| Resource | Link |
-|:--------:|:----:|
-| 🌐 Website | [orbiteos.com](https://orbiteos.com) |
-| 🚀 App | [app.orbiteos.cloud](https://app.orbiteos.cloud) |
-| 📖 Documentation | [mcp.orbiteos.cloud/docs](https://mcp.orbiteos.cloud/docs) |
-| 🔌 MCP Server | [mcp.orbiteos.cloud/mcp](https://mcp.orbiteos.cloud/mcp) |
-| 🔒 Privacy Policy | [mcp.orbiteos.cloud/privacy](https://mcp.orbiteos.cloud/privacy) |
-
-</div>
-
----
-
-## Contact
-
-<div align="center">
-
-📧 **hello@orbiteos.cloud**
+| | |
+|:-:|:-:|
+| [**orbiteos.com**](https://orbiteos.com) | Website |
+| [**app.orbiteos.cloud**](https://app.orbiteos.cloud) | Launch App |
+| [**mcp.orbiteos.cloud/docs**](https://mcp.orbiteos.cloud/docs) | API Documentation |
+| [**mcp.orbiteos.cloud/mcp**](https://mcp.orbiteos.cloud/mcp) | MCP Server Endpoint |
+| [**mcp.orbiteos.cloud/privacy**](https://mcp.orbiteos.cloud/privacy) | Privacy Policy |
 
 <br>
 
-Built with ⚡ by **OrbitEOS**
+**hello@orbiteos.cloud**
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://capsule-render.vercel.app/api?type=waving&color=0:134e4a,50:1e1b4b,100:09090b&height=120&section=footer">
-  <img src="https://capsule-render.vercel.app/api?type=waving&color=0:134e4a,50:1e1b4b,100:09090b&height=120&section=footer" width="100%" alt="">
-</picture>
+<sub>Built by OrbitEOS</sub>
 
 </div>
