@@ -12,10 +12,10 @@ const DIST = path.join(ROOT, 'dist');
 
 const DEFAULT_LOCALE = 'en';
 
-// Each locale maps to its own domain
-const LOCALE_DOMAINS = {
-    en: 'https://orbiteos.com',
-    nl: 'https://orbiteos.nl',
+// Domain mapping for hreflang and language switcher
+const LOCALE_URLS = {
+    en: 'https://orbiteos.com/',
+    nl: 'https://orbiteos.nl/',
 };
 
 // Discover locales from JSON files
@@ -33,6 +33,19 @@ function getNestedValue(obj, keyPath) {
 function ensureDir(dir) {
     if (!fs.existsSync(dir)) {
         fs.mkdirSync(dir, { recursive: true });
+    }
+}
+
+function copyDirSync(src, dest) {
+    ensureDir(dest);
+    for (const entry of fs.readdirSync(src, { withFileTypes: true })) {
+        const srcPath = path.join(src, entry.name);
+        const destPath = path.join(dest, entry.name);
+        if (entry.isDirectory()) {
+            copyDirSync(srcPath, destPath);
+        } else {
+            fs.copyFileSync(srcPath, destPath);
+        }
     }
 }
 
@@ -66,10 +79,10 @@ for (const locale of locales) {
 
     // 4. Inject hreflang tags after <meta name="theme-color">
     const hreflangTags = locales.map(l => {
-        const domain = LOCALE_DOMAINS[l] || LOCALE_DOMAINS[DEFAULT_LOCALE];
-        return `    <link rel="alternate" hreflang="${l}" href="${domain}/">`;
+        const href = LOCALE_URLS[l] || `${LOCALE_URLS[DEFAULT_LOCALE]}${l}/`;
+        return `    <link rel="alternate" hreflang="${l}" href="${href}">`;
     }).join('\n');
-    const xDefaultTag = `    <link rel="alternate" hreflang="x-default" href="${LOCALE_DOMAINS[DEFAULT_LOCALE]}/">`;
+    const xDefaultTag = `    <link rel="alternate" hreflang="x-default" href="${LOCALE_URLS[DEFAULT_LOCALE]}">`;
     const allHreflang = `${hreflangTags}\n${xDefaultTag}`;
     html = html.replace(
         /(<meta name="theme-color"[^>]*>)/,
@@ -94,16 +107,21 @@ for (const locale of locales) {
         }
     );
 
-    // 7. Replace data-i18n on SVG <text> elements
-    //    (already handled by step 6 since <text> matches <(\w+)>)
-
-    // 8. Update language switcher links to use full domain URLs
+    // 7. Update language switcher links to use full domain URLs
     for (const l of locales) {
-        const domain = LOCALE_DOMAINS[l] || LOCALE_DOMAINS[DEFAULT_LOCALE];
+        const url = LOCALE_URLS[l] || `${LOCALE_URLS[DEFAULT_LOCALE]}${l}/`;
         html = html.replace(
             new RegExp(`href="[^"]*"(\\s+class="lang-option[^"]*"\\s+data-lang="${l}")`),
-            `href="${domain}/"$1`
+            `href="${url}"$1`
         );
+    }
+
+    // 8. Fix asset paths for non-default locales (served from /nl/ subdirectory)
+    if (locale !== DEFAULT_LOCALE) {
+        html = html.replace(/href="css\//g, 'href="../css/');
+        html = html.replace(/src="js\//g, 'src="../js/');
+        html = html.replace(/href="img\//g, 'href="../img/');
+        html = html.replace(/src="img\//g, 'src="../img/');
     }
 
     // 9. Set active language in switcher
@@ -112,43 +130,42 @@ for (const locale of locales) {
         /(<button[^>]*id="lang-switcher-btn"[^>]*>[\s\S]*?<span>)\w+(<\/span>)/,
         `$1${langLabel}$2`
     );
-    // Mark active language option
     html = html.replace(/class="lang-option active"/g, 'class="lang-option"');
     html = html.replace(
         new RegExp(`class="lang-option"(\\s+data-lang="${locale}")`),
         `class="lang-option active"$1`
     );
 
-    // 10. Write output — each locale gets its own directory (separate FTP deploy)
-    const outDir = path.join(DIST, locale);
+    // 10. Write output: EN → dist/, NL → dist/nl/
+    const outDir = locale === DEFAULT_LOCALE ? DIST : path.join(DIST, locale);
     ensureDir(outDir);
     const outFile = path.join(outDir, 'index.html');
     fs.writeFileSync(outFile, html, 'utf-8');
     console.log(`  ✓ ${locale} → ${path.relative(ROOT, outFile)}`);
+}
 
-    // Copy static assets into each locale dir
-    const assetDirs = ['css', 'js', 'img'];
-    for (const dir of assetDirs) {
-        const src = path.join(ROOT, dir);
-        if (fs.existsSync(src)) {
-            copyDirSync(src, path.join(outDir, dir));
-        }
+// Copy static assets to dist root (shared by all locales)
+const assetDirs = ['css', 'js', 'img'];
+for (const dir of assetDirs) {
+    const src = path.join(ROOT, dir);
+    if (fs.existsSync(src)) {
+        copyDirSync(src, path.join(DIST, dir));
+        console.log(`  ✓ ${dir}/ copied`);
     }
 }
 
-function copyDirSync(src, dest) {
-    ensureDir(dest);
-    for (const entry of fs.readdirSync(src, { withFileTypes: true })) {
-        const srcPath = path.join(src, entry.name);
-        const destPath = path.join(dest, entry.name);
-        if (entry.isDirectory()) {
-            copyDirSync(srcPath, destPath);
-        } else {
-            fs.copyFileSync(srcPath, destPath);
-        }
-    }
-}
+// Generate .htaccess for domain-based routing
+const htaccess = `# Route orbiteos.nl to Dutch version
+RewriteEngine On
 
-console.log(`\nDone! Deploy each folder via FTP:`);
-console.log(`  dist/en/ → orbiteos.com`);
-console.log(`  dist/nl/ → orbiteos.nl`);
+# If visitor comes via orbiteos.nl, serve /nl/ content
+RewriteCond %{HTTP_HOST} ^(www\\.)?orbiteos\\.nl$ [NC]
+RewriteCond %{REQUEST_URI} !^/nl/
+RewriteRule ^(.*)$ /nl/$1 [L]
+`;
+fs.writeFileSync(path.join(DIST, '.htaccess'), htaccess, 'utf-8');
+console.log('  ✓ .htaccess generated');
+
+console.log(`\nDone! Upload dist/ to hosting root.`);
+console.log(`  orbiteos.com  → serves dist/index.html (EN)`);
+console.log(`  orbiteos.nl   → .htaccess rewrites to dist/nl/index.html (NL)`);
