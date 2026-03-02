@@ -78,6 +78,22 @@
         });
     }
 
+    // ===== Theme Toggle =====
+    var themeToggle = document.getElementById('theme-toggle');
+    var savedTheme = localStorage.getItem('orbiteos-theme');
+    if (savedTheme) {
+        document.documentElement.setAttribute('data-theme', savedTheme);
+    }
+
+    if (themeToggle) {
+        themeToggle.addEventListener('click', function () {
+            var current = document.documentElement.getAttribute('data-theme');
+            var next = current === 'light' ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-theme', next);
+            localStorage.setItem('orbiteos-theme', next);
+        });
+    }
+
     // ===== Smooth scroll for anchor links =====
     document.querySelectorAll('a[href^="#"]').forEach(function (anchor) {
         anchor.addEventListener('click', function (e) {

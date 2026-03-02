@@ -140,6 +140,13 @@ for (const locale of locales) {
     console.log(`  ✓ ${locale} → ${path.relative(ROOT, outFile)}`);
 }
 
+// Copy docs.html to dist root
+const docsPage = path.join(ROOT, 'docs.html');
+if (fs.existsSync(docsPage)) {
+    fs.copyFileSync(docsPage, path.join(DIST, 'docs.html'));
+    console.log('  ✓ docs.html copied');
+}
+
 // Copy static assets to dist root (shared by all locales)
 const assetDirs = ['css', 'js', 'img'];
 for (const dir of assetDirs) {
