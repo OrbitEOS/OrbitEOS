@@ -107,14 +107,8 @@ for (const locale of locales) {
         }
     );
 
-    // 7. Update language switcher links to use full domain URLs
-    for (const l of locales) {
-        const url = LOCALE_URLS[l] || `${LOCALE_URLS[DEFAULT_LOCALE]}${l}/`;
-        html = html.replace(
-            new RegExp(`href="[^"]*"(\\s+class="lang-option[^"]*"\\s+data-lang="${l}")`),
-            `href="${url}"$1`
-        );
-    }
+    // 7. Language switcher uses relative paths: / for EN, /nl/ for NL
+    //    (keeps users on the same domain — orbiteos.com or orbiteos.nl)
 
     // 8. Fix asset paths for non-default locales (served from /nl/ subdirectory)
     if (locale !== DEFAULT_LOCALE) {
