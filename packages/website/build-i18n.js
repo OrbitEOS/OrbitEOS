@@ -118,6 +118,8 @@ for (const locale of locales) {
         html = html.replace(/src="js\//g, 'src="/js/');
         html = html.replace(/href="img\//g, 'href="/img/');
         html = html.replace(/src="img\//g, 'src="/img/');
+        // Fix docs links to point to locale-specific docs page
+        html = html.replace(/href="\/docs\.html"/g, `href="/${locale}/docs.html"`);
     }
 
     // 9. Set active language in switcher
@@ -145,6 +147,18 @@ const docsPage = path.join(ROOT, 'docs.html');
 if (fs.existsSync(docsPage)) {
     fs.copyFileSync(docsPage, path.join(DIST, 'docs.html'));
     console.log('  ✓ docs.html copied');
+}
+
+// Copy locale-specific docs pages (e.g., docs-nl.html → dist/nl/docs.html)
+for (const locale of locales) {
+    if (locale === DEFAULT_LOCALE) continue;
+    const localeDocsPage = path.join(ROOT, `docs-${locale}.html`);
+    if (fs.existsSync(localeDocsPage)) {
+        const localeDir = path.join(DIST, locale);
+        ensureDir(localeDir);
+        fs.copyFileSync(localeDocsPage, path.join(localeDir, 'docs.html'));
+        console.log(`  ✓ docs-${locale}.html → ${locale}/docs.html`);
+    }
 }
 
 // Copy static assets to dist root (shared by all locales)
