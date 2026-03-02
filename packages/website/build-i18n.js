@@ -110,12 +110,14 @@ for (const locale of locales) {
     // 7. Language switcher uses relative paths: / for EN, /nl/ for NL
     //    (keeps users on the same domain — orbiteos.com or orbiteos.nl)
 
-    // 8. Fix asset paths for non-default locales (served from /nl/ subdirectory)
+    // 8. Fix asset paths for non-default locales to use absolute root paths.
+    //    NL is served at /nl/ on orbiteos.com and at / on orbiteos.nl.
+    //    Using /css/ ensures assets load from hosting root in both cases.
     if (locale !== DEFAULT_LOCALE) {
-        html = html.replace(/href="css\//g, 'href="../css/');
-        html = html.replace(/src="js\//g, 'src="../js/');
-        html = html.replace(/href="img\//g, 'href="../img/');
-        html = html.replace(/src="img\//g, 'src="../img/');
+        html = html.replace(/href="css\//g, 'href="/css/');
+        html = html.replace(/src="js\//g, 'src="/js/');
+        html = html.replace(/href="img\//g, 'href="/img/');
+        html = html.replace(/src="img\//g, 'src="/img/');
     }
 
     // 9. Set active language in switcher
@@ -155,9 +157,13 @@ RewriteEngine On
 # Skip ACME challenges (Let's Encrypt SSL validation)
 RewriteRule ^.well-known/ - [L]
 
-# If visitor comes via orbiteos.nl, serve /nl/ content
+# If visitor comes via orbiteos.nl, rewrite to /nl/ for the HTML page
+# but NOT for shared assets (css/, js/, img/) which live at root
 RewriteCond %{HTTP_HOST} ^(www\\.)?orbiteos\\.nl$ [NC]
 RewriteCond %{REQUEST_URI} !^/nl/
+RewriteCond %{REQUEST_URI} !^/css/
+RewriteCond %{REQUEST_URI} !^/js/
+RewriteCond %{REQUEST_URI} !^/img/
 RewriteRule ^(.*)$ /nl/$1 [L]
 `;
 fs.writeFileSync(path.join(DIST, '.htaccess'), htaccess, 'utf-8');
