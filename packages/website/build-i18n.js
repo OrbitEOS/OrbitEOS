@@ -152,6 +152,9 @@ for (const dir of assetDirs) {
 const htaccess = `# Route orbiteos.nl to Dutch version
 RewriteEngine On
 
+# Skip ACME challenges (Let's Encrypt SSL validation)
+RewriteRule ^.well-known/ - [L]
+
 # If visitor comes via orbiteos.nl, serve /nl/ content
 RewriteCond %{HTTP_HOST} ^(www\\.)?orbiteos\\.nl$ [NC]
 RewriteCond %{REQUEST_URI} !^/nl/
