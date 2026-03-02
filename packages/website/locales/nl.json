@@ -1,0 +1,150 @@
+{
+  "meta": {
+    "title": "OrbitEOS — Energiebeheer voor het AI-tijdperk",
+    "description": "Monitor zon, batterij en net in realtime. Bedien alles via AI-assistenten. Het intelligente energiebeheerplatform."
+  },
+  "nav": {
+    "features": "Functies",
+    "howItWorks": "Hoe het werkt",
+    "aiIntegration": "AI-integratie",
+    "useCases": "Toepassingen",
+    "docs": "Docs",
+    "login": "Inloggen"
+  },
+  "hero": {
+    "title": "Energiebeheer<br>voor het AI-tijdperk",
+    "subtitle": "Monitor zon, batterij en net in realtime.<br>Bedien alles via AI-assistenten.",
+    "cta": "Aan de slag"
+  },
+  "metrics": {
+    "value1": "24/7",
+    "label1": "Realtime monitoring",
+    "value2": "AI-native",
+    "label2": "Platformarchitectuur",
+    "value3": "Enterprise",
+    "label3": "Klaar & schaalbaar",
+    "value4": "Wereldwijd",
+    "label4": "Multi-site schaal"
+  },
+  "features": {
+    "title": "Alles wat je nodig hebt om<br>energie intelligent te beheren",
+    "subtitle": "Een compleet platform voor het monitoren, aansturen en optimaliseren van energiesystemen — van een enkel huis tot duizenden locaties.",
+    "dashboard": {
+      "title": "Live energiedashboard",
+      "desc": "Realtime visualisatie van energiestromen die elke watt door je systeem toont — zon, batterij, net en verbruik."
+    },
+    "ai": {
+      "title": "AI-gestuurde bediening",
+      "desc": "Stel vragen en geef opdrachten in natuurlijke taal via Claude, ChatGPT of elke MCP-compatibele AI-assistent."
+    },
+    "battery": {
+      "title": "Batterij-intelligentie",
+      "desc": "Slimme laad- en ontlaadoptimalisatie die je patronen leert en eigenverbruik en batterijlevensduur maximaliseert."
+    },
+    "grid": {
+      "title": "Netoptimalisatie",
+      "desc": "Piekverlaging, maximalisatie van eigenverbruik en vraagsturing — verlaag automatisch je elektriciteitskosten."
+    },
+    "multiSite": {
+      "title": "Multi-site beheer",
+      "desc": "Hi\u00ebrarchische locatieboom met rolgebaseerde toegangscontrole. Beheer regio's, hubs, locaties en zones vanuit \u00e9\u00e9n overzicht."
+    },
+    "marketplace": {
+      "title": "Marktplaats",
+      "desc": "Uitbreiden met plugins voor apparaatstuurprogramma's, analyses, regelstrategieën, meldingen en dashboardwidgets."
+    }
+  },
+  "energyFlow": {
+    "title": "Zie elke watt, in realtime",
+    "subtitle": "Bekijk hoe energie door je systeem stroomt — van zonnepanelen naar batterijopslag, net en verbruik.",
+    "solar": "Zon",
+    "smartHub": "Slim knooppunt",
+    "battery": "Batterij",
+    "grid": "Net",
+    "home": "Woning"
+  },
+  "ai": {
+    "userMsg1": "Werkt mijn systeem normaal?",
+    "aiMsg1": "<strong>Systeemgezondheidscheck</strong><br><br>Je Munich Factory-locatie draait normaal.<br><br><span class=\"ai-highlight green\">Zon:</span> 5,2 kW (producerend)<br><span class=\"ai-highlight teal\">Batterij:</span> 85% SoC (opladen)<br><span class=\"ai-highlight blue\">Net:</span> 0,3 kW (minimale import)<br><span class=\"ai-highlight purple\">Belasting:</span> 3,8 kW<br><br>Eigenverbruikspercentage: 94%. Alle componenten online.",
+    "userMsg2": "Stel batterij in om 's nachts van het net te laden",
+    "aiMsg2": "Klaar. Batterij gepland voor netladen 23:00–06:00 tegen daltarief.",
+    "title": "Gebouwd voor het AI-tijdperk",
+    "subtitle": "OrbitEOS werkt native samen met je favoriete AI-assistenten via het Model Context Protocol (MCP). Stel vragen, krijg inzichten en bedien je energiesysteem — allemaal in natuurlijke taal.",
+    "terminalLabel": "Terminal",
+    "note": "Werkt met Claude, ChatGPT en elke MCP-compatibele AI-assistent."
+  },
+  "howItWorks": {
+    "title": "Binnen minuten aan de slag",
+    "subtitle": "Drie eenvoudige stappen naar intelligent energiebeheer.",
+    "step1": {
+      "title": "Verbinden",
+      "desc": "Koppel je energiesysteem — omvormers, meters, batterijen, EV-laders. Ondersteunt alle grote merken via onze marktplaats."
+    },
+    "step2": {
+      "title": "Monitoren",
+      "desc": "Bekijk realtime energiestromen, historische analyses en systeemgezondheid. Stel meldingen in en volg prestaties op al je locaties."
+    },
+    "step3": {
+      "title": "Optimaliseren",
+      "desc": "Laat AI-assistenten je energiepatronen analyseren, optimalisaties voorstellen en je systeem bedienen — allemaal via natuurlijk gesprek."
+    }
+  },
+  "useCases": {
+    "title": "Gebouwd voor elke schaal",
+    "subtitle": "Van een enkel huis tot volledige energiegemeenschappen.",
+    "residential": {
+      "title": "Residentieel",
+      "tagline": "Maximaliseer zonne-eigenverbruik",
+      "desc": "Slim batterijbeheer leert je huishoudpatronen en optimaliseert wanneer energie op te slaan, te gebruiken of te exporteren — verlaagt automatisch je energierekening."
+    },
+    "commercial": {
+      "title": "Commercieel",
+      "tagline": "Verlaag piekvraagtarieven",
+      "desc": "Piekverlaging, belastingbeheer en netoptimalisatiestrategieën die commerciële elektriciteitskosten verlagen. Multi-site vlootoverzicht voor portefeuilles."
+    },
+    "community": {
+      "title": "Energiegemeenschappen",
+      "tagline": "Beheer gedistribueerde assets op schaal",
+      "desc": "Hiërarchisch locatiebeheer met rolgebaseerde toegang. Aggregeer data over honderden locaties, beheer subaccounts en optimaliseer vlootbrede prestaties."
+    }
+  },
+  "platform": {
+    "title": "Oneindig uitbreidbaar",
+    "subtitle": "Een open platform dat meegroeit met je behoeften.",
+    "marketplace": {
+      "title": "Plugin-marktplaats",
+      "desc": "Apparaatstuurprogramma's, analysemodules, regelstrategieën en dashboardwidgets — installeer met één klik."
+    },
+    "api": {
+      "title": "REST API + WebSocket",
+      "desc": "Volledige programmatische toegang tot elke functie. Bouw aangepaste dashboards, integraties en automatisering."
+    },
+    "mcp": {
+      "title": "MCP-integratie",
+      "desc": "Native Model Context Protocol-ondersteuning. Verbind elke AI-assistent met je energiesysteem in seconden."
+    }
+  },
+  "cta": {
+    "title": "Begin slimmer met energie",
+    "subtitle": "Sluit je aan bij de volgende generatie energiebeheer. Gratis starten, schaalt met je mee.",
+    "primary": "Gratis starten",
+    "secondary": "Lees de docs"
+  },
+  "footer": {
+    "tagline": "Energiebeheer voor het AI-tijdperk",
+    "productHeading": "Product",
+    "features": "Functies",
+    "howItWorks": "Hoe het werkt",
+    "aiIntegration": "AI-integratie",
+    "documentation": "Documentatie",
+    "platformHeading": "Platform",
+    "getStarted": "Aan de slag",
+    "login": "Inloggen",
+    "apiMcp": "API / MCP",
+    "github": "GitHub",
+    "legalHeading": "Juridisch",
+    "privacy": "Privacybeleid",
+    "support": "Ondersteuning",
+    "copyright": "&copy; 2026 OrbitEOS. Alle rechten voorbehouden."
+  }
+}

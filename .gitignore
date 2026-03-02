@@ -16,3 +16,6 @@ Thumbs.db
 
 # Node (if added later)
 node_modules/
+
+# i18n build output
+packages/website/dist/

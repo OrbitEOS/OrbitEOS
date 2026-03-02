@@ -1,0 +1,150 @@
+{
+  "meta": {
+    "title": "OrbitEOS — Energy Management for the AI Era",
+    "description": "Monitor solar, battery, and grid in real time. Control everything through AI assistants. The intelligent energy management platform."
+  },
+  "nav": {
+    "features": "Features",
+    "howItWorks": "How It Works",
+    "aiIntegration": "AI Integration",
+    "useCases": "Use Cases",
+    "docs": "Docs",
+    "login": "Login"
+  },
+  "hero": {
+    "title": "Energy Management<br>for the AI Era",
+    "subtitle": "Monitor solar, battery, and grid in real time.<br>Control everything through AI assistants.",
+    "cta": "Get Started"
+  },
+  "metrics": {
+    "value1": "24/7",
+    "label1": "Real-Time Monitoring",
+    "value2": "AI-Native",
+    "label2": "Platform Architecture",
+    "value3": "Enterprise",
+    "label3": "Ready & Scalable",
+    "value4": "Global",
+    "label4": "Multi-Site Scale"
+  },
+  "features": {
+    "title": "Everything you need to<br>manage energy intelligently",
+    "subtitle": "A complete platform for monitoring, controlling, and optimizing energy systems — from a single home to thousands of sites.",
+    "dashboard": {
+      "title": "Live Energy Dashboard",
+      "desc": "Real-time power flow visualization showing every watt moving through your system — solar, battery, grid, and consumption."
+    },
+    "ai": {
+      "title": "AI-Powered Control",
+      "desc": "Ask questions and give commands in natural language through Claude, ChatGPT, or any MCP-compatible AI assistant."
+    },
+    "battery": {
+      "title": "Battery Intelligence",
+      "desc": "Smart charge and discharge optimization that learns your patterns and maximizes self-consumption and battery lifespan."
+    },
+    "grid": {
+      "title": "Grid Optimization",
+      "desc": "Peak shaving, self-consumption maximization, and demand response — automatically reduce your electricity costs."
+    },
+    "multiSite": {
+      "title": "Multi-Site Management",
+      "desc": "Hierarchical site tree with role-based access control. Manage regions, hubs, sites, and zones from a single pane."
+    },
+    "marketplace": {
+      "title": "Marketplace",
+      "desc": "Extend with plugins for device drivers, analytics, control strategies, notifications, and dashboard widgets."
+    }
+  },
+  "energyFlow": {
+    "title": "See every watt, in real time",
+    "subtitle": "Watch energy flow through your system — from solar panels to battery storage to grid and consumption.",
+    "solar": "Solar",
+    "smartHub": "Smart Hub",
+    "battery": "Battery",
+    "grid": "Grid",
+    "home": "Home"
+  },
+  "ai": {
+    "userMsg1": "Is my system running normally?",
+    "aiMsg1": "<strong>System Health Check</strong><br><br>Your Munich Factory site is running normally.<br><br><span class=\"ai-highlight green\">Solar:</span> 5.2 kW (producing)<br><span class=\"ai-highlight teal\">Battery:</span> 85% SoC (charging)<br><span class=\"ai-highlight blue\">Grid:</span> 0.3 kW (minimal import)<br><span class=\"ai-highlight purple\">Load:</span> 3.8 kW<br><br>Self-consumption rate: 94%. All components online.",
+    "userMsg2": "Set battery to charge from grid overnight",
+    "aiMsg2": "Done. Battery scheduled for grid charging 23:00–06:00 at off-peak rate.",
+    "title": "Built for the AI era",
+    "subtitle": "OrbitEOS works natively with your favorite AI assistants through the Model Context Protocol (MCP). Ask questions, get insights, and control your energy system — all in natural language.",
+    "terminalLabel": "Terminal",
+    "note": "Works with Claude, ChatGPT, and any MCP-compatible AI assistant."
+  },
+  "howItWorks": {
+    "title": "Get started in minutes",
+    "subtitle": "Three simple steps to intelligent energy management.",
+    "step1": {
+      "title": "Connect",
+      "desc": "Link your energy system — inverters, meters, batteries, EV chargers. Supports all major brands through our marketplace."
+    },
+    "step2": {
+      "title": "Monitor",
+      "desc": "See real-time energy flows, historical analytics, and system health. Set alerts and track performance across all your sites."
+    },
+    "step3": {
+      "title": "Optimize",
+      "desc": "Let AI assistants analyze your energy patterns, suggest optimizations, and control your system — all through natural conversation."
+    }
+  },
+  "useCases": {
+    "title": "Built for every scale",
+    "subtitle": "From a single home to entire energy communities.",
+    "residential": {
+      "title": "Residential",
+      "tagline": "Maximize solar self-consumption",
+      "desc": "Smart battery management learns your household patterns and optimizes when to store, use, or export energy — reducing your electricity bill automatically."
+    },
+    "commercial": {
+      "title": "Commercial",
+      "tagline": "Reduce peak demand charges",
+      "desc": "Peak shaving, load management, and grid optimization strategies that cut commercial electricity costs. Multi-site fleet view for portfolios."
+    },
+    "community": {
+      "title": "Energy Communities",
+      "tagline": "Manage distributed assets at scale",
+      "desc": "Hierarchical site management with role-based access. Aggregate data across hundreds of sites, manage sub-accounts, and optimize fleet-wide performance."
+    }
+  },
+  "platform": {
+    "title": "Infinitely extensible",
+    "subtitle": "An open platform that grows with your needs.",
+    "marketplace": {
+      "title": "Plugin Marketplace",
+      "desc": "Device drivers, analytics modules, control strategies, and dashboard widgets — install in one click."
+    },
+    "api": {
+      "title": "REST API + WebSocket",
+      "desc": "Full programmatic access to every feature. Build custom dashboards, integrations, and automation."
+    },
+    "mcp": {
+      "title": "MCP Integration",
+      "desc": "Native Model Context Protocol support. Connect any AI assistant to your energy system in seconds."
+    }
+  },
+  "cta": {
+    "title": "Start managing energy smarter",
+    "subtitle": "Join the next generation of energy management. Free to start, scales with you.",
+    "primary": "Get Started Free",
+    "secondary": "Read the Docs"
+  },
+  "footer": {
+    "tagline": "Energy Management for the AI Era",
+    "productHeading": "Product",
+    "features": "Features",
+    "howItWorks": "How It Works",
+    "aiIntegration": "AI Integration",
+    "documentation": "Documentation",
+    "platformHeading": "Platform",
+    "getStarted": "Get Started",
+    "login": "Login",
+    "apiMcp": "API / MCP",
+    "github": "GitHub",
+    "legalHeading": "Legal",
+    "privacy": "Privacy Policy",
+    "support": "Support",
+    "copyright": "&copy; 2026 OrbitEOS. All rights reserved."
+  }
+}

@@ -63,6 +63,21 @@
         });
     }
 
+    // ===== Language Switcher =====
+    var langBtn = document.getElementById('lang-switcher-btn');
+    var langDropdown = document.getElementById('lang-dropdown');
+
+    if (langBtn && langDropdown) {
+        langBtn.addEventListener('click', function (e) {
+            e.stopPropagation();
+            langDropdown.classList.toggle('open');
+        });
+
+        document.addEventListener('click', function () {
+            langDropdown.classList.remove('open');
+        });
+    }
+
     // ===== Smooth scroll for anchor links =====
     document.querySelectorAll('a[href^="#"]').forEach(function (anchor) {
         anchor.addEventListener('click', function (e) {
