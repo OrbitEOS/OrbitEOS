@@ -194,6 +194,7 @@
     .flow-hue { position: absolute; inset: 0; pointer-events: none; border-radius: 1rem; overflow: hidden; }
     .flow-blob { position: absolute; border-radius: 50%; filter: blur(120px); transition: opacity 1.5s ease; }
     .flow-svg-layer { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; }
+    .flow-canvas-layer { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; }
     .flow-layout { position: relative; z-index: 2; width: 100%; display: flex; align-items: center;
       justify-content: space-between; max-width: 64rem; }
     .flow-col-left, .flow-col-right { display: flex; flex-direction: column; gap: 48px; }
@@ -424,8 +425,9 @@
       .config-layout { grid-template-columns: 200px 1fr; }
     }
     @media (max-width: 768px) {
-      :root { --sidebar-w: 0px; }
-      .sidebar { display: none; }
+      :root { --sidebar-w: 48px; --sidebar-rail-w: 48px; }
+      .sidebar-rail { width: 48px; padding: 4px 0; }
+      .sidebar-rail-icon { width: 36px; height: 36px; font-size: 16px; }
       .flow-svg-layer { display: none; }
       .stat-grid-4, .stat-grid-3 { grid-template-columns: 1fr 1fr; }
       .flow-hub { aspect-ratio: auto; min-height: auto; max-height: none; padding: 24px 16px 40px; }
@@ -436,9 +438,13 @@
       .flow-battery-soc { font-size: 16px; }
       .flow-icon-box { width: 40px; height: 40px; }
       .data-table th, .data-table td { padding: 8px 10px; font-size: 12px; }
-      .header { padding: 0 16px; }
-      .content { padding: 16px; }
-      .alarm-dropdown { width: 300px; }
+      .header { padding: 0 12px; }
+      .header-breadcrumb { font-size: 12px; }
+      .header-right { gap: 8px; }
+      .theme-toggle, .lang-toggle { font-size: 0; padding: 6px 8px; }
+      .theme-toggle *, .lang-toggle * { font-size: 14px; margin: 0; }
+      .content { padding: 12px; }
+      .alarm-dropdown { width: 300px; right: -40px; }
       .login-card { padding: 24px; width: 340px; }
       .device-grid { grid-template-columns: repeat(2, 1fr); }
       .charger-grid { grid-template-columns: 1fr 1fr; }
@@ -449,8 +455,11 @@
       .flow-rule { grid-template-columns: 1fr; }
       .widget-grid { grid-template-columns: 1fr; }
       .customize-drawer { width: 100%; max-width: 100%; }
+      .data-table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
     }
     @media (max-width: 480px) {
+      :root { --sidebar-w: 0px; }
+      .sidebar { display: none; }
       .stat-grid-4, .stat-grid-3 { grid-template-columns: 1fr; }
       .flow-hub { padding: 20px 12px 36px; }
       .flow-col-left, .flow-col-right { flex-direction: column; gap: 12px; align-items: center; }
@@ -466,6 +475,8 @@
       .alarm-dropdown { width: calc(100vw - 32px); right: -60px; }
       .device-grid, .charger-grid { grid-template-columns: 1fr; }
       .marketplace-grid { grid-template-columns: 1fr; }
+      .header { padding: 0 8px; }
+      .content { padding: 8px; }
     }
   </style>
 </head>
@@ -495,7 +506,7 @@ const { DashboardOutlined, ThunderboltOutlined, ClusterOutlined, ApiOutlined, Ap
   WarningOutlined, EuroCircleOutlined, FundOutlined, HomeOutlined, CloudServerOutlined,
   ShopOutlined, HddOutlined, AlertOutlined, FireOutlined, LockOutlined, GatewayOutlined,
   RobotOutlined, RadarChartOutlined, SlidersOutlined, BuildOutlined, CodeOutlined,
-  FunctionOutlined, FilterOutlined, PieChartOutlined, SwapOutlined, BankOutlined } = icons;
+  FunctionOutlined, FilterOutlined, PieChartOutlined, SwapOutlined, BankOutlined, CloudOutlined } = icons;
 
 // Icon lookup for nav items
 const NAV_ICONS = {
@@ -743,23 +754,23 @@ const UserStore = (() => {
 // ─── Seed: Users ───
 const USER_SEEDS = [
   { id:'user-jan', name:'Jan de Vries', email:'jan@orbiteos.com', role:'Platform Admin', accountId:null,
-    avatar:null, initials:'JV', phone:'+31 6 1234 5678', lang:'en', theme:'dark',
+    avatar:'https://i.pravatar.cc/150?u=jan-devries', initials:'JV', phone:'+31 6 1234 5678', lang:'en', theme:'dark',
     permissions:['platform.admin','accounts.manage','sites.manage','users.manage','devices.manage','flows.manage'],
     lastLogin:'Just now', status:'online' },
   { id:'user-groot', name:'Jan de Groot', email:'jan@degroatagri.nl', role:'Site Admin', accountId:'acme',
-    avatar:null, initials:'JG', phone:'+31 6 2345 6789', lang:'nl', theme:'dark',
+    avatar:'https://i.pravatar.cc/150?u=jan-degroot', initials:'JG', phone:'+31 6 2345 6789', lang:'nl', theme:'dark',
     permissions:['sites.manage','devices.manage','flows.manage'],
     lastLogin:'10 min ago', status:'online' },
   { id:'user-maria', name:'Maria van Dijk', email:'maria@acme-energy.nl', role:'Operator', accountId:'acme',
-    avatar:null, initials:'MV', phone:'+31 6 3456 7890', lang:'nl', theme:'light',
+    avatar:'https://i.pravatar.cc/150?u=maria-vandijk', initials:'MV', phone:'+31 6 3456 7890', lang:'nl', theme:'light',
     permissions:['devices.view','flows.view','alerts.manage'],
     lastLogin:'1 hour ago', status:'online' },
   { id:'user-lisa', name:'Lisa Vermeer', email:'lisa@greengrid.nl', role:'Site Admin', accountId:'greengrid',
-    avatar:null, initials:'LV', phone:'+31 6 4567 8901', lang:'en', theme:'dark',
+    avatar:'https://i.pravatar.cc/150?u=lisa-vermeer', initials:'LV', phone:'+31 6 4567 8901', lang:'en', theme:'dark',
     permissions:['sites.manage','devices.manage','flows.manage'],
     lastLogin:'30 min ago', status:'online' },
   { id:'user-kees', name:'Kees van den Berg', email:'kees@greengrid.nl', role:'Operator', accountId:'greengrid',
-    avatar:null, initials:'KB', phone:'+31 6 5678 9012', lang:'nl', theme:'dark',
+    avatar:'https://i.pravatar.cc/150?u=kees-vandenberg', initials:'KB', phone:'+31 6 5678 9012', lang:'nl', theme:'dark',
     permissions:['devices.view','flows.view','alerts.manage'],
     lastLogin:'5 hours ago', status:'away' },
 ];
@@ -1708,44 +1719,192 @@ const MockAPI = {
       .map(a => ({ sev: a.sev, msg: a.msg, dev: a.dev, time: a.time, status: a.status || 'active', entityName: a.entityName }));
   },
 
-  // ─── Rules Engine ───
-  getRules: () => [
-    {name:'Self-consumption Optimizer',strategy:'Self-consumption',priority:'1 (Highest)',exec:142,last:'2 min ago',status:'Active'},
-    {name:'Peak Demand Limiter',strategy:'Peak Shaving',priority:'2',exec:38,last:'15 min ago',status:'Active'},
-    {name:'EPEX Day-ahead Scheduler',strategy:'Tariff Arbitrage',priority:'3',exec:24,last:'1 hour ago',status:'Active'},
-    {name:'Grid Congestion Handler',strategy:'Grid Congestion',priority:'4',exec:3,last:'Yesterday',status:'Standby'},
-    {name:'Emergency Backup Reserve',strategy:'Emergency Backup',priority:'0 (Override)',exec:1,last:'5 days ago',status:'Active'},
-  ],
-  getActiveRule: () => ({
-    name: 'Self-consumption Optimizer', description: 'Maximize use of locally generated energy before importing from grid',
-    when: ['Solar generation > 2 kW', 'Battery SoC < 95%'],
-    and: ['Grid export price < €0.08/kWh', 'No peak shaving event active'],
-    then: ['Charge battery at max rate', 'Reduce grid export to 0 kW'],
-  }),
+  // ─── Self-Consumption & Autarky (entity-aware) ───
+  getSelfConsumption: (entityId) => {
+    const ef = MockAPI.getEnergyFlowState(entityId);
+    if (!ef) return {selfConsumption:0,autarky:0,solarFraction:0,directUse:0,batteryUse:0,gridFeedIn:0};
+    const totalGen = ef.solarPower + ef.windPower;
+    const totalLoad = ef.buildingPower + ef.evPower;
+    const directUse = Math.min(totalGen, totalLoad);
+    const batteryContrib = ef.batteryMode === 'Discharging' ? ef.batteryPower : 0;
+    const gridFeedIn = ef.gridExporting ? ef.gridPower : 0;
+    const selfConsumption = totalGen > 0 ? Math.round((directUse / totalGen) * 100) : 0;
+    const autarky = totalLoad > 0 ? Math.min(100, Math.round(((directUse + batteryContrib) / totalLoad) * 100)) : 0;
+    const solarFraction = totalLoad > 0 ? Math.min(100, Math.round((ef.solarPower / totalLoad) * 100)) : 0;
+    return { selfConsumption, autarky, solarFraction, directUse: Math.round(directUse*10)/10,
+      batteryUse: Math.round(batteryContrib*10)/10, gridFeedIn: Math.round(gridFeedIn*10)/10 };
+  },
+
+  // ─── Energy Balance Today (entity-aware) ───
+  getEnergyBalance: (entityId) => {
+    const ef = MockAPI.getEnergyFlowState(entityId);
+    if (!ef) return {produced:0,consumed:0,imported:0,exported:0,stored:0,co2Avoided:0};
+    const hourOfDay = new Date().getHours() || 14;
+    const factor = hourOfDay / 24;
+    const produced = Math.round((ef.solarPower + ef.windPower) * hourOfDay * (0.6 + Math.random()*0.2) * 10) / 10;
+    const consumed = Math.round((ef.buildingPower + ef.evPower) * hourOfDay * (0.7 + Math.random()*0.15) * 10) / 10;
+    const imported = ef.gridImporting ? Math.round(ef.gridPower * hourOfDay * 0.4 * 10) / 10 : Math.round(consumed * 0.1 * 10) / 10;
+    const exported = ef.gridExporting ? Math.round(ef.gridPower * hourOfDay * 0.5 * 10) / 10 : 0;
+    const stored = ef.batteryMode === 'Charging' ? Math.round(ef.batteryPower * hourOfDay * 0.3 * 10) / 10 : 0;
+    const co2Avoided = Math.round(produced * 0.42 * 10) / 10;
+    return { produced, consumed, imported, exported, stored, co2Avoided };
+  },
+
+  // ─── Solar Production Stats (entity-aware) ───
+  getSolarStats: (entityId) => {
+    const id = entityId || 'dg-maasland';
+    const ef = MockAPI.getEnergyFlowState(id);
+    const devices = EntityStore.getDescendants(id, ['device']);
+    const solarDevices = devices.filter(d => d.properties.type === 'Solar Inverter' || d.properties.type === 'Hybrid Inverter');
+    const totalCapacity = solarDevices.reduce((acc, d) => {
+      const model = d.properties.model || '';
+      const match = model.match(/(\d+\.?\d*)/);
+      return acc + (match ? parseFloat(match[1]) : 5);
+    }, 0);
+    const currentOutput = ef?.solarPower || 0;
+    const hourOfDay = new Date().getHours() || 14;
+    const dailyYield = Math.round(currentOutput * hourOfDay * 0.55 * 10) / 10;
+    const monthlyYield = Math.round(dailyYield * 24.5 * 10) / 10;
+    const lifetimeYield = Math.round(totalCapacity * 1100 * (0.8 + Math.random()*0.2) * 10) / 10;
+    const specificYield = totalCapacity > 0 ? Math.round(dailyYield / totalCapacity * 1000) / 1000 : 0;
+    const peakToday = Math.round(currentOutput * (1.1 + Math.random()*0.15) * 10) / 10;
+    return { currentOutput, dailyYield, monthlyYield, lifetimeYield: `${(lifetimeYield/1000).toFixed(1)} MWh`,
+      specificYield: `${specificYield.toFixed(2)} kWh/kWp`, peakToday, installedCapacity: `${totalCapacity} kWp`,
+      strings: solarDevices.length, activePanels: solarDevices.filter(d => d.state.status === 'online').length,
+      totalPanels: solarDevices.length };
+  },
+
+  // ─── Weather / Irradiance Forecast (entity-aware — uses site location) ───
+  getWeatherForecast: (entityId) => {
+    const entity = EntityStore.get(entityId || 'dg-maasland');
+    let site = entity;
+    while (site && site.entityType !== 'site') { site = site.parentId ? EntityStore.get(site.parentId) : null; }
+    const lat = site?.properties?.lat || 52.0;
+    const hour = new Date().getHours() || 14;
+    const isDaytime = hour >= 7 && hour <= 20;
+    const baseTemp = 12 + Math.round(Math.sin((hour - 6) / 24 * Math.PI * 2) * 8);
+    const irradiance = isDaytime ? Math.round(400 + Math.random() * 500) : 0;
+    const forecast = [];
+    for (let h = 0; h < 24; h++) {
+      const isDay = h >= 7 && h <= 20;
+      forecast.push({
+        hour: h,
+        temp: Math.round(8 + Math.sin((h - 6) / 24 * Math.PI * 2) * 10),
+        irradiance: isDay ? Math.round(200 + Math.sin((h - 6) / 14 * Math.PI) * 700) : 0,
+        clouds: Math.round(20 + Math.random() * 40),
+        wind: Math.round(3 + Math.random() * 8),
+      });
+    }
+    return { temp: baseTemp, irradiance, condition: irradiance > 500 ? 'Sunny' : irradiance > 200 ? 'Partly Cloudy' : isDaytime ? 'Overcast' : 'Night',
+      humidity: Math.round(55 + Math.random() * 25), windSpeed: Math.round(3 + Math.random() * 8),
+      forecast, sunrise: '06:48', sunset: '19:42', location: site?.properties?.location || 'Netherlands' };
+  },
+
+  // ─── Grid Details (entity-aware) ───
+  getGridDetails: (entityId) => {
+    const ef = MockAPI.getEnergyFlowState(entityId);
+    const entity = EntityStore.get(entityId || 'dg-maasland');
+    let site = entity;
+    while (site && site.entityType !== 'site') { site = site.parentId ? EntityStore.get(site.parentId) : null; }
+    const devices = EntityStore.getDescendants(entityId || 'dg-maasland', ['device']);
+    const meters = devices.filter(d => ['Power Analyzer','Energy Meter','Smart Meter','CT Meter'].includes(d.properties.type));
+    const sensors = meters.flatMap(d => EntityStore.getChildren(d.id).filter(c => c.entityType === 'sensor'));
+    const freqSensor = sensors.find(s => s.properties.type === 'frequency');
+    const voltageSensor = sensors.find(s => s.properties.type === 'voltage');
+    const pfSensor = sensors.find(s => s.properties.type === 'ratio' && s.name.includes('Factor'));
+    return {
+      power: ef?.gridPower || 0, direction: ef?.gridExporting ? 'export' : ef?.gridImporting ? 'import' : 'balanced',
+      frequency: freqSensor?.state?.value || 50.01, voltage: voltageSensor?.state?.value || 230,
+      powerFactor: pfSensor?.state?.value || 0.97,
+      connection: site?.properties?.connection || '3×25A', dso: site?.properties?.dso || 'Stedin',
+      todayImport: Math.round((ef?.gridImporting ? ef.gridPower : 0) * 14 * 0.4 * 10) / 10,
+      todayExport: Math.round((ef?.gridExporting ? ef.gridPower : 0) * 14 * 0.5 * 10) / 10,
+    };
+  },
+
+  // ─── Rules Engine (entity-aware) ───
+  getRules: (entityId) => {
+    const id = entityId || 'dg-maasland';
+    const entity = EntityStore.get(id);
+    const ef = MockAPI.getEnergyFlowState(id);
+    const hasBattery = EntityStore.getDescendants(id, ['device']).some(d => d.properties.type === 'Battery' || d.properties.type === 'Battery Storage');
+    const hasEV = EntityStore.getDescendants(id, ['device']).some(d => d.properties.type === 'EV Charger');
+    const hasSolar = ef?.solarActive;
+    const rules = [
+      {name:'Self-consumption Optimizer',strategy:'Self-consumption',priority:'1 (Highest)',exec:Math.round(80+Math.random()*120),last:'2 min ago',status:'Active'},
+    ];
+    if (hasBattery) rules.push({name:'Peak Demand Limiter',strategy:'Peak Shaving',priority:'2',exec:Math.round(20+Math.random()*40),last:'15 min ago',status:'Active'});
+    if (hasSolar) rules.push({name:'EPEX Day-ahead Scheduler',strategy:'Tariff Arbitrage',priority:'3',exec:Math.round(10+Math.random()*30),last:'1 hour ago',status:'Active'});
+    rules.push({name:'Grid Congestion Handler',strategy:'Grid Congestion',priority: hasBattery?'4':'2',exec:Math.round(1+Math.random()*5),last:'Yesterday',status:'Standby'});
+    if (hasBattery) rules.push({name:'Emergency Backup Reserve',strategy:'Emergency Backup',priority:'0 (Override)',exec:1,last:'5 days ago',status:'Active'});
+    if (hasEV) rules.push({name:'Smart EV Charging',strategy:'EV Optimization',priority:'5',exec:Math.round(5+Math.random()*15),last:'3 hours ago',status:'Active'});
+    return rules;
+  },
+  getActiveRule: (entityId) => {
+    const ef = MockAPI.getEnergyFlowState(entityId);
+    if (ef?.solarActive && ef.solarPower > 2) {
+      return { name:'Self-consumption Optimizer', description:'Maximize use of locally generated energy before importing from grid',
+        when:['Solar generation > 2 kW','Battery SoC < 95%'], and:['Grid export price < €0.08/kWh','No peak shaving event active'],
+        then:['Charge battery at max rate','Reduce grid export to 0 kW'] };
+    }
+    return { name:'Peak Demand Limiter', description:'Prevent demand from exceeding contracted limit to avoid penalty charges',
+      when:['Live demand > 85% of limit','15-min window active'], and:['Battery SoC > 20%','No emergency backup active'],
+      then:['Discharge battery','Reduce non-essential loads'] };
+  },
 
   // ─── Tariff Arbitrage (constant/market-level — walks up to nearest site with prices) ───
   getTariffPrices: (entityId) => {
     return EntityStore.getResolvedProperty(entityId || 'dg-maasland', 'tariffPrices') ||
       EntityStore.get('dg-maasland').properties.tariffPrices;
   },
-  getChargeSchedule: () => [
-    {time:'02:00 – 06:00',action:'Charge 30 kWh @ €0.06/kWh',cost:'€1.80',color:'var(--success)'},
-    {time:'12:00 – 14:00',action:'Solar surplus → Battery',cost:'€0.00',color:'var(--info)'},
-    {time:'17:00 – 19:00',action:'Discharge → Avoid peak price',cost:'-€8.40',color:'var(--error)'},
-  ],
-  getTariffForecast: () => ({cost:'€12.60', withoutOpt:'€46.80', savingPct:'73'}),
+  getChargeSchedule: (entityId) => {
+    const hasBattery = EntityStore.getDescendants(entityId || 'dg-maasland', ['device']).some(d => d.properties.type === 'Battery' || d.properties.type === 'Battery Storage');
+    const ef = MockAPI.getEnergyFlowState(entityId);
+    const schedule = [];
+    if (hasBattery) {
+      schedule.push({time:'02:00 – 06:00',action:'Charge battery @ low tariff',cost:'€1.80',color:'var(--success)'});
+      if (ef?.solarActive) schedule.push({time:'12:00 – 14:00',action:'Solar surplus → Battery',cost:'€0.00',color:'var(--info)'});
+      schedule.push({time:'17:00 – 19:00',action:'Discharge → Avoid peak price',cost:'-€8.40',color:'var(--error)'});
+    } else {
+      schedule.push({time:'02:00 – 06:00',action:'Shift flexible loads to off-peak',cost:'€2.40',color:'var(--success)'});
+      schedule.push({time:'17:00 – 19:00',action:'Reduce grid import (peak hours)',cost:'-€4.20',color:'var(--warning)'});
+    }
+    return schedule;
+  },
+  getTariffForecast: (entityId) => {
+    const ef = MockAPI.getEnergyFlowState(entityId);
+    const totalLoad = (ef?.buildingPower || 5) + (ef?.evPower || 0);
+    const withoutOpt = (totalLoad * 0.22 * 24 * 0.7).toFixed(2);
+    const cost = (withoutOpt * 0.35).toFixed(2);
+    return { cost: `€${cost}`, withoutOpt: `€${withoutOpt}`, savingPct: '65' };
+  },
 
   // ─── Peak Shaving (entity-aware — aggregates from descendants) ───
   getPeakShavingState: (entityId) => {
     return EntityStore.getAggregatedPeakShaving(entityId || 'dg-maasland') ||
       EntityStore.getAggregatedPeakShaving('dg-maasland');
   },
-  getDemandBars: () => [20,25,30,35,38,42,39,36,32,28,24,20,18,22,28,32],
-  getPeakEvents: () => [
-    {time:'Mar 23, 09:15',peak:'41.2 kW',dur:'4 min',response:'Discharged 2.8 kWh',result:'Mitigated',penalty:'€120',peakColor:'var(--error)',respColor:'var(--success)',resultClass:'online'},
-    {time:'Mar 21, 17:42',peak:'39.8 kW',dur:'8 min',response:'Discharged 1.2 kWh',result:'Mitigated',penalty:'€120',peakColor:'var(--warning)',respColor:'var(--success)',resultClass:'online'},
-    {time:'Mar 18, 08:30',peak:'42.6 kW',dur:'12 min',response:'Battery SoC too low',result:'Breach',penalty:'€0',peakColor:'var(--error)',respColor:'var(--error)',resultClass:'error'},
-  ],
+  getDemandBars: (entityId) => {
+    const ps = MockAPI.getPeakShavingState(entityId);
+    if (!ps) return [20,25,30,35,38,42,39,36,32,28,24,20,18,22,28,32];
+    const limit = ps.contractLimit || 40;
+    const live = ps.liveDemand || 30;
+    return Array.from({length:16}, (_,i) => {
+      const base = live * (0.5 + Math.sin(i/16*Math.PI)*0.5);
+      return Math.round(Math.min(limit * 1.1, base + (Math.random()-0.3) * limit * 0.15));
+    });
+  },
+  getPeakEvents: (entityId) => {
+    const ps = MockAPI.getPeakShavingState(entityId);
+    const hasBattery = EntityStore.getDescendants(entityId || 'dg-maasland', ['device']).some(d => d.properties.type === 'Battery' || d.properties.type === 'Battery Storage');
+    const limit = ps?.contractLimit || 40;
+    const peak1 = (limit * 1.03).toFixed(1), peak2 = (limit * 0.995).toFixed(1), peak3 = (limit * 1.065).toFixed(1);
+    return [
+      {time:'Mar 23, 09:15',peak:`${peak1} kW`,dur:'4 min',response:hasBattery?'Discharged 2.8 kWh':'Load curtailment',result:'Mitigated',penalty:'€120',peakColor:'var(--error)',respColor:'var(--success)',resultClass:'online'},
+      {time:'Mar 21, 17:42',peak:`${peak2} kW`,dur:'8 min',response:hasBattery?'Discharged 1.2 kWh':'EV charging paused',result:'Mitigated',penalty:'€120',peakColor:'var(--warning)',respColor:'var(--success)',resultClass:'online'},
+      {time:'Mar 18, 08:30',peak:`${peak3} kW`,dur:'12 min',response:hasBattery?'Battery SoC too low':'No response available',result:'Breach',penalty:'€0',peakColor:'var(--error)',respColor:'var(--error)',resultClass:'error'},
+    ];
+  },
 
   // ─── Battery Management (entity-aware — reads sensor children for SoC/SoH/temp/cycles) ───
   getBatteries: (entityId) => {
@@ -1768,7 +1927,16 @@ const MockAPI = {
         };
       });
   },
-  getBatteryFleetSummary: () => ({totalCap:'25.2 kWh',available:'14.4 kWh',avgSoh:'94.0%',throughput:'892 kWh'}),
+  getBatteryFleetSummary: (entityId) => {
+    const batteries = MockAPI.getBatteries(entityId);
+    if (batteries.length === 0) return {totalCap:'0 kWh',available:'0 kWh',avgSoh:'—',throughput:'0 kWh'};
+    const totalCap = batteries.reduce((acc,b) => { const m = String(b.cap).match(/(\d+\.?\d*)/); return acc + (m?parseFloat(m[1]):10); }, 0);
+    const avgSoc = batteries.reduce((acc,b) => acc+b.soc, 0) / batteries.length;
+    const available = (totalCap * avgSoc / 100).toFixed(1);
+    const avgSoh = (batteries.reduce((acc,b) => acc+b.soh, 0) / batteries.length).toFixed(1);
+    const throughput = Math.round(totalCap * 0.8 * (25 + Math.random()*10));
+    return { totalCap:`${totalCap.toFixed(1)} kWh`, available:`${available} kWh`, avgSoh:`${avgSoh}%`, throughput:`${throughput} kWh` };
+  },
 
   // ─── EV Charging (entity-aware) ───
   getChargers: (entityId) => {
@@ -1790,11 +1958,15 @@ const MockAPI = {
         };
       });
   },
-  getChargingSessions: () => [
-    {charger:'ALFEN-001',vehicle:'Tesla M3',energy:'18.2 kWh',cost:'€2.58'},
-    {charger:'ABB-001',vehicle:'VW ID.4',energy:'32.4 kWh',cost:'€4.21'},
-    {charger:'ALFEN-002',vehicle:'BMW iX3',energy:'28.6 kWh',cost:'€1.72'},
-  ],
+  getChargingSessions: (entityId) => {
+    const chargers = MockAPI.getChargers(entityId);
+    const vehicles = ['Tesla M3','VW ID.4','BMW iX3','Hyundai Ioniq 5','Polestar 2','Audi Q4 e-tron','Kia EV6','Mercedes EQA'];
+    return chargers.filter(c => c.status === 'Charging' || Math.random() > 0.3).slice(0,5).map((c,i) => ({
+      charger: c.id, vehicle: vehicles[i % vehicles.length],
+      energy: `${(8 + Math.random() * 30).toFixed(1)} kWh`,
+      cost: `€${(1 + Math.random() * 5).toFixed(2)}`,
+    }));
+  },
 
   // ─── Grid Congestion (entity-aware — walks up to nearest site with congestion data) ───
   getGridCongestionState: (entityId) => {
@@ -1806,32 +1978,68 @@ const MockAPI = {
     const fallback = EntityStore.get('dg-maasland');
     return {...fallback.state.congestion, dso: fallback.properties.dso, connection: fallback.properties.connection};
   },
-  getCongestionEvents: () => [
-    {time:'Today 13:00',dso:'Stedin',signal:'Curtail',signalClass:'error',limit:'15 kW',dur:'Ongoing',action:'Battery charge + EV boost',status:'Active',statusClass:'warning'},
-    {time:'Mar 21 09:30',dso:'Stedin',signal:'Load Shed',signalClass:'warning',limit:'30 kW',dur:'2h 15m',action:'Battery discharge + EV pause',status:'Resolved',statusClass:'online'},
-    {time:'Mar 19 14:00',dso:'Stedin',signal:'Curtail',signalClass:'error',limit:'10 kW',dur:'4h 30m',action:'Full self-consumption mode',status:'Resolved',statusClass:'online'},
-  ],
+  getCongestionEvents: (entityId) => {
+    const gc = MockAPI.getGridCongestionState(entityId);
+    const events = [];
+    if (gc.signalActive) {
+      events.push({time:'Today 13:00',dso:gc.dso,signal:'Curtail',signalClass:'error',limit:gc.maxExport,dur:'Ongoing',action:'Battery charge + EV boost',status:'Active',statusClass:'warning'});
+    }
+    events.push(
+      {time:'Mar 21 09:30',dso:gc.dso,signal:'Load Shed',signalClass:'warning',limit:'30 kW',dur:'2h 15m',action:'Battery discharge + EV pause',status:'Resolved',statusClass:'online'},
+      {time:'Mar 19 14:00',dso:gc.dso,signal:'Curtail',signalClass:'error',limit:'10 kW',dur:'4h 30m',action:'Full self-consumption mode',status:'Resolved',statusClass:'online'}
+    );
+    return events;
+  },
 
   // ─── Compliance (entity-aware — aggregates from descendants) ───
   getComplianceState: (entityId) => {
     return EntityStore.getAggregatedCompliance(entityId || 'dg-maasland');
   },
-  getRegulations: () => [
-    {article:'Art. 12.4',req:'DSO signal response within 60s',impl:'Auto-response (avg 2.3s)',status:'Compliant',statusClass:'online',verified:'Today',highlight:false},
-    {article:'Art. 15.2',req:'Feed-in curtailment compliance',impl:'Modbus power limiting',status:'Compliant',statusClass:'online',verified:'Today',highlight:false},
-    {article:'Art. 22.1',req:'Smart meter data (DSMR 5.0)',impl:'P1 port reader, 10s intervals',status:'Compliant',statusClass:'online',verified:'Mar 20',highlight:false},
-    {article:'Art. 31.5',req:'EV charging authorization',impl:'OCPP 1.6J + RFID auth',status:'Compliant',statusClass:'online',verified:'Mar 18',highlight:false},
-    {article:'Art. 45.2',req:'Annual energy efficiency report',impl:'Report pending',status:'Action Needed',statusClass:'warning',verified:'Due Apr 1',highlight:true},
-  ],
+  getRegulations: (entityId) => {
+    const cs = MockAPI.getComplianceState(entityId);
+    const hasEV = EntityStore.getDescendants(entityId || 'dg-maasland', ['device']).some(d => d.properties.type === 'EV Charger');
+    const hasMeter = EntityStore.getDescendants(entityId || 'dg-maasland', ['device']).some(d => d.properties.type === 'Smart Meter');
+    const regs = [
+      {article:'Art. 12.4',req:'DSO signal response within 60s',impl:'Auto-response (avg 2.3s)',status:'Compliant',statusClass:'online',verified:'Today',highlight:false},
+      {article:'Art. 15.2',req:'Feed-in curtailment compliance',impl:'Modbus power limiting',status:'Compliant',statusClass:'online',verified:'Today',highlight:false},
+    ];
+    if (hasMeter) regs.push({article:'Art. 22.1',req:'Smart meter data (DSMR 5.0)',impl:'P1 port reader, 10s intervals',status:'Compliant',statusClass:'online',verified:'Mar 20',highlight:false});
+    if (hasEV) regs.push({article:'Art. 31.5',req:'EV charging authorization',impl:'OCPP 1.6J + RFID auth',status:'Compliant',statusClass:'online',verified:'Mar 18',highlight:false});
+    if (cs && cs.actionNeeded > 0) {
+      regs.push({article:'Art. 45.2',req:'Annual energy efficiency report',impl:'Report pending',status:'Action Needed',statusClass:'warning',verified:'Due Apr 1',highlight:true});
+    }
+    regs.push({article:'Art. 8.3',req:'Energy data retention (5 years)',impl:'TimescaleDB with compression',status:'Compliant',statusClass:'online',verified:'Mar 15',highlight:false});
+    return regs;
+  },
 
-  // ─── IoT Fleet ───
-  getGateways: () => [
-    {name:'Spykebox-Maasland',id:'e00fce68...',site:'De Groot Agri',fw:'v2.4.1',signal:-62,last:'Just now',status:'online',ota:'Up to date'},
-    {name:'Spykebox-Microgrid',id:'e00fce72...',site:'Maasland Microgrid',fw:'v2.4.1',signal:-58,last:'Just now',status:'online',ota:'Up to date'},
-    {name:'Spykebox-Amersfoort',id:'e00fce69...',site:'Amersfoort Res.',fw:'v2.4.1',signal:-78,last:'2 min ago',status:'online',ota:'Up to date'},
-    {name:'Spykebox-Utrecht',id:'e00fce70...',site:'Utrecht Comm.',fw:'v2.3.8',signal:-85,last:'5 min ago',status:'online',ota:'Update →'},
-    {name:'Spykebox-Rotterdam',id:'e00fce71...',site:'Rotterdam Ind.',fw:'v2.4.1',signal:null,last:'2 hours ago',status:'offline',ota:'—'},
-  ],
+  // ─── IoT Fleet (entity-aware) ───
+  getGateways: (entityId) => {
+    const id = entityId || 'dg-maasland';
+    const entity = EntityStore.get(id);
+    // Get all sites under the selected entity
+    let sites;
+    if (entity?.entityType === 'site') { sites = [entity]; }
+    else { sites = EntityStore.getDescendants(id, ['site']); if (sites.length === 0) sites = EntityStore.getByType('site'); }
+    return sites.map((s, idx) => {
+      const gwDevices = EntityStore.getDescendants(s.id, ['device']).filter(d => d.properties.type === 'IoT Gateway' || d.properties.type === 'Cellular Gateway');
+      if (gwDevices.length > 0) {
+        return gwDevices.map(gw => ({
+          name: gw.name, id: gw.id, site: s.name, fw: gw.properties.firmware || 'v2.4.1',
+          signal: gw.state.status==='online' ? -(55+Math.round(Math.random()*30)) : null,
+          last: gw.state.status==='online' ? (Math.random()>0.5?'Just now':'2 min ago') : '2 hours ago',
+          status: gw.state.status==='online'?'online':'offline',
+          ota: gw.state.status==='online' ? (Math.random()>0.8?'Update →':'Up to date') : '—',
+        }));
+      }
+      return [{
+        name: `Spykebox-${s.name.split(' ')[0]}`, id: `e00fce${68+idx}...`, site: s.name,
+        fw: 'v2.4.1', signal: s.state.status==='online' ? -(55+Math.round(Math.random()*30)) : null,
+        last: s.state.status==='online' ? 'Just now' : '2 hours ago',
+        status: s.state.status==='online'||s.state.status==='maintenance'?'online':'offline',
+        ota: 'Up to date',
+      }];
+    }).flat();
+  },
 
   // ─── Marketplace ───
   getMarketplaceApps: () => [
@@ -1875,16 +2083,21 @@ const MockAPI = {
   // lives in WIDGET_REGISTRY — each widget is self-describing and self-contained.
   // The dashboard shell resolves everything from the registry.
   getDefaultWidgetLayout: () => [
-    {id:'energyFlow',   visible:true},
-    {id:'deviceTable',  visible:true},
-    {id:'alertsList',   visible:true},
-    {id:'batteryStatus',visible:true},
-    {id:'evStatus',     visible:true},
-    {id:'tariffChart',  visible:true},
-    {id:'peakDemand',   visible:true},
-    {id:'fleetOverview',visible:true},
-    {id:'recentSessions',visible:true},
-    {id:'complianceScore',visible:true},
+    {id:'energyFlow',       visible:true},
+    {id:'selfConsumption',  visible:true},
+    {id:'energyBalance',    visible:true},
+    {id:'solarProduction',  visible:true},
+    {id:'weatherForecast',  visible:true},
+    {id:'batteryStatus',    visible:true},
+    {id:'gridDetails',      visible:true},
+    {id:'tariffChart',      visible:true},
+    {id:'peakDemand',       visible:true},
+    {id:'evStatus',         visible:true},
+    {id:'deviceTable',      visible:true},
+    {id:'alertsList',       visible:true},
+    {id:'fleetOverview',    visible:false},
+    {id:'recentSessions',   visible:false},
+    {id:'complianceScore',  visible:false},
   ],
 
   // ─── Configuration ───
@@ -1908,7 +2121,7 @@ const MockAPI = {
 // Icon component lookup (for MockAPI data referencing icons by string name)
 const ICON_MAP = {
   ThunderboltOutlined, DatabaseOutlined, CarOutlined, BarChartOutlined,
-  FundOutlined, EuroCircleOutlined, CloudServerOutlined, PieChartOutlined, ApiOutlined,
+  FundOutlined, EuroCircleOutlined, CloudServerOutlined, CloudOutlined, PieChartOutlined, ApiOutlined,
   HddOutlined, AlertOutlined, LineChartOutlined, ClusterOutlined, HistoryOutlined, SafetyCertificateOutlined,
   CheckCircleFilled, CloseCircleFilled, ExclamationCircleFilled, InfoCircleFilled,
   WarningFilled, RocketFilled, DisconnectOutlined,
@@ -2063,29 +2276,30 @@ function HeaderUserProfile({ lang, setPage, setCurrentApp }) {
   return (
     <div ref={ref} style={{position:'relative'}}>
       <div onClick={() => setOpen(!open)}
-        style={{display:'flex',alignItems:'center',gap:8,cursor:'pointer',padding:'4px 8px',borderRadius:8,
-          transition:'background 0.15s',background: open?'var(--bg-card-hover)':'transparent'}}
-        onMouseEnter={e => { if(!open) e.currentTarget.style.background='var(--bg-card-hover)'; }}
-        onMouseLeave={e => { if(!open) e.currentTarget.style.background='transparent'; }}>
-        <div style={{width:32,height:32,borderRadius:'50%',background:'linear-gradient(135deg, var(--brand) 0%, #3b82f6 100%)',
-          display:'flex',alignItems:'center',justifyContent:'center',fontSize:12,fontWeight:700,color:'#fff',
-          border:'2px solid var(--border)',flexShrink:0}}>
-          {user.initials}
-        </div>
-        <div style={{display:'flex',flexDirection:'column',lineHeight:1.2}}>
-          <span style={{fontSize:12,fontWeight:600,color:'var(--text-primary)'}}>{user.name}</span>
-          <span style={{fontSize:10,color:'var(--text-tertiary)'}}>{user.role}</span>
-        </div>
+        style={{cursor:'pointer',padding:2,borderRadius:'50%',
+          transition:'box-shadow 0.15s',boxShadow: open?'0 0 0 2px var(--brand)':'0 0 0 2px transparent'}}
+        onMouseEnter={e => { if(!open) e.currentTarget.style.boxShadow='0 0 0 2px var(--border-active)'; }}
+        onMouseLeave={e => { if(!open) e.currentTarget.style.boxShadow=open?'0 0 0 2px var(--brand)':'0 0 0 2px transparent'; }}>
+        {user.avatar
+          ? <img src={user.avatar} alt={user.name} style={{width:32,height:32,borderRadius:'50%',objectFit:'cover',display:'block'}}/>
+          : <div style={{width:32,height:32,borderRadius:'50%',background:'linear-gradient(135deg, var(--brand) 0%, #3b82f6 100%)',
+              display:'flex',alignItems:'center',justifyContent:'center',fontSize:12,fontWeight:700,color:'#fff'}}>
+              {user.initials}
+            </div>
+        }
       </div>
       {open && (
         <div style={{position:'absolute',top:'100%',right:0,marginTop:4,width:260,background:'var(--bg-card)',
           border:'1px solid var(--border)',borderRadius:10,boxShadow:'var(--shadow)',zIndex:200,overflow:'hidden'}}>
           {/* Profile header */}
           <div style={{padding:'16px',borderBottom:'1px solid var(--border)',display:'flex',alignItems:'center',gap:12}}>
-            <div style={{width:44,height:44,borderRadius:'50%',background:'linear-gradient(135deg, var(--brand) 0%, #3b82f6 100%)',
-              display:'flex',alignItems:'center',justifyContent:'center',fontSize:16,fontWeight:700,color:'#fff',flexShrink:0}}>
-              {user.initials}
-            </div>
+            {user.avatar
+              ? <img src={user.avatar} alt={user.name} style={{width:44,height:44,borderRadius:'50%',objectFit:'cover',flexShrink:0}}/>
+              : <div style={{width:44,height:44,borderRadius:'50%',background:'linear-gradient(135deg, var(--brand) 0%, #3b82f6 100%)',
+                  display:'flex',alignItems:'center',justifyContent:'center',fontSize:16,fontWeight:700,color:'#fff',flexShrink:0}}>
+                  {user.initials}
+                </div>
+            }
             <div>
               <div style={{fontSize:14,fontWeight:600,color:'var(--text-primary)'}}>{user.name}</div>
               <div style={{fontSize:11,color:'var(--text-tertiary)'}}>{user.email}</div>
@@ -2580,6 +2794,174 @@ function WidgetComplianceScore({t, lang, currentSite, data}) {
   );
 }
 
+// ─── New Dashboard Widget Components ───
+
+function WidgetSelfConsumption({t, lang, data}) {
+  const sc = data.selfConsumption;
+  const gaugeColor = sc.autarky > 80 ? 'var(--success)' : sc.autarky > 50 ? 'var(--warning)' : 'var(--error)';
+  return (
+    <div style={{display:'flex',gap:20,alignItems:'center'}}>
+      <div style={{textAlign:'center'}}>
+        <Progress type="dashboard" percent={sc.autarky} size={90}
+          strokeColor={gaugeColor} strokeWidth={8}
+          format={()=><div><div style={{fontSize:22,fontWeight:700,color:'var(--text-primary)'}}>{sc.autarky}%</div><div style={{fontSize:9,color:'var(--text-tertiary)'}}>Autarky</div></div>}/>
+      </div>
+      <div style={{flex:1,display:'grid',gap:8}}>
+        <div style={{display:'flex',justifyContent:'space-between',fontSize:12}}>
+          <span style={{color:'var(--text-secondary)'}}>{lang==='nl'?'Eigen verbruik':'Self-consumption'}</span>
+          <span style={{fontWeight:600,color:'var(--text-primary)'}}>{sc.selfConsumption}%</span>
+        </div>
+        <div style={{display:'flex',justifyContent:'space-between',fontSize:12}}>
+          <span style={{color:'var(--text-secondary)'}}>{lang==='nl'?'Direct gebruik':'Direct use'}</span>
+          <span style={{fontWeight:500,color:'var(--success)'}}>{sc.directUse} kW</span>
+        </div>
+        <div style={{display:'flex',justifyContent:'space-between',fontSize:12}}>
+          <span style={{color:'var(--text-secondary)'}}>{lang==='nl'?'Batterij bijdrage':'Battery contrib.'}</span>
+          <span style={{fontWeight:500,color:'var(--battery)'}}>{sc.batteryUse} kW</span>
+        </div>
+        <div style={{display:'flex',justifyContent:'space-between',fontSize:12}}>
+          <span style={{color:'var(--text-secondary)'}}>{lang==='nl'?'Netteruglevering':'Grid feed-in'}</span>
+          <span style={{fontWeight:500,color:'var(--warning)'}}>{sc.gridFeedIn} kW</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function WidgetEnergyBalance({t, lang, data}) {
+  const eb = data.energyBalance;
+  const maxVal = Math.max(eb.produced, eb.consumed, eb.imported, eb.exported, 1);
+  const bars = [
+    {label:lang==='nl'?'Opgewekt':'Produced', value:eb.produced, color:'var(--solar)', unit:'kWh'},
+    {label:lang==='nl'?'Verbruikt':'Consumed', value:eb.consumed, color:'var(--error)', unit:'kWh'},
+    {label:lang==='nl'?'Geïmporteerd':'Imported', value:eb.imported, color:'var(--warning)', unit:'kWh'},
+    {label:lang==='nl'?'Geëxporteerd':'Exported', value:eb.exported, color:'var(--success)', unit:'kWh'},
+  ];
+  return (
+    <div>
+      <div style={{display:'grid',gap:10}}>
+        {bars.map((b,i) => (
+          <div key={i}>
+            <div style={{display:'flex',justifyContent:'space-between',fontSize:11,marginBottom:3}}>
+              <span style={{color:'var(--text-secondary)'}}>{b.label}</span>
+              <span style={{fontWeight:600,color:'var(--text-primary)'}}>{b.value} {b.unit}</span>
+            </div>
+            <div className="progress-bar" style={{height:8,borderRadius:4}}>
+              <div className="progress-bar-fill" style={{width:`${(b.value/maxVal)*100}%`,background:b.color,transition:'width 0.5s ease'}}/>
+            </div>
+          </div>
+        ))}
+      </div>
+      <div style={{display:'flex',gap:12,marginTop:12,padding:'8px 0',borderTop:'1px solid var(--border)'}}>
+        <div style={{fontSize:11,color:'var(--text-tertiary)'}}><span style={{color:'var(--success)',fontWeight:600}}>🌱 {eb.co2Avoided} kg</span> CO₂ {lang==='nl'?'vermeden':'avoided'}</div>
+      </div>
+    </div>
+  );
+}
+
+function WidgetSolarProduction({t, lang, data}) {
+  const ss = data.solarStats;
+  return (
+    <div>
+      <div style={{display:'flex',alignItems:'baseline',gap:8,marginBottom:12}}>
+        <span style={{fontSize:28,fontWeight:700,color:'var(--solar)'}}>{fmt(ss.currentOutput)}</span>
+        <span style={{fontSize:12,color:'var(--text-tertiary)'}}>kW {lang==='nl'?'nu':'now'}</span>
+        <span style={{fontSize:11,color:'var(--text-tertiary)',marginLeft:'auto'}}>{lang==='nl'?'van':'of'} {ss.installedCapacity}</span>
+      </div>
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:8}}>
+        <div>
+          <div style={{fontSize:10,color:'var(--text-tertiary)',textTransform:'uppercase'}}>{lang==='nl'?'Vandaag':'Today'}</div>
+          <div style={{fontSize:16,fontWeight:600,color:'var(--text-primary)'}}>{ss.dailyYield} kWh</div>
+        </div>
+        <div>
+          <div style={{fontSize:10,color:'var(--text-tertiary)',textTransform:'uppercase'}}>{lang==='nl'?'Deze maand':'This month'}</div>
+          <div style={{fontSize:16,fontWeight:600,color:'var(--text-primary)'}}>{ss.monthlyYield} kWh</div>
+        </div>
+        <div>
+          <div style={{fontSize:10,color:'var(--text-tertiary)',textTransform:'uppercase'}}>{lang==='nl'?'Totaal':'Lifetime'}</div>
+          <div style={{fontSize:16,fontWeight:600,color:'var(--text-primary)'}}>{ss.lifetimeYield}</div>
+        </div>
+      </div>
+      <div style={{display:'flex',gap:12,marginTop:10,fontSize:11,color:'var(--text-tertiary)'}}>
+        <span>{lang==='nl'?'Piek vandaag':'Peak today'}: <strong style={{color:'var(--solar)'}}>{ss.peakToday} kW</strong></span>
+        <span>{lang==='nl'?'Strings':'Strings'}: {ss.activePanels}/{ss.totalPanels} {lang==='nl'?'actief':'active'}</span>
+      </div>
+    </div>
+  );
+}
+
+function WidgetWeatherForecast({t, lang, data}) {
+  const w = data.weather;
+  const conditionIcon = w.condition === 'Sunny' ? '☀️' : w.condition === 'Partly Cloudy' ? '⛅' : w.condition === 'Night' ? '🌙' : '☁️';
+  return (
+    <div>
+      <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:12}}>
+        <span style={{fontSize:32}}>{conditionIcon}</span>
+        <div>
+          <div style={{fontSize:24,fontWeight:700,color:'var(--text-primary)'}}>{w.temp}°C</div>
+          <div style={{fontSize:11,color:'var(--text-tertiary)'}}>{w.condition} · {w.location}</div>
+        </div>
+        <div style={{marginLeft:'auto',textAlign:'right'}}>
+          <div style={{fontSize:11,color:'var(--text-tertiary)'}}>{lang==='nl'?'Instraling':'Irradiance'}</div>
+          <div style={{fontSize:16,fontWeight:600,color:'var(--solar)'}}>{w.irradiance} W/m²</div>
+        </div>
+      </div>
+      <div style={{display:'flex',alignItems:'flex-end',gap:1,height:48}}>
+        {w.forecast.map((f,i) => (
+          <Tooltip key={i} title={`${String(f.hour).padStart(2,'0')}:00 — ${f.irradiance} W/m²`}>
+            <div style={{flex:1,height:`${Math.max(2,f.irradiance/900*100)}%`,
+              background:f.irradiance>500?'var(--solar)':f.irradiance>200?'var(--warning)':'var(--text-tertiary)',
+              borderRadius:1,opacity:0.7,minHeight:2}}/>
+          </Tooltip>
+        ))}
+      </div>
+      <div style={{display:'flex',justifyContent:'space-between',marginTop:4,fontSize:9,color:'var(--text-tertiary)'}}>
+        <span>00:00</span><span>12:00</span><span>23:00</span>
+      </div>
+      <div style={{display:'flex',gap:16,marginTop:8,fontSize:11,color:'var(--text-tertiary)'}}>
+        <span>{lang==='nl'?'Wind':'Wind'}: {w.windSpeed} m/s</span>
+        <span>{lang==='nl'?'Vochtigheid':'Humidity'}: {w.humidity}%</span>
+        <span>☀ {w.sunrise} — {w.sunset}</span>
+      </div>
+    </div>
+  );
+}
+
+function WidgetGridDetails({t, lang, data}) {
+  const g = data.gridDetails;
+  const dirColor = g.direction==='export'?'var(--success)':g.direction==='import'?'var(--error)':'var(--text-tertiary)';
+  const dirLabel = g.direction==='export'?(lang==='nl'?'Exporterend':'Exporting'):g.direction==='import'?(lang==='nl'?'Importerend':'Importing'):(lang==='nl'?'Gebalanceerd':'Balanced');
+  const dirArrow = g.direction==='export'?'↑':g.direction==='import'?'↓':'=';
+  return (
+    <div>
+      <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:12}}>
+        <div style={{fontSize:28,fontWeight:700,color:dirColor}}>{dirArrow} {fmt(g.power)}</div>
+        <span style={{fontSize:12,color:'var(--text-tertiary)'}}>kW</span>
+        <span className={`status-dot ${g.direction==='export'?'online':g.direction==='import'?'error':'info'}`} style={{fontSize:10,marginLeft:'auto'}}>{dirLabel}</span>
+      </div>
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:8}}>
+        <div>
+          <div style={{fontSize:10,color:'var(--text-tertiary)'}}>Frequency</div>
+          <div style={{fontSize:15,fontWeight:600,color:'var(--text-primary)'}}>{g.frequency} Hz</div>
+        </div>
+        <div>
+          <div style={{fontSize:10,color:'var(--text-tertiary)'}}>Voltage</div>
+          <div style={{fontSize:15,fontWeight:600,color:'var(--text-primary)'}}>{g.voltage} V</div>
+        </div>
+        <div>
+          <div style={{fontSize:10,color:'var(--text-tertiary)'}}>PF</div>
+          <div style={{fontSize:15,fontWeight:600,color:'var(--text-primary)'}}>{g.powerFactor}</div>
+        </div>
+      </div>
+      <div style={{display:'flex',gap:12,marginTop:10,fontSize:11,color:'var(--text-tertiary)',borderTop:'1px solid var(--border)',paddingTop:8}}>
+        <span>{lang==='nl'?'Import vandaag':'Today import'}: <strong>{g.todayImport} kWh</strong></span>
+        <span>{lang==='nl'?'Export vandaag':'Today export'}: <strong>{g.todayExport} kWh</strong></span>
+        <span style={{marginLeft:'auto'}}>{g.dso} · {g.connection}</span>
+      </div>
+    </div>
+  );
+}
+
 // ─── Widget Registry ───
 // Each widget is a self-contained micro-frontend manifest.
 // The dashboard shell knows NOTHING about individual widgets — it reads this registry.
@@ -2693,13 +3075,68 @@ WidgetRegistry.register({
 });
 
 WidgetRegistry.register({
+  id: 'selfConsumption',
+  label: {en:'Self-Consumption & Autarky', nl:'Eigenverbruik & Autarkie'},
+  desc: {en:'How much of your own energy you use', nl:'Hoeveel eigen energie je verbruikt'},
+  icon: 'PieChartOutlined', size: 'half',
+  component: WidgetSelfConsumption,
+  dataProvider: (siteId) => ({
+    selfConsumption: MockAPI.getSelfConsumption(siteId),
+  }),
+});
+
+WidgetRegistry.register({
+  id: 'energyBalance',
+  label: {en:'Energy Balance Today', nl:'Energiebalans Vandaag'},
+  desc: {en:'Production vs consumption breakdown', nl:'Productie vs verbruik overzicht'},
+  icon: 'BarChartOutlined', size: 'half',
+  component: WidgetEnergyBalance,
+  dataProvider: (siteId) => ({
+    energyBalance: MockAPI.getEnergyBalance(siteId),
+  }),
+});
+
+WidgetRegistry.register({
+  id: 'solarProduction',
+  label: {en:'Solar Production', nl:'Zonne-energie Productie'},
+  desc: {en:'Output, yield, and string performance', nl:'Output, opbrengst en string prestaties'},
+  icon: 'FundOutlined', size: 'half',
+  component: WidgetSolarProduction,
+  dataProvider: (siteId) => ({
+    solarStats: MockAPI.getSolarStats(siteId),
+  }),
+});
+
+WidgetRegistry.register({
+  id: 'weatherForecast',
+  label: {en:'Weather & Irradiance', nl:'Weer & Instraling'},
+  desc: {en:'Temperature, solar forecast, wind', nl:'Temperatuur, zonne-voorspelling, wind'},
+  icon: 'CloudOutlined', size: 'half',
+  component: WidgetWeatherForecast,
+  dataProvider: (siteId) => ({
+    weather: MockAPI.getWeatherForecast(siteId),
+  }),
+});
+
+WidgetRegistry.register({
+  id: 'gridDetails',
+  label: {en:'Grid Connection', nl:'Netaansluiting'},
+  desc: {en:'Import/export, frequency, voltage', nl:'Import/export, frequentie, spanning'},
+  icon: 'ApiOutlined', size: 'half',
+  component: WidgetGridDetails,
+  dataProvider: (siteId) => ({
+    gridDetails: MockAPI.getGridDetails(siteId),
+  }),
+});
+
+WidgetRegistry.register({
   id: 'recentSessions',
   label: {en:'Recent EV Sessions', nl:'Recente EV Sessies'},
   desc: {en:'Latest charging sessions', nl:'Laatste laadsessies'},
   icon: 'HistoryOutlined', size: 'half',
   component: WidgetRecentSessions,
   dataProvider: (siteId) => ({
-    sessions: MockAPI.getChargingSessions(),
+    sessions: MockAPI.getChargingSessions(siteId),
     columns: {en:['Charger','Vehicle','Energy','Cost'],nl:['Lader','Voertuig','Energie','Kosten']},
   }),
 });
@@ -3223,7 +3660,8 @@ function BuildingIcon() {
 // ─── Canvas Flow Particle Layer ───
 // Uses requestAnimationFrame — immune to React re-renders, perfectly smooth.
 // Cubic bezier paths matching the flow hub layout.
-const FLOW_PATHS = {
+// Desktop: horizontal layout (800×400 space) — left → center → right
+const FLOW_PATHS_DESKTOP = {
   solar:   [{x:95,y:145},{x:180,y:145},{x:300,y:200},{x:400,y:200}],
   wind:    [{x:95,y:265},{x:180,y:265},{x:300,y:200},{x:400,y:200}],
   load:    [{x:400,y:200},{x:500,y:200},{x:620,y:90},{x:705,y:90}],
@@ -3231,6 +3669,17 @@ const FLOW_PATHS = {
   grid:    [{x:400,y:200},{x:500,y:200},{x:620,y:310},{x:705,y:310}],
   gridIn:  [{x:705,y:310},{x:620,y:310},{x:500,y:200},{x:400,y:200}],
 };
+// Mobile: vertical layout (800×600 space) — top row → center battery → bottom row
+const FLOW_PATHS_MOBILE = {
+  solar:   [{x:280,y:70},{x:300,y:150},{x:370,y:250},{x:400,y:300}],
+  wind:    [{x:520,y:70},{x:500,y:150},{x:430,y:250},{x:400,y:300}],
+  load:    [{x:400,y:300},{x:370,y:370},{x:260,y:470},{x:230,y:530}],
+  ev:      [{x:400,y:300},{x:400,y:370},{x:400,y:470},{x:400,y:530}],
+  grid:    [{x:400,y:300},{x:430,y:370},{x:540,y:470},{x:570,y:530}],
+  gridIn:  [{x:570,y:530},{x:540,y:470},{x:430,y:370},{x:400,y:300}],
+};
+// Dynamic path accessor — switches based on container aspect ratio
+const FLOW_PATHS = FLOW_PATHS_DESKTOP; // default, canvas layer picks dynamically
 
 // Evaluate cubic bezier at parameter t (0..1)
 function bezierPoint(p0, p1, p2, p3, t) {
@@ -3257,22 +3706,28 @@ function FlowCanvasLayer({ef}) {
     const ctx = canvas.getContext('2d');
     let raf;
 
+    // Track which path set is active
+    let isVertical = false;
+    function getActivePaths() { return isVertical ? FLOW_PATHS_MOBILE : FLOW_PATHS_DESKTOP; }
+    function getCoordSpace() { return isVertical ? {w:800,h:600} : {w:800,h:400}; }
+
     function buildParticles() {
       const particles = [];
       const ef = efRef.current;
+      const paths = getActivePaths();
       const channels = [];
       if (ef.solarActive && ef.solarPower > 0)
-        channels.push({path: FLOW_PATHS.solar, color: COLOR_SOLAR, power: ef.solarPower});
+        channels.push({path: paths.solar, color: COLOR_SOLAR, power: ef.solarPower});
       if (ef.windActive && ef.windPower > 0)
-        channels.push({path: FLOW_PATHS.wind, color: COLOR_WIND, power: ef.windPower});
+        channels.push({path: paths.wind, color: COLOR_WIND, power: ef.windPower});
       if (ef.consumptionActive && ef.buildingPower > 0)
-        channels.push({path: FLOW_PATHS.load, color: COLOR_BUILDING, power: ef.buildingPower});
+        channels.push({path: paths.load, color: COLOR_BUILDING, power: ef.buildingPower});
       if (ef.consumptionActive && ef.evPower > 0)
-        channels.push({path: FLOW_PATHS.ev, color: COLOR_EV, power: ef.evPower});
+        channels.push({path: paths.ev, color: COLOR_EV, power: ef.evPower});
       if (ef.gridExporting && ef.gridPower > 0)
-        channels.push({path: FLOW_PATHS.grid, color: COLOR_EXPORT, power: ef.gridPower});
+        channels.push({path: paths.grid, color: COLOR_EXPORT, power: ef.gridPower});
       if (ef.gridImporting && ef.gridPower > 0)
-        channels.push({path: FLOW_PATHS.gridIn, color: COLOR_IMPORT, power: ef.gridPower});
+        channels.push({path: paths.gridIn, color: COLOR_IMPORT, power: ef.gridPower});
 
       channels.forEach(ch => {
         const n = ch.power > 20 ? 4 : ch.power > 8 ? 3 : 2;
@@ -3308,17 +3763,19 @@ function FlowCanvasLayer({ef}) {
 
       ctx.clearRect(0, 0, w, h);
 
-      // Scale factors: path coords are in 800×400 space
-      const scX = w / 800;
-      const scY = h / 400;
+      // Scale factors: path coords map to coordinate space
+      const cs = getCoordSpace();
+      const scX = w / cs.w;
+      const scY = h / cs.h;
+      const paths = getActivePaths();
 
       // Draw dashed guide paths
       ctx.save();
       ctx.setLineDash([4, 6]);
       ctx.strokeStyle = 'rgba(255,255,255,0.10)';
       ctx.lineWidth = 1;
-      Object.values(FLOW_PATHS).forEach(pts => {
-        if (pts === FLOW_PATHS.gridIn) return;
+      Object.entries(paths).forEach(([key, pts]) => {
+        if (key === 'gridIn') return;
         ctx.beginPath();
         ctx.moveTo(pts[0].x * scX, pts[0].y * scY);
         ctx.bezierCurveTo(pts[1].x*scX, pts[1].y*scY, pts[2].x*scX, pts[2].y*scY, pts[3].x*scX, pts[3].y*scY);
@@ -3364,6 +3821,10 @@ function FlowCanvasLayer({ef}) {
       const ch = parent.clientHeight;
       cssW.current = cw;
       cssH.current = ch;
+      // Switch to vertical paths if container is roughly square or taller than wide
+      const wasVertical = isVertical;
+      isVertical = ch > cw * 0.7;
+      if (wasVertical !== isVertical) { particles = buildParticles(); }
       canvas.width = cw * dpr;
       canvas.height = ch * dpr;
       canvas.style.width = cw + 'px';
@@ -3372,16 +3833,24 @@ function FlowCanvasLayer({ef}) {
     }
 
     resize();
+    // Use ResizeObserver to handle container resizes (e.g. tree panel pin/unpin)
+    let ro;
+    const parent = canvas.parentElement;
+    if (typeof ResizeObserver !== 'undefined' && parent) {
+      ro = new ResizeObserver(() => resize());
+      ro.observe(parent);
+    }
     window.addEventListener('resize', resize);
     raf = requestAnimationFrame(draw);
 
     return () => {
       cancelAnimationFrame(raf);
       window.removeEventListener('resize', resize);
+      if (ro) ro.disconnect();
     };
   }, []);
 
-  return <canvas ref={canvasRef} style={{position:'absolute',inset:0,width:'100%',height:'100%',pointerEvents:'none',zIndex:1}}/>;
+  return <canvas ref={canvasRef} className="flow-canvas-layer"/>;
 }
 
 // ─── Energy Flow Page (Production-matching animated SVG) ───
@@ -3497,8 +3966,8 @@ function AlertsPage({t, lang, currentSite, alarms}) {
 // ─── Rules Engine Page ───
 function RulesEnginePage({t, lang, currentSite}) {
   const [strategy, setStrategy] = useState('Self-consumption');
-  const rules = MockAPI.getRules();
-  const activeRule = MockAPI.getActiveRule();
+  const rules = MockAPI.getRules(currentSite);
+  const activeRule = MockAPI.getActiveRule(currentSite);
   return (
     <div className="page-enter">
       <Segmented options={['Self-consumption','Peak Shaving','Tariff Arbitrage','Grid Congestion','Feed-in Priority','Emergency Backup']}
@@ -3546,14 +4015,19 @@ function RulesEnginePage({t, lang, currentSite}) {
 function TariffPage({t, lang, currentSite}) {
   const prices = MockAPI.getTariffPrices(currentSite);
   const hours = prices.map((price, i) => ({hour:i, price}));
-  const maxP = 0.30;
+  const maxP = Math.max(...prices, 0.30);
+  const currentHour = new Date().getHours() || 14;
+  const currentPrice = prices[currentHour] || 0.14;
+  const avgPrice = (prices.reduce((a,b)=>a+b,0)/prices.length);
+  const cheapestHour = prices.indexOf(Math.min(...prices));
+  const costSaved = EntityStore.get(currentSite)?.properties?.costSaved || {value:'—',trend:'—'};
   return (
     <div className="page-enter">
       <div className="stat-grid stat-grid-4">
-        <StatCard label={t.currentPrice} value="€0.142" trend="▼ 23% below avg" color="var(--brand)"/>
-        <StatCard label={t.avgPrice} value="€0.184" trend="▲ 8% vs yesterday" trendDir="down" color="var(--warning)"/>
-        <StatCard label={t.savingsToday} value="€34.20" trend="From optimized scheduling" color="var(--success)"/>
-        <StatCard label={t.nextCheapWindow} value="02:00" trend="€0.06/kWh forecast" color="var(--purple)"/>
+        <StatCard label={t.currentPrice} value={`€${currentPrice.toFixed(3)}`} trend={currentPrice<avgPrice?`▼ ${Math.round((1-currentPrice/avgPrice)*100)}% below avg`:`▲ ${Math.round((currentPrice/avgPrice-1)*100)}% above avg`} color="var(--brand)"/>
+        <StatCard label={t.avgPrice} value={`€${avgPrice.toFixed(3)}`} trend={lang==='nl'?'Daggemiddelde':'Day average'} trendDir="down" color="var(--warning)"/>
+        <StatCard label={t.savingsToday} value={costSaved.value} trend={lang==='nl'?'Door geoptimaliseerde planning':'From optimized scheduling'} color="var(--success)"/>
+        <StatCard label={t.nextCheapWindow} value={`${String(cheapestHour).padStart(2,'0')}:00`} trend={`€${Math.min(...prices).toFixed(3)}/kWh forecast`} color="var(--purple)"/>
       </div>
       <div className="grid-2">
         <div className="card">
@@ -3580,7 +4054,7 @@ function TariffPage({t, lang, currentSite}) {
         <div className="card">
           <div className="card-title">Charge Schedule</div>
           <div className="card-subtitle">Optimized battery plan</div>
-          {MockAPI.getChargeSchedule().map((s,i) => (
+          {MockAPI.getChargeSchedule(currentSite).map((s,i) => (
             <div key={i} style={{display:'flex',alignItems:'center',gap:12,padding:'12px 0',borderBottom:'1px solid var(--border)'}}>
               <div style={{width:24,height:24,borderRadius:'50%',background:s.color,display:'flex',alignItems:'center',
                 justifyContent:'center',fontSize:12,color:'#fff',fontWeight:600,flexShrink:0}}>{i+1}</div>
@@ -3591,7 +4065,7 @@ function TariffPage({t, lang, currentSite}) {
               <div style={{fontSize:13,fontWeight:600,color:'var(--success)'}}>{s.cost}</div>
             </div>
           ))}
-          {(() => { const fc = MockAPI.getTariffForecast(); return (
+          {(() => { const fc = MockAPI.getTariffForecast(currentSite); return (
           <div style={{marginTop:12,padding:12,background:'var(--bg-secondary)',borderRadius:8}}>
             <div style={{display:'flex',justifyContent:'space-between'}}>
               <span style={{fontSize:12,color:'var(--text-secondary)'}}>Today's forecast cost:</span>
@@ -3632,12 +4106,14 @@ function PeakShavingPage({t, lang, currentSite}) {
         <div style={{position:'relative',height:200,marginTop:16}}>
           {/* Limit line */}
           <div style={{position:'absolute',top:0,left:0,right:0,height:1,borderTop:'2px dashed var(--error)',opacity:0.5}}/>
-          <div style={{position:'absolute',top:-8,right:0,fontSize:10,color:'var(--error)',background:'var(--error-bg)',padding:'2px 6px',borderRadius:4}}>40 kW</div>
+          <div style={{position:'absolute',top:-8,right:0,fontSize:10,color:'var(--error)',background:'var(--error-bg)',padding:'2px 6px',borderRadius:4}}>{ps.contractLimit} kW</div>
           <div style={{display:'flex',alignItems:'flex-end',gap:2,height:'100%'}}>
-            {MockAPI.getDemandBars().map((v,i) => (
-              <div key={i} style={{flex:1,height:`${v/50*100}%`,background:v>=40?'var(--error)':v>=34?'var(--warning)':i===15?'var(--brand)':'var(--info)',
-                borderRadius:'2px 2px 0 0',opacity:i===15?1:0.6,transition:'height 0.3s'}}/>
-            ))}
+            {MockAPI.getDemandBars(currentSite).map((v,i) => {
+              const limit = ps.contractLimit || 40;
+              const warn = limit * 0.85;
+              return <div key={i} style={{flex:1,height:`${v/(limit*1.25)*100}%`,background:v>=limit?'var(--error)':v>=warn?'var(--warning)':i===15?'var(--brand)':'var(--info)',
+                borderRadius:'2px 2px 0 0',opacity:i===15?1:0.6,transition:'height 0.3s'}}/>;
+            })}
           </div>
         </div>
       </div>
@@ -3646,7 +4122,7 @@ function PeakShavingPage({t, lang, currentSite}) {
         <table className="data-table">
           <thead><tr><th>Timestamp</th><th>Peak</th><th>Duration</th><th>Battery Response</th><th>Result</th><th>Penalty Avoided</th></tr></thead>
           <tbody>
-            {MockAPI.getPeakEvents().map((e,i) => (
+            {MockAPI.getPeakEvents(currentSite).map((e,i) => (
               <tr key={i}><td>{e.time}</td><td style={{color:e.peakColor,fontWeight:500}}>{e.peak}</td><td>{e.dur}</td>
                 <td style={{color:e.respColor}}>{e.response}</td>
                 <td><span className={`status-dot ${e.resultClass}`}>{e.result}</span></td>
@@ -3663,7 +4139,7 @@ function PeakShavingPage({t, lang, currentSite}) {
 function BatteryPage({t, lang, currentSite}) {
   const rawBatteries = MockAPI.getBatteries(currentSite);
   const batteries = rawBatteries.map(b => ({...b, status: b.soc > 60 ? t.charging : t.idle}));
-  const fleet = MockAPI.getBatteryFleetSummary();
+  const fleet = MockAPI.getBatteryFleetSummary(currentSite);
   return (
     <div className="page-enter">
       <div className="battery-grid">
@@ -3776,7 +4252,7 @@ function EVChargingPage({t, lang, currentSite}) {
           <table className="data-table">
             <thead><tr><th>Charger</th><th>{t.vehicle}</th><th>Energy</th><th>Cost</th></tr></thead>
             <tbody>
-              {MockAPI.getChargingSessions().map((s,i) => (
+              {MockAPI.getChargingSessions(currentSite).map((s,i) => (
                 <tr key={i}><td>{s.charger}</td><td>{s.vehicle}</td><td>{s.energy}</td><td>{s.cost}</td></tr>
               ))}
             </tbody>
@@ -4283,7 +4759,7 @@ function DeveloperStudioPage({t, lang, tab}) {
 // ─── Grid Congestion Page ───
 function GridCongestionPage({t, lang, currentSite}) {
   const gc = MockAPI.getGridCongestionState(currentSite);
-  const events = MockAPI.getCongestionEvents();
+  const events = MockAPI.getCongestionEvents(currentSite);
   return (
     <div className="page-enter">
       {gc.signalActive && (
@@ -4321,7 +4797,7 @@ function GridCongestionPage({t, lang, currentSite}) {
 // ─── Compliance Page ───
 function CompliancePage({t, lang, currentSite}) {
   const cs = MockAPI.getComplianceState(currentSite);
-  const regs = MockAPI.getRegulations();
+  const regs = MockAPI.getRegulations(currentSite);
   return (
     <div className="page-enter">
       <div className="stat-grid stat-grid-4">
@@ -4351,15 +4827,15 @@ function CompliancePage({t, lang, currentSite}) {
 }
 
 // ─── IoT Fleet Page ───
-function IoTFleetPage({t}) {
-  const gateways = MockAPI.getGateways();
+function IoTFleetPage({t, currentSite}) {
+  const gateways = MockAPI.getGateways(currentSite);
   return (
     <div className="page-enter">
       <div className="stat-grid stat-grid-4">
         <StatCard label="Gateways" value={gateways.length} color="var(--brand)"/>
         <StatCard label={t.online} value={gateways.filter(g=>g.status==='online').length+'/'+gateways.length} color="var(--success)"/>
-        <StatCard label="Firmware" value="v2.4.1" trend="1 update available" color="var(--info)"/>
-        <StatCard label="Uptime (30D)" value="99.2%" color="var(--success)"/>
+        <StatCard label="Firmware" value={gateways[0]?.fw || '—'} trend={gateways.some(g=>g.ota.includes('Update'))?`${gateways.filter(g=>g.ota.includes('Update')).length} update available`:'All up to date'} color="var(--info)"/>
+        <StatCard label="Uptime (30D)" value={`${(gateways.filter(g=>g.status==='online').length/Math.max(gateways.length,1)*100).toFixed(1)}%`} color="var(--success)"/>
       </div>
       <div className="card" style={{padding:0}}>
         <table className="data-table">
