@@ -246,7 +246,7 @@
     .flow-ambient-toggle:hover { background: rgba(0,0,0,0.5); color: rgba(255,255,255,0.8); }
     .solar-rings { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; pointer-events: none; }
     .solar-ring { position: absolute; width: 48px; height: 48px; border-radius: 50%;
-      border: 2px solid rgba(251,191,36,0.4); opacity: 0; animation: pulse-ring 2.5s ease-out infinite; }
+      border: 2px solid rgba(245,158,11,0.4); opacity: 0; animation: pulse-ring 2.5s ease-out infinite; }
     .solar-ring:nth-child(2) { animation-delay: 0.8s; }
     .solar-ring:nth-child(3) { animation-delay: 1.6s; }
     .ev-anim-wrap { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; pointer-events: none; }
@@ -258,13 +258,13 @@
     .wind-blades { transform-origin: center; animation: wind-spin 3s linear infinite; }
     .wind-rings { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; pointer-events: none; }
     .wind-ring { position: absolute; width: 48px; height: 48px; border-radius: 50%;
-      border: 2px solid rgba(6,182,212,0.3); opacity: 0; animation: pulse-ring 3s ease-out infinite; }
+      border: 2px solid rgba(34,211,238,0.3); opacity: 0; animation: pulse-ring 3s ease-out infinite; }
     .wind-ring:nth-child(2) { animation-delay: 1s; }
     .wind-ring:nth-child(3) { animation-delay: 2s; }
     /* Building load pulse */
     .building-pulse { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; pointer-events: none; }
     .building-glow { position: absolute; width: 52px; height: 52px; border-radius: 12px;
-      background: rgba(56,189,248,0.15); border: 1px solid rgba(56,189,248,0.25); animation: building-breathe 2s ease-in-out infinite; }
+      background: rgba(249,115,22,0.12); border: 1px solid rgba(249,115,22,0.2); animation: building-breathe 2s ease-in-out infinite; }
     /* Grid active spark */
     .grid-spark { position: absolute; inset: 0; pointer-events: none; }
     .grid-spark-dot { position: absolute; width: 4px; height: 4px; border-radius: 50%; }
@@ -602,6 +602,7 @@ const EntityStore = (() => {
       solarPower:0, windPower:0, buildingPower:0, evPower:0,
       gridPower:0, batteryPower:0, batteryMode:'Mixed', footerText:'' };
     let socCount = 0;
+    let gridExportTotal = 0, gridImportTotal = 0;
     sites.forEach(s => {
       const ef = s.state?.energyFlow;
       if (!ef) return;
@@ -609,16 +610,21 @@ const EntityStore = (() => {
       agg.windPower += ef.windPower || 0;
       agg.buildingPower += ef.buildingPower || 0;
       agg.evPower += ef.evPower || 0;
-      agg.gridPower += ef.gridPower || 0;
       agg.batteryPower += ef.batteryPower || 0;
       if (ef.solarActive) agg.solarActive = true;
       if (ef.windActive) agg.windActive = true;
       if (ef.consumptionActive) agg.consumptionActive = true;
-      if (ef.gridExporting) agg.gridExporting = true;
-      if (ef.gridImporting) agg.gridImporting = true;
+      // Net grid: track export/import separately, then compute net direction
+      if (ef.gridExporting) gridExportTotal += ef.gridPower || 0;
+      if (ef.gridImporting) gridImportTotal += ef.gridPower || 0;
       if (ef.essSoc > 0) { agg.essSoc += ef.essSoc; socCount++; }
     });
     if (socCount > 0) agg.essSoc = Math.round(agg.essSoc / socCount);
+    // Net grid direction — can only be one
+    const netGrid = gridExportTotal - gridImportTotal;
+    if (netGrid > 0) { agg.gridExporting = true; agg.gridImporting = false; agg.gridPower = netGrid; }
+    else if (netGrid < 0) { agg.gridExporting = false; agg.gridImporting = true; agg.gridPower = Math.abs(netGrid); }
+    else { agg.gridExporting = false; agg.gridImporting = false; agg.gridPower = 0; }
     ['solarPower','windPower','buildingPower','evPower','gridPower','batteryPower'].forEach(k => {
       agg[k] = Math.round(agg[k] * 10) / 10;
     });
@@ -760,6 +766,83 @@ const USER_SEEDS = [
 USER_SEEDS.forEach(u => UserStore.register(u));
 UserStore.login('user-jan'); // Default logged-in user
 console.log(`UserStore: ${UserStore.getAllUsers().length} users registered, logged in as ${UserStore.currentUser().name}`);
+
+// ═══════════════════════════════════════════════════════════════════════
+// ─── NavigationStore (Zustand-like app/menu state) ───
+// Holds the app registry, menu structure, and sidebar preferences.
+// To migrate to production: hydrate from user permissions + installed domain plugins.
+// ═══════════════════════════════════════════════════════════════════════
+const NavigationStore = (() => {
+  const _apps = new Map();
+  let _sidebarPinned = false;
+
+  function registerApp(app) { _apps.set(app.id, app); }
+  function getApp(id) { return _apps.get(id); }
+  function getAllApps() { return Array.from(_apps.values()); }
+  function getVisibleApps() { return getAllApps().filter(a => a.visible !== false); }
+  function isPinned() { return _sidebarPinned; }
+  function setPinned(val) { _sidebarPinned = val; }
+  function togglePinned() { _sidebarPinned = !_sidebarPinned; return _sidebarPinned; }
+
+  return { registerApp, getApp, getAllApps, getVisibleApps, isPinned, setPinned, togglePinned };
+})();
+
+// ─── Seed: Apps ───
+const APP_SEEDS = [
+  { id:'dashboard', icon:'dashboard', label:{en:'Dashboard',nl:'Dashboard'}, description:{en:'Energy monitoring & analytics',nl:'Energie monitoring & analyses'}, visible:true, order:0,
+    pages: [
+      {key:'dashboard',label:{en:'Overview',nl:'Overzicht'}},
+      {key:'fleet',label:{en:'Fleet',nl:'Vloot'}},
+      {key:'devices',label:{en:'Devices',nl:'Apparaten'}},
+      {key:'entityBrowser',label:{en:'Entity Browser',nl:'Entiteiten Browser'}},
+      {key:'peakShaving',label:{en:'Peak Shaving',nl:'Piekvermijding'}},
+      {key:'tariffArbitrage',label:{en:'Tariff Arbitrage',nl:'Tarief Arbitrage'}},
+      {key:'batteryMgmt',label:{en:'Battery Mgmt',nl:'Batterijbeheer'}},
+      {key:'evCharging',label:{en:'EV Charging',nl:'EV Laden'}},
+      {key:'rulesEngine',label:{en:'Rules Engine',nl:'Regelmotor'}},
+    ]
+  },
+  { id:'alarms', icon:'alarms', label:{en:'Alarm Management',nl:'Alarmbeheer'}, description:{en:'Real-time alerts & event management',nl:'Realtime meldingen & eventbeheer'}, visible:true, order:1,
+    pages: [
+      {key:'alerts',label:{en:'Active Alerts',nl:'Actieve Meldingen'}},
+      {key:'alertHistory',label:{en:'Alert History',nl:'Meldingshistorie'}},
+      {key:'alertRules',label:{en:'Alert Rules',nl:'Meldingsregels'}},
+    ]
+  },
+  { id:'map', icon:'map', label:{en:'Site Map',nl:'Locatiekaart'}, description:{en:'Geographic site overview & live status',nl:'Geografisch locatieoverzicht & live status'}, visible:true, order:2,
+    pages: [
+      {key:'siteMap',label:{en:'Map View',nl:'Kaartweergave'}},
+      {key:'siteList',label:{en:'Site List',nl:'Locatielijst'}},
+    ]
+  },
+  { id:'configuration', icon:'configuration', label:{en:'Configuration',nl:'Configuratie'}, description:{en:'System settings, users & integrations',nl:'Systeeminstellingen, gebruikers & integraties'}, visible:true, order:3,
+    pages: [
+      {key:'configuration',label:{en:'General Settings',nl:'Algemene Instellingen'}},
+      {key:'admin',label:{en:'Accounts & Users',nl:'Accounts & Gebruikers'}},
+      {key:'gridCongestion',label:{en:'Grid & DSO',nl:'Net & DSO'}},
+      {key:'compliance',label:{en:'Compliance',nl:'Naleving'}},
+      {key:'iotFleet',label:{en:'IoT Gateways',nl:'IoT Gateways'}},
+    ]
+  },
+  { id:'marketplace', icon:'marketplace', label:{en:'Marketplace',nl:'Marktplaats'}, description:{en:'Apps, integrations & domain plugins',nl:'Apps, integraties & domein plugins'}, visible:true, order:4,
+    pages: [
+      {key:'marketplace',label:{en:'Browse Apps',nl:'Apps Verkennen'}},
+      {key:'myApps',label:{en:'My Installations',nl:'Mijn Installaties'}},
+    ]
+  },
+  { id:'developerStudio', icon:'developerStudio', label:{en:'Developer Studio',nl:'Developer Studio'}, description:{en:'Entity templates, API keys & domain SDK',nl:'Entiteit templates, API sleutels & domein SDK'}, visible:true, order:5,
+    pages: [
+      {key:'entityTemplates',label:{en:'Entity Templates',nl:'Entiteit Templates'}},
+      {key:'propertyDict',label:{en:'Property Dictionary',nl:'Eigenschap Woordenboek'}},
+      {key:'apiKeys',label:{en:'API Keys',nl:'API Sleutels'}},
+      {key:'domainPlugins',label:{en:'Domain Plugins',nl:'Domein Plugins'}},
+      {key:'flowTemplates',label:{en:'Flow Templates',nl:'Flow Templates'}},
+      {key:'mcpTools',label:{en:'MCP Tools',nl:'MCP Tools'}},
+    ]
+  },
+];
+APP_SEEDS.forEach(a => NavigationStore.registerApp(a));
+console.log(`NavigationStore: ${NavigationStore.getAllApps().length} apps registered`);
 
 // ─── Seed: Platform ───
 EntityStore.put({
@@ -1832,60 +1915,7 @@ const ICON_MAP = {
 };
 function resolveIcon(name) { return ICON_MAP[name] || DashboardOutlined; }
 
-// ─── App Definitions ───
-const APPS = {
-  dashboard: { icon:'dashboard', label:{en:'Dashboard',nl:'Dashboard'}, description:{en:'Energy monitoring & analytics',nl:'Energie monitoring & analyses'},
-    pages: [
-      {key:'dashboard',label:{en:'Overview',nl:'Overzicht'}},
-      {key:'fleet',label:{en:'Fleet',nl:'Vloot'}},
-      {key:'devices',label:{en:'Devices',nl:'Apparaten'}},
-      {key:'entityBrowser',label:{en:'Entity Browser',nl:'Entiteiten Browser'}},
-      {key:'peakShaving',label:{en:'Peak Shaving',nl:'Piekvermijding'}},
-      {key:'tariffArbitrage',label:{en:'Tariff Arbitrage',nl:'Tarief Arbitrage'}},
-      {key:'batteryMgmt',label:{en:'Battery Mgmt',nl:'Batterijbeheer'}},
-      {key:'evCharging',label:{en:'EV Charging',nl:'EV Laden'}},
-      {key:'rulesEngine',label:{en:'Rules Engine',nl:'Regelmotor'}},
-    ]
-  },
-  alarms: { icon:'alarms', label:{en:'Alarm Management',nl:'Alarmbeheer'}, description:{en:'Real-time alerts & event management',nl:'Realtime meldingen & eventbeheer'},
-    pages: [
-      {key:'alerts',label:{en:'Active Alerts',nl:'Actieve Meldingen'}},
-      {key:'alertHistory',label:{en:'Alert History',nl:'Meldingshistorie'}},
-      {key:'alertRules',label:{en:'Alert Rules',nl:'Meldingsregels'}},
-    ]
-  },
-  map: { icon:'map', label:{en:'Site Map',nl:'Locatiekaart'}, description:{en:'Geographic site overview & live status',nl:'Geografisch locatieoverzicht & live status'},
-    pages: [
-      {key:'siteMap',label:{en:'Map View',nl:'Kaartweergave'}},
-      {key:'siteList',label:{en:'Site List',nl:'Locatielijst'}},
-    ]
-  },
-  configuration: { icon:'configuration', label:{en:'Configuration',nl:'Configuratie'}, description:{en:'System settings, users & integrations',nl:'Systeeminstellingen, gebruikers & integraties'},
-    pages: [
-      {key:'configuration',label:{en:'General Settings',nl:'Algemene Instellingen'}},
-      {key:'admin',label:{en:'Accounts & Users',nl:'Accounts & Gebruikers'}},
-      {key:'gridCongestion',label:{en:'Grid & DSO',nl:'Net & DSO'}},
-      {key:'compliance',label:{en:'Compliance',nl:'Naleving'}},
-      {key:'iotFleet',label:{en:'IoT Gateways',nl:'IoT Gateways'}},
-    ]
-  },
-  marketplace: { icon:'marketplace', label:{en:'Marketplace',nl:'Marktplaats'}, description:{en:'Apps, integrations & domain plugins',nl:'Apps, integraties & domein plugins'},
-    pages: [
-      {key:'marketplace',label:{en:'Browse Apps',nl:'Apps Verkennen'}},
-      {key:'myApps',label:{en:'My Installations',nl:'Mijn Installaties'}},
-    ]
-  },
-  developerStudio: { icon:'developerStudio', label:{en:'Developer Studio',nl:'Developer Studio'}, description:{en:'Entity templates, API keys & domain SDK',nl:'Entiteit templates, API sleutels & domein SDK'},
-    pages: [
-      {key:'entityTemplates',label:{en:'Entity Templates',nl:'Entiteit Templates'}},
-      {key:'propertyDict',label:{en:'Property Dictionary',nl:'Eigenschap Woordenboek'}},
-      {key:'apiKeys',label:{en:'API Keys',nl:'API Sleutels'}},
-      {key:'domainPlugins',label:{en:'Domain Plugins',nl:'Domein Plugins'}},
-      {key:'flowTemplates',label:{en:'Flow Templates',nl:'Flow Templates'}},
-      {key:'mcpTools',label:{en:'MCP Tools',nl:'MCP Tools'}},
-    ]
-  },
-};
+// ─── App Definitions (served from NavigationStore) ───
 
 // ─── Entity Tree Node (recursive) ───
 function EntityTreeNode({ entity, focusedEntityId, setFocusedEntityId, depth, expandedNodes, toggleExpand }) {
@@ -1918,103 +1948,81 @@ function EntityTreeNode({ entity, focusedEntityId, setFocusedEntityId, depth, ex
 }
 
 // ─── Sidebar Component ───
+// Icon-only rail. Hover widens to show icon + label at same level. Click navigates.
 function Sidebar({ page, setPage, t, lang, focusedEntityId, setFocusedEntityId, currentApp, setCurrentApp }) {
-  const [panelOpen, setPanelOpen] = useState(true);
-  const [expandedNodes, setExpandedNodes] = useState(() => {
-    // Auto-expand platform → account → subAccount levels so all sites are visible
-    const expanded = new Set();
-    EntityStore.getByType('platform').forEach(p => expanded.add(p.id));
-    EntityStore.getByType('account').forEach(a => expanded.add(a.id));
-    EntityStore.getByType('subAccount').forEach(sa => expanded.add(sa.id));
-    // Also expand path to focused entity
-    const path = EntityStore.getPath(focusedEntityId);
-    path.forEach(e => expanded.add(e.id));
-    return expanded;
-  });
-  const app = APPS[currentApp] || APPS.dashboard;
+  const [hovered, setHovered] = useState(false);
+  const hoverTimer = useRef(null);
 
-  const toggleExpand = useCallback((id) => {
-    setExpandedNodes(prev => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id); else next.add(id);
-      return next;
-    });
+  // Read apps from NavigationStore
+  const apps = NavigationStore.getVisibleApps();
+
+  const expanded = hovered;
+  const railW = 56;
+  const expandedW = 200;
+
+  // Hover handlers with small delay to avoid flicker
+  const onMouseEnter = useCallback(() => {
+    clearTimeout(hoverTimer.current);
+    hoverTimer.current = setTimeout(() => setHovered(true), 100);
   }, []);
 
-  // When focusedEntityId changes, auto-expand the path to it
-  useEffect(() => {
-    const path = EntityStore.getPath(focusedEntityId);
-    setExpandedNodes(prev => {
-      const next = new Set(prev);
-      path.forEach(e => next.add(e.id));
-      return next;
-    });
-  }, [focusedEntityId]);
-
-  // Get root entities for the tree
-  const rootEntities = EntityStore.getByType('platform');
+  const onMouseLeave = useCallback(() => {
+    clearTimeout(hoverTimer.current);
+    hoverTimer.current = setTimeout(() => setHovered(false), 200);
+  }, []);
 
   return (
-    <div className="sidebar" style={{display:'flex'}}>
-      {/* Icon Rail */}
-      <div className="sidebar-rail">
-        <div style={{width:40,height:40,display:'flex',alignItems:'center',justifyContent:'center',marginBottom:4}}>
-          <div style={{width:28,height:28,background:'var(--brand)',borderRadius:6,display:'flex',alignItems:'center',justifyContent:'center'}}>
-            <svg viewBox="0 0 16 16" fill="white" width="14" height="14"><path d="M8 2l5 8H3l5-8z"/></svg>
-          </div>
+    <div className="sidebar" style={{
+      width: expanded ? expandedW : railW,
+      transition: 'width 0.2s ease',
+      display:'flex', flexDirection:'column', flexShrink:0,
+      background:'var(--bg-sidebar)', borderRight:'1px solid var(--border)',
+      overflow:'hidden', position:'relative', zIndex:100,
+    }}
+      onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave}>
+
+      {/* Logo — click → first app */}
+      <div style={{height:56,display:'flex',alignItems:'center',padding:'0 14px',gap:10,cursor:'pointer',
+        borderBottom:'1px solid var(--border)',flexShrink:0,overflow:'hidden'}}
+        onClick={() => { const first = apps[0]; if(first){ setCurrentApp(first.id); setPage(first.pages[0].key); } }}>
+        <div style={{width:28,height:28,background:'var(--brand)',borderRadius:6,display:'flex',alignItems:'center',justifyContent:'center',
+          flexShrink:0,transition:'transform 0.15s ease'}}
+          onMouseEnter={e=>e.currentTarget.style.transform='scale(1.1)'}
+          onMouseLeave={e=>e.currentTarget.style.transform='scale(1)'}>
+          <svg viewBox="0 0 16 16" fill="white" width="14" height="14"><path d="M8 2l5 8H3l5-8z"/></svg>
         </div>
-        <div className="sidebar-rail-sep"/>
-        {Object.entries(APPS).map(([key, a]) => (
-          <Tooltip key={key} placement="right" title={a.label[lang]}>
-            <div className={`sidebar-rail-icon ${currentApp===key?'active':''}`}
-              onClick={() => { setCurrentApp(key); setPage(a.pages[0].key); setPanelOpen(true); }}>
-              {React.createElement(APP_ICONS[key]||DashboardOutlined)}
-            </div>
-          </Tooltip>
-        ))}
-        <div style={{flex:1}}/>
-        <Tooltip placement="right" title={panelOpen ? (lang==='nl'?'Paneel sluiten':'Collapse panel') : (lang==='nl'?'Paneel openen':'Expand panel')}>
-          <div className="sidebar-rail-icon" onClick={() => setPanelOpen(!panelOpen)}
-            style={{fontSize:14,transform: panelOpen?'rotate(180deg)':'none',transition:'transform 0.2s'}}>
-            ▸
-          </div>
-        </Tooltip>
+        {expanded && <span style={{fontSize:14,fontWeight:700,color:'var(--text-primary)',whiteSpace:'nowrap',
+          opacity: expanded?1:0,transition:'opacity 0.15s ease'}}>OrbitEOS</span>}
       </div>
 
-      {/* Expandable Panel */}
-      <div className={`sidebar-panel ${panelOpen?'':'sidebar-panel-hidden'}`}>
-        {/* App name + pages */}
-        <div style={{padding:'12px',borderBottom:'1px solid var(--border)'}}>
-          <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:8}}>
-            <span style={{fontSize:16,color:'var(--brand)'}}>{React.createElement(APP_ICONS[currentApp]||DashboardOutlined)}</span>
-            <span style={{fontSize:13,fontWeight:600,color:'var(--text-primary)'}}>{app.label[lang]}</span>
-          </div>
-          {app.pages.map(item => (
-            <div key={item.key} className={`nav-item ${page===item.key?'active':''}`}
-              style={{padding:'6px 8px',fontSize:12}}
-              onClick={() => setPage(item.key)}>
-              <NavIcon name={item.key} style={{fontSize:14}}/> {item.label[lang]}
-            </div>
-          ))}
-        </div>
-
-        {/* Entity Hierarchy Tree — for apps that are entity-aware */}
-        {['dashboard','alarms','map'].includes(currentApp) && (
-          <div style={{flex:1,display:'flex',flexDirection:'column',minHeight:0}}>
-            <div style={{padding:'8px 12px',fontSize:10,fontWeight:600,textTransform:'uppercase',color:'var(--text-tertiary)',
-              letterSpacing:'0.04em',borderBottom:'1px solid var(--border)',flexShrink:0}}>
-              {lang==='en'?'Entity Hierarchy':'Entiteitshiërarchie'}
-            </div>
-            <div className="sidebar-entity-tree" style={{flex:1,overflowY:'auto',minHeight:0}}>
-              {rootEntities.map(root => (
-                <EntityTreeNode key={root.id} entity={root} focusedEntityId={focusedEntityId}
-                  setFocusedEntityId={setFocusedEntityId} depth={0}
-                  expandedNodes={expandedNodes} toggleExpand={toggleExpand}/>
-              ))}
-            </div>
-          </div>
-        )}
-
+      {/* App list — each row: icon (always) + label (on expand) at same level */}
+      <div style={{flex:1,padding:'6px 0',overflowY:'auto',overflowX:'hidden'}}>
+        {apps.map(a => {
+          const isActive = currentApp === a.id;
+          const Icon = APP_ICONS[a.id] || DashboardOutlined;
+          return (
+            <Tooltip key={a.id} placement="right" title={!expanded ? a.label[lang] : ''}>
+              <div style={{
+                height:40, display:'flex', alignItems:'center', padding:'0 14px', gap:10,
+                cursor:'pointer', margin:'2px 6px', borderRadius:6,
+                color: isActive?'var(--brand)':'var(--text-secondary)',
+                background: isActive?'var(--brand-bg)':'transparent',
+                fontWeight: isActive?600:400, fontSize:13,
+                transition:'all 0.12s', overflow:'hidden',
+                borderLeft: isActive?'3px solid var(--brand)':'3px solid transparent',
+              }}
+                onMouseEnter={e => { if(!isActive) e.currentTarget.style.background='var(--bg-card-hover)'; }}
+                onMouseLeave={e => { if(!isActive) e.currentTarget.style.background= isActive?'var(--brand-bg)':'transparent'; }}
+                onClick={() => { setCurrentApp(a.id); setPage(a.pages[0].key); }}>
+                <span style={{fontSize:17,flexShrink:0,width:22,textAlign:'center',display:'flex',alignItems:'center',justifyContent:'center'}}>
+                  {React.createElement(Icon)}
+                </span>
+                {expanded && <span style={{whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis',
+                  opacity:expanded?1:0,transition:'opacity 0.15s ease'}}>{a.label[lang]}</span>}
+              </div>
+            </Tooltip>
+          );
+        })}
       </div>
     </div>
   );
@@ -2126,29 +2134,132 @@ function HeaderUserProfile({ lang, setPage, setCurrentApp }) {
   );
 }
 
+// ─── Entity Scope Selector (Cascading searchable combo: Account → Sub-account → Site) ───
+function EntityScopeSelector({ focusedEntityId, setFocusedEntityId, lang }) {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState('');
+  const ref = useRef(null);
+  const inputRef = useRef(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [open]);
+
+  useEffect(() => { if (open && inputRef.current) inputRef.current.focus(); }, [open]);
+
+  // Build cascading options: Account → Sub-account → Site
+  const accounts = EntityStore.getByType('account');
+  const buildTree = () => {
+    const items = [];
+    accounts.forEach(acc => {
+      items.push({ ...acc, depth: 0 });
+      const subs = EntityStore.getChildren(acc.id).filter(c => c.entityType === 'subAccount');
+      subs.forEach(sub => {
+        items.push({ ...sub, depth: 1 });
+        const sites = EntityStore.getChildren(sub.id).filter(c => c.entityType === 'site');
+        sites.forEach(site => {
+          items.push({ ...site, depth: 2 });
+          // Nested sites
+          const nested = EntityStore.getChildren(site.id).filter(c => c.entityType === 'site');
+          nested.forEach(ns => items.push({ ...ns, depth: 3 }));
+        });
+      });
+      // Direct sites under account
+      const directSites = EntityStore.getChildren(acc.id).filter(c => c.entityType === 'site');
+      directSites.forEach(site => items.push({ ...site, depth: 1 }));
+    });
+    return items;
+  };
+
+  const allItems = useMemo(buildTree, []);
+  const filtered = search
+    ? allItems.filter(item => item.name.toLowerCase().includes(search.toLowerCase()))
+    : allItems;
+
+  // Current focused entity name for display
+  const focused = EntityStore.get(focusedEntityId);
+  const focusedName = focused ? focused.name : '—';
+
+  const depthColors = ['var(--text-primary)', 'var(--text-secondary)', 'var(--text-primary)', 'var(--text-secondary)'];
+  const depthIcons = { account: BankOutlined, subAccount: TeamOutlined, site: HomeOutlined };
+
+  return (
+    <div ref={ref} style={{position:'relative',display:'inline-flex'}}>
+      <div onClick={() => setOpen(!open)}
+        style={{display:'inline-flex',alignItems:'center',gap:6,padding:'3px 10px',borderRadius:6,cursor:'pointer',
+          fontSize:12,fontWeight:500,color:'var(--text-secondary)',background: open?'var(--bg-card-hover)':'transparent',
+          border:'1px solid transparent',transition:'all 0.15s'}}
+        onMouseEnter={e => { if(!open) e.currentTarget.style.borderColor='var(--border)'; }}
+        onMouseLeave={e => { if(!open) e.currentTarget.style.borderColor='transparent'; }}>
+        <EntityTypeIcon type={focused?.entityType||'site'} style={{fontSize:12,color:'var(--brand)'}}/>
+        <span style={{color:'var(--text-primary)',fontWeight:600}}>{focusedName}</span>
+        <span style={{fontSize:10,color:'var(--text-tertiary)',transform:open?'rotate(180deg)':'rotate(0)',transition:'transform 0.15s'}}>▾</span>
+      </div>
+      {open && (
+        <div style={{position:'absolute',top:'100%',left:0,marginTop:4,width:280,background:'var(--bg-card)',
+          border:'1px solid var(--border)',borderRadius:10,boxShadow:'var(--shadow)',zIndex:200,overflow:'hidden'}}>
+          {/* Search input */}
+          <div style={{padding:'8px 10px',borderBottom:'1px solid var(--border)'}}>
+            <input ref={inputRef} value={search} onChange={e => setSearch(e.target.value)}
+              placeholder={lang==='nl'?'Zoek account, site...':'Search account, site...'}
+              style={{width:'100%',border:'1px solid var(--border)',borderRadius:6,padding:'6px 10px',fontSize:12,
+                background:'var(--bg-secondary)',color:'var(--text-primary)',outline:'none'}}/>
+          </div>
+          {/* Results */}
+          <div style={{maxHeight:280,overflowY:'auto',padding:'4px 0'}}>
+            {filtered.length === 0 && (
+              <div style={{padding:'16px',textAlign:'center',fontSize:12,color:'var(--text-tertiary)'}}>
+                {lang==='nl'?'Geen resultaten':'No results'}
+              </div>
+            )}
+            {filtered.map(item => {
+              const isActive = item.id === focusedEntityId;
+              const Icon = depthIcons[item.entityType] || HomeOutlined;
+              return (
+                <div key={item.id}
+                  style={{padding:'6px 12px',paddingLeft: 12 + (search ? 0 : item.depth * 16),display:'flex',alignItems:'center',gap:8,
+                    cursor:'pointer',fontSize:12,color: isActive?'var(--brand)':depthColors[item.depth],
+                    fontWeight: isActive?600: item.depth===0?600: item.depth===1?500:400,
+                    background: isActive?'var(--brand-bg)':'transparent',transition:'background 0.1s'}}
+                  onMouseEnter={e => { if(!isActive) e.currentTarget.style.background='var(--bg-card-hover)'; }}
+                  onMouseLeave={e => { if(!isActive) e.currentTarget.style.background= isActive?'var(--brand-bg)':'transparent'; }}
+                  onClick={() => { setFocusedEntityId(item.id); setOpen(false); setSearch(''); }}>
+                  <span style={{fontSize:13,color: isActive?'var(--brand)':'var(--text-tertiary)',flexShrink:0}}>
+                    {React.createElement(Icon)}
+                  </span>
+                  <span style={{flex:1,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{item.name}</span>
+                  {item.entityType==='site' && <span style={{fontSize:10,color:'var(--text-tertiary)',flexShrink:0}}>
+                    {EntityStore.getDescendants(item.id).filter(d=>d.entityType==='device').length} {lang==='nl'?'apparaten':'devices'}
+                  </span>}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Header Component ───
-function Header({ page, t, lang, setLang, themeName, setTheme, alarms, alarmCount, showAlarms, setShowAlarms, focusedEntityId, setFocusedEntityId, setPage, setCurrentApp }) {
+function Header({ page, t, lang, setLang, themeName, setTheme, alarms, alarmCount, showAlarms, setShowAlarms, focusedEntityId, setFocusedEntityId, setPage, setCurrentApp, currentApp }) {
   const titles = { dashboard:t.dashboard, energyFlow:t.energyFlow, fleet:t.fleet, devices:t.devices,
     alerts:t.alerts, rulesEngine:t.rulesEngine, tariffArbitrage:t.tariffArbitrage, peakShaving:t.peakShaving,
     batteryMgmt:t.batteryMgmt, evCharging:t.evCharging, configuration:t.configuration };
   const [bellRing, setBellRing] = useState(false);
   useEffect(() => { if(alarmCount>0){setBellRing(true); setTimeout(()=>setBellRing(false),600);} }, [alarmCount]);
-  const breadcrumbPath = EntityStore.getPath(focusedEntityId);
+  const appObj = NavigationStore.getApp(currentApp);
+  const appLabel = appObj ? appObj.label[lang] : '';
   return (
     <div className="header">
       <div className="header-left">
-        <div className="header-breadcrumb" style={{display:'flex',alignItems:'center',gap:4,flexWrap:'wrap'}}>
-          {breadcrumbPath.map((ent, i) => (
-            <span key={ent.id} style={{display:'inline-flex',alignItems:'center',gap:3}}>
-              {i > 0 && <span style={{color:'var(--text-tertiary)',margin:'0 2px'}}>/</span>}
-              <EntityTypeIcon type={ent.entityType} style={{fontSize:12,color: i===breadcrumbPath.length-1?'var(--brand)':'var(--text-tertiary)'}}/>
-              <span style={{cursor:'pointer',color: i===breadcrumbPath.length-1?'var(--text-primary)':'var(--text-tertiary)',
-                fontWeight: i===breadcrumbPath.length-1?600:400,fontSize:13}}
-                onClick={()=>setFocusedEntityId(ent.id)}>{ent.name}</span>
-            </span>
-          ))}
-          <span style={{color:'var(--text-tertiary)',margin:'0 2px'}}>/</span>
-          <strong style={{fontSize:13}}>{titles[page]||page}</strong>
+        <div className="header-breadcrumb" style={{display:'flex',alignItems:'center',gap:6,flexWrap:'wrap'}}>
+          <span style={{fontSize:13,color:'var(--text-tertiary)'}}>{appLabel}</span>
+          <span style={{color:'var(--text-tertiary)'}}>/</span>
+          <strong style={{fontSize:13,color:'var(--text-primary)'}}>{titles[page]||page}</strong>
         </div>
       </div>
       <div className="header-right">
@@ -2208,7 +2319,7 @@ function StatCard({label, value, trend, trendDir, color}) {
 // All widgets follow the same interface: ({t, lang, currentSite, data}) => JSX
 // `data` is provided by the widget's own dataProvider in WidgetRegistry — widgets never fetch their own data.
 
-function WidgetEnergyFlow({t, lang, currentSite, data}) {
+const WidgetEnergyFlow = React.memo(function WidgetEnergyFlow({t, lang, currentSite, data}) {
   const { energyFlow: ef, status, costSaved } = data;
   const [ambientOn, setAmbientOn] = React.useState(true);
   const { solarActive, windActive, consumptionActive, gridExporting, gridImporting, essSoc } = ef;
@@ -2223,7 +2334,7 @@ function WidgetEnergyFlow({t, lang, currentSite, data}) {
           </div>
         </Tooltip>
         {ambientOn && <EnergyAmbientHues ef={ef}/>}
-        <FlowSvgLayer ef={ef}/>
+        <FlowCanvasLayer ef={ef}/>
         <div className="flow-layout">
           <div className="flow-col-left">
             <div className="flow-node">
@@ -2270,8 +2381,8 @@ function WidgetEnergyFlow({t, lang, currentSite, data}) {
               <div className="flow-icon-box">
                 {consumptionActive && ef.evPower > 0 && <div className="ev-anim-wrap">
                   <svg width="48" height="48" viewBox="0 0 48 48" style={{transform:'rotate(-90deg)'}}>
-                    <circle cx="24" cy="24" r="22" stroke="rgba(20,184,166,0.2)" strokeWidth="2" fill="transparent"/>
-                    <circle cx="24" cy="24" r="22" stroke={TEAL} strokeWidth="2" fill="transparent"
+                    <circle cx="24" cy="24" r="22" stroke="rgba(167,139,250,0.2)" strokeWidth="2" fill="transparent"/>
+                    <circle cx="24" cy="24" r="22" stroke={COLOR_EV} strokeWidth="2" fill="transparent"
                       strokeDasharray="138" className="ev-progress-ring"/>
                   </svg>
                   <div className="ev-zap-wrap"><ZapSmall/></div>
@@ -2319,7 +2430,7 @@ function WidgetEnergyFlow({t, lang, currentSite, data}) {
       </div>
     </div>
   );
-}
+});
 function WidgetDeviceTable({t, lang, currentSite, data}) {
   const { devices } = data;
   return (
@@ -2723,6 +2834,46 @@ function DashboardPage({t, lang, currentSite, focusedEntityId, setFocusedEntityI
   });
   const [gridCustomize, setGridCustomize] = useState(false);
   const [listDrawer, setListDrawer] = useState(false);
+  const [treePinned, setTreePinned] = useState(false);
+  const [treeHovered, setTreeHovered] = useState(false);
+  const treeHoverTimer = useRef(null);
+  const [treeExpandedNodes, setTreeExpandedNodes] = useState(() => {
+    const expanded = new Set();
+    EntityStore.getByType('platform').forEach(p => expanded.add(p.id));
+    EntityStore.getByType('account').forEach(a => expanded.add(a.id));
+    EntityStore.getByType('subAccount').forEach(sa => expanded.add(sa.id));
+    const path = EntityStore.getPath(focusedEntityId);
+    path.forEach(e => expanded.add(e.id));
+    return expanded;
+  });
+
+  const toggleTreeExpand = useCallback((id) => {
+    setTreeExpandedNodes(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }, []);
+
+  useEffect(() => {
+    const path = EntityStore.getPath(focusedEntityId);
+    setTreeExpandedNodes(prev => { const next = new Set(prev); path.forEach(e => next.add(e.id)); return next; });
+  }, [focusedEntityId]);
+
+  const rootEntities = EntityStore.getByType('platform');
+  const treeVisible = treePinned || treeHovered;
+
+  const onTreeMouseEnter = useCallback(() => {
+    if (treePinned) return;
+    clearTimeout(treeHoverTimer.current);
+    treeHoverTimer.current = setTimeout(() => setTreeHovered(true), 120);
+  }, [treePinned]);
+
+  const onTreeMouseLeave = useCallback(() => {
+    if (treePinned) return;
+    clearTimeout(treeHoverTimer.current);
+    treeHoverTimer.current = setTimeout(() => setTreeHovered(false), 250);
+  }, [treePinned]);
 
   useEffect(() => {
     localStorage.setItem('orbiteos-dashboard-layout', JSON.stringify(widgets));
@@ -2747,11 +2898,68 @@ function DashboardPage({t, lang, currentSite, focusedEntityId, setFocusedEntityI
   };
 
   return (
-    <div className={`page-enter ${gridCustomize ? 'customize-active' : ''}`}>
+    <div className={`page-enter ${gridCustomize ? 'customize-active' : ''}`} style={{display:'flex',gap:0,position:'relative'}}>
+      {/* Dashboard Tree Panel — collapsed rail + expandable tree */}
+      <div style={{display:'flex',flexShrink:0,position:'relative',zIndex:50}}
+        onMouseEnter={onTreeMouseEnter} onMouseLeave={onTreeMouseLeave}>
+        {/* Rail toggle — always visible */}
+        <div style={{width:28,display:'flex',flexDirection:'column',alignItems:'center',paddingTop:8,gap:4,flexShrink:0}}>
+          <Tooltip placement="right" title={lang==='nl'?'Entiteitsboom':'Entity Tree'}>
+            <div style={{width:24,height:24,borderRadius:6,display:'flex',alignItems:'center',justifyContent:'center',
+              cursor:'pointer',fontSize:14,color: treeVisible?'var(--brand)':'var(--text-tertiary)',
+              background: treeVisible?'var(--brand-bg)':'transparent',transition:'all 0.15s'}}
+              onClick={() => { setTreePinned(!treePinned); if(!treePinned) setTreeHovered(false); }}>
+              <ApartmentOutlined/>
+            </div>
+          </Tooltip>
+        </div>
+        {/* Tree panel — flyout or pinned */}
+        <div style={{
+          width: treeVisible ? 220 : 0, opacity: treeVisible ? 1 : 0, overflow: 'hidden',
+          background:'var(--bg-card)', borderRadius: treeVisible?'8px':'0', marginRight: treeVisible?8:0,
+          border: treeVisible?'1px solid var(--border)':'none',
+          display:'flex', flexDirection:'column', transition: 'width 0.2s ease, opacity 0.15s ease, margin 0.2s ease',
+          position: treePinned ? 'relative' : 'absolute', left: treePinned ? 0 : 28, top: 0, bottom: 0,
+          boxShadow: !treePinned && treeVisible ? '4px 0 16px rgba(0,0,0,0.3)' : 'none',
+          maxHeight: treePinned ? 'none' : 'calc(100vh - 120px)',
+        }}>
+          <div style={{minWidth:220}}>
+            <div style={{padding:'8px 10px',borderBottom:'1px solid var(--border)',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+              <span style={{fontSize:10,fontWeight:600,textTransform:'uppercase',color:'var(--text-tertiary)',letterSpacing:'0.04em',whiteSpace:'nowrap'}}>
+                {lang==='nl'?'Entiteitsboom':'Entity Tree'}
+              </span>
+              <Tooltip title={treePinned?(lang==='nl'?'Losmaken':'Unpin'):(lang==='nl'?'Vastzetten':'Pin')}>
+                <div style={{width:20,height:20,borderRadius:4,display:'flex',alignItems:'center',justifyContent:'center',
+                  cursor:'pointer',fontSize:10,color:treePinned?'var(--brand)':'var(--text-tertiary)',
+                  background:treePinned?'var(--brand-bg)':'transparent',transition:'all 0.15s'}}
+                  onClick={() => { setTreePinned(!treePinned); if(!treePinned) setTreeHovered(false); }}>
+                  <svg viewBox="0 0 16 16" width="10" height="10" fill="currentColor" style={{transform:treePinned?'rotate(0deg)':'rotate(45deg)',transition:'transform 0.2s'}}>
+                    <path d="M9.828.722a.5.5 0 01.354.146l4.95 4.95a.5.5 0 010 .707c-.48.48-1.072.588-1.503.588-.177 0-.335-.018-.46-.039l-3.134 3.134a5.927 5.927 0 01.16 1.338c.018.55-.111 1.162-.548 1.6a.5.5 0 01-.708 0l-2.45-2.45-3.89 3.89a.5.5 0 01-.707-.708l3.89-3.889-2.45-2.45a.5.5 0 010-.707c.437-.437 1.05-.566 1.6-.548.376.012.742.063 1.338.16L9.48 2.64c-.021-.125-.039-.283-.039-.46 0-.431.108-1.022.589-1.503a.5.5 0 01.353-.146z"/>
+                  </svg>
+                </div>
+              </Tooltip>
+            </div>
+            <div style={{overflowY:'auto',maxHeight:'calc(100vh - 180px)',padding:'4px 0'}}>
+              {rootEntities.map(root => (
+                <EntityTreeNode key={root.id} entity={root} focusedEntityId={focusedEntityId}
+                  setFocusedEntityId={setFocusedEntityId} depth={0}
+                  expandedNodes={treeExpandedNodes} toggleExpand={toggleTreeExpand}/>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Main dashboard content */}
+      <div style={{flex:1,minWidth:0}}>
       <div className="widget-header">
-        <div className="widget-header-title">
-          <ThunderboltOutlined style={{marginRight:8,color:'var(--brand)'}}/>
-          {lang==='nl'?'Energie Dashboard':'Energy Dashboard'}
+        <div className="widget-header-title" style={{display:'flex',alignItems:'center',gap:12}}>
+          <span style={{display:'flex',alignItems:'center',gap:8}}>
+            <ThunderboltOutlined style={{color:'var(--brand)'}}/>
+            {lang==='nl'?'Energie Dashboard':'Energy Dashboard'}
+          </span>
+          <span style={{color:'var(--text-tertiary)',fontSize:11}}>—</span>
+          <EntityScopeSelector focusedEntityId={focusedEntityId} setFocusedEntityId={setFocusedEntityId} lang={lang}/>
         </div>
         <div className="customize-header-controls">
           <Tooltip title={gridCustomize ? (lang==='nl'?'Klaar':'Done') : (lang==='nl'?'Widgets verplaatsen':'Rearrange widgets')}>
@@ -2769,12 +2977,36 @@ function DashboardPage({t, lang, currentSite, focusedEntityId, setFocusedEntityI
       </div>
 
       {/* Widget Grid — shell renders from registry, zero widget knowledge */}
+      {/* Memoize widget data per entityId to avoid re-creating objects on unrelated re-renders (e.g. alarms) */}
+      <WidgetGrid visibleWidgets={visibleWidgets} entityId={entityId} t={t} lang={lang}
+        gridCustomize={gridCustomize} gridDrag={gridDrag} visibleToFullIdx={visibleToFullIdx}
+        toggleVisibility={toggleVisibility}/>
+
+      {listDrawer && <CustomizeDrawer widgets={widgets} setWidgets={setWidgets} onClose={()=>setListDrawer(false)} lang={lang}/>}
+      </div>{/* end main dashboard content */}
+    </div>
+  );
+}
+
+// Extracted widget grid as its own component to enable per-widget memoization
+const WidgetGrid = React.memo(function WidgetGrid({visibleWidgets, entityId, t, lang, gridCustomize, gridDrag, visibleToFullIdx, toggleVisibility}) {
+  // Cache widget data — only recompute when entityId changes, not on every parent re-render
+  const widgetDataCache = useMemo(() => {
+    const cache = {};
+    visibleWidgets.forEach(w => {
+      const manifest = WidgetRegistry.get(w.id);
+      if (manifest) cache[w.id] = manifest.dataProvider(entityId);
+    });
+    return cache;
+  }, [entityId, visibleWidgets]);
+
+  return (
       <div className="widget-grid">
         {visibleWidgets.map((w, visIdx) => {
           const manifest = WidgetRegistry.get(w.id);
           if (!manifest) return null;
           const Renderer = manifest.component;
-          const widgetData = manifest.dataProvider(entityId);
+          const widgetData = widgetDataCache[w.id] || manifest.dataProvider(entityId);
           const isFullWidth = manifest.size === 'full';
           const IconComp = resolveIcon(manifest.icon);
           const fullIdx = visibleToFullIdx(visIdx);
@@ -2833,57 +3065,53 @@ function DashboardPage({t, lang, currentSite, focusedEntityId, setFocusedEntityI
           );
         })}
       </div>
-
-      {listDrawer && <CustomizeDrawer widgets={widgets} setWidgets={setWidgets} onClose={()=>setListDrawer(false)} lang={lang}/>}
-    </div>
   );
-}
+});
 
 // ─── Energy Flow Hub Icons (matching Figma / production Lucide style) ───
 // Ambient background — blurred color blobs that melt together
 // Large, high-opacity blobs on a solid dark base (#0f172a).
 // They overlap and blur into each other creating a living, colored atmosphere.
-function EnergyAmbientHues({ef}) {
+const EnergyAmbientHues = React.memo(function EnergyAmbientHues({ef}) {
   const sz = (pwr, min, max) => Math.round(Math.min(max, min + (pwr / 25) * (max - min)));
   const blobs = [];
 
   const hasLeft = ef.solarPower > 0 || ef.windPower > 0;
   const hasRight = ef.buildingPower > 0 || ef.evPower > 0 || ef.gridPower > 0;
 
-  // Solar — warm golden sunlight
+  // Solar — warm amber glow
   if (ef.solarPower > 0) {
-    // If no wind, solar expands to fill entire left side
     const noWind = ef.windPower <= 0;
-    blobs.push({color:'rgb(255,195,60)', x:'30%', y: noWind ? '50%' : '30%',
-      size:sz(ef.solarPower, noWind ? 450 : 380, noWind ? 700 : 600), op:0.55, key:'solar'});
+    blobs.push({color:'rgb(245,158,11)', x:'30%', y: noWind ? '50%' : '30%',
+      size:sz(ef.solarPower, noWind ? 450 : 380, noWind ? 700 : 600), op:0.45, key:'solar'});
   }
 
-  // Wind — fresh mint-teal
+  // Wind — cool cyan
   if (ef.windPower > 0) {
     const noSolar = ef.solarPower <= 0;
-    blobs.push({color:'rgb(100,220,190)', x:'30%', y: noSolar ? '50%' : '70%',
-      size:sz(ef.windPower, noSolar ? 450 : 350, noSolar ? 700 : 550), op:0.50, key:'wind'});
+    blobs.push({color:'rgb(34,211,238)', x:'30%', y: noSolar ? '50%' : '70%',
+      size:sz(ef.windPower, noSolar ? 450 : 350, noSolar ? 700 : 550), op:0.40, key:'wind'});
   }
 
-  // Building — warm peach
+  // Building — warm orange
   if (ef.buildingPower > 0) blobs.push(
-    {color:'rgb(245,200,160)', x: hasLeft ? '68%' : '50%', y:'25%',
-      size:sz(ef.buildingPower, 350, 540), op:0.45, key:'bldg'});
+    {color:'rgb(249,115,22)', x: hasLeft ? '68%' : '50%', y:'25%',
+      size:sz(ef.buildingPower, 350, 540), op:0.35, key:'bldg'});
 
-  // EV — soft lilac
+  // EV — soft violet
   if (ef.evPower > 0) blobs.push(
-    {color:'rgb(190,160,230)', x: hasLeft ? '68%' : '50%', y:'50%',
-      size:sz(ef.evPower, 320, 500), op:0.45, key:'ev'});
+    {color:'rgb(167,139,250)', x: hasLeft ? '68%' : '50%', y:'50%',
+      size:sz(ef.evPower, 320, 500), op:0.35, key:'ev'});
 
-  // Grid import — warm red (danger/heat)
+  // Grid import — rose
   if (ef.gridImporting && ef.gridPower > 0) blobs.push(
-    {color:'rgb(220,80,70)', x: hasLeft ? '68%' : '45%', y:'75%',
-      size:sz(ef.gridPower, 380, 650), op:0.50, key:'grid'});
+    {color:'rgb(244,63,94)', x: hasLeft ? '68%' : '45%', y:'75%',
+      size:sz(ef.gridPower, 380, 650), op:0.40, key:'grid'});
 
-  // Grid export — sage green
+  // Grid export — emerald green
   if (ef.gridExporting && ef.gridPower > 0) blobs.push(
-    {color:'rgb(130,215,160)', x: hasLeft ? '68%' : '50%', y:'75%',
-      size:sz(ef.gridPower, 350, 560), op:0.50, key:'grid'});
+    {color:'rgb(52,211,153)', x: hasLeft ? '68%' : '50%', y:'75%',
+      size:sz(ef.gridPower, 350, 560), op:0.40, key:'grid'});
 
   // Fill guarantee: if no left sources, right blobs shift center to cover
   // If no right sources, left blobs are already large enough with blur to reach
@@ -2898,17 +3126,18 @@ function EnergyAmbientHues({ef}) {
       opacity: b.op,
     }}/>)}
   </div>;
-}
+});
 
 // Format number to 1 decimal place — standardised across all dashboard widgets
 function fmt(n) { return Number(n).toFixed(1); }
 
-const TEAL = '#2dd4bf', AMBER = '#fbbf24', TEAL_300 = '#5eead4';
-const COLOR_PROD = '#2dd4bf', COLOR_CONS = '#2dd4bf', COLOR_EXPORT = '#3b82f6', COLOR_IMPORT = '#ef4444';
+const TEAL = '#2dd4bf', AMBER = '#f59e0b', TEAL_300 = '#5eead4';
+const COLOR_BUILDING = '#f97316', COLOR_EV = '#a78bfa', COLOR_EXPORT = '#34d399', COLOR_IMPORT = '#f43f5e';
+const COLOR_WIND = '#22d3ee', COLOR_SOLAR = AMBER;
 
 function SunIcon() {
-  return React.createElement('svg', {width:32,height:32,viewBox:'0 0 24 24',fill:'none',stroke:AMBER,strokeWidth:2,strokeLinecap:'round',strokeLinejoin:'round',
-    style:{filter:'drop-shadow(0 0 8px rgba(251,191,36,0.5))'}},
+  return React.createElement('svg', {width:32,height:32,viewBox:'0 0 24 24',fill:'none',stroke:COLOR_SOLAR,strokeWidth:2,strokeLinecap:'round',strokeLinejoin:'round',
+    style:{filter:'drop-shadow(0 0 8px rgba(245,158,11,0.5))'}},
     React.createElement('circle', {cx:12,cy:12,r:4}),
     React.createElement('path', {d:'M12 2v2'}), React.createElement('path', {d:'M12 20v2'}),
     React.createElement('path', {d:'M4.93 4.93l1.41 1.41'}), React.createElement('path', {d:'M17.66 17.66l1.41 1.41'}),
@@ -2916,46 +3145,42 @@ function SunIcon() {
     React.createElement('path', {d:'M6.34 17.66l-1.41 1.41'}), React.createElement('path', {d:'M19.07 4.93l-1.41 1.41'})
   );
 }
-function WindMillIcon({active}) {
+const WindMillIcon = React.memo(function WindMillIcon({active}) {
+  const c = COLOR_WIND;
   return (
-    <svg width="32" height="32" viewBox="0 0 32 32" style={{filter:'drop-shadow(0 0 6px rgba(6,182,212,0.4))'}}>
-      {/* Tower */}
-      <line x1="16" y1="14" x2="14" y2="30" stroke="#06b6d4" strokeWidth="2" strokeLinecap="round" opacity="0.6"/>
-      <line x1="16" y1="14" x2="18" y2="30" stroke="#06b6d4" strokeWidth="2" strokeLinecap="round" opacity="0.6"/>
-      {/* Base */}
-      <line x1="10" y1="30" x2="22" y2="30" stroke="#06b6d4" strokeWidth="2" strokeLinecap="round" opacity="0.5"/>
-      {/* Blades — spin only when producing */}
+    <svg width="32" height="32" viewBox="0 0 32 32" style={{filter:'drop-shadow(0 0 6px rgba(34,211,238,0.4))'}}>
+      <line x1="16" y1="14" x2="14" y2="30" stroke={c} strokeWidth="2" strokeLinecap="round" opacity="0.6"/>
+      <line x1="16" y1="14" x2="18" y2="30" stroke={c} strokeWidth="2" strokeLinecap="round" opacity="0.6"/>
+      <line x1="10" y1="30" x2="22" y2="30" stroke={c} strokeWidth="2" strokeLinecap="round" opacity="0.5"/>
       <g className={active ? 'wind-blades' : ''} style={{transformOrigin:'16px 12px'}}>
-        {/* 3 blades at 120 degree intervals */}
-        <line x1="16" y1="12" x2="16" y2="1" stroke="#06b6d4" strokeWidth="2.5" strokeLinecap="round"/>
-        <line x1="16" y1="12" x2="6.5" y2="17.5" stroke="#06b6d4" strokeWidth="2.5" strokeLinecap="round"/>
-        <line x1="16" y1="12" x2="25.5" y2="17.5" stroke="#06b6d4" strokeWidth="2.5" strokeLinecap="round"/>
-        {/* Blade tips */}
-        <circle cx="16" cy="1" r="1.5" fill="#06b6d4" opacity="0.5"/>
-        <circle cx="6.5" cy="17.5" r="1.5" fill="#06b6d4" opacity="0.5"/>
-        <circle cx="25.5" cy="17.5" r="1.5" fill="#06b6d4" opacity="0.5"/>
+        <line x1="16" y1="12" x2="16" y2="1" stroke={c} strokeWidth="2.5" strokeLinecap="round"/>
+        <line x1="16" y1="12" x2="6.5" y2="17.5" stroke={c} strokeWidth="2.5" strokeLinecap="round"/>
+        <line x1="16" y1="12" x2="25.5" y2="17.5" stroke={c} strokeWidth="2.5" strokeLinecap="round"/>
+        <circle cx="16" cy="1" r="1.5" fill={c} opacity="0.5"/>
+        <circle cx="6.5" cy="17.5" r="1.5" fill={c} opacity="0.5"/>
+        <circle cx="25.5" cy="17.5" r="1.5" fill={c} opacity="0.5"/>
       </g>
-      {/* Hub center */}
-      <circle cx="16" cy="12" r="2.5" fill="#06b6d4" stroke="none"/>
+      <circle cx="16" cy="12" r="2.5" fill={c} stroke="none"/>
       <circle cx="16" cy="12" r="1" fill="#0e7490" stroke="none"/>
     </svg>
   );
-}
+});
 function EFCarIcon() {
-  return React.createElement('svg', {width:28,height:28,viewBox:'0 0 24 24',fill:'none',stroke:TEAL,strokeWidth:2,strokeLinecap:'round',strokeLinejoin:'round'},
+  return React.createElement('svg', {width:28,height:28,viewBox:'0 0 24 24',fill:'none',stroke:COLOR_EV,strokeWidth:2,strokeLinecap:'round',strokeLinejoin:'round',
+    style:{filter:'drop-shadow(0 0 6px rgba(167,139,250,0.4))'}},
     React.createElement('path', {d:"M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-2-2.2-3.3C13 5.6 12 5 11 5H5c-1 0-2 .5-2.8 1.4L0 9.5"}),
     React.createElement('path', {d:"M5 17H3c-.6 0-1-.4-1-1v-3.5"}),
     React.createElement('circle', {cx:7.5,cy:17.5,r:2.5}), React.createElement('circle', {cx:16.5,cy:17.5,r:2.5})
   );
 }
 function ZapSmall() {
-  return React.createElement('svg', {width:16,height:16,viewBox:'0 0 24 24',fill:'rgba(94,234,212,0.2)',stroke:TEAL_300,strokeWidth:2,strokeLinecap:'round',strokeLinejoin:'round'},
+  return React.createElement('svg', {width:16,height:16,viewBox:'0 0 24 24',fill:'rgba(167,139,250,0.2)',stroke:COLOR_EV,strokeWidth:2,strokeLinecap:'round',strokeLinejoin:'round'},
     React.createElement('path', {d:"M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"})
   );
 }
 function GridPoleIcon({active, exporting}) {
-  const color = active ? (exporting ? '#3b82f6' : '#ef4444') : '#94a3b8';
-  const glow = active ? (exporting ? 'rgba(59,130,246,0.4)' : 'rgba(239,68,68,0.4)') : 'none';
+  const color = active ? (exporting ? COLOR_EXPORT : COLOR_IMPORT) : '#94a3b8';
+  const glow = active ? (exporting ? 'rgba(52,211,153,0.4)' : 'rgba(244,63,94,0.4)') : 'none';
   return React.createElement('svg', {width:32,height:32,viewBox:'0 0 24 24',fill:'none',stroke:color,strokeWidth:1.5,strokeLinecap:'round',strokeLinejoin:'round',
     style:active?{filter:`drop-shadow(0 0 6px ${glow})`}:undefined},
     React.createElement('line', {x1:12,y1:2,x2:12,y2:22}),
@@ -2985,8 +3210,8 @@ function BatteryGaugeIcon({soc}) {
   );
 }
 function BuildingIcon() {
-  return React.createElement('svg', {width:28,height:28,viewBox:'0 0 24 24',fill:'none',stroke:'#38bdf8',strokeWidth:2,strokeLinecap:'round',strokeLinejoin:'round',
-    style:{filter:'drop-shadow(0 0 6px rgba(56,189,248,0.3))'}},
+  return React.createElement('svg', {width:28,height:28,viewBox:'0 0 24 24',fill:'none',stroke:COLOR_BUILDING,strokeWidth:2,strokeLinecap:'round',strokeLinejoin:'round',
+    style:{filter:'drop-shadow(0 0 6px rgba(249,115,22,0.4))'}},
     React.createElement('path', {d:'M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z'}),
     React.createElement('path', {d:'M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2'}),
     React.createElement('path', {d:'M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2'}),
@@ -2995,70 +3220,168 @@ function BuildingIcon() {
   );
 }
 
-// ─── SVG Flow Particle Layer (production-matching animateMotion) ───
-// Paths: left icons ~12%, center hub ~50%, right icons ~88% of viewBox width
-// Vertical: 2 left nodes at 35%/65%, 3 right nodes at 22%/50%/78% of height
-const PATH_SOLAR   = 'M 95 145 C 180 145 300 200 400 200';
-const PATH_WIND    = 'M 95 265 C 180 265 300 200 400 200';
-const PATH_LOAD    = 'M 400 200 C 500 200 620 90  705 90';
-const PATH_EV      = 'M 400 200 C 500 200 620 200 705 200';
-const PATH_GRID    = 'M 400 200 C 500 200 620 310 705 310';
-const PATH_GRID_IN = 'M 705 310 C 620 310 500 200 400 200';
+// ─── Canvas Flow Particle Layer ───
+// Uses requestAnimationFrame — immune to React re-renders, perfectly smooth.
+// Cubic bezier paths matching the flow hub layout.
+const FLOW_PATHS = {
+  solar:   [{x:95,y:145},{x:180,y:145},{x:300,y:200},{x:400,y:200}],
+  wind:    [{x:95,y:265},{x:180,y:265},{x:300,y:200},{x:400,y:200}],
+  load:    [{x:400,y:200},{x:500,y:200},{x:620,y:90},{x:705,y:90}],
+  ev:      [{x:400,y:200},{x:500,y:200},{x:620,y:200},{x:705,y:200}],
+  grid:    [{x:400,y:200},{x:500,y:200},{x:620,y:310},{x:705,y:310}],
+  gridIn:  [{x:705,y:310},{x:620,y:310},{x:500,y:200},{x:400,y:200}],
+};
 
-// Gentle particle speed proportional to power.
-// 2 kW → ~8s (slow trickle), 10 kW → ~4s, 30+ kW → ~2.5s
-function flowDur(kw) { return Math.max(3, Math.min(10, 30 / Math.max(kw, 0.5))).toFixed(1) + 's'; }
-
-// Particle group: small glowing dots evenly staggered along a path
-function FlowParticles({power, color, path}) {
-  if (!power || power <= 0) return null;
-  const dur = flowDur(power);
-  const durN = parseFloat(dur);
-  const n = power > 20 ? 4 : power > 8 ? 3 : 2;
-  const particles = [];
-  for (let i = 0; i < n; i++) {
-    const begin = (durN * i / n).toFixed(1) + 's';
-    particles.push(
-      <circle key={i} r={2} fill={color} filter="url(#glow)" opacity={0.85}>
-        <animateMotion dur={dur} repeatCount="indefinite" begin={begin} path={path}/>
-      </circle>
-    );
-  }
-  return <>{particles}</>;
+// Evaluate cubic bezier at parameter t (0..1)
+function bezierPoint(p0, p1, p2, p3, t) {
+  const u = 1 - t;
+  return {
+    x: u*u*u*p0.x + 3*u*u*t*p1.x + 3*u*t*t*p2.x + t*t*t*p3.x,
+    y: u*u*u*p0.y + 3*u*u*t*p1.y + 3*u*t*t*p2.y + t*t*t*p3.y,
+  };
 }
 
-function FlowSvgLayer({ef}) {
-  const {solarActive, windActive, consumptionActive, gridExporting, gridImporting} = ef;
-  return (
-    <svg className="flow-svg-layer" viewBox="0 0 800 400">
-      <defs>
-        <filter id="glow"><feGaussianBlur stdDeviation="4" result="b"/>
-          <feMerge><feMergeNode in="b"/><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
-        </filter>
-      </defs>
+// Speed: 2 kW → 15s (slow trickle), 10 kW → 8s, 30+ kW → 5s
+function flowSpeed(kw) { return Math.max(5, Math.min(15, 60 / Math.max(kw, 0.5))); }
 
-      {/* Background flow channels — subtle guides */}
-      <path d={PATH_SOLAR} fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth="1" strokeDasharray="4 6"/>
-      <path d={PATH_WIND}  fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth="1" strokeDasharray="4 6"/>
-      <path d={PATH_LOAD}  fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth="1" strokeDasharray="4 6"/>
-      <path d={PATH_EV}    fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth="1" strokeDasharray="4 6"/>
-      <path d={PATH_GRID}  fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth="1" strokeDasharray="4 6"/>
+function FlowCanvasLayer({ef}) {
+  const canvasRef = useRef(null);
+  const efRef = useRef(ef);
+  const cssW = useRef(0);
+  const cssH = useRef(0);
+  efRef.current = ef;
 
-      {/* Active particles — speed proportional to power value */}
-      {solarActive && ef.solarPower > 0 &&
-        <FlowParticles power={ef.solarPower} color={AMBER} path={PATH_SOLAR}/>}
-      {windActive && ef.windPower > 0 &&
-        <FlowParticles power={ef.windPower} color="#06b6d4" path={PATH_WIND}/>}
-      {consumptionActive && ef.buildingPower > 0 &&
-        <FlowParticles power={ef.buildingPower} color="#38bdf8" path={PATH_LOAD}/>}
-      {consumptionActive && ef.evPower > 0 &&
-        <FlowParticles power={ef.evPower} color="#8b5cf6" path={PATH_EV}/>}
-      {gridExporting && ef.gridPower > 0 &&
-        <FlowParticles power={ef.gridPower} color={COLOR_EXPORT} path={PATH_GRID}/>}
-      {gridImporting && ef.gridPower > 0 &&
-        <FlowParticles power={ef.gridPower} color={COLOR_IMPORT} path={PATH_GRID_IN}/>}
-    </svg>
-  );
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    let raf;
+
+    function buildParticles() {
+      const particles = [];
+      const ef = efRef.current;
+      const channels = [];
+      if (ef.solarActive && ef.solarPower > 0)
+        channels.push({path: FLOW_PATHS.solar, color: COLOR_SOLAR, power: ef.solarPower});
+      if (ef.windActive && ef.windPower > 0)
+        channels.push({path: FLOW_PATHS.wind, color: COLOR_WIND, power: ef.windPower});
+      if (ef.consumptionActive && ef.buildingPower > 0)
+        channels.push({path: FLOW_PATHS.load, color: COLOR_BUILDING, power: ef.buildingPower});
+      if (ef.consumptionActive && ef.evPower > 0)
+        channels.push({path: FLOW_PATHS.ev, color: COLOR_EV, power: ef.evPower});
+      if (ef.gridExporting && ef.gridPower > 0)
+        channels.push({path: FLOW_PATHS.grid, color: COLOR_EXPORT, power: ef.gridPower});
+      if (ef.gridImporting && ef.gridPower > 0)
+        channels.push({path: FLOW_PATHS.gridIn, color: COLOR_IMPORT, power: ef.gridPower});
+
+      channels.forEach(ch => {
+        const n = ch.power > 20 ? 4 : ch.power > 8 ? 3 : 2;
+        const dur = flowSpeed(ch.power);
+        for (let i = 0; i < n; i++) {
+          particles.push({ path: ch.path, color: ch.color, dur, offset: i / n });
+        }
+      });
+      return particles;
+    }
+
+    // Parse hex color to {r,g,b}
+    function parseColor(c) {
+      if (c.startsWith('#') && c.length >= 7) {
+        return { r: parseInt(c.slice(1,3),16), g: parseInt(c.slice(3,5),16), b: parseInt(c.slice(5,7),16) };
+      }
+      return { r:100, g:180, b:200 };
+    }
+
+    let particles = buildParticles();
+    let lastRebuild = Date.now();
+    const startTime = performance.now();
+
+    function draw(now) {
+      if (Date.now() - lastRebuild > 2000) {
+        particles = buildParticles();
+        lastRebuild = Date.now();
+      }
+
+      const w = cssW.current;
+      const h = cssH.current;
+      if (!w || !h) { raf = requestAnimationFrame(draw); return; }
+
+      ctx.clearRect(0, 0, w, h);
+
+      // Scale factors: path coords are in 800×400 space
+      const scX = w / 800;
+      const scY = h / 400;
+
+      // Draw dashed guide paths
+      ctx.save();
+      ctx.setLineDash([4, 6]);
+      ctx.strokeStyle = 'rgba(255,255,255,0.10)';
+      ctx.lineWidth = 1;
+      Object.values(FLOW_PATHS).forEach(pts => {
+        if (pts === FLOW_PATHS.gridIn) return;
+        ctx.beginPath();
+        ctx.moveTo(pts[0].x * scX, pts[0].y * scY);
+        ctx.bezierCurveTo(pts[1].x*scX, pts[1].y*scY, pts[2].x*scX, pts[2].y*scY, pts[3].x*scX, pts[3].y*scY);
+        ctx.stroke();
+      });
+      ctx.restore();
+
+      // Draw particles — small, subtle
+      const elapsed = (now - startTime) / 1000;
+      particles.forEach(p => {
+        const t = ((elapsed / p.dur + p.offset) % 1);
+        const pt = bezierPoint(p.path[0], p.path[1], p.path[2], p.path[3], t);
+        const sx = pt.x * scX;
+        const sy = pt.y * scY;
+        const {r,g,b} = parseColor(p.color);
+
+        // Soft glow — small radius
+        const grad = ctx.createRadialGradient(sx, sy, 0, sx, sy, 6);
+        grad.addColorStop(0, `rgba(${r},${g},${b},0.3)`);
+        grad.addColorStop(1, `rgba(${r},${g},${b},0)`);
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.arc(sx, sy, 6, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Core dot — 1.5px radius
+        ctx.beginPath();
+        ctx.arc(sx, sy, 1.5, 0, Math.PI * 2);
+        ctx.fillStyle = p.color;
+        ctx.globalAlpha = 0.85;
+        ctx.fill();
+        ctx.globalAlpha = 1;
+      });
+
+      raf = requestAnimationFrame(draw);
+    }
+
+    function resize() {
+      const parent = canvas.parentElement;
+      if (!parent) return;
+      const dpr = window.devicePixelRatio || 1;
+      const cw = parent.clientWidth;
+      const ch = parent.clientHeight;
+      cssW.current = cw;
+      cssH.current = ch;
+      canvas.width = cw * dpr;
+      canvas.height = ch * dpr;
+      canvas.style.width = cw + 'px';
+      canvas.style.height = ch + 'px';
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+
+    resize();
+    window.addEventListener('resize', resize);
+    raf = requestAnimationFrame(draw);
+
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener('resize', resize);
+    };
+  }, []);
+
+  return <canvas ref={canvasRef} style={{position:'absolute',inset:0,width:'100%',height:'100%',pointerEvents:'none',zIndex:1}}/>;
 }
 
 // ─── Energy Flow Page (Production-matching animated SVG) ───
@@ -3558,7 +3881,21 @@ function getTimeOfDayPalette() {
 
 function LoginPage({t, setPage, setCurrentApp, lang, setLang}) {
   const canvasRef = useRef(null);
+  const [emailVal, setEmailVal] = useState('');
+  const [greetName, setGreetName] = useState('');
   const timeGlow = useMemo(() => getTimeOfDayPalette(), []);
+
+  // Extract first name from email on blur (e.g. "jan.de.vries@acme.nl" → "Jan")
+  const onEmailBlur = useCallback(() => {
+    const prefix = emailVal.split('@')[0] || '';
+    // Take first segment before . or _ or - , capitalize it
+    const raw = prefix.split(/[._-]/)[0];
+    if (raw.length >= 2) {
+      setGreetName(raw.charAt(0).toUpperCase() + raw.slice(1).toLowerCase());
+    } else {
+      setGreetName('');
+    }
+  }, [emailVal]);
 
   // Page background gradient — dark base with time-tinted corner
   const bgGrad = `linear-gradient(135deg, #020617 0%, rgb(${Math.round(2 + timeGlow.bgR*0.3)},${Math.round(6 + timeGlow.bgG*0.3)},${Math.round(23 + timeGlow.bgB*0.3)}) 50%, rgb(${timeGlow.bgR},${timeGlow.bgG},${timeGlow.bgB}) 100%)`;
@@ -3696,20 +4033,20 @@ function LoginPage({t, setPage, setCurrentApp, lang, setLang}) {
             <svg viewBox="0 0 24 24" fill="white" width="22" height="22"><path d="M12 2l8 14H4l8-14z"/></svg>
           </div>
           <div style={{fontSize:20,fontWeight:700,color:'var(--text-primary)',marginBottom:4}}>OrbitEOS</div>
-          <div style={{fontSize:13,color:'var(--text-secondary)'}}>{(() => {
+          {greetName && <div style={{fontSize:14,color:'var(--brand)',fontWeight:500,transition:'all 0.3s ease',opacity:0.9}}>{(() => {
             const h = new Date().getHours();
             const greetings = {
-              en: h < 6 ? 'Good night' : h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening',
-              nl: h < 6 ? 'Goedenacht' : h < 12 ? 'Goedemorgen' : h < 18 ? 'Goedemiddag' : 'Goedenavond',
+              en: h < 5 ? 'Good evening' : h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening',
+              nl: h < 5 ? 'Goedenavond' : h < 12 ? 'Goedemorgen' : h < 18 ? 'Goedemiddag' : 'Goedenavond',
             };
-            return greetings[lang] || greetings.en;
-          })()}</div>
+            return `${greetings[lang] || greetings.en}, ${greetName}`;
+          })()}</div>}
         </div>
 
         {/* Form fields */}
         <div style={{marginBottom:16}}>
           <div style={{fontSize:12,fontWeight:500,color:'var(--text-primary)',marginBottom:4}}>{t.email}</div>
-          <Input placeholder="jan@orbiteos.com"/>
+          <Input placeholder="jan@orbiteos.com" value={emailVal} onChange={e => setEmailVal(e.target.value)} onBlur={onEmailBlur}/>
         </div>
         <div style={{marginBottom:12}}>
           <div style={{fontSize:12,fontWeight:500,color:'var(--text-primary)',marginBottom:4}}>{t.password}</div>
@@ -3721,11 +4058,60 @@ function LoginPage({t, setPage, setCurrentApp, lang, setLang}) {
           </label>
           <span style={{fontSize:11,color:'var(--brand)',cursor:'pointer'}}>{t.forgotPassword}</span>
         </div>
-        <button className="header-btn primary" style={{width:'100%',padding:'8px',fontSize:13,borderRadius:6}}
+        <button style={{width:'100%',padding:'10px',fontSize:14,fontWeight:600,borderRadius:8,border:'none',
+          background:'var(--brand)',color:'#fff',cursor:'pointer',transition:'all 0.2s ease',letterSpacing:'0.02em',
+          boxShadow:'0 2px 8px rgba(45,212,191,0.3)'}}
+          onMouseEnter={e=>{e.target.style.background='var(--brand-hover)';e.target.style.boxShadow='0 4px 16px rgba(45,212,191,0.4)';}}
+          onMouseLeave={e=>{e.target.style.background='var(--brand)';e.target.style.boxShadow='0 2px 8px rgba(45,212,191,0.3)';}}
           onClick={()=>{UserStore.login('user-jan');setPage('dashboard');setCurrentApp&&setCurrentApp('dashboard');}}>{t.signInBtn}</button>
 
+        {/* Register link */}
+        <div style={{textAlign:'center',marginTop:14,fontSize:12,color:'var(--text-secondary)'}}>
+          {lang==='nl'?'Geen account?':'No account?'}{' '}
+          <span style={{color:'var(--brand)',cursor:'pointer',fontWeight:500}}
+            onMouseEnter={e=>e.target.style.textDecoration='underline'}
+            onMouseLeave={e=>e.target.style.textDecoration='none'}>
+            {lang==='nl'?'Registreren':'Register'}
+          </span>
+        </div>
+
+        {/* SSO divider */}
+        <div style={{display:'flex',alignItems:'center',gap:12,margin:'16px 0 12px'}}>
+          <div style={{flex:1,height:1,background:'rgba(255,255,255,0.08)'}}/>
+          <span style={{fontSize:10,color:'var(--text-tertiary)',textTransform:'uppercase',letterSpacing:'0.05em'}}>{lang==='nl'?'of':'or'}</span>
+          <div style={{flex:1,height:1,background:'rgba(255,255,255,0.08)'}}/>
+        </div>
+
+        {/* SSO icon buttons — Google, Apple, Microsoft */}
+        <div style={{display:'flex',justifyContent:'center',gap:12}}>
+          {/* Google */}
+          <button style={{width:40,height:40,borderRadius:8,border:'1px solid rgba(255,255,255,0.1)',background:'rgba(255,255,255,0.05)',
+            cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',transition:'all 0.2s ease',padding:0}}
+            onMouseEnter={e=>e.currentTarget.style.background='rgba(255,255,255,0.12)'}
+            onMouseLeave={e=>e.currentTarget.style.background='rgba(255,255,255,0.05)'}
+            title="Google">
+            <svg width="18" height="18" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18A11.96 11.96 0 001 12c0 1.94.46 3.77 1.18 5.41l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+          </button>
+          {/* Apple */}
+          <button style={{width:40,height:40,borderRadius:8,border:'1px solid rgba(255,255,255,0.1)',background:'rgba(255,255,255,0.05)',
+            cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',transition:'all 0.2s ease',padding:0}}
+            onMouseEnter={e=>e.currentTarget.style.background='rgba(255,255,255,0.12)'}
+            onMouseLeave={e=>e.currentTarget.style.background='rgba(255,255,255,0.05)'}
+            title="Apple">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="#ccc"><path d="M17.05 20.28c-.98.95-2.05.88-3.08.4-1.09-.5-2.08-.48-3.24 0-1.44.62-2.2.44-3.06-.4C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.32 2.32-1.66 4.32-3.74 4.25z"/></svg>
+          </button>
+          {/* Microsoft */}
+          <button style={{width:40,height:40,borderRadius:8,border:'1px solid rgba(255,255,255,0.1)',background:'rgba(255,255,255,0.05)',
+            cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',transition:'all 0.2s ease',padding:0}}
+            onMouseEnter={e=>e.currentTarget.style.background='rgba(255,255,255,0.12)'}
+            onMouseLeave={e=>e.currentTarget.style.background='rgba(255,255,255,0.05)'}
+            title="Microsoft">
+            <svg width="18" height="18" viewBox="0 0 24 24"><rect x="1" y="1" width="10" height="10" fill="#F25022"/><rect x="13" y="1" width="10" height="10" fill="#7FBA00"/><rect x="1" y="13" width="10" height="10" fill="#00A4EF"/><rect x="13" y="13" width="10" height="10" fill="#FFB900"/></svg>
+          </button>
+        </div>
+
         {/* Footer */}
-        <div style={{textAlign:'center',marginTop:20,paddingTop:12,borderTop:'1px solid rgba(255,255,255,0.06)'}}>
+        <div style={{textAlign:'center',marginTop:16,paddingTop:12,borderTop:'1px solid rgba(255,255,255,0.06)'}}>
           <div style={{fontSize:10,color:'var(--text-tertiary)'}}>Powered by OrbitEOS</div>
         </div>
       </div>
@@ -4342,7 +4728,7 @@ function App() {
             setTheme={setThemeName} alarms={alarms} alarmCount={alarmCount}
             showAlarms={showAlarms} setShowAlarms={setShowAlarms}
             focusedEntityId={focusedEntityId} setFocusedEntityId={setFocusedEntityId}
-            setPage={setPage} setCurrentApp={setCurrentApp}/>
+            setPage={setPage} setCurrentApp={setCurrentApp} currentApp={currentApp}/>
           <div className="content" key={page}>
             {pages[page] || <DashboardPage {...sp}/>}
           </div>
