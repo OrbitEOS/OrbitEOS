@@ -133,6 +133,51 @@
       background: var(--error); color: #fff; border-radius: 8px; font-size: 10px; font-weight: 600;
       display: flex; align-items: center; justify-content: center; padding: 0 4px; }
     @keyframes bell-shake { 0%,100%{transform:rotate(0)} 20%{transform:rotate(12deg)} 40%{transform:rotate(-12deg)} 60%{transform:rotate(6deg)} 80%{transform:rotate(-6deg)} }
+
+    /* ---- Orbit Loading Screen — all canvas-rendered now ---- */
+
+    /* ---- Login error styles ---- */
+    .login-error { display: flex; align-items: flex-start; gap: 8px; padding: 10px 12px; border-radius: 8px;
+      background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.2); margin-bottom: 12px;
+      animation: error-slide-in 0.3s ease; }
+    .login-error-icon { color: #ef4444; flex-shrink: 0; margin-top: 1px; font-size: 14px; }
+    .login-error-text { font-size: 12px; color: #fca5a5; line-height: 1.4; }
+    [data-theme="light"] .login-error { background: rgba(239,68,68,0.06); }
+    [data-theme="light"] .login-error-text { color: #dc2626; }
+    .login-field-error { border-color: rgba(239,68,68,0.5) !important; }
+    .login-field-error:focus, .login-field-error .ant-input:focus { border-color: #ef4444 !important; box-shadow: 0 0 0 2px rgba(239,68,68,0.15) !important; }
+    .login-field-hint { font-size: 11px; color: #f87171; margin-top: 4px; opacity: 0; max-height: 0; overflow: hidden; transition: all 0.2s ease; }
+    .login-field-hint.visible { opacity: 1; max-height: 24px; }
+    .login-attempts-warn { font-size: 11px; color: #f59e0b; margin-top: 4px; }
+    @keyframes error-slide-in { 0% { opacity: 0; transform: translateY(-6px); } 100% { opacity: 1; transform: translateY(0); } }
+    .login-shake { animation: form-shake 0.4s ease; }
+    @keyframes form-shake { 0%,100%{transform:translateX(0)} 15%{transform:translateX(-8px)} 30%{transform:translateX(8px)} 45%{transform:translateX(-6px)} 60%{transform:translateX(6px)} 75%{transform:translateX(-3px)} 90%{transform:translateX(3px)} }
+
+    /* ---- SUD Login Success Sequence ---- */
+    .login-btn-success { background: #22c55e !important; box-shadow: 0 0 20px rgba(34,197,94,0.4) !important;
+      pointer-events: none; transform: scale(1.02); }
+    .login-card-exit { animation: card-exit 0.5s ease forwards; }
+    @keyframes card-exit {
+      0% { opacity: 1; transform: scale(1) translateY(0); }
+      100% { opacity: 0; transform: scale(0.92) translateY(20px); }
+    }
+    .login-bg-exit canvas { transition: opacity 0.4s ease; }
+
+    /* ---- SUD Shell Assemble ---- */
+    .shell-enter .sidebar { animation: sidebar-slide-in 0.4s ease both; }
+    @keyframes sidebar-slide-in { 0% { transform: translateX(-100%); opacity: 0; } 100% { transform: translateX(0); opacity: 1; } }
+    .shell-enter .main-area { animation: main-fade-in 0.4s ease 0.15s both; }
+    @keyframes main-fade-in { 0% { opacity: 0; } 100% { opacity: 1; } }
+    .shell-enter .header { animation: header-drop-in 0.35s ease 0.1s both; }
+    @keyframes header-drop-in { 0% { transform: translateY(-100%); opacity: 0; } 100% { transform: translateY(0); opacity: 1; } }
+
+    /* ---- SUD Dashboard Reveal ---- */
+    .orbit-overlay-inner { position: absolute; inset: 0; }
+    .content-reveal { animation: content-reveal 0.5s ease both; }
+    @keyframes content-reveal {
+      0% { opacity: 0; transform: translateY(16px); }
+      100% { opacity: 1; transform: translateY(0); }
+    }
     .alarm-bell.ringing svg { animation: bell-shake 0.5s ease; }
     .theme-toggle, .lang-toggle { padding: 4px 10px; border-radius: 14px; border: 1px solid var(--border);
       background: var(--bg-card); font-size: 11px; color: var(--text-secondary); cursor: pointer; font-weight: 500; }
@@ -506,7 +551,8 @@ const { DashboardOutlined, ThunderboltOutlined, ClusterOutlined, ApiOutlined, Ap
   WarningOutlined, EuroCircleOutlined, FundOutlined, HomeOutlined, CloudServerOutlined,
   ShopOutlined, HddOutlined, AlertOutlined, FireOutlined, LockOutlined, GatewayOutlined,
   RobotOutlined, RadarChartOutlined, SlidersOutlined, BuildOutlined, CodeOutlined,
-  FunctionOutlined, FilterOutlined, PieChartOutlined, SwapOutlined, BankOutlined, CloudOutlined } = icons;
+  FunctionOutlined, FilterOutlined, PieChartOutlined, SwapOutlined, BankOutlined, CloudOutlined,
+  ExclamationCircleOutlined } = icons;
 
 // Icon lookup for nav items
 const NAV_ICONS = {
@@ -735,41 +781,87 @@ const EntityStore = (() => {
 const UserStore = (() => {
   let _currentUser = null;
   const _users = new Map();
+  let _loginAttempts = 0;
+  let _lockoutUntil = null;
 
   function register(user) { _users.set(user.id, user); }
+
+  // Authenticate by email + password → returns {ok, user?, error?}
+  function authenticate(email, password) {
+    // Check lockout
+    if (_lockoutUntil && Date.now() < _lockoutUntil) {
+      const secsLeft = Math.ceil((_lockoutUntil - Date.now()) / 1000);
+      return { ok: false, error: 'locked', secsLeft };
+    }
+    if (_lockoutUntil && Date.now() >= _lockoutUntil) {
+      _lockoutUntil = null;
+      _loginAttempts = 0;
+    }
+
+    const trimmedEmail = (email || '').trim().toLowerCase();
+    if (!trimmedEmail) return { ok: false, error: 'emptyEmail' };
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) return { ok: false, error: 'invalidEmail' };
+    if (!password) return { ok: false, error: 'emptyPassword' };
+    if (password.length < 4) return { ok: false, error: 'shortPassword' };
+
+    // Find user by email
+    const user = Array.from(_users.values()).find(u => u.email.toLowerCase() === trimmedEmail);
+    if (!user) return { ok: false, error: 'noAccount', _attempts: ++_loginAttempts };
+
+    // Check password
+    if (password !== user.password) {
+      _loginAttempts++;
+      if (_loginAttempts >= 5) {
+        _lockoutUntil = Date.now() + 30000; // 30s lockout
+        return { ok: false, error: 'locked', secsLeft: 30, _attempts: _loginAttempts };
+      }
+      return { ok: false, error: 'wrongPassword', _attempts: _loginAttempts, _remaining: 5 - _loginAttempts };
+    }
+
+    // Check if account is inactive
+    if (user.status === 'inactive') return { ok: false, error: 'inactive' };
+
+    // Success
+    _loginAttempts = 0;
+    _lockoutUntil = null;
+    _currentUser = user;
+    return { ok: true, user };
+  }
+
   function login(userId) { _currentUser = _users.get(userId) || null; }
   function logout() { _currentUser = null; }
   function currentUser() { return _currentUser; }
   function getUser(id) { return _users.get(id); }
   function getAllUsers() { return Array.from(_users.values()); }
+  function getAttempts() { return _loginAttempts; }
   function updateProfile(updates) {
     if (!_currentUser) return;
     Object.assign(_currentUser, updates);
     _users.set(_currentUser.id, _currentUser);
   }
 
-  return { register, login, logout, currentUser, getUser, getAllUsers, updateProfile };
+  return { register, authenticate, login, logout, currentUser, getUser, getAllUsers, getAttempts, updateProfile };
 })();
 
 // ─── Seed: Users ───
 const USER_SEEDS = [
-  { id:'user-jan', name:'Jan de Vries', email:'jan@orbiteos.com', role:'Platform Admin', accountId:null,
+  { id:'user-jan', name:'Jan de Vries', email:'jan@orbiteos.com', password:'orbit2026', role:'Platform Admin', accountId:null,
     avatar:'https://i.pravatar.cc/150?u=jan-devries', initials:'JV', phone:'+31 6 1234 5678', lang:'en', theme:'dark',
     permissions:['platform.admin','accounts.manage','sites.manage','users.manage','devices.manage','flows.manage'],
     lastLogin:'Just now', status:'online' },
-  { id:'user-groot', name:'Jan de Groot', email:'jan@degroatagri.nl', role:'Site Admin', accountId:'acme',
+  { id:'user-groot', name:'Jan de Groot', email:'jan@degroatagri.nl', password:'orbit2026', role:'Site Admin', accountId:'acme',
     avatar:'https://i.pravatar.cc/150?u=jan-degroot', initials:'JG', phone:'+31 6 2345 6789', lang:'nl', theme:'dark',
     permissions:['sites.manage','devices.manage','flows.manage'],
     lastLogin:'10 min ago', status:'online' },
-  { id:'user-maria', name:'Maria van Dijk', email:'maria@acme-energy.nl', role:'Operator', accountId:'acme',
+  { id:'user-maria', name:'Maria van Dijk', email:'maria@acme-energy.nl', password:'orbit2026', role:'Operator', accountId:'acme',
     avatar:'https://i.pravatar.cc/150?u=maria-vandijk', initials:'MV', phone:'+31 6 3456 7890', lang:'nl', theme:'light',
     permissions:['devices.view','flows.view','alerts.manage'],
     lastLogin:'1 hour ago', status:'online' },
-  { id:'user-lisa', name:'Lisa Vermeer', email:'lisa@greengrid.nl', role:'Site Admin', accountId:'greengrid',
+  { id:'user-lisa', name:'Lisa Vermeer', email:'lisa@greengrid.nl', password:'orbit2026', role:'Site Admin', accountId:'greengrid',
     avatar:'https://i.pravatar.cc/150?u=lisa-vermeer', initials:'LV', phone:'+31 6 4567 8901', lang:'en', theme:'dark',
     permissions:['sites.manage','devices.manage','flows.manage'],
     lastLogin:'30 min ago', status:'online' },
-  { id:'user-kees', name:'Kees van den Berg', email:'kees@greengrid.nl', role:'Operator', accountId:'greengrid',
+  { id:'user-kees', name:'Kees van den Berg', email:'kees@greengrid.nl', password:'orbit2026', role:'Operator', accountId:'greengrid',
     avatar:'https://i.pravatar.cc/150?u=kees-vandenberg', initials:'KB', phone:'+31 6 5678 9012', lang:'nl', theme:'dark',
     permissions:['devices.view','flows.view','alerts.manage'],
     lastLogin:'5 hours ago', status:'away' },
@@ -797,6 +889,59 @@ const NavigationStore = (() => {
 
   return { registerApp, getApp, getAllApps, getVisibleApps, isPinned, setPinned, togglePinned };
 })();
+
+/**
+ * LoaderStore — Global loading state any page can control
+ *
+ * API:
+ *   LoaderStore.start()                — ambient mode (glow over content)
+ *   LoaderStore.start({ mode:'solid' })— solid mode (opaque bg, blocks content)
+ *   LoaderStore.progress(0–1)          — set progress
+ *   LoaderStore.stop()                 — trigger exit fade
+ *   LoaderStore.getState()             — { active, progress, stopping, mode }
+ *   LoaderStore.subscribe(fn)          — listen for state changes
+ */
+const LoaderStore = (() => {
+  let _state = { active: false, progress: 0, stopping: false, mode: 'ambient' };
+  const _listeners = new Set();
+
+  function _notify() { _listeners.forEach(fn => fn(_state)); }
+
+  function start(opts) {
+    const mode = opts?.mode || 'ambient';
+    _state = { active: true, progress: 0, stopping: false, mode };
+    _notify();
+  }
+
+  function progress(val) {
+    if (!_state.active) return;
+    _state = { ..._state, progress: Math.max(0, Math.min(1, val)) };
+    _notify();
+  }
+
+  function stop() {
+    if (!_state.active) return;
+    _state = { ..._state, stopping: true };
+    _notify();
+  }
+
+  function _reset() {
+    _state = { active: false, progress: 0, stopping: false, mode: 'ambient' };
+    _notify();
+  }
+
+  function getState() { return _state; }
+  function subscribe(fn) { _listeners.add(fn); return () => _listeners.delete(fn); }
+
+  return { start, progress, stop, _reset, getState, subscribe };
+})();
+
+// React hook for LoaderStore
+function useLoaderStore() {
+  const [state, setState] = useState(LoaderStore.getState());
+  useEffect(() => LoaderStore.subscribe(setState), []);
+  return state;
+}
 
 // ─── Seed: Apps ───
 const APP_SEEDS = [
@@ -1518,6 +1663,20 @@ const T = {
     buildingLoads:'Building Loads', liveMetrics:'Live Metrics',
     welcome:'Welcome back', signIn:'Sign in to OrbitEOS', email:'Email', password:'Password',
     rememberMe:'Remember me', forgotPassword:'Forgot password?', signInBtn:'Sign In', ssoBtn:'Sign in with SSO',
+    // SUD login errors — Simple (plain language), Useful (tells what to fix), Delightful (warm tone)
+    errEmptyEmail:'Enter your email to get started.',
+    errInvalidEmail:'That doesn\'t look like an email address. Try something like name@company.com',
+    errEmptyPassword:'You\'ll need your password to continue.',
+    errShortPassword:'Passwords are at least 4 characters. Give it another try.',
+    errNoAccount:'We couldn\'t find an account with that email. Double-check or register a new one.',
+    errWrongPassword:'That password doesn\'t match. Forgotten it? Reset below.',
+    errLocked:'Too many attempts. Take a breather — try again in {secs}s.',
+    errInactive:'This account has been deactivated. Contact your admin to reactivate.',
+    errSsoUnavailable:'SSO isn\'t configured for this prototype yet. Use email & password instead.',
+    loginHintPassword:'Hint: orbit2026',
+    loginLoading:'Connecting to OrbitEOS…',
+    loginLoadingSub:'Preparing your workspace',
+    loginAttemptsLeft:'{n} attempts remaining before temporary lock',
   },
   nl: {
     dashboard:'Dashboard', energyFlow:'Energiestroom', fleet:'Vloot', devices:'Apparaten', alerts:'Meldingen',
@@ -1555,6 +1714,19 @@ const T = {
     buildingLoads:'Gebouwbelasting', liveMetrics:'Live Metingen',
     welcome:'Welkom terug', signIn:'Inloggen bij OrbitEOS', email:'E-mail', password:'Wachtwoord',
     rememberMe:'Onthoud mij', forgotPassword:'Wachtwoord vergeten?', signInBtn:'Inloggen', ssoBtn:'Inloggen met SSO',
+    errEmptyEmail:'Voer je e-mailadres in om te beginnen.',
+    errInvalidEmail:'Dat lijkt geen geldig e-mailadres. Probeer zoiets als naam@bedrijf.nl',
+    errEmptyPassword:'Je hebt je wachtwoord nodig om door te gaan.',
+    errShortPassword:'Wachtwoorden zijn minimaal 4 tekens. Probeer het opnieuw.',
+    errNoAccount:'We konden geen account vinden met dit e-mailadres. Controleer of registreer een nieuw account.',
+    errWrongPassword:'Dat wachtwoord klopt niet. Vergeten? Herstel hieronder.',
+    errLocked:'Te veel pogingen. Even pauze — probeer het over {secs}s opnieuw.',
+    errInactive:'Dit account is gedeactiveerd. Neem contact op met je beheerder.',
+    errSsoUnavailable:'SSO is nog niet beschikbaar in dit prototype. Gebruik e-mail & wachtwoord.',
+    loginHintPassword:'Hint: orbit2026',
+    loginLoading:'Verbinden met OrbitEOS…',
+    loginLoadingSub:'Je werkruimte wordt voorbereid',
+    loginAttemptsLeft:'{n} pogingen over voor tijdelijke blokkering',
   }
 };
 
@@ -2162,7 +2334,7 @@ function EntityTreeNode({ entity, focusedEntityId, setFocusedEntityId, depth, ex
 
 // ─── Sidebar Component ───
 // Icon-only rail. Hover widens to show icon + label at same level. Click navigates.
-function Sidebar({ page, setPage, t, lang, focusedEntityId, setFocusedEntityId, currentApp, setCurrentApp }) {
+function Sidebar({ page, setPage, navigateWithLoader, t, lang, focusedEntityId, setFocusedEntityId, currentApp, setCurrentApp }) {
   const [hovered, setHovered] = useState(false);
   const hoverTimer = useRef(null);
 
@@ -2197,7 +2369,7 @@ function Sidebar({ page, setPage, t, lang, focusedEntityId, setFocusedEntityId, 
       {/* Logo — click → first app */}
       <div style={{height:56,display:'flex',alignItems:'center',padding:'0 14px',gap:10,cursor:'pointer',
         borderBottom:'1px solid var(--border)',flexShrink:0,overflow:'hidden'}}
-        onClick={() => { const first = apps[0]; if(first){ setCurrentApp(first.id); setPage(first.pages[0].key); } }}>
+        onClick={() => { const first = apps[0]; if(first){ setCurrentApp(first.id); navigateWithLoader(first.pages[0].key); } }}>
         <div style={{width:28,height:28,background:'var(--brand)',borderRadius:6,display:'flex',alignItems:'center',justifyContent:'center',
           flexShrink:0,transition:'transform 0.15s ease'}}
           onMouseEnter={e=>e.currentTarget.style.transform='scale(1.1)'}
@@ -2226,7 +2398,7 @@ function Sidebar({ page, setPage, t, lang, focusedEntityId, setFocusedEntityId, 
               }}
                 onMouseEnter={e => { if(!isActive) e.currentTarget.style.background='var(--bg-card-hover)'; }}
                 onMouseLeave={e => { if(!isActive) e.currentTarget.style.background= isActive?'var(--brand-bg)':'transparent'; }}
-                onClick={() => { setCurrentApp(a.id); setPage(a.pages[0].key); }}>
+                onClick={() => { setCurrentApp(a.id); navigateWithLoader(a.pages[0].key); }}>
                 <span style={{fontSize:17,flexShrink:0,width:22,textAlign:'center',display:'flex',alignItems:'center',justifyContent:'center'}}>
                   {React.createElement(Icon)}
                 </span>
@@ -2331,7 +2503,7 @@ function HeaderUserProfile({ lang, setPage, setCurrentApp }) {
               transition:'background 0.12s'}}
               onMouseEnter={e => e.currentTarget.style.background='var(--bg-card-hover)'}
               onMouseLeave={e => e.currentTarget.style.background='transparent'}
-              onClick={() => { setCurrentApp('configuration'); setPage('configuration'); setOpen(false); }}>
+              onClick={() => { setCurrentApp('configuration'); navigateWithLoader('configuration'); setOpen(false); }}>
               <SettingOutlined style={{fontSize:14}}/> {L.profileSettings}
             </div>
             <div style={{padding:'8px 16px',fontSize:12,color:'var(--error)',cursor:'pointer',display:'flex',alignItems:'center',gap:8,
@@ -2459,7 +2631,7 @@ function EntityScopeSelector({ focusedEntityId, setFocusedEntityId, lang }) {
 }
 
 // ─── Header Component ───
-function Header({ page, t, lang, setLang, themeName, setTheme, alarms, alarmCount, showAlarms, setShowAlarms, focusedEntityId, setFocusedEntityId, setPage, setCurrentApp, currentApp }) {
+function Header({ page, t, lang, setLang, themeName, setTheme, alarms, alarmCount, showAlarms, setShowAlarms, focusedEntityId, setFocusedEntityId, setPage, navigateWithLoader, setCurrentApp, currentApp }) {
   const titles = { dashboard:t.dashboard, energyFlow:t.energyFlow, fleet:t.fleet, devices:t.devices,
     alerts:t.alerts, rulesEngine:t.rulesEngine, tariffArbitrage:t.tariffArbitrage, peakShaving:t.peakShaving,
     batteryMgmt:t.batteryMgmt, evCharging:t.evCharging, configuration:t.configuration };
@@ -2535,7 +2707,7 @@ function StatCard({label, value, trend, trendDir, color}) {
 
 const WidgetEnergyFlow = React.memo(function WidgetEnergyFlow({t, lang, currentSite, data}) {
   const { energyFlow: ef, status, costSaved } = data;
-  const [ambientOn, setAmbientOn] = React.useState(true);
+  const [ambientOn, setAmbientOn] = React.useState(() => { const v = localStorage.getItem('orbiteos-flow-ambient'); return v !== null ? v === 'true' : true; });
   const { solarActive, windActive, consumptionActive, gridExporting, gridImporting, essSoc } = ef;
   return (
     <div style={{marginBottom:16}}>
@@ -2543,7 +2715,7 @@ const WidgetEnergyFlow = React.memo(function WidgetEnergyFlow({t, lang, currentS
         boxShadow: ambientOn ? `0 0 24px ${status.color}25, 0 0 48px ${status.color}10` : 'none',
         background: ambientOn ? '#0f172a' : 'var(--bg-card)'}}>
         <Tooltip title={ambientOn ? 'Standard view' : 'Ambient view'} placement="left">
-          <div className="flow-ambient-toggle" onClick={() => setAmbientOn(!ambientOn)}>
+          <div className="flow-ambient-toggle" onClick={() => { const next = !ambientOn; setAmbientOn(next); localStorage.setItem('orbiteos-flow-ambient', next); }}>
             {React.createElement(ambientOn ? EyeOutlined : EyeInvisibleOutlined)}
           </div>
         </Tooltip>
@@ -3749,9 +3921,25 @@ function FlowCanvasLayer({ef}) {
 
     let particles = buildParticles();
     let lastRebuild = Date.now();
-    const startTime = performance.now();
+    let animTime = 0; // accumulated animation time in ms
+    let lastFrame = performance.now();
+    let paused = document.hidden;
+
+    // Pause animation when tab is hidden — prevents particle rush on restore
+    function onVisChange() {
+      if (document.hidden) { paused = true; }
+      else { paused = false; lastFrame = performance.now(); }
+    }
+    document.addEventListener('visibilitychange', onVisChange);
 
     function draw(now) {
+      if (paused) { raf = requestAnimationFrame(draw); return; }
+
+      // Cap delta to 50ms (20fps min) — prevents burst after minimize/maximize
+      const delta = Math.min(now - lastFrame, 50);
+      lastFrame = now;
+      animTime += delta;
+
       if (Date.now() - lastRebuild > 2000) {
         particles = buildParticles();
         lastRebuild = Date.now();
@@ -3784,7 +3972,7 @@ function FlowCanvasLayer({ef}) {
       ctx.restore();
 
       // Draw particles — small, subtle
-      const elapsed = (now - startTime) / 1000;
+      const elapsed = animTime / 1000;
       particles.forEach(p => {
         const t = ((elapsed / p.dur + p.offset) % 1);
         const pt = bezierPoint(p.path[0], p.path[1], p.path[2], p.path[3], t);
@@ -3846,6 +4034,7 @@ function FlowCanvasLayer({ef}) {
     return () => {
       cancelAnimationFrame(raf);
       window.removeEventListener('resize', resize);
+      document.removeEventListener('visibilitychange', onVisChange);
       if (ro) ro.disconnect();
     };
   }, []);
@@ -4355,23 +4544,302 @@ function getTimeOfDayPalette() {
   };
 }
 
+/**
+ * OrbitLoader — Reusable loading glow control
+ *
+ * Two modes:
+ *   ambient (default) — transparent overlay, glow breathes over content
+ *   solid             — opaque background, blocks content (login transition)
+ *
+ * Usage:
+ *   <OrbitLoader />                              — ambient, pulses forever
+ *   <OrbitLoader mode="solid" />                 — opaque background
+ *   <OrbitLoader stopping onDone={fn} />         — triggers exit then calls fn
+ *   <OrbitLoader color={{r:59,g:130,b:246}} />   — blue glow
+ *   <OrbitLoader size={{width:200,height:200}} /> — fixed size
+ *
+ * Global overlay via LoaderStore:
+ *   LoaderStore.start()                — ambient overlay
+ *   LoaderStore.start({mode:'solid'})  — solid overlay (login)
+ *   LoaderStore.stop()                 — exit + dissolve
+ */
+function OrbitLoader({ stopping = false, color, onDone, size = 'full', className, mode = 'ambient' }) {
+  const canvasRef = useRef(null);
+  const doneRef = useRef(false);
+  const stoppingRef = useRef(stopping);
+  const exitStartRef = useRef(null);
+  const modeRef = useRef(mode);
+
+  const R = color?.r ?? 45, G = color?.g ?? 212, B = color?.b ?? 191;
+  const solid = mode === 'solid';
+
+  useEffect(() => { stoppingRef.current = stopping; }, [stopping]);
+  useEffect(() => { modeRef.current = mode; }, [mode]);
+
+  useEffect(() => {
+    const cvs = canvasRef.current;
+    if (!cvs) return;
+    const par = cvs.parentElement;
+    const ctx = cvs.getContext('2d');
+    const dpr = window.devicePixelRatio || 1;
+    const W = par.clientWidth, H = par.clientHeight;
+    if (!W || !H) return;
+    cvs.width = W * dpr; cvs.height = H * dpr;
+    cvs.style.width = W + 'px'; cvs.style.height = H + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    // Theme-aware background color (solid mode only)
+    const isDark = document.body.getAttribute('data-theme') !== 'light';
+    const BG_R = isDark ? 2 : 248, BG_G = isDark ? 6 : 250, BG_B = isDark ? 23 : 252;
+    const isSolid = modeRef.current === 'solid';
+
+    const cx = W / 2, cy = H / 2;
+    const dim = Math.min(W, H);
+    const PEAK = dim * 0.44;            // gentle peak
+    const REST = dim * 0.16;            // soft resting glow
+    const CYCLE = 2000;                 // ms per breath — slow, calm
+    const ATK = 0.25;                   // gentle rise (25% = 500ms)
+    let raf, paused = document.hidden;
+
+    function onVis() { paused = document.hidden; }
+    document.addEventListener('visibilitychange', onVis);
+
+    // Single glow draw — one gradient, one arc
+    function glow(radius, alpha) {
+      if (alpha < 0.005 || radius < 1) return;
+      const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius);
+      const coreAlpha = alpha * 0.9;
+      g.addColorStop(0,    isDark ? `rgba(255,255,255,${coreAlpha})` : `rgba(${R},${G},${B},${coreAlpha})`);
+      g.addColorStop(0.05, `rgba(${R},${G},${B},${alpha * 0.75})`);
+      g.addColorStop(0.3,  `rgba(${R},${G},${B},${alpha * 0.22})`);
+      g.addColorStop(0.65, `rgba(${R},${G},${B},${alpha * 0.05})`);
+      g.addColorStop(1,    `rgba(${R},${G},${B},0)`);
+      ctx.fillStyle = g;
+      ctx.beginPath(); ctx.arc(cx, cy, radius, 0, Math.PI * 2); ctx.fill();
+    }
+
+    // Pulse: 0→1→0, gentle rise, slow release
+    function pulse(elapsed) {
+      const t = (elapsed % CYCLE) / CYCLE;
+      if (t < ATK) { const p = t / ATK; return p * p; }
+      const p = (t - ATK) / (1 - ATK);
+      return 1 - p * p;
+    }
+
+    const t0 = performance.now();
+    let bgAlpha = isSolid ? 1 : 0;
+    const EXIT_DUR = isSolid ? 1500 : 800; // ambient exits faster
+
+    function draw(now) {
+      if (paused) { raf = requestAnimationFrame(draw); return; }
+      const elapsed = now - t0;
+      ctx.clearRect(0, 0, W, H);
+
+      // Exit fade
+      if (stoppingRef.current) {
+        if (!exitStartRef.current) exitStartRef.current = now;
+        const ex = now - exitStartRef.current;
+        const t = Math.min(ex / EXIT_DUR, 1);
+        const fade = 1 - t * t * (3 - 2 * t); // S-curve
+
+        if (fade > 0.001) {
+          if (isSolid) {
+            ctx.fillStyle = `rgba(${BG_R},${BG_G},${BG_B},${fade})`;
+            ctx.fillRect(0, 0, W, H);
+          }
+          const p = pulse(elapsed);
+          glow(REST + p * (PEAK - REST), (0.20 + p * 0.40) * fade);
+        }
+
+        if (t >= 1 && !doneRef.current) {
+          doneRef.current = true;
+          cancelAnimationFrame(raf);
+          document.removeEventListener('visibilitychange', onVis);
+          if (onDone) onDone();
+          return;
+        }
+        raf = requestAnimationFrame(draw);
+        return;
+      }
+
+      // Active
+      if (isSolid) {
+        ctx.fillStyle = `rgba(${BG_R},${BG_G},${BG_B},1)`;
+        ctx.fillRect(0, 0, W, H);
+      }
+      const p = pulse(elapsed);
+      glow(REST + p * (PEAK - REST), 0.20 + p * 0.40);
+      raf = requestAnimationFrame(draw);
+    }
+
+    raf = requestAnimationFrame(draw);
+    return () => { cancelAnimationFrame(raf); document.removeEventListener('visibilitychange', onVis); };
+  }, [R, G, B, solid]);
+
+  const wrapStyle = size === 'full'
+    ? { position:'relative', display:'flex', alignItems:'center', justifyContent:'center', overflow:'hidden', width:'100%', height:'100%' }
+    : { position:'relative', display:'flex', alignItems:'center', justifyContent:'center', overflow:'hidden', width: size.width, height: size.height };
+
+  return (
+    <div className={className} style={wrapStyle}>
+      <canvas ref={canvasRef} style={{position:'absolute',inset:0,zIndex:1}}/>
+    </div>
+  );
+}
+
+/**
+ * OrbitLoaderOverlay — Full-content overlay driven by LoaderStore.
+ *
+ * Any page/component can trigger:
+ *   LoaderStore.start()                — ambient glow over content
+ *   LoaderStore.start({mode:'solid'})  — opaque overlay (login)
+ *   LoaderStore.stop()                 — exit + dissolve
+ *   navigateWithLoader('page')         — ambient start + navigate + auto-stop
+ */
+function OrbitLoaderOverlay({ onDone }) {
+  const { active, stopping, mode } = useLoaderStore();
+
+  const handleDone = useCallback(() => {
+    LoaderStore._reset();
+    if (onDone) onDone();
+  }, [onDone]);
+
+  if (!active) return null;
+
+  // Ambient: pointer-events none so content stays interactive
+  // Solid: blocks interaction until stopping
+  const blockInput = mode === 'solid' && !stopping;
+
+  return (
+    <div style={{
+      position:'absolute', inset:0, zIndex:10,
+      pointerEvents: blockInput ? 'auto' : 'none',
+    }}>
+      <OrbitLoader stopping={stopping} onDone={handleDone}
+        mode={mode} size="full" className="orbit-overlay-inner" />
+    </div>
+  );
+}
+
 function LoginPage({t, setPage, setCurrentApp, lang, setLang}) {
   const canvasRef = useRef(null);
-  const [emailVal, setEmailVal] = useState('');
-  const [greetName, setGreetName] = useState('');
+  const [emailVal, setEmailVal] = useState('jan@orbiteos.com');
+  const [passwordVal, setPasswordVal] = useState('orbit2026');
+  const [greetName, setGreetName] = useState('Jan');
+  const [error, setError] = useState(null); // {type, message}
+  const [fieldErrors, setFieldErrors] = useState({}); // {email?, password?}
+  const [shaking, setShaking] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [successPhase, setSuccessPhase] = useState(0); // 0=none, 1=checkmark, 2=card-exit, 3=done
+  const [attemptsLeft, setAttemptsLeft] = useState(null);
+  const [lockCountdown, setLockCountdown] = useState(0);
+  const formRef = useRef(null);
   const timeGlow = useMemo(() => getTimeOfDayPalette(), []);
 
   // Extract first name from email on blur (e.g. "jan.de.vries@acme.nl" → "Jan")
   const onEmailBlur = useCallback(() => {
     const prefix = emailVal.split('@')[0] || '';
-    // Take first segment before . or _ or - , capitalize it
     const raw = prefix.split(/[._-]/)[0];
     if (raw.length >= 2) {
       setGreetName(raw.charAt(0).toUpperCase() + raw.slice(1).toLowerCase());
     } else {
       setGreetName('');
     }
-  }, [emailVal]);
+    // Clear email field error on blur if user fixed it
+    if (fieldErrors.email && emailVal.trim() && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailVal.trim())) {
+      setFieldErrors(prev => ({...prev, email: null}));
+    }
+  }, [emailVal, fieldErrors.email]);
+
+  // Lockout countdown timer
+  useEffect(() => {
+    if (lockCountdown <= 0) return;
+    const iv = setInterval(() => {
+      setLockCountdown(prev => {
+        if (prev <= 1) { setError(null); return 0; }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(iv);
+  }, [lockCountdown]);
+
+  // SUD error mapper — maps error codes to {message, fieldErrors}
+  const mapError = useCallback((result) => {
+    const errs = {};
+    let msg = '';
+    switch (result.error) {
+      case 'emptyEmail':
+        msg = t.errEmptyEmail; errs.email = true; break;
+      case 'invalidEmail':
+        msg = t.errInvalidEmail; errs.email = true; break;
+      case 'emptyPassword':
+        msg = t.errEmptyPassword; errs.password = true; break;
+      case 'shortPassword':
+        msg = t.errShortPassword; errs.password = true; break;
+      case 'noAccount':
+        msg = t.errNoAccount; errs.email = true; break;
+      case 'wrongPassword':
+        msg = t.errWrongPassword; errs.password = true; break;
+      case 'locked':
+        msg = (t.errLocked || '').replace('{secs}', result.secsLeft || 30);
+        setLockCountdown(result.secsLeft || 30);
+        break;
+      case 'inactive':
+        msg = t.errInactive; break;
+      default:
+        msg = 'Something went wrong. Please try again.';
+    }
+    // Show attempts warning
+    if (result._attempts && result._remaining) {
+      setAttemptsLeft(result._remaining);
+    } else {
+      setAttemptsLeft(null);
+    }
+    return { msg, errs };
+  }, [t]);
+
+  // Handle login
+  const handleLogin = useCallback(() => {
+    if (submitting) return;
+    setError(null);
+    setFieldErrors({});
+    setAttemptsLeft(null);
+
+    const result = UserStore.authenticate(emailVal, passwordVal);
+
+    if (!result.ok) {
+      const { msg, errs } = mapError(result);
+      setError({ message: msg });
+      setFieldErrors(errs);
+      // SUD delight: gentle shake on error
+      setShaking(true);
+      setTimeout(() => setShaking(false), 500);
+      return;
+    }
+
+    // SUD Success Sequence: checkmark → card exit → shell assemble
+    setSubmitting(true);
+    setSuccessPhase(1); // Button morphs to checkmark
+    setTimeout(() => setSuccessPhase(2), 600); // Card scales down + fades
+    setTimeout(() => {
+      setCurrentApp && setCurrentApp('dashboard');
+      LoaderStore.start({ mode: 'solid' });
+      setPage('dashboard');
+      setTimeout(() => LoaderStore.stop(), 4200);
+    }, 1100); // Transition to shell after card fully exits
+  }, [emailVal, passwordVal, submitting, mapError, setPage, setCurrentApp]);
+
+  // Handle Enter key
+  const onKeyDown = useCallback((e) => {
+    if (e.key === 'Enter') handleLogin();
+  }, [handleLogin]);
+
+  // SSO click handler
+  const handleSso = useCallback(() => {
+    setError({ message: t.errSsoUnavailable });
+    setShaking(true);
+    setTimeout(() => setShaking(false), 500);
+  }, [t]);
 
   // Page background gradient — dark base with time-tinted corner
   const bgGrad = `linear-gradient(135deg, #020617 0%, rgb(${Math.round(2 + timeGlow.bgR*0.3)},${Math.round(6 + timeGlow.bgG*0.3)},${Math.round(23 + timeGlow.bgB*0.3)}) 50%, rgb(${timeGlow.bgR},${timeGlow.bgG},${timeGlow.bgB}) 100%)`;
@@ -4423,7 +4891,15 @@ function LoginPage({t, setPage, setCurrentApp, lang, setLang}) {
     particles.forEach(p => { p.color = [timeGlow.pr, timeGlow.pg, timeGlow.pb]; });
 
     let raf;
+    let loginPaused = document.hidden;
+    function onLoginVis() {
+      if (document.hidden) loginPaused = true;
+      else loginPaused = false;
+    }
+    document.addEventListener('visibilitychange', onLoginVis);
+
     function draw() {
+      if (loginPaused) { raf = requestAnimationFrame(draw); return; }
       ctx.clearRect(0,0,W,H);
 
       // Ambient time-of-day glow — single wide wash centered behind the login card
@@ -4487,15 +4963,18 @@ function LoginPage({t, setPage, setCurrentApp, lang, setLang}) {
       raf = requestAnimationFrame(draw);
     }
     draw();
-    return () => cancelAnimationFrame(raf);
+    return () => { cancelAnimationFrame(raf); document.removeEventListener('visibilitychange', onLoginVis); };
   }, []);
+
+  // On success, LoginPage calls setPage('loading') — the App component handles the shell + overlay
+
   return (
-    <div className="login-layout" style={{background: bgGrad}}>
+    <div className={`login-layout ${successPhase >= 2 ? 'login-bg-exit' : ''}`} style={{background: bgGrad}}>
       {/* Animated particle background (full screen) */}
-      <canvas ref={canvasRef} style={{position:'absolute',inset:0,zIndex:0}}/>
+      <canvas ref={canvasRef} style={{position:'absolute',inset:0,zIndex:0,opacity:successPhase>=2?0:1,transition:'opacity 0.5s ease'}}/>
 
       {/* Centered login card */}
-      <div className="login-card" style={{borderColor: cardBorder, background: cardBg}}>
+      <div className={`login-card ${successPhase >= 2 ? 'login-card-exit' : ''}`} style={{borderColor: cardBorder, background: cardBg}}>
         {/* Language selector — top right */}
         <div style={{position:'absolute',top:12,right:12}}>
           <Select value={lang} onChange={v=>setLang(v)} size="small" variant="borderless"
@@ -4519,27 +4998,64 @@ function LoginPage({t, setPage, setCurrentApp, lang, setLang}) {
           })()}</div>}
         </div>
 
+        {/* Error banner — SUD: slide-in, clear language, actionable */}
+        {error && (
+          <div className="login-error">
+            <span className="login-error-icon"><ExclamationCircleOutlined/></span>
+            <span className="login-error-text">{error.message}</span>
+          </div>
+        )}
+
         {/* Form fields */}
-        <div style={{marginBottom:16}}>
-          <div style={{fontSize:12,fontWeight:500,color:'var(--text-primary)',marginBottom:4}}>{t.email}</div>
-          <Input placeholder="jan@orbiteos.com" value={emailVal} onChange={e => setEmailVal(e.target.value)} onBlur={onEmailBlur}/>
+        <div ref={formRef} className={shaking ? 'login-shake' : ''}>
+          <div style={{marginBottom:16}}>
+            <div style={{fontSize:12,fontWeight:500,color:'var(--text-primary)',marginBottom:4}}>{t.email}</div>
+            <Input placeholder="jan@orbiteos.com" value={emailVal}
+              className={fieldErrors.email ? 'login-field-error' : ''}
+              onChange={e => { setEmailVal(e.target.value); if(fieldErrors.email) setFieldErrors(p=>({...p,email:null})); }}
+              onBlur={onEmailBlur} onKeyDown={onKeyDown} status={fieldErrors.email ? 'error' : ''}/>
+          </div>
+          <div style={{marginBottom:4}}>
+            <div style={{fontSize:12,fontWeight:500,color:'var(--text-primary)',marginBottom:4}}>{t.password}</div>
+            <Input.Password placeholder="••••••••" value={passwordVal}
+              className={fieldErrors.password ? 'login-field-error' : ''}
+              onChange={e => { setPasswordVal(e.target.value); if(fieldErrors.password) setFieldErrors(p=>({...p,password:null})); }}
+              onKeyDown={onKeyDown} status={fieldErrors.password ? 'error' : ''}/>
+          </div>
+          <div style={{height: attemptsLeft ? 4 : 12}}/>
+          {attemptsLeft && attemptsLeft <= 3 && (
+            <div className="login-attempts-warn" style={{marginBottom:8}}>
+              <WarningOutlined style={{marginRight:4,fontSize:11}}/>
+              {(t.loginAttemptsLeft||'').replace('{n}', attemptsLeft)}
+            </div>
+          )}
+          {lockCountdown > 0 && (
+            <div style={{textAlign:'center',marginBottom:8,fontSize:20,fontWeight:700,color:'#f59e0b',fontVariantNumeric:'tabular-nums'}}>
+              0:{String(lockCountdown).padStart(2,'0')}
+            </div>
+          )}
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:20}}>
+            <label style={{fontSize:11,color:'var(--text-secondary)',display:'flex',alignItems:'center',gap:6,cursor:'pointer'}}>
+              <input type="checkbox"/> {t.rememberMe}
+            </label>
+            <span style={{fontSize:11,color:'var(--brand)',cursor:'pointer'}}>{t.forgotPassword}</span>
+          </div>
+          <button className={successPhase >= 1 ? 'login-btn-success' : ''}
+            style={{width:'100%',padding:'10px',fontSize:14,fontWeight:600,borderRadius:8,border:'none',
+            background: lockCountdown > 0 ? 'var(--text-tertiary)' : 'var(--brand)',
+            color:'#fff',cursor: lockCountdown > 0 ? 'not-allowed' : 'pointer',
+            transition:'all 0.3s ease',letterSpacing:'0.02em',
+            boxShadow: lockCountdown > 0 ? 'none' : '0 2px 8px rgba(45,212,191,0.3)',
+            opacity: submitting && !successPhase ? 0.7 : 1}}
+            disabled={lockCountdown > 0 || submitting}
+            onMouseEnter={e=>{if(lockCountdown<=0&&!successPhase)e.target.style.background='var(--brand-hover)';}}
+            onMouseLeave={e=>{if(lockCountdown<=0&&!successPhase)e.target.style.background='var(--brand)';}}
+            onClick={handleLogin}>
+            {successPhase >= 1
+              ? React.createElement(CheckOutlined, {style:{fontSize:18}})
+              : t.signInBtn}
+          </button>
         </div>
-        <div style={{marginBottom:12}}>
-          <div style={{fontSize:12,fontWeight:500,color:'var(--text-primary)',marginBottom:4}}>{t.password}</div>
-          <Input.Password placeholder="••••••••"/>
-        </div>
-        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:20}}>
-          <label style={{fontSize:11,color:'var(--text-secondary)',display:'flex',alignItems:'center',gap:6,cursor:'pointer'}}>
-            <input type="checkbox"/> {t.rememberMe}
-          </label>
-          <span style={{fontSize:11,color:'var(--brand)',cursor:'pointer'}}>{t.forgotPassword}</span>
-        </div>
-        <button style={{width:'100%',padding:'10px',fontSize:14,fontWeight:600,borderRadius:8,border:'none',
-          background:'var(--brand)',color:'#fff',cursor:'pointer',transition:'all 0.2s ease',letterSpacing:'0.02em',
-          boxShadow:'0 2px 8px rgba(45,212,191,0.3)'}}
-          onMouseEnter={e=>{e.target.style.background='var(--brand-hover)';e.target.style.boxShadow='0 4px 16px rgba(45,212,191,0.4)';}}
-          onMouseLeave={e=>{e.target.style.background='var(--brand)';e.target.style.boxShadow='0 2px 8px rgba(45,212,191,0.3)';}}
-          onClick={()=>{UserStore.login('user-jan');setPage('dashboard');setCurrentApp&&setCurrentApp('dashboard');}}>{t.signInBtn}</button>
 
         {/* Register link */}
         <div style={{textAlign:'center',marginTop:14,fontSize:12,color:'var(--text-secondary)'}}>
@@ -4565,7 +5081,7 @@ function LoginPage({t, setPage, setCurrentApp, lang, setLang}) {
             cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',transition:'all 0.2s ease',padding:0}}
             onMouseEnter={e=>e.currentTarget.style.background='rgba(255,255,255,0.12)'}
             onMouseLeave={e=>e.currentTarget.style.background='rgba(255,255,255,0.05)'}
-            title="Google">
+            onClick={handleSso} title="Google">
             <svg width="18" height="18" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18A11.96 11.96 0 001 12c0 1.94.46 3.77 1.18 5.41l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
           </button>
           {/* Apple */}
@@ -4573,7 +5089,7 @@ function LoginPage({t, setPage, setCurrentApp, lang, setLang}) {
             cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',transition:'all 0.2s ease',padding:0}}
             onMouseEnter={e=>e.currentTarget.style.background='rgba(255,255,255,0.12)'}
             onMouseLeave={e=>e.currentTarget.style.background='rgba(255,255,255,0.05)'}
-            title="Apple">
+            onClick={handleSso} title="Apple">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="#ccc"><path d="M17.05 20.28c-.98.95-2.05.88-3.08.4-1.09-.5-2.08-.48-3.24 0-1.44.62-2.2.44-3.06-.4C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.32 2.32-1.66 4.32-3.74 4.25z"/></svg>
           </button>
           {/* Microsoft */}
@@ -4581,7 +5097,7 @@ function LoginPage({t, setPage, setCurrentApp, lang, setLang}) {
             cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',transition:'all 0.2s ease',padding:0}}
             onMouseEnter={e=>e.currentTarget.style.background='rgba(255,255,255,0.12)'}
             onMouseLeave={e=>e.currentTarget.style.background='rgba(255,255,255,0.05)'}
-            title="Microsoft">
+            onClick={handleSso} title="Microsoft">
             <svg width="18" height="18" viewBox="0 0 24 24"><rect x="1" y="1" width="10" height="10" fill="#F25022"/><rect x="13" y="1" width="10" height="10" fill="#7FBA00"/><rect x="1" y="13" width="10" height="10" fill="#00A4EF"/><rect x="13" y="13" width="10" height="10" fill="#FFB900"/></svg>
           </button>
         </div>
@@ -5109,6 +5625,7 @@ function App() {
   const [toasts, setToasts] = useState([]);
   const [focusedEntityId, setFocusedEntityId] = useState('dg-maasland');
   const [currentApp, setCurrentApp] = useState('dashboard');
+  const prevPageRef = useRef('login');
 
   const t = T[lang];
 
@@ -5141,6 +5658,20 @@ function App() {
     return () => document.removeEventListener('click', handler);
   }, [showAlarms]);
 
+  // All hooks MUST be before any conditional returns
+  const pageRef = useRef(page);
+  pageRef.current = page;
+
+  const navigateWithLoader = useCallback((targetPage) => {
+    if (targetPage === pageRef.current) return;
+    LoaderStore.start();
+    setPage(targetPage);
+    // 1 full pulse cycle (2s) then exit fade (1.5s) = 3.5s total
+    setTimeout(() => LoaderStore.stop(), 2000);
+  }, []);
+
+  const onLoadingDone = useCallback(() => { /* overlay dissolved */ }, []);
+
   const antThemeConfig = useMemo(() => ({
     algorithm: themeName === 'dark' ? antTheme.darkAlgorithm : antTheme.defaultAlgorithm,
     token: {
@@ -5158,7 +5689,7 @@ function App() {
     );
   }
 
-  const sp = { t, lang, currentSite: focusedEntityId, focusedEntityId, setFocusedEntityId }; // shared page props
+  const sp = { t, lang, currentSite: focusedEntityId, focusedEntityId, setFocusedEntityId, navigateWithLoader }; // shared page props
   const pages = {
     dashboard: <DashboardPage {...sp}/>,
     fleet: <FleetPage {...sp}/>,
@@ -5196,18 +5727,20 @@ function App() {
 
   return (
     <ConfigProvider theme={antThemeConfig}>
-      <div className="app-layout">
-        <Sidebar page={page} setPage={setPage} t={t} lang={lang} focusedEntityId={focusedEntityId} setFocusedEntityId={setFocusedEntityId}
+      <div className={`app-layout${prevPageRef.current === 'login' ? ' shell-enter' : ''}`}>
+        <Sidebar page={page} setPage={setPage} navigateWithLoader={navigateWithLoader} t={t} lang={lang} focusedEntityId={focusedEntityId} setFocusedEntityId={setFocusedEntityId}
           currentApp={currentApp} setCurrentApp={setCurrentApp}/>
-        <div className="main-area">
+        <div className="main-area" style={{position:'relative'}}>
           <Header page={page} t={t} lang={lang} setLang={setLang} themeName={themeName}
             setTheme={setThemeName} alarms={alarms} alarmCount={alarmCount}
             showAlarms={showAlarms} setShowAlarms={setShowAlarms}
             focusedEntityId={focusedEntityId} setFocusedEntityId={setFocusedEntityId}
-            setPage={setPage} setCurrentApp={setCurrentApp} currentApp={currentApp}/>
-          <div className="content" key={page}>
+            setPage={setPage} navigateWithLoader={navigateWithLoader} setCurrentApp={setCurrentApp} currentApp={currentApp}/>
+          <div className={`content ${prevPageRef.current === 'loading' ? 'content-reveal' : ''}`} key={page}
+            onAnimationEnd={() => { prevPageRef.current = page; }}>
             {pages[page] || <DashboardPage {...sp}/>}
           </div>
+          <OrbitLoaderOverlay onDone={onLoadingDone}/>
         </div>
       </div>
       {/* Toast notifications */}
