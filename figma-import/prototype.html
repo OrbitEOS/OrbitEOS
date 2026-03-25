@@ -37,6 +37,14 @@
       --shadow: 0 4px 12px rgba(0,0,0,0.08);
     }
 
+    /* ─── Theme-aware Scrollbars ─── */
+    * { scrollbar-width: thin; scrollbar-color: var(--border-active) transparent; }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border-active); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--text-tertiary); }
+    ::-webkit-scrollbar-corner { background: transparent; }
+
     .app-layout { display: flex; height: 100vh; background: var(--bg-primary); }
     .sidebar { display: flex; flex-shrink: 0; transition: all 0.25s ease; height: 100vh; }
     .sidebar-rail { width: var(--sidebar-rail-w); background: var(--bg-sidebar); border-right: 1px solid var(--border);
@@ -523,6 +531,85 @@
       .header { padding: 0 8px; }
       .content { padding: 8px; }
     }
+
+    /* ─── Spotlight Search ─── */
+    .spotlight-overlay { position:fixed; inset:0; z-index:9999; display:flex; align-items:flex-start; justify-content:center;
+      padding-top:12vh; backdrop-filter:blur(16px); animation:spotFadeIn 0.15s ease; }
+    [data-theme="dark"] .spotlight-overlay { background:rgba(0,0,0,0.5); }
+    [data-theme="light"] .spotlight-overlay { background:rgba(255,255,255,0.7); }
+    .spotlight-panel { width:540px; max-height:60vh; border-radius:16px; overflow:hidden;
+      border:1px solid var(--border); box-shadow:0 8px 40px rgba(0,0,0,0.4); animation:spotScaleIn 0.15s ease; }
+    [data-theme="dark"] .spotlight-panel { background:rgba(15,23,42,0.92); }
+    [data-theme="light"] .spotlight-panel { background:rgba(255,255,255,0.95); }
+    .spotlight-input { width:100%; padding:16px 20px; border:none; outline:none; font-size:16px; font-family:inherit;
+      background:transparent; color:var(--text-primary); caret-color:var(--brand); border-bottom:1px solid var(--border); }
+    .spotlight-input::placeholder { color:var(--text-tertiary); }
+    .spotlight-results { overflow-y:auto; max-height:calc(60vh - 60px); }
+    .spotlight-section { padding:6px 16px; font-size:10px; font-weight:600; text-transform:uppercase;
+      color:var(--text-tertiary); letter-spacing:0.04em; }
+    .spotlight-item { display:flex; align-items:center; gap:10px; padding:8px 16px; cursor:pointer; transition:background 0.1s; }
+    .spotlight-item:hover, .spotlight-item.active { background:var(--brand-bg); }
+    .spotlight-item-icon { width:28px; height:28px; border-radius:6px; background:var(--bg-card-hover);
+      display:flex; align-items:center; justify-content:center; font-size:14px; color:var(--text-secondary); flex-shrink:0; }
+    .spotlight-item-info { flex:1; min-width:0; }
+    .spotlight-item-name { font-size:13px; font-weight:500; color:var(--text-primary); }
+    .spotlight-item-path { font-size:11px; color:var(--text-tertiary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .spotlight-empty { padding:24px; text-align:center; color:var(--text-tertiary); font-size:13px; }
+    .spotlight-kbd { display:inline-flex; align-items:center; gap:2px; padding:1px 5px; border-radius:4px;
+      background:var(--bg-card-hover); border:1px solid var(--border); font-size:10px; color:var(--text-tertiary); font-family:inherit; }
+    @keyframes spotFadeIn { from { opacity:0; } to { opacity:1; } }
+    @keyframes spotScaleIn { from { transform:scale(0.98); opacity:0; } to { transform:scale(1); opacity:1; } }
+
+    /* ─── Configuration Page ─── */
+    .config-page { display:flex; gap:0; height:calc(100vh - var(--header-h) - 32px); }
+    .config-tree-panel { width:290px; min-width:290px; background:var(--bg-card); border:1px solid var(--border);
+      border-radius:8px; display:flex; flex-direction:column; overflow:hidden; }
+    .config-tree-header { padding:10px 12px; border-bottom:1px solid var(--border); }
+    .config-tree-scroll { flex:1; overflow-y:auto; overflow-x:auto; }
+    .config-detail-panel { flex:1; margin-left:12px; background:var(--bg-card); border:1px solid var(--border);
+      border-radius:8px; display:flex; flex-direction:column; overflow:hidden; }
+    .config-detail-header { padding:14px 20px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:12px; }
+    .config-detail-body { flex:1; overflow-y:auto; padding:0; }
+    .config-breadcrumb { display:flex; align-items:center; gap:4px; font-size:12px; color:var(--text-tertiary); padding:10px 20px;
+      border-bottom:1px solid var(--border); flex-wrap:wrap; }
+    .config-breadcrumb span { cursor:pointer; }
+    .config-breadcrumb span:hover { color:var(--brand); }
+    .config-breadcrumb .sep { color:var(--text-tertiary); cursor:default; }
+    .config-entity-header { display:flex; align-items:center; gap:12px; flex:1; }
+    .config-entity-icon { width:36px; height:36px; border-radius:8px; background:var(--brand-bg); display:flex;
+      align-items:center; justify-content:center; font-size:18px; color:var(--brand); }
+    .config-entity-name { font-size:15px; font-weight:600; color:var(--text-primary); }
+    .config-entity-type { font-size:11px; color:var(--text-tertiary); }
+    .config-actions { display:flex; gap:6px; margin-left:auto; }
+    .config-tag-pills { display:flex; gap:4px; flex-wrap:wrap; padding:0 20px 8px; }
+    .config-tag { padding:1px 8px; border-radius:10px; font-size:10px; font-weight:500;
+      background:var(--brand-bg); color:var(--brand); cursor:default; }
+    .config-prop-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px 24px; padding:16px 20px; }
+    .config-prop-label { font-size:11px; color:var(--text-tertiary); margin-bottom:2px; }
+    .config-prop-value { font-size:13px; font-weight:500; color:var(--text-primary); }
+    .config-tab-content { padding:16px 20px; }
+    /* Config Nav List */
+    .config-nav-item { padding:5px 8px; cursor:pointer; font-size:12px; color:var(--text-secondary);
+      display:flex; align-items:center; gap:6px; transition:all 0.12s; border-radius:5px; margin:1px 4px;
+      min-height:28px; position:relative; white-space:nowrap; }
+    .config-nav-item:hover { background:var(--bg-card-hover); color:var(--text-primary); }
+    .config-nav-item.active { color:var(--brand); background:var(--brand-bg); }
+    .config-nav-item .nav-icon { font-size:12px; flex-shrink:0; display:flex; align-items:center; }
+    .config-nav-item .nav-name { flex:1; font-weight:500; white-space:nowrap; line-height:1.3; min-width:0; overflow:hidden; text-overflow:ellipsis; }
+    .config-nav-item .nav-count { font-size:9px; color:var(--text-tertiary); background:var(--bg-secondary);
+      padding:0 5px; border-radius:8px; font-weight:500; flex-shrink:0; line-height:16px; }
+    .config-nav-item .nav-arrow { font-size:9px; color:var(--text-tertiary); transition:transform 0.2s; flex-shrink:0;
+      width:16px; height:16px; display:flex; align-items:center; justify-content:center; border-radius:3px; }
+    .config-nav-item .nav-arrow:hover { background:var(--bg-card-hover); color:var(--text-primary); }
+    .config-nav-item .nav-arrow.open { transform:rotate(90deg); }
+    .config-nav-children { padding-left:10px; margin-left:14px; }
+    .config-status-dot { width:6px; height:6px; border-radius:50%; flex-shrink:0; }
+    .config-status-dot.online { background:var(--success); }
+    .config-status-dot.warning { background:var(--warning); }
+    .config-status-dot.fault, .config-status-dot.error { background:var(--error); }
+    .config-status-dot.offline { background:var(--text-tertiary); }
+    .config-status-dot.maintenance { background:var(--warning); }
+    .config-status-dot.idle, .config-status-dot.available { background:var(--info); }
   </style>
 </head>
 <body data-theme="dark">
@@ -538,7 +625,7 @@
 <script type="text/babel">
 const { useState, useEffect, useRef, useCallback, useMemo } = React;
 const { ConfigProvider, theme: antTheme, Button, Table, Tag, Badge, Switch, Select, Input, Tabs, Segmented,
-  Progress, Slider, Form, InputNumber, Tooltip, Dropdown, Space } = antd;
+  Progress, Slider, Form, InputNumber, Tooltip, Dropdown, Space, Modal, Drawer } = antd;
 const icons = window.icons;
 const { DashboardOutlined, ThunderboltOutlined, ClusterOutlined, ApiOutlined, ApartmentOutlined,
   LineChartOutlined, DollarOutlined, DatabaseOutlined, CarOutlined, SettingOutlined, BellOutlined,
@@ -552,7 +639,10 @@ const { DashboardOutlined, ThunderboltOutlined, ClusterOutlined, ApiOutlined, Ap
   ShopOutlined, HddOutlined, AlertOutlined, FireOutlined, LockOutlined, GatewayOutlined,
   RobotOutlined, RadarChartOutlined, SlidersOutlined, BuildOutlined, CodeOutlined,
   FunctionOutlined, FilterOutlined, PieChartOutlined, SwapOutlined, BankOutlined, CloudOutlined,
-  ExclamationCircleOutlined } = icons;
+  ExclamationCircleOutlined, SearchOutlined, PlusOutlined, EditOutlined, DeleteOutlined,
+  TagOutlined, UserOutlined, AuditOutlined, FileSearchOutlined, ClockCircleOutlined,
+  ThunderboltFilled, ExpandOutlined, CompressOutlined, CopyOutlined, ReloadOutlined,
+  SendOutlined, ScheduleOutlined, SafetyOutlined, RightOutlined } = icons;
 
 // Icon lookup for nav items
 const NAV_ICONS = {
@@ -767,8 +857,25 @@ const EntityStore = (() => {
     return path;
   }
 
+  function remove(id) {
+    // Recursive delete — removes entity and all descendants
+    const desc = getDescendants(id);
+    desc.forEach(e => _entities.delete(e.id));
+    _entities.delete(id);
+  }
+
+  function update(id, changes) {
+    const existing = _entities.get(id);
+    if (!existing) return;
+    const merged = { ...existing, ...changes,
+      properties: { ...existing.properties, ...(changes.properties || {}) },
+      state: { ...existing.state, ...(changes.state || {}) },
+    };
+    _entities.set(id, merged);
+  }
+
   return { put, get, getChildren, getByType, getDescendants, getSiteDevices, getSiteSensors,
-    getSiteDeviceGroups, getSiteAlarms, getResolvedProperty, getAll, size,
+    getSiteDeviceGroups, getSiteAlarms, getResolvedProperty, getAll, size, remove, update,
     getAggregatedEnergyFlow, getAggregatedAlarms, getAggregatedPeakShaving,
     getAggregatedCompliance, getPath };
 })();
@@ -843,6 +950,355 @@ const UserStore = (() => {
   return { register, authenticate, login, logout, currentUser, getUser, getAllUsers, getAttempts, updateProfile };
 })();
 
+// ═══════════════════════════════════════════════════════════════════════
+// ─── AccessStore (Scoped user/role assignments per entity) ───
+// ═══════════════════════════════════════════════════════════════════════
+const AccessStore = (() => {
+  const _access = [];
+  function getForScope(scopeId) { return _access.filter(a => a.scopeId === scopeId); }
+  function getForUser(userId) { return _access.filter(a => a.userId === userId); }
+  function add(entry) { _access.push(entry); }
+  function remove(userId, scopeId) {
+    const idx = _access.findIndex(a => a.userId === userId && a.scopeId === scopeId);
+    if (idx >= 0) _access.splice(idx, 1);
+  }
+  function getAll() { return _access; }
+  function _seed(entries) { _access.push(...entries); }
+  return { getForScope, getForUser, add, remove, getAll, _seed };
+})();
+
+// ═══════════════════════════════════════════════════════════════════════
+// ─── ThemeStore (Visual theme definitions — Zustand-like) ───
+// 5 distinct enterprise themes. Each sets Ant Design tokens + CSS custom props.
+// ═══════════════════════════════════════════════════════════════════════
+const ThemeStore = (() => {
+  const _themes = [
+    {
+      id: 'classic', name: 'OrbitEOS Classic', description: 'The original teal-on-slate theme. Familiar and trusted.',
+      mode: 'dark', default: true,
+      preview: '#2dd4bf',
+      antTokens: { colorPrimary:'#2dd4bf', colorSuccess:'#22c55e', colorWarning:'#f59e0b', colorError:'#ef4444', colorInfo:'#3b82f6', borderRadius:6 },
+      cssVars: {
+        '--brand':'#2dd4bf','--brand-hover':'#14b8a6','--brand-bg':'rgba(45,212,191,0.1)',
+        '--bg-primary':'#020617','--bg-secondary':'#0f172a','--bg-card':'#0f172a','--bg-card-hover':'#1e293b',
+        '--bg-sidebar':'#020617','--bg-header':'#0f172a','--bg-input':'#1e293b',
+        '--text-primary':'#f1f5f9','--text-secondary':'#94a3b8','--text-tertiary':'#64748b',
+        '--border':'rgba(255,255,255,0.06)','--border-active':'rgba(255,255,255,0.12)',
+        '--success':'#22c55e','--warning':'#f59e0b','--error':'#ef4444','--info':'#3b82f6','--purple':'#8b5cf6',
+        '--success-bg':'rgba(34,197,94,0.1)','--warning-bg':'rgba(245,158,11,0.1)','--error-bg':'rgba(239,68,68,0.1)',
+        '--shadow':'0 4px 12px rgba(0,0,0,0.4)',
+      },
+    },
+    {
+      id: 'obsidian', name: 'Obsidian', description: 'Deep charcoal with warm amber. Premium industrial feel.',
+      mode: 'dark',
+      preview: '#d97706',
+      antTokens: { colorPrimary:'#d97706', colorSuccess:'#65a30d', colorWarning:'#ea580c', colorError:'#dc2626', colorInfo:'#0284c7', borderRadius:6 },
+      cssVars: {
+        '--brand':'#d97706','--brand-hover':'#b45309','--brand-bg':'rgba(217,119,6,0.10)',
+        '--bg-primary':'#0c0a09','--bg-secondary':'#1c1917','--bg-card':'#1c1917','--bg-card-hover':'#292524',
+        '--bg-sidebar':'#0c0a09','--bg-header':'#1c1917','--bg-input':'#292524',
+        '--text-primary':'#fafaf9','--text-secondary':'#a8a29e','--text-tertiary':'#78716c',
+        '--border':'rgba(255,255,255,0.06)','--border-active':'rgba(255,255,255,0.12)',
+        '--success':'#65a30d','--warning':'#ea580c','--error':'#dc2626','--info':'#0284c7','--purple':'#a855f7',
+        '--success-bg':'rgba(101,163,13,0.10)','--warning-bg':'rgba(234,88,12,0.10)','--error-bg':'rgba(220,38,38,0.10)',
+        '--shadow':'0 4px 12px rgba(0,0,0,0.5)',
+      },
+    },
+    {
+      id: 'sandstone', name: 'Sandstone', description: 'Warm neutrals with terracotta. Clean architectural light theme.',
+      mode: 'light',
+      preview: '#c2410c',
+      antTokens: { colorPrimary:'#c2410c', colorSuccess:'#15803d', colorWarning:'#b45309', colorError:'#b91c1c', colorInfo:'#1d4ed8', borderRadius:8 },
+      cssVars: {
+        '--brand':'#c2410c','--brand-hover':'#9a3412','--brand-bg':'rgba(194,65,12,0.08)',
+        '--bg-primary':'#fafaf9','--bg-secondary':'#ffffff','--bg-card':'#ffffff','--bg-card-hover':'#f5f5f4',
+        '--bg-sidebar':'#fafaf9','--bg-header':'#ffffff','--bg-input':'#f5f5f4',
+        '--text-primary':'#1c1917','--text-secondary':'#78716c','--text-tertiary':'#a8a29e',
+        '--border':'#e7e5e4','--border-active':'#d6d3d1',
+        '--success':'#15803d','--warning':'#b45309','--error':'#b91c1c','--info':'#1d4ed8','--purple':'#7c3aed',
+        '--success-bg':'rgba(21,128,61,0.08)','--warning-bg':'rgba(180,83,9,0.08)','--error-bg':'rgba(185,28,28,0.08)',
+        '--shadow':'0 4px 12px rgba(28,25,23,0.08)',
+      },
+    },
+    {
+      id: 'nightfall', name: 'Nightfall', description: 'Deep indigo with soft violet. Elegant and sophisticated.',
+      mode: 'dark',
+      preview: '#8b5cf6',
+      antTokens: { colorPrimary:'#8b5cf6', colorSuccess:'#22c55e', colorWarning:'#f59e0b', colorError:'#ef4444', colorInfo:'#38bdf8', borderRadius:6 },
+      cssVars: {
+        '--brand':'#8b5cf6','--brand-hover':'#7c3aed','--brand-bg':'rgba(139,92,246,0.10)',
+        '--bg-primary':'#030014','--bg-secondary':'#0f0b2e','--bg-card':'#0f0b2e','--bg-card-hover':'#1a1445',
+        '--bg-sidebar':'#030014','--bg-header':'#0f0b2e','--bg-input':'#1a1445',
+        '--text-primary':'#f0eeff','--text-secondary':'#a5a0d4','--text-tertiary':'#6e68a0',
+        '--border':'rgba(139,92,246,0.10)','--border-active':'rgba(139,92,246,0.20)',
+        '--success':'#22c55e','--warning':'#f59e0b','--error':'#ef4444','--info':'#38bdf8','--purple':'#c084fc',
+        '--success-bg':'rgba(34,197,94,0.10)','--warning-bg':'rgba(245,158,11,0.10)','--error-bg':'rgba(239,68,68,0.10)',
+        '--shadow':'0 4px 16px rgba(3,0,20,0.6)',
+      },
+    },
+    {
+      id: 'evergreen', name: 'Evergreen', description: 'Deep forest with sage accents. Nature-inspired sustainability.',
+      mode: 'dark',
+      preview: '#84cc16',
+      antTokens: { colorPrimary:'#84cc16', colorSuccess:'#22c55e', colorWarning:'#eab308', colorError:'#ef4444', colorInfo:'#06b6d4', borderRadius:6 },
+      cssVars: {
+        '--brand':'#84cc16','--brand-hover':'#65a30d','--brand-bg':'rgba(132,204,22,0.10)',
+        '--bg-primary':'#052e16','--bg-secondary':'#0a3d22','--bg-card':'#0a3d22','--bg-card-hover':'#14532d',
+        '--bg-sidebar':'#052e16','--bg-header':'#0a3d22','--bg-input':'#14532d',
+        '--text-primary':'#f0fdf4','--text-secondary':'#86efac','--text-tertiary':'#4ade80',
+        '--border':'rgba(132,204,22,0.08)','--border-active':'rgba(132,204,22,0.16)',
+        '--success':'#22c55e','--warning':'#eab308','--error':'#ef4444','--info':'#06b6d4','--purple':'#a78bfa',
+        '--success-bg':'rgba(34,197,94,0.10)','--warning-bg':'rgba(234,179,8,0.10)','--error-bg':'rgba(239,68,68,0.10)',
+        '--shadow':'0 4px 12px rgba(5,46,22,0.5)',
+      },
+    },
+    {
+      id: 'polar', name: 'Polar', description: 'High-contrast slate on white. Maximum readability and accessibility.',
+      mode: 'light',
+      preview: '#475569',
+      antTokens: { colorPrimary:'#334155', colorSuccess:'#16a34a', colorWarning:'#ca8a04', colorError:'#dc2626', colorInfo:'#2563eb', borderRadius:4 },
+      cssVars: {
+        '--brand':'#334155','--brand-hover':'#1e293b','--brand-bg':'rgba(51,65,85,0.08)',
+        '--bg-primary':'#ffffff','--bg-secondary':'#f8fafc','--bg-card':'#ffffff','--bg-card-hover':'#f1f5f9',
+        '--bg-sidebar':'#f8fafc','--bg-header':'#ffffff','--bg-input':'#f1f5f9',
+        '--text-primary':'#020617','--text-secondary':'#475569','--text-tertiary':'#94a3b8',
+        '--border':'#cbd5e1','--border-active':'#94a3b8',
+        '--success':'#16a34a','--warning':'#ca8a04','--error':'#dc2626','--info':'#2563eb','--purple':'#7c3aed',
+        '--success-bg':'rgba(22,163,74,0.06)','--warning-bg':'rgba(202,138,4,0.06)','--error-bg':'rgba(220,38,38,0.06)',
+        '--shadow':'0 2px 8px rgba(0,0,0,0.06)',
+      },
+    },
+  ];
+
+  let _activeId = localStorage.getItem('orbiteos-theme-id') || 'classic';
+
+  function getAll() { return _themes; }
+  function getActive() { return _themes.find(t => t.id === _activeId) || _themes[0]; }
+  function setActive(id) { _activeId = id; localStorage.setItem('orbiteos-theme-id', id); }
+  function getById(id) { return _themes.find(t => t.id === id); }
+
+  return { getAll, getActive, setActive, getById };
+})();
+
+// ═══════════════════════════════════════════════════════════════════════
+// ─── EventCodeStore (Entity event code registry) ───
+// ═══════════════════════════════════════════════════════════════════════
+const EventCodeStore = (() => {
+  const _codes = new Map();
+  function register(entityType, codes) { _codes.set(entityType, codes); }
+  function getForType(entityType) { return _codes.get(entityType) || []; }
+  function getAll() { return Object.fromEntries(_codes); }
+  function getAllCodes() { return Array.from(_codes.values()).flat(); }
+  return { register, getForType, getAll, getAllCodes };
+})();
+
+EventCodeStore.register('platform', [
+  { code:'PLATFORM_STARTED', severity:'info', label:{en:'Platform Started',nl:'Platform Gestart'} },
+  { code:'PLATFORM_CONFIG_CHANGED', severity:'info', label:{en:'Config Changed',nl:'Config Gewijzigd'} },
+  { code:'DOMAIN_REGISTERED', severity:'info', label:{en:'Domain Registered',nl:'Domein Geregistreerd'} },
+  { code:'LICENSE_RENEWED', severity:'info', label:{en:'License Renewed',nl:'Licentie Vernieuwd'} },
+]);
+EventCodeStore.register('account', [
+  { code:'ACCOUNT_CREATED', severity:'info', label:{en:'Account Created',nl:'Account Aangemaakt'} },
+  { code:'USER_INVITED', severity:'info', label:{en:'User Invited',nl:'Gebruiker Uitgenodigd'} },
+  { code:'USER_REMOVED', severity:'warning', label:{en:'User Removed',nl:'Gebruiker Verwijderd'} },
+  { code:'PLAN_UPGRADED', severity:'info', label:{en:'Plan Upgraded',nl:'Plan Geüpgraded'} },
+  { code:'API_KEY_GENERATED', severity:'info', label:{en:'API Key Generated',nl:'API Sleutel Gegenereerd'} },
+]);
+EventCodeStore.register('subAccount', [
+  { code:'SUBACCOUNT_CREATED', severity:'info', label:{en:'Sub-account Created',nl:'Sub-account Aangemaakt'} },
+  { code:'REGION_CHANGED', severity:'info', label:{en:'Region Changed',nl:'Regio Gewijzigd'} },
+  { code:'SITE_ASSIGNED', severity:'info', label:{en:'Site Assigned',nl:'Locatie Toegewezen'} },
+]);
+EventCodeStore.register('site', [
+  { code:'SITE_COMMISSIONED', severity:'info', label:{en:'Site Commissioned',nl:'Locatie In Bedrijf'} },
+  { code:'GRID_CONNECTED', severity:'info', label:{en:'Grid Connected',nl:'Net Verbonden'} },
+  { code:'GRID_ISLANDED', severity:'warning', label:{en:'Grid Islanded',nl:'Net Eilandbedrijf'} },
+  { code:'EMERGENCY_STOP', severity:'critical', label:{en:'Emergency Stop',nl:'Noodstop'} },
+  { code:'CAPACITY_CHANGED', severity:'info', label:{en:'Capacity Changed',nl:'Capaciteit Gewijzigd'} },
+]);
+EventCodeStore.register('deviceGroup', [
+  { code:'GROUP_CREATED', severity:'info', label:{en:'Group Created',nl:'Groep Aangemaakt'} },
+  { code:'DEVICE_ADDED', severity:'info', label:{en:'Device Added',nl:'Apparaat Toegevoegd'} },
+  { code:'DEVICE_REMOVED', severity:'warning', label:{en:'Device Removed',nl:'Apparaat Verwijderd'} },
+  { code:'GROUP_ALARM_TRIGGERED', severity:'warning', label:{en:'Group Alarm',nl:'Groepsalarm'} },
+]);
+EventCodeStore.register('device', [
+  { code:'DEV_ONLINE', severity:'info', label:{en:'Device Online',nl:'Apparaat Online'} },
+  { code:'DEV_OFFLINE', severity:'warning', label:{en:'Device Offline',nl:'Apparaat Offline'} },
+  { code:'DEV_FAULT', severity:'critical', label:{en:'Device Fault',nl:'Apparaat Storing'} },
+  { code:'DEV_CONFIG_CHANGED', severity:'info', label:{en:'Config Changed',nl:'Config Gewijzigd'} },
+  { code:'DEV_FIRMWARE_UPDATED', severity:'info', label:{en:'Firmware Updated',nl:'Firmware Bijgewerkt'} },
+  { code:'COMM_LOST', severity:'critical', label:{en:'Communication Lost',nl:'Communicatie Verloren'} },
+  { code:'COMM_RESTORED', severity:'info', label:{en:'Communication Restored',nl:'Communicatie Hersteld'} },
+]);
+EventCodeStore.register('sensor', [
+  { code:'THRESHOLD_EXCEEDED', severity:'warning', label:{en:'Threshold Exceeded',nl:'Drempel Overschreden'} },
+  { code:'THRESHOLD_RESTORED', severity:'info', label:{en:'Threshold Restored',nl:'Drempel Hersteld'} },
+  { code:'CALIBRATION_DUE', severity:'info', label:{en:'Calibration Due',nl:'Kalibratie Nodig'} },
+  { code:'VALUE_STALE', severity:'warning', label:{en:'Value Stale',nl:'Waarde Verouderd'} },
+]);
+EventCodeStore.register('actuator', [
+  { code:'COMMAND_SENT', severity:'info', label:{en:'Command Sent',nl:'Commando Verstuurd'} },
+  { code:'COMMAND_FAILED', severity:'critical', label:{en:'Command Failed',nl:'Commando Mislukt'} },
+  { code:'MODE_CHANGED', severity:'info', label:{en:'Mode Changed',nl:'Modus Gewijzigd'} },
+  { code:'LIMIT_REACHED', severity:'warning', label:{en:'Limit Reached',nl:'Limiet Bereikt'} },
+  { code:'SAFETY_OVERRIDE', severity:'critical', label:{en:'Safety Override',nl:'Veiligheidsoverride'} },
+]);
+
+// ─── Event & Audit Log Generators ───
+function generateMockEvents(entity, lang) {
+  const codes = EventCodeStore.getForType(entity.entityType);
+  if (!codes.length) return [];
+  const now = Date.now();
+  return Array.from({length: 12}, (_, i) => {
+    const code = codes[Math.floor(Math.random() * codes.length)];
+    const ts = now - (i * 3600000 * (1 + Math.random() * 4));
+    return {
+      id: `evt-${entity.id}-${i}`,
+      code: code.code,
+      severity: code.severity,
+      label: code.label[lang || 'en'],
+      timestamp: new Date(ts).toISOString(),
+      timeAgo: i === 0 ? 'Just now' : i < 4 ? `${i} hours ago` : `${Math.floor(i/4)} days ago`,
+      entityId: entity.id, entityName: entity.name,
+    };
+  });
+}
+
+function generateAuditLog(entity) {
+  const actions = ['Created','Updated properties','Changed status','Modified settings','Added tag','User access changed','Config exported'];
+  const users = ['Jan de Vries','Jan de Groot','Maria van Dijk','Lisa Vermeer','System Bot'];
+  const now = Date.now();
+  return Array.from({length: 8}, (_, i) => ({
+    id: `audit-${entity.id}-${i}`,
+    action: actions[i % actions.length],
+    user: users[i % users.length],
+    timestamp: new Date(now - (i * 86400000 * (1 + Math.random() * 3))).toISOString(),
+    timeAgo: i === 0 ? 'Today' : i < 3 ? `${i+1} days ago` : `${Math.floor(i/2)} weeks ago`,
+  }));
+}
+
+// ─── Role Definitions ───
+const ROLE_DEFINITIONS = [
+  { name:'Platform Admin', level:'Platform', permissions:{ sites:'Full', devices:'Full', users:'Full', flows:'Full', billing:'Full', config:'Full', audit:'View' } },
+  { name:'Account Admin', level:'Account', permissions:{ sites:'Full', devices:'Full', users:'Full', flows:'Edit', billing:'View', config:'Edit', audit:'View' } },
+  { name:'Regional Admin', level:'Sub-account', permissions:{ sites:'Full', devices:'Edit', users:'Edit', flows:'Edit', billing:'—', config:'Edit', audit:'View' } },
+  { name:'Site Admin', level:'Site', permissions:{ sites:'Edit', devices:'Full', users:'Edit', flows:'Edit', billing:'—', config:'Edit', audit:'View' } },
+  { name:'Operator', level:'Site', permissions:{ sites:'View', devices:'View', users:'—', flows:'View', billing:'—', config:'—', audit:'View' } },
+  { name:'Installer', level:'Site', permissions:{ sites:'View', devices:'Create/Edit', users:'—', flows:'—', billing:'—', config:'View', audit:'—' } },
+  { name:'Viewer', level:'Site', permissions:{ sites:'View', devices:'View', users:'—', flows:'View', billing:'—', config:'—', audit:'—' } },
+  { name:'API User', level:'Account', permissions:{ sites:'View', devices:'View', users:'—', flows:'View', billing:'—', config:'—', audit:'—' } },
+];
+
+// ═══════════════════════════════════════════════════════════════════════
+// ─── TabRegistry (entity type → ordered tab definitions) ───
+// ═══════════════════════════════════════════════════════════════════════
+const TabRegistry = (() => {
+  const _tabs = {
+    platform: [
+      { key:'overview', label:{en:'Overview',nl:'Overzicht'}, icon:'DashboardOutlined', type:'property' },
+      { key:'accounts', label:{en:'Accounts',nl:'Accounts'}, icon:'BankOutlined', type:'children', childType:'account' },
+      { key:'usersRoles', label:{en:'Users & Roles',nl:'Gebruikers & Rollen'}, icon:'TeamOutlined', type:'property' },
+      { key:'globalSettings', label:{en:'Global Settings',nl:'Algemene Instellingen'}, icon:'SettingOutlined', type:'property' },
+      { key:'domains', label:{en:'Domains',nl:'Domeinen'}, icon:'CloudOutlined', type:'property' },
+      { key:'events', label:{en:'Events',nl:'Gebeurtenissen'}, icon:'HistoryOutlined', type:'action' },
+      { key:'alarms', label:{en:'Alarms',nl:'Alarmen'}, icon:'AlertOutlined', type:'action' },
+      { key:'auditLog', label:{en:'Audit Log',nl:'Auditlog'}, icon:'AuditOutlined', type:'action' },
+      { key:'tags', label:{en:'Tags',nl:'Tags'}, icon:'TagOutlined', type:'action' },
+    ],
+    account: [
+      { key:'overview', label:{en:'Overview',nl:'Overzicht'}, type:'property' },
+      { key:'subAccounts', label:{en:'Sub-accounts',nl:'Sub-accounts'}, type:'children', childType:'subAccount' },
+      { key:'usersRoles', label:{en:'Users & Roles',nl:'Gebruikers & Rollen'}, type:'property' },
+      { key:'billing', label:{en:'Billing',nl:'Facturering'}, type:'property' },
+      { key:'apiKeys', label:{en:'API Keys',nl:'API Sleutels'}, type:'property' },
+      { key:'events', label:{en:'Events',nl:'Gebeurtenissen'}, type:'action' },
+      { key:'alarms', label:{en:'Alarms',nl:'Alarmen'}, type:'action' },
+      { key:'auditLog', label:{en:'Audit Log',nl:'Auditlog'}, type:'action' },
+      { key:'tags', label:{en:'Tags',nl:'Tags'}, type:'action' },
+    ],
+    subAccount: [
+      { key:'overview', label:{en:'Overview',nl:'Overzicht'}, type:'property' },
+      { key:'sites', label:{en:'Sites',nl:'Locaties'}, type:'children', childType:'site' },
+      { key:'usersRoles', label:{en:'Users & Roles',nl:'Gebruikers & Rollen'}, type:'property' },
+      { key:'regionalSettings', label:{en:'Regional Settings',nl:'Regionale Instellingen'}, type:'property' },
+      { key:'events', label:{en:'Events',nl:'Gebeurtenissen'}, type:'action' },
+      { key:'alarms', label:{en:'Alarms',nl:'Alarmen'}, type:'action' },
+      { key:'auditLog', label:{en:'Audit Log',nl:'Auditlog'}, type:'action' },
+      { key:'tags', label:{en:'Tags',nl:'Tags'}, type:'action' },
+    ],
+    site: [
+      { key:'overview', label:{en:'Overview',nl:'Overzicht'}, type:'property' },
+      { key:'deviceGroups', label:{en:'Device Groups',nl:'Apparaatgroepen'}, type:'children', childType:'deviceGroup' },
+      { key:'allDevices', label:{en:'All Devices',nl:'Alle Apparaten'}, type:'property' },
+      { key:'usersRoles', label:{en:'Users & Roles',nl:'Gebruikers & Rollen'}, type:'property' },
+      { key:'siteSettings', label:{en:'Site Settings',nl:'Locatie-instellingen'}, type:'property' },
+      { key:'compliance', label:{en:'Compliance',nl:'Naleving'}, type:'property' },
+      { key:'location', label:{en:'Location',nl:'Locatie'}, type:'property' },
+      { key:'events', label:{en:'Events',nl:'Gebeurtenissen'}, type:'action' },
+      { key:'alarms', label:{en:'Alarms',nl:'Alarmen'}, type:'action' },
+      { key:'auditLog', label:{en:'Audit Log',nl:'Auditlog'}, type:'action' },
+      { key:'tags', label:{en:'Tags',nl:'Tags'}, type:'action' },
+    ],
+    deviceGroup: [
+      { key:'overview', label:{en:'Overview',nl:'Overzicht'}, type:'property' },
+      { key:'subGroups', label:{en:'Sub-groups',nl:'Subgroepen'}, type:'children', childType:'deviceGroup' },
+      { key:'devices', label:{en:'Devices',nl:'Apparaten'}, type:'children', childType:'device' },
+      { key:'groupSettings', label:{en:'Group Settings',nl:'Groepsinstellingen'}, type:'property' },
+      { key:'metrics', label:{en:'Metrics',nl:'Metingen'}, type:'property' },
+      { key:'events', label:{en:'Events',nl:'Gebeurtenissen'}, type:'action' },
+      { key:'alarms', label:{en:'Alarms',nl:'Alarmen'}, type:'action' },
+      { key:'auditLog', label:{en:'Audit Log',nl:'Auditlog'}, type:'action' },
+      { key:'tags', label:{en:'Tags',nl:'Tags'}, type:'action' },
+    ],
+    device: [
+      { key:'overview', label:{en:'Overview',nl:'Overzicht'}, type:'property' },
+      { key:'sensors', label:{en:'Sensors',nl:'Sensoren'}, type:'children', childType:'sensor' },
+      { key:'actuators', label:{en:'Actuators',nl:'Actuatoren'}, type:'children', childType:'actuator' },
+      { key:'connection', label:{en:'Connection',nl:'Verbinding'}, type:'property' },
+      { key:'firmware', label:{en:'Firmware',nl:'Firmware'}, type:'property' },
+      { key:'events', label:{en:'Events',nl:'Gebeurtenissen'}, type:'action' },
+      { key:'alarms', label:{en:'Alarms',nl:'Alarmen'}, type:'action' },
+      { key:'auditLog', label:{en:'Audit Log',nl:'Auditlog'}, type:'action' },
+      { key:'tags', label:{en:'Tags',nl:'Tags'}, type:'action' },
+    ],
+    sensor: [
+      { key:'overview', label:{en:'Overview',nl:'Overzicht'}, type:'property' },
+      { key:'thresholds', label:{en:'Thresholds',nl:'Drempels'}, type:'property' },
+      { key:'calibration', label:{en:'Calibration',nl:'Kalibratie'}, type:'property' },
+      { key:'data', label:{en:'Data',nl:'Data'}, type:'property' },
+      { key:'events', label:{en:'Events',nl:'Gebeurtenissen'}, type:'action' },
+      { key:'alarms', label:{en:'Alarms',nl:'Alarmen'}, type:'action' },
+      { key:'tags', label:{en:'Tags',nl:'Tags'}, type:'action' },
+    ],
+    actuator: [
+      { key:'overview', label:{en:'Overview',nl:'Overzicht'}, type:'property' },
+      { key:'commands', label:{en:'Commands',nl:'Commando\'s'}, type:'property' },
+      { key:'schedule', label:{en:'Schedule',nl:'Schema'}, type:'property' },
+      { key:'limits', label:{en:'Limits',nl:'Limieten'}, type:'property' },
+      { key:'events', label:{en:'Events',nl:'Gebeurtenissen'}, type:'action' },
+      { key:'alarms', label:{en:'Alarms',nl:'Alarmen'}, type:'action' },
+      { key:'tags', label:{en:'Tags',nl:'Tags'}, type:'action' },
+    ],
+  };
+
+  function getTabsForEntity(entity) {
+    const typeTabs = _tabs[entity.entityType] || [];
+    return typeTabs.filter(tab => {
+      if (tab.type === 'children') {
+        const children = EntityStore.getChildren(entity.id);
+        return children.some(c => c.entityType === tab.childType);
+      }
+      return true;
+    });
+  }
+
+  function getAll() { return _tabs; }
+  return { getTabsForEntity, getAll };
+})();
+
 // ─── Seed: Users ───
 const USER_SEEDS = [
   { id:'user-jan', name:'Jan de Vries', email:'jan@orbiteos.com', password:'orbit2026', role:'Platform Admin', accountId:null,
@@ -865,6 +1321,14 @@ const USER_SEEDS = [
     avatar:'https://i.pravatar.cc/150?u=kees-vandenberg', initials:'KB', phone:'+31 6 5678 9012', lang:'nl', theme:'dark',
     permissions:['devices.view','flows.view','alerts.manage'],
     lastLogin:'5 hours ago', status:'away' },
+  { id:'user-pieter', name:'Pieter Smit', email:'pieter@greengrid.nl', password:'orbit2026', role:'Installer', accountId:'greengrid',
+    avatar:'https://i.pravatar.cc/150?u=pieter-smit', initials:'PS', phone:'+31 6 6789 0123', lang:'nl', theme:'dark',
+    permissions:['devices.configure','devices.create'],
+    lastLogin:'1 week ago', status:'offline' },
+  { id:'user-sophie', name:'Sophie Jansen', email:'sophie@acme-energy.nl', password:'orbit2026', role:'Installer', accountId:'acme',
+    avatar:'https://i.pravatar.cc/150?u=sophie-jansen', initials:'SJ', phone:'+31 6 7890 1234', lang:'en', theme:'dark',
+    permissions:['devices.configure','devices.create'],
+    lastLogin:'2 days ago', status:'online' },
 ];
 USER_SEEDS.forEach(u => UserStore.register(u));
 UserStore.login('user-jan'); // Default logged-in user
@@ -882,7 +1346,7 @@ const NavigationStore = (() => {
   function registerApp(app) { _apps.set(app.id, app); }
   function getApp(id) { return _apps.get(id); }
   function getAllApps() { return Array.from(_apps.values()); }
-  function getVisibleApps() { return getAllApps().filter(a => a.visible !== false); }
+  function getVisibleApps() { return getAllApps().filter(a => a.visible !== false).sort((a,b) => (a.order||0) - (b.order||0)); }
   function isPinned() { return _sidebarPinned; }
   function setPinned(val) { _sidebarPinned = val; }
   function togglePinned() { _sidebarPinned = !_sidebarPinned; return _sidebarPinned; }
@@ -958,26 +1422,22 @@ const APP_SEEDS = [
       {key:'rulesEngine',label:{en:'Rules Engine',nl:'Regelmotor'}},
     ]
   },
-  { id:'alarms', icon:'alarms', label:{en:'Alarm Management',nl:'Alarmbeheer'}, description:{en:'Real-time alerts & event management',nl:'Realtime meldingen & eventbeheer'}, visible:true, order:1,
+  { id:'configuration', icon:'configuration', label:{en:'Configuration',nl:'Configuratie'}, description:{en:'System setup, entity management & access control',nl:'Systeemconfiguratie, entiteitbeheer & toegangsbeheer'}, visible:true, order:1,
+    pages: [
+      {key:'configuration',label:{en:'Entity Manager',nl:'Entiteitbeheer'}},
+    ]
+  },
+  { id:'alarms', icon:'alarms', label:{en:'Alarm Management',nl:'Alarmbeheer'}, description:{en:'Real-time alerts & event management',nl:'Realtime meldingen & eventbeheer'}, visible:true, order:2,
     pages: [
       {key:'alerts',label:{en:'Active Alerts',nl:'Actieve Meldingen'}},
       {key:'alertHistory',label:{en:'Alert History',nl:'Meldingshistorie'}},
       {key:'alertRules',label:{en:'Alert Rules',nl:'Meldingsregels'}},
     ]
   },
-  { id:'map', icon:'map', label:{en:'Site Map',nl:'Locatiekaart'}, description:{en:'Geographic site overview & live status',nl:'Geografisch locatieoverzicht & live status'}, visible:true, order:2,
+  { id:'map', icon:'map', label:{en:'Site Map',nl:'Locatiekaart'}, description:{en:'Geographic site overview & live status',nl:'Geografisch locatieoverzicht & live status'}, visible:true, order:3,
     pages: [
       {key:'siteMap',label:{en:'Map View',nl:'Kaartweergave'}},
       {key:'siteList',label:{en:'Site List',nl:'Locatielijst'}},
-    ]
-  },
-  { id:'configuration', icon:'configuration', label:{en:'Configuration',nl:'Configuratie'}, description:{en:'System settings, users & integrations',nl:'Systeeminstellingen, gebruikers & integraties'}, visible:true, order:3,
-    pages: [
-      {key:'configuration',label:{en:'General Settings',nl:'Algemene Instellingen'}},
-      {key:'admin',label:{en:'Accounts & Users',nl:'Accounts & Gebruikers'}},
-      {key:'gridCongestion',label:{en:'Grid & DSO',nl:'Net & DSO'}},
-      {key:'compliance',label:{en:'Compliance',nl:'Naleving'}},
-      {key:'iotFleet',label:{en:'IoT Gateways',nl:'IoT Gateways'}},
     ]
   },
   { id:'marketplace', icon:'marketplace', label:{en:'Marketplace',nl:'Marktplaats'}, description:{en:'Apps, integrations & domain plugins',nl:'Apps, integraties & domein plugins'}, visible:true, order:4,
@@ -1004,40 +1464,44 @@ console.log(`NavigationStore: ${NavigationStore.getAllApps().length} apps regist
 EntityStore.put({
   id: 'orbiteos', entityType: 'platform', parentId: null, name: 'OrbitEOS',
   properties: { version: 'v2.0.0', defaultLang: 'en', timezone: 'Europe/Amsterdam', currency: 'EUR', dateFormat: 'DD-MM-YYYY',
-    energyUnit: 'kWh', selfConsTarget: 80, realtimeEnabled: true, autoAckAlerts: false, dailyReports: true },
-  state: { status: 'online', uptime: '42 days', totalAccounts: 2, totalSites: 5, totalDevices: 46, lastSync: 'Just now' },
+    energyUnit: 'kWh', selfConsTarget: 80, realtimeEnabled: true, autoAckAlerts: false, dailyReports: true,
+    tags: ['production', 'eu-west'] },
+  state: { status: 'online', uptime: '42 days', totalAccounts: 2, totalSites: 7, totalDevices: 77, lastSync: 'Just now' },
   alarms: [], capabilities: ['manage_accounts','global_config','view_analytics'],
 });
 
 // ─── Seed: Accounts ───
 EntityStore.put({
   id: 'acme', entityType: 'account', parentId: 'orbiteos', name: 'Acme Energy BV',
-  properties: { type: 'Commercial', contactEmail: 'admin@acme-energy.nl', maxSites: 10, maxUsers: 20, plan: 'Enterprise' },
-  state: { status: 'active', users: 8, sites: 3, devices: 22 },
+  properties: { type: 'Commercial', contactEmail: 'admin@acme-energy.nl', maxSites: 10, maxUsers: 20, plan: 'Enterprise',
+    tags: ['enterprise', 'energy-operator'], vatNumber: 'NL123456789B01', contractStart: '2024-01-01', contractEnd: '2026-12-31' },
+  state: { status: 'active', users: 8, sites: 4, devices: 51 },
   alarms: [], capabilities: ['manage_sites','manage_users','billing'],
 });
 EntityStore.put({
   id: 'greengrid', entityType: 'account', parentId: 'orbiteos', name: 'GreenGrid Solutions',
-  properties: { type: 'Industrial', contactEmail: 'admin@greengrid.nl', maxSites: 5, maxUsers: 15, plan: 'Professional' },
-  state: { status: 'active', users: 6, sites: 2, devices: 16 },
+  properties: { type: 'Industrial', contactEmail: 'admin@greengrid.nl', maxSites: 5, maxUsers: 15, plan: 'Professional',
+    tags: ['professional', 'microgrid-operator'], vatNumber: 'NL987654321B01', contractStart: '2025-03-01', contractEnd: '2027-02-28' },
+  state: { status: 'active', users: 6, sites: 3, devices: 26 },
   alarms: [], capabilities: ['manage_sites','manage_users','billing'],
 });
 
 // ─── Seed: Sub-accounts ───
 EntityStore.put({ id:'acme-nl', entityType:'subAccount', parentId:'acme', name:'Acme NL Operations',
-  properties:{ region:'Netherlands' }, state:{ sites:2, devices:16 }, alarms:[], capabilities:['manage_sites','regional_config'] });
+  properties:{ region:'Netherlands', dso:'Stedin', lang:'nl', tags:['netherlands','operations'] }, state:{ sites:3, devices:43 }, alarms:[], capabilities:['manage_sites','regional_config'] });
 EntityStore.put({ id:'acme-be', entityType:'subAccount', parentId:'acme', name:'Acme Belgium',
-  properties:{ region:'Belgium' }, state:{ sites:1, devices:6 }, alarms:[], capabilities:['manage_sites','regional_config'] });
+  properties:{ region:'Belgium', dso:'Fluvius', lang:'nl', tags:['belgium','logistics'] }, state:{ sites:1, devices:8 }, alarms:[], capabilities:['manage_sites','regional_config'] });
 EntityStore.put({ id:'gg-residential', entityType:'subAccount', parentId:'greengrid', name:'GreenGrid Residential',
-  properties:{ region:'Zuid-Holland' }, state:{ sites:1, devices:8 }, alarms:[], capabilities:['manage_sites','regional_config'] });
+  properties:{ region:'Zuid-Holland', dso:'Stedin', lang:'nl', tags:['residential','community'] }, state:{ sites:1, devices:6 }, alarms:[], capabilities:['manage_sites','regional_config'] });
 EntityStore.put({ id:'gg-commercial', entityType:'subAccount', parentId:'greengrid', name:'GreenGrid Commercial',
-  properties:{ region:'Utrecht' }, state:{ sites:1, devices:8 }, alarms:[], capabilities:['manage_sites','regional_config'] });
+  properties:{ region:'Utrecht / Rotterdam', dso:'Stedin', lang:'nl', tags:['commercial','industrial'] }, state:{ sites:2, devices:20 }, alarms:[], capabilities:['manage_sites','regional_config'] });
 
 // ─── Seed: Sites ───
 // Each site has: location, capacity, energy flow state, cost data, tariff, peak shaving, compliance, congestion
 const SITE_SEEDS = [
   { id:'dg-maasland', parentId:'acme-nl', name:'De Groot Agri',
     properties:{ location:'Maasland, NL', type:'Agricultural', capacity:'42 kW', lat:51.933, lng:4.250, contractLimit:40, dso:'Stedin', connection:'3×25A',
+      tags:['agricultural','solar','battery','ev-charging'],
       costSaved:{value:'€34.20',trend:'€8.40'}, tariffPrices:[0.06,0.05,0.04,0.04,0.06,0.08,0.12,0.18,0.24,0.28,0.26,0.22,0.19,0.17,0.15,0.16,0.20,0.26,0.24,0.18,0.12,0.09,0.07,0.06],
       compliance:{score:98,tracked:12,compliant:11,actionNeeded:1,auditEntries:'1,842',retention:'5 yr'},
     },
@@ -1056,6 +1520,7 @@ const SITE_SEEDS = [
   },
   { id:'amersfoort', parentId:'acme-nl', name:'Amersfoort Residential',
     properties:{ location:'Amersfoort, NL', type:'Residential', capacity:'18 kW', lat:52.155, lng:5.387, contractLimit:25, dso:'Stedin', connection:'3×25A',
+      tags:['residential','solar'],
       costSaved:{value:'€12.80',trend:'€2.10'}, tariffPrices:[0.07,0.06,0.05,0.05,0.06,0.09,0.14,0.20,0.26,0.30,0.28,0.24,0.21,0.19,0.17,0.18,0.22,0.28,0.26,0.20,0.14,0.10,0.08,0.07],
       compliance:{score:100,tracked:8,compliant:8,actionNeeded:0,auditEntries:'642',retention:'5 yr'},
     },
@@ -1071,7 +1536,8 @@ const SITE_SEEDS = [
     ],
   },
   { id:'utrecht', parentId:'gg-commercial', name:'Utrecht Commercial',
-    properties:{ location:'Utrecht, NL', type:'Commercial', capacity:'64 kW', lat:52.090, lng:5.121, contractLimit:40, dso:'Stedin', connection:'3×35A',
+    properties:{ location:'Utrecht, NL', type:'Commercial Office', capacity:'64 kW', lat:52.090, lng:5.121, contractLimit:40, dso:'Stedin', connection:'3×35A',
+      tags:['commercial','office','ev-charging'],
       costSaved:{value:'€52.60',trend:'€14.30'}, tariffPrices:[0.05,0.04,0.04,0.03,0.05,0.07,0.11,0.16,0.22,0.26,0.24,0.20,0.17,0.15,0.14,0.15,0.19,0.24,0.22,0.16,0.10,0.08,0.06,0.05],
       compliance:{score:96,tracked:12,compliant:11,actionNeeded:1,auditEntries:'2,104',retention:'5 yr'},
     },
@@ -1087,27 +1553,29 @@ const SITE_SEEDS = [
       {id:'al-ut-3',sev:'info',msg:'EV session completed (BMW iX3)',time:'45 min ago',status:'resolved',dev:'Alfen Eve S-line #2'},
     ],
   },
-  { id:'microgrid', parentId:'acme-nl', name:'Maasland Microgrid',
-    properties:{ location:'Maasland, NL', type:'Microgrid', capacity:'130 kW', lat:51.935, lng:4.255, contractLimit:40, dso:'Stedin', connection:'3×63A',
+  { id:'microgrid', parentId:'acme-nl', name:'Maasland Microgrid Hub',
+    properties:{ location:'Maasland, NL', type:'Microgrid', capacity:'380 kW', lat:51.935, lng:4.255, contractLimit:100, dso:'Stedin', connection:'3×63A',
+      tags:['microgrid','bess','wind','critical-infrastructure'],
       costSaved:{value:'€28.90',trend:'€6.70'}, tariffPrices:[0.06,0.05,0.04,0.04,0.06,0.08,0.12,0.18,0.24,0.28,0.26,0.22,0.19,0.17,0.15,0.16,0.20,0.26,0.24,0.18,0.12,0.09,0.07,0.06],
       compliance:{score:100,tracked:14,compliant:14,actionNeeded:0,auditEntries:'3,210',retention:'5 yr'},
     },
-    state:{ status:'online', selfConsumption:100, devices:6,
-      energyFlow:{ solarActive:true, windActive:true, consumptionActive:true, gridExporting:false, gridImporting:false, essSoc:58,
-        solarPower:8.2, windPower:6.4, buildingPower:14.1, evPower:0, gridPower:0, batteryPower:0.5, batteryMode:'Idle', footerText:'Island Mode' },
-      peakShaving:{ demandPct:35, liveDemand:14.1, monthPeak:18.4, headroom:25.9 },
-      congestion:{ signalActive:false, signal:'None', maxExport:'—', until:'—', currentExport:'0 kW', events:0, totalHours:'0', curtailed:'0 kWh', revenueLost:'€0' },
+    state:{ status:'online', selfConsumption:100, devices:29,
+      energyFlow:{ solarActive:true, windActive:true, consumptionActive:true, gridExporting:true, gridImporting:false, essSoc:78,
+        solarPower:80, windPower:50, buildingPower:14.1, evPower:44, gridPower:42, batteryPower:120, batteryMode:'Charging', footerText:'Microgrid Active' },
+      peakShaving:{ demandPct:35, liveDemand:14.1, monthPeak:18.4, headroom:85.9 },
+      congestion:{ signalActive:false, signal:'None', maxExport:'—', until:'—', currentExport:'42 kW', events:0, totalHours:'0', curtailed:'0 kWh', revenueLost:'€0' },
     },
     alarms:[
       {id:'al-mg-1',sev:'info',msg:'Island mode active — all loads balanced',time:'3 min ago',status:'active',dev:'ABB PCC Relay'},
     ],
   },
-  { id:'rotterdam', parentId:'gg-residential', name:'Rotterdam Industrial',
+  { id:'rotterdam', parentId:'gg-commercial', name:'Rotterdam Industrial',
     properties:{ location:'Rotterdam, NL', type:'Industrial', capacity:'24 kW', lat:51.924, lng:4.477, contractLimit:45, dso:'Stedin', connection:'3×40A',
+      tags:['industrial','maintenance-mode'],
       costSaved:{value:'€8.40',trend:'€1.20'}, tariffPrices:[0.08,0.07,0.06,0.05,0.07,0.10,0.15,0.22,0.28,0.32,0.30,0.26,0.23,0.20,0.18,0.19,0.24,0.30,0.28,0.22,0.15,0.11,0.09,0.08],
       compliance:{score:92,tracked:12,compliant:10,actionNeeded:2,auditEntries:'1,402',retention:'5 yr'},
     },
-    state:{ status:'maintenance', selfConsumption:62, devices:12,
+    state:{ status:'maintenance', selfConsumption:62, devices:8,
       energyFlow:{ solarActive:false, windActive:true, consumptionActive:true, gridExporting:false, gridImporting:true, essSoc:12,
         solarPower:0, windPower:1.8, buildingPower:42.6, evPower:0, gridPower:38.4, batteryPower:2.4, batteryMode:'Discharging', footerText:'Grid Dependent' },
       peakShaving:{ demandPct:96, liveDemand:42.6, monthPeak:44.2, headroom:2.4 },
@@ -1118,6 +1586,38 @@ const SITE_SEEDS = [
       {id:'al-rt-2',sev:'warning',msg:'SMA Tripower 25 offline',time:'8 min ago',status:'active',dev:'SMA Tripower 25'},
       {id:'al-rt-3',sev:'warning',msg:'Janitza UMG96-B offline',time:'8 min ago',status:'active',dev:'Janitza UMG96-B'},
       {id:'al-rt-4',sev:'warning',msg:'High grid import (38.4 kW)',time:'15 min ago',status:'active',dev:'Grid Meter'},
+    ],
+  },
+  { id:'antwerp', parentId:'acme-be', name:'Antwerp Logistics Depot',
+    properties:{ location:'Antwerp, BE', type:'Logistics', capacity:'48 kW', lat:51.219, lng:4.402, contractLimit:50, dso:'Fluvius', connection:'3×40A',
+      tags:['logistics','solar','ev-fleet','belgium'],
+      costSaved:{value:'€22.40',trend:'€5.60'}, tariffPrices:[0.07,0.06,0.05,0.05,0.06,0.09,0.13,0.19,0.25,0.29,0.27,0.23,0.20,0.18,0.16,0.17,0.21,0.27,0.25,0.19,0.13,0.10,0.08,0.07],
+      compliance:{score:96,tracked:10,compliant:9,actionNeeded:1,auditEntries:'482',retention:'5 yr'},
+    },
+    state:{ status:'online', selfConsumption:72, devices:8,
+      energyFlow:{ solarActive:true, windActive:false, consumptionActive:true, gridExporting:true, gridImporting:false, essSoc:0,
+        solarPower:32, windPower:0, buildingPower:16, evPower:16, gridPower:0, batteryPower:0, batteryMode:'None', footerText:'Solar Self-consumption' },
+      peakShaving:{ demandPct:64, liveDemand:32, monthPeak:42, headroom:18 },
+      congestion:{ signalActive:false },
+    },
+    alarms:[
+      {id:'al-ant-1',sev:'info',msg:'ABB DC Wallbox firmware update available',time:'2 hours ago',status:'active',dev:'ABB Terra DC'},
+    ],
+  },
+  { id:'leiden', parentId:'gg-residential', name:'Leiden Residential Complex',
+    properties:{ location:'Leiden, NL', type:'Residential Complex', capacity:'22 kW', lat:52.160, lng:4.497, contractLimit:25, dso:'Liander', connection:'3×25A',
+      tags:['residential','shared-solar','community','ev-charging'],
+      costSaved:{value:'€8.60',trend:'€2.40'}, tariffPrices:[0.07,0.06,0.05,0.05,0.06,0.09,0.14,0.20,0.26,0.30,0.28,0.24,0.21,0.19,0.17,0.18,0.22,0.28,0.26,0.20,0.14,0.10,0.08,0.07],
+      compliance:{score:100,tracked:6,compliant:6,actionNeeded:0,auditEntries:'248',retention:'5 yr'},
+    },
+    state:{ status:'online', selfConsumption:86, devices:6,
+      energyFlow:{ solarActive:true, windActive:false, consumptionActive:true, gridExporting:true, gridImporting:false, essSoc:74,
+        solarPower:8.2, windPower:0, buildingPower:3.8, evPower:7.4, gridPower:0.4, batteryPower:3.4, batteryMode:'Charging', footerText:'Community Solar' },
+      peakShaving:{ demandPct:48, liveDemand:12, monthPeak:18, headroom:13 },
+      congestion:{ signalActive:false },
+    },
+    alarms:[
+      {id:'al-lei-1',sev:'warning',msg:'Tesla Powerwall gateway reconnecting',time:'20 min ago',status:'active',dev:'Tesla Powerwall 2'},
     ],
   },
 ];
@@ -1259,21 +1759,24 @@ const SITES = [
       { id:'am-solar', name:'Rooftop Solar', type:'Generation', devices:1, power:'6.8 kW', devices_list:[
         {id:'fronius-001',name:'Fronius Primo 8.2',type:'Solar Inverter',manufacturer:'Fronius',model:'Primo 8.2-1',
           power:'6.8 kW',status:'online',firmware:'v3.24.7-1',
-          sensors:[{id:'f-s1',name:'AC Power',type:'power',unit:'kW',value:6.8,status:'online'},{id:'f-s2',name:'Daily Yield',type:'energy',unit:'kWh',value:38.4,status:'online'}],
+          sensors:[{id:'f-s1',name:'AC Power',type:'power',unit:'kW',value:6.8,status:'online'},{id:'f-s2',name:'Daily Yield',type:'energy',unit:'kWh',value:38.4,status:'online'},
+            {id:'f-s3',name:'String 1 Voltage',type:'voltage',unit:'V',value:420,status:'online'},{id:'f-s4',name:'Panel Temperature',type:'temperature',unit:'°C',value:36,status:'online'}],
           actuators:[{id:'f-a1',name:'Power Limit',type:'power_limit',unit:'%',value:100,status:'online'}]
         }
       ]},
       { id:'am-battery', name:'Home Battery', type:'Storage', devices:1, power:'2.1 kW', devices_list:[
         {id:'byd-002',name:'BYD HVS 7.7',type:'Battery',manufacturer:'BYD',model:'HVS 7.7',
           power:'+2.1 kW',status:'online',firmware:'v1.8.2',
-          sensors:[{id:'b2-s1',name:'SoC',type:'percentage',unit:'%',value:88,status:'online'},{id:'b2-s2',name:'SoH',type:'percentage',unit:'%',value:98.1,status:'online'}],
+          sensors:[{id:'b2-s1',name:'SoC',type:'percentage',unit:'%',value:88,status:'online'},{id:'b2-s2',name:'SoH',type:'percentage',unit:'%',value:98.1,status:'online'},
+            {id:'b2-s3',name:'Cell Temperature',type:'temperature',unit:'°C',value:24,status:'online'},{id:'b2-s4',name:'Cycle Count',type:'counter',unit:'',value:186,status:'online'}],
           actuators:[{id:'b2-a1',name:'Mode',type:'mode',unit:'',value:'charge',status:'online'}]
         }
       ]},
       { id:'am-ev', name:'Home Charger', type:'EV Charging', devices:1, power:'11 kW', devices_list:[
         {id:'alfen-002',name:'Alfen Eve Single Pro-line',type:'EV Charger',manufacturer:'Alfen',model:'Eve Single Pro-line',
           power:'11 kW',status:'online',firmware:'v5.8.1',
-          sensors:[{id:'a2-s1',name:'Charging Power',type:'power',unit:'kW',value:11,status:'online'}],
+          sensors:[{id:'a2-s1',name:'Charging Power',type:'power',unit:'kW',value:11,status:'online'},
+            {id:'a2-s2',name:'OCPP Status',type:'status',unit:'',value:'Charging',status:'online'},{id:'a2-s3',name:'Session Energy',type:'energy',unit:'kWh',value:18.4,status:'online'}],
           actuators:[{id:'a2-a1',name:'Current Limit',type:'current',unit:'A',value:16,status:'online'}]
         }
       ]},
@@ -1338,12 +1841,20 @@ const SITES = [
           sensors:[{id:'k-s1',name:'Power',type:'power',unit:'kW',value:11,status:'online'},{id:'k-s2',name:'Session Energy',type:'energy',unit:'kWh',value:24.6,status:'online'}],
           actuators:[{id:'k-a1',name:'Current Limit',type:'current',unit:'A',value:32,status:'online'}]
         },
-        {id:'keba-002',name:'KEBA KeContact P30',type:'EV Charger',manufacturer:'KEBA',model:'KeContact P30 c-series',
-          power:'11 kW',status:'online',firmware:'v1.13',sensors:[],actuators:[]},
-        {id:'schneider-001',name:'Schneider EVlink Home',type:'EV Charger',manufacturer:'Schneider Electric',model:'EVlink Home Smart',
-          power:'0 kW',status:'available',firmware:'v2.4',sensors:[],actuators:[]},
-        {id:'schneider-002',name:'Schneider EVlink Home',type:'EV Charger',manufacturer:'Schneider Electric',model:'EVlink Home Smart',
-          power:'0 kW',status:'offline',firmware:'v2.4',sensors:[],actuators:[]}
+        {id:'keba-002',name:'KEBA KeContact P30 #2',type:'EV Charger',manufacturer:'KEBA',model:'KeContact P30 c-series',
+          power:'11 kW',status:'online',firmware:'v1.13',
+          sensors:[{id:'k2-s1',name:'Power',type:'power',unit:'kW',value:11,status:'online'},{id:'k2-s2',name:'Session Energy',type:'energy',unit:'kWh',value:18.2,status:'online'},
+            {id:'k2-s3',name:'OCPP Status',type:'status',unit:'',value:'Charging',status:'online'}],
+          actuators:[{id:'k2-a1',name:'Current Limit',type:'current',unit:'A',value:32,status:'online'}]},
+        {id:'schneider-001',name:'Schneider EVlink Home #1',type:'EV Charger',manufacturer:'Schneider Electric',model:'EVlink Home Smart',
+          power:'0 kW',status:'available',firmware:'v2.4',
+          sensors:[{id:'sch1-s1',name:'Power',type:'power',unit:'kW',value:0,status:'online'},{id:'sch1-s2',name:'OCPP Status',type:'status',unit:'',value:'Available',status:'online'},
+            {id:'sch1-s3',name:'Session Energy',type:'energy',unit:'kWh',value:0,status:'online'}],
+          actuators:[{id:'sch1-a1',name:'Current Limit',type:'current',unit:'A',value:16,status:'online'}]},
+        {id:'schneider-002',name:'Schneider EVlink Home #2',type:'EV Charger',manufacturer:'Schneider Electric',model:'EVlink Home Smart',
+          power:'0 kW',status:'offline',firmware:'v2.4',
+          sensors:[{id:'sch2-s1',name:'Power',type:'power',unit:'kW',value:0,status:'offline'},{id:'sch2-s2',name:'OCPP Status',type:'status',unit:'',value:'Unavailable',status:'offline'}],
+          actuators:[]}
       ]},
       { id:'ut-metering', name:'Building Metering', type:'Metering', devices:3, power:'—', devices_list:[
         {id:'jan-002',name:'Janitza UMG 512-PRO',type:'Power Analyzer',manufacturer:'Janitza',model:'UMG 512-PRO',
@@ -1353,62 +1864,102 @@ const SITES = [
           actuators:[]
         },
         {id:'carlo-002',name:'Carlo Gavazzi EM530',type:'Energy Meter',manufacturer:'Carlo Gavazzi',model:'EM530',
-          power:'—',status:'online',firmware:'v3.2',sensors:[],actuators:[]},
+          power:'—',status:'online',firmware:'v3.2',
+          sensors:[{id:'c2-s1',name:'Total Power',type:'power',unit:'kW',value:44.2,status:'online'},{id:'c2-s2',name:'Import Energy',type:'energy',unit:'kWh',value:42800,status:'online'},
+            {id:'c2-s3',name:'Export Energy',type:'energy',unit:'kWh',value:18600,status:'online'},{id:'c2-s4',name:'Power Factor',type:'ratio',unit:'',value:0.97,status:'online'}],
+          actuators:[]},
         {id:'carlo-003',name:'Carlo Gavazzi ET340',type:'CT Meter',manufacturer:'Carlo Gavazzi',model:'ET340',
-          power:'—',status:'online',firmware:'v2.0',sensors:[],actuators:[]}
+          power:'—',status:'online',firmware:'v2.0',
+          sensors:[{id:'c3-s1',name:'CT Current L1',type:'current',unit:'A',value:42,status:'online'},{id:'c3-s2',name:'CT Current L2',type:'current',unit:'A',value:38,status:'online'},
+            {id:'c3-s3',name:'CT Current L3',type:'current',unit:'A',value:40,status:'online'},{id:'c3-s4',name:'Total Power',type:'power',unit:'kW',value:27.6,status:'online'}],
+          actuators:[]}
       ]}
     ]
   },
   { id:'microgrid', name:'Maasland Microgrid Hub', account:'acme', sub:'acme-nl', location:'Maasland, NL', type:'Microgrid',
-    capacity:'380 kW', status:'online', selfConsumption:92, devices:38, lat:51.935,lng:4.255,
+    capacity:'380 kW', status:'online', selfConsumption:92, devices:29, lat:51.935,lng:4.255,
     deviceGroups: [
-      { id:'mg-container', name:'20ft Battery Container', type:'Storage', devices:4, power:'120 kW',
-        devices_list: [
-          {id:'byd-rack1',name:'BYD Battery Rack 1 (96 kWh)',type:'Battery',manufacturer:'BYD',model:'B-Box Premium HVM 96',
-            power:'+40 kW',status:'online',firmware:'v2.0.1',
-            sensors:[
-              {id:'br1-s1',name:'SoC',type:'percentage',unit:'%',value:78,status:'online'},
-              {id:'br1-s2',name:'SoH',type:'percentage',unit:'%',value:97.4,status:'online'},
-              {id:'br1-s3',name:'Rack Temperature',type:'temperature',unit:'°C',value:24,status:'online'},
-              {id:'br1-s4',name:'Cell Voltage Min',type:'voltage',unit:'V',value:3.28,status:'online'},
-              {id:'br1-s5',name:'Cell Voltage Max',type:'voltage',unit:'V',value:3.42,status:'online'},
-              {id:'br1-s6',name:'Charge Power',type:'power',unit:'kW',value:40,status:'online'},
-              {id:'br1-s7',name:'Discharge Power',type:'power',unit:'kW',value:0,status:'online'},
-              {id:'br1-s8',name:'Cycle Count',type:'counter',unit:'',value:412,status:'online'},
-            ],
-            actuators:[
-              {id:'br1-a1',name:'Mode',type:'mode',unit:'',value:'charge',status:'online'},
-              {id:'br1-a2',name:'Max Charge Rate',type:'power_limit',unit:'kW',value:50,status:'online'},
-              {id:'br1-a3',name:'Max Discharge Rate',type:'power_limit',unit:'kW',value:80,status:'online'},
+      { id:'bess-alpha', name:'20ft BESS Container Alpha', type:'Storage', devices:11, power:'120 kW',
+        tags:['bess','20ft-container','outdoor'],
+        subGroups: [
+          { id:'bess-alpha-r1', name:'Battery Rack 1', type:'Battery Rack', devices:2, power:'+40 kW',
+            tags:['battery-rack','rack-mounted'],
+            devices_list: [
+              {id:'byd-rack1',name:'BYD Battery Rack 1 (96 kWh)',type:'Battery',manufacturer:'BYD',model:'B-Box Premium HVM 96',
+                power:'+40 kW',status:'online',firmware:'v2.0.1',
+                sensors:[
+                  {id:'br1-s1',name:'SoC',type:'percentage',unit:'%',value:78,status:'online'},
+                  {id:'br1-s2',name:'SoH',type:'percentage',unit:'%',value:97.4,status:'online'},
+                  {id:'br1-s3',name:'Rack Temperature',type:'temperature',unit:'°C',value:24,status:'online'},
+                  {id:'br1-s4',name:'Cell Voltage Min',type:'voltage',unit:'V',value:3.28,status:'online'},
+                  {id:'br1-s5',name:'Cell Voltage Max',type:'voltage',unit:'V',value:3.42,status:'online'},
+                  {id:'br1-s6',name:'Charge Power',type:'power',unit:'kW',value:40,status:'online'},
+                  {id:'br1-s7',name:'Discharge Power',type:'power',unit:'kW',value:0,status:'online'},
+                  {id:'br1-s8',name:'Cycle Count',type:'counter',unit:'',value:412,status:'online'},
+                ],
+                actuators:[
+                  {id:'br1-a1',name:'Mode',type:'mode',unit:'',value:'charge',status:'online'},
+                  {id:'br1-a2',name:'Max Charge Rate',type:'power_limit',unit:'kW',value:50,status:'online'},
+                  {id:'br1-a3',name:'Max Discharge Rate',type:'power_limit',unit:'kW',value:80,status:'online'},
+                ]
+              },
+              {id:'byd-rack1b',name:'BYD B-Box Premium HVM Module 2',type:'Battery',manufacturer:'BYD',model:'B-Box Premium HVM 96',
+                power:'+40 kW',status:'online',firmware:'v2.0.1',
+                sensors:[{id:'br1b-s1',name:'SoC',type:'percentage',unit:'%',value:76,status:'online'},{id:'br1b-s2',name:'SoH',type:'percentage',unit:'%',value:97.1,status:'online'},
+                  {id:'br1b-s3',name:'Rack Temp',type:'temperature',unit:'°C',value:25,status:'online'}],
+                actuators:[{id:'br1b-a1',name:'Mode',type:'mode',unit:'',value:'charge',status:'online'}]
+              },
             ]
           },
-          {id:'byd-rack2',name:'BYD Battery Rack 2 (96 kWh)',type:'Battery',manufacturer:'BYD',model:'B-Box Premium HVM 96',
-            power:'+40 kW',status:'online',firmware:'v2.0.1',
-            sensors:[{id:'br2-s1',name:'SoC',type:'percentage',unit:'%',value:75,status:'online'},{id:'br2-s2',name:'SoH',type:'percentage',unit:'%',value:96.8,status:'online'},
-              {id:'br2-s3',name:'Rack Temp',type:'temperature',unit:'°C',value:25,status:'online'}],
-            actuators:[{id:'br2-a1',name:'Mode',type:'mode',unit:'',value:'charge',status:'online'}]
+          { id:'bess-alpha-r2', name:'Battery Rack 2', type:'Battery Rack', devices:2, power:'+40 kW',
+            tags:['battery-rack','rack-mounted'],
+            devices_list: [
+              {id:'samsung-r2a',name:'Samsung SDI E3-R096 Module 1',type:'Battery',manufacturer:'Samsung SDI',model:'E3-R096',
+                power:'+40 kW',status:'online',firmware:'v1.4.2',
+                sensors:[{id:'sr2a-s1',name:'SoC',type:'percentage',unit:'%',value:72,status:'online'},{id:'sr2a-s2',name:'SoH',type:'percentage',unit:'%',value:98.6,status:'online'},
+                  {id:'sr2a-s3',name:'Cell Temp',type:'temperature',unit:'°C',value:26,status:'online'},{id:'sr2a-s4',name:'Cell V Min',type:'voltage',unit:'V',value:3.31,status:'online'},
+                  {id:'sr2a-s5',name:'Cell V Max',type:'voltage',unit:'V',value:3.40,status:'online'},{id:'sr2a-s6',name:'Cycle Count',type:'counter',unit:'',value:228,status:'online'}],
+                actuators:[{id:'sr2a-a1',name:'Mode',type:'mode',unit:'',value:'charge',status:'online'},{id:'sr2a-a2',name:'Max Charge Rate',type:'power_limit',unit:'kW',value:50,status:'online'}]
+              },
+              {id:'samsung-r2b',name:'Samsung SDI E3-R096 Module 2',type:'Battery',manufacturer:'Samsung SDI',model:'E3-R096',
+                power:'+40 kW',status:'online',firmware:'v1.4.2',
+                sensors:[{id:'sr2b-s1',name:'SoC',type:'percentage',unit:'%',value:70,status:'online'},{id:'sr2b-s2',name:'SoH',type:'percentage',unit:'%',value:98.2,status:'online'},
+                  {id:'sr2b-s3',name:'Temp',type:'temperature',unit:'°C',value:27,status:'online'}],
+                actuators:[{id:'sr2b-a1',name:'Mode',type:'mode',unit:'',value:'charge',status:'online'}]
+              },
+            ]
           },
-          {id:'byd-rack3',name:'BYD Battery Rack 3 (96 kWh)',type:'Battery',manufacturer:'BYD',model:'B-Box Premium HVM 96',
-            power:'+40 kW',status:'online',firmware:'v2.0.1',
-            sensors:[{id:'br3-s1',name:'SoC',type:'percentage',unit:'%',value:82,status:'online'},{id:'br3-s2',name:'SoH',type:'percentage',unit:'%',value:98.1,status:'online'}],
-            actuators:[{id:'br3-a1',name:'Mode',type:'mode',unit:'',value:'charge',status:'online'}]
+          { id:'bess-alpha-r3', name:'Battery Rack 3', type:'Battery Rack', devices:2, power:'+40 kW',
+            tags:['battery-rack','rack-mounted'],
+            devices_list: [
+              {id:'catl-r3a',name:'CATL LFP280 Module 1',type:'Battery',manufacturer:'CATL',model:'LFP280',
+                power:'+40 kW',status:'online',firmware:'v3.1.0',
+                sensors:[{id:'cr3a-s1',name:'SoC',type:'percentage',unit:'%',value:80,status:'online'},{id:'cr3a-s2',name:'SoH',type:'percentage',unit:'%',value:99.1,status:'online'},
+                  {id:'cr3a-s3',name:'Cell Temp',type:'temperature',unit:'°C',value:23,status:'online'},{id:'cr3a-s4',name:'Cell V Min',type:'voltage',unit:'V',value:3.22,status:'online'},
+                  {id:'cr3a-s5',name:'Cell V Max',type:'voltage',unit:'V',value:3.35,status:'online'},{id:'cr3a-s6',name:'Cycle Count',type:'counter',unit:'',value:156,status:'online'}],
+                actuators:[{id:'cr3a-a1',name:'Mode',type:'mode',unit:'',value:'charge',status:'online'},{id:'cr3a-a2',name:'Max Charge Rate',type:'power_limit',unit:'kW',value:50,status:'online'}]
+              },
+              {id:'catl-r3b',name:'CATL LFP280 Module 2',type:'Battery',manufacturer:'CATL',model:'LFP280',
+                power:'+40 kW',status:'online',firmware:'v3.1.0',
+                sensors:[{id:'cr3b-s1',name:'SoC',type:'percentage',unit:'%',value:81,status:'online'},{id:'cr3b-s2',name:'SoH',type:'percentage',unit:'%',value:99.0,status:'online'},
+                  {id:'cr3b-s3',name:'Temp',type:'temperature',unit:'°C',value:24,status:'online'}],
+                actuators:[{id:'cr3b-a1',name:'Mode',type:'mode',unit:'',value:'charge',status:'online'}]
+              },
+            ]
           },
+        ],
+        devices_list: [
           {id:'victron-inv',name:'Victron Quattro 48/15000',type:'Battery Inverter',manufacturer:'Victron',model:'Quattro 48/15000',
             power:'120 kW',status:'online',firmware:'v502',
             sensors:[{id:'vi-s1',name:'AC Output Power',type:'power',unit:'kW',value:120,status:'online'},{id:'vi-s2',name:'AC Input Power',type:'power',unit:'kW',value:0,status:'online'},
               {id:'vi-s3',name:'Inverter Temp',type:'temperature',unit:'°C',value:38,status:'online'}],
             actuators:[{id:'vi-a1',name:'Mode',type:'mode',unit:'',value:'inverting',status:'online'}]
           },
-        ]
-      },
-      { id:'mg-container-infra', name:'Container Infrastructure', type:'Infrastructure', devices:4, power:'—',
-        devices_list: [
-          {id:'mikrotik-001',name:'MikroTik RouterBOARD RB4011',type:'Network Router',manufacturer:'MikroTik',model:'RB4011iGS+',
-            power:'—',status:'online',firmware:'RouterOS v7.12',
-            sensors:[{id:'mk-s1',name:'CPU Load',type:'percentage',unit:'%',value:12,status:'online'},{id:'mk-s2',name:'Memory Usage',type:'percentage',unit:'%',value:34,status:'online'},
-              {id:'mk-s3',name:'Uptime',type:'duration',unit:'days',value:42,status:'online'},{id:'mk-s4',name:'WAN Throughput',type:'bandwidth',unit:'Mbps',value:24.6,status:'online'},
-              {id:'mk-s5',name:'Connected Clients',type:'counter',unit:'',value:38,status:'online'}],
-            actuators:[{id:'mk-a1',name:'Reboot',type:'command',unit:'',value:'—',status:'online'}]
+          {id:'climasys-001',name:'Schneider ClimaSys CV',type:'Cooling Unit',manufacturer:'Schneider Electric',model:'ClimaSys CV',
+            power:'1.2 kW',status:'online',firmware:'v2.1.4',
+            sensors:[{id:'cs-s1',name:'Inlet Temp',type:'temperature',unit:'°C',value:32,status:'online'},{id:'cs-s2',name:'Outlet Temp',type:'temperature',unit:'°C',value:22,status:'online'},
+              {id:'cs-s3',name:'Fan Speed',type:'speed',unit:'rpm',value:1800,status:'online'},{id:'cs-s4',name:'Filter Status',type:'status',unit:'',value:'Clean',status:'online'}],
+            actuators:[{id:'cs-a1',name:'Target Temp',type:'temperature',unit:'°C',value:22,status:'online'},{id:'cs-a2',name:'Fan Mode',type:'mode',unit:'',value:'auto',status:'online'}]
           },
           {id:'novec-001',name:'NOVEC 1230 Fire Suppression',type:'Fire Suppression',manufacturer:'3M',model:'NOVEC 1230 Clean Agent',
             power:'—',status:'online',firmware:'v3.2',
@@ -1423,12 +1974,12 @@ const SITES = [
               {id:'hid-s3',name:'Access Attempts (24h)',type:'counter',unit:'',value:12,status:'online'},{id:'hid-s4',name:'Failed Attempts',type:'counter',unit:'',value:0,status:'online'}],
             actuators:[{id:'hid-a1',name:'Lock/Unlock',type:'switch',unit:'',value:'locked',status:'online'},{id:'hid-a2',name:'Emergency Override',type:'command',unit:'',value:'—',status:'online'}]
           },
-          {id:'teltonika-001',name:'Teltonika RUTX50 5G/4G Router',type:'Cellular Gateway',manufacturer:'Teltonika',model:'RUTX50',
-            power:'—',status:'online',firmware:'RUTX_R_00.07.06.1',
-            sensors:[{id:'tel-s1',name:'Signal Strength',type:'signal',unit:'dBm',value:-68,status:'online'},{id:'tel-s2',name:'Connection Type',type:'status',unit:'',value:'4G LTE-A',status:'online'},
-              {id:'tel-s3',name:'Data Usage (MTD)',type:'volume',unit:'GB',value:8.4,status:'online'},{id:'tel-s4',name:'Latency',type:'latency',unit:'ms',value:18,status:'online'},
-              {id:'tel-s5',name:'Uptime',type:'duration',unit:'days',value:42,status:'online'}],
-            actuators:[{id:'tel-a1',name:'Reboot',type:'command',unit:'',value:'—',status:'online'}]
+          {id:'cradlepoint-001',name:'Cradlepoint IBR1700',type:'Network Router',manufacturer:'Cradlepoint',model:'IBR1700',
+            power:'—',status:'online',firmware:'NCOS v7.22',
+            sensors:[{id:'cp-s1',name:'CPU Load',type:'percentage',unit:'%',value:15,status:'online'},{id:'cp-s2',name:'Memory Usage',type:'percentage',unit:'%',value:38,status:'online'},
+              {id:'cp-s3',name:'Uptime',type:'duration',unit:'days',value:42,status:'online'},{id:'cp-s4',name:'WAN Throughput',type:'bandwidth',unit:'Mbps',value:28.4,status:'online'},
+              {id:'cp-s5',name:'Connected Clients',type:'counter',unit:'',value:42,status:'online'}],
+            actuators:[{id:'cp-a1',name:'Reboot',type:'command',unit:'',value:'—',status:'online'}]
           },
         ]
       },
@@ -1536,30 +2087,154 @@ const SITES = [
       },
     ]
   },
-  { id:'rotterdam', name:'Rotterdam Industrial', account:'greengrid', sub:'gg-residential', location:'Rotterdam, NL', type:'Industrial',
+  { id:'rotterdam', name:'Rotterdam Industrial', account:'greengrid', sub:'gg-commercial', location:'Rotterdam, NL', type:'Industrial',
     capacity:'24 kW', status:'maintenance', selfConsumption:62, devices:8, lat:51.924,lng:4.477,
     deviceGroups: [
       { id:'rt-solar', name:'Roof Solar', type:'Generation', devices:2, power:'6.2 kW', devices_list:[
         {id:'sma-003',name:'SMA Sunny Boy 5.0',type:'Solar Inverter',manufacturer:'SMA',model:'Sunny Boy 5.0',
-          power:'4.2 kW',status:'online',firmware:'v3.10.14R',sensors:[],actuators:[]},
+          power:'4.2 kW',status:'online',firmware:'v3.10.14R',
+          sensors:[{id:'sma3-s1',name:'AC Power',type:'power',unit:'kW',value:4.2,status:'online'},{id:'sma3-s2',name:'DC Power',type:'power',unit:'kW',value:4.4,status:'online'},
+            {id:'sma3-s3',name:'String Voltage',type:'voltage',unit:'V',value:340,status:'online'},{id:'sma3-s4',name:'Temperature',type:'temperature',unit:'°C',value:38,status:'online'},
+            {id:'sma3-s5',name:'Daily Yield',type:'energy',unit:'kWh',value:22.8,status:'online'}],
+          actuators:[{id:'sma3-a1',name:'Power Limit',type:'power_limit',unit:'%',value:100,status:'online'}]},
         {id:'sma-004',name:'SMA Sunny Boy 3.0',type:'Solar Inverter',manufacturer:'SMA',model:'Sunny Boy 3.0',
-          power:'2.0 kW',status:'warning',firmware:'v3.10.14R',sensors:[],actuators:[]}
+          power:'2.0 kW',status:'warning',firmware:'v3.10.14R',
+          sensors:[{id:'sma4-s1',name:'AC Power',type:'power',unit:'kW',value:2.0,status:'online'},{id:'sma4-s2',name:'String Voltage',type:'voltage',unit:'V',value:280,status:'warning'}],
+          actuators:[{id:'sma4-a1',name:'Power Limit',type:'power_limit',unit:'%',value:100,status:'online'}]}
       ]},
       { id:'rt-ev', name:'Fleet Chargers', type:'EV Charging', devices:3, power:'0 kW', devices_list:[
-        {id:'abb-002',name:'ABB Terra AC W22-T-0',type:'EV Charger',manufacturer:'ABB',model:'Terra AC W22',
-          power:'0 kW',status:'fault',firmware:'v1.6.3',sensors:[],actuators:[]},
-        {id:'abb-003',name:'ABB Terra AC W22-T-0',type:'EV Charger',manufacturer:'ABB',model:'Terra AC W22',
-          power:'0 kW',status:'available',firmware:'v1.6.3',sensors:[],actuators:[]},
-        {id:'abb-004',name:'ABB Terra AC W22-T-0',type:'EV Charger',manufacturer:'ABB',model:'Terra AC W22',
-          power:'0 kW',status:'available',firmware:'v1.6.3',sensors:[],actuators:[]}
+        {id:'abb-002',name:'ABB Terra AC W22-T-0 #1',type:'EV Charger',manufacturer:'ABB',model:'Terra AC W22',
+          power:'0 kW',status:'fault',firmware:'v1.6.3',
+          sensors:[{id:'abb2-s1',name:'OCPP Status',type:'status',unit:'',value:'Faulted',status:'fault'},{id:'abb2-s2',name:'Error Code',type:'status',unit:'',value:'GND-FAULT-01',status:'fault'},
+            {id:'abb2-s3',name:'Temperature',type:'temperature',unit:'°C',value:52,status:'warning'}],
+          actuators:[]},
+        {id:'abb-003',name:'ABB Terra AC W22-T-0 #2',type:'EV Charger',manufacturer:'ABB',model:'Terra AC W22',
+          power:'0 kW',status:'available',firmware:'v1.6.3',
+          sensors:[{id:'abb3-s1',name:'OCPP Status',type:'status',unit:'',value:'Available',status:'online'},{id:'abb3-s2',name:'Total Sessions',type:'counter',unit:'',value:186,status:'online'}],
+          actuators:[{id:'abb3-a1',name:'Current Limit',type:'current',unit:'A',value:32,status:'online'}]},
+        {id:'abb-004',name:'ABB Terra AC W22-T-0 #3',type:'EV Charger',manufacturer:'ABB',model:'Terra AC W22',
+          power:'0 kW',status:'available',firmware:'v1.6.3',
+          sensors:[{id:'abb4-s1',name:'OCPP Status',type:'status',unit:'',value:'Available',status:'online'}],
+          actuators:[{id:'abb4-a1',name:'Current Limit',type:'current',unit:'A',value:32,status:'online'}]}
       ]},
       { id:'rt-metering', name:'Industrial Metering', type:'Metering', devices:3, power:'—', devices_list:[
         {id:'jan-003',name:'Janitza UMG 96RM-E',type:'Power Analyzer',manufacturer:'Janitza',model:'UMG 96RM-E',
-          power:'—',status:'online',firmware:'v3.062',sensors:[],actuators:[]},
+          power:'—',status:'online',firmware:'v3.062',
+          sensors:[{id:'j3-s1',name:'Total Power',type:'power',unit:'kW',value:18.6,status:'online'},{id:'j3-s2',name:'L1 Power',type:'power',unit:'kW',value:6.4,status:'online'},
+            {id:'j3-s3',name:'L2 Power',type:'power',unit:'kW',value:6.2,status:'online'},{id:'j3-s4',name:'L3 Power',type:'power',unit:'kW',value:6.0,status:'online'},
+            {id:'j3-s5',name:'Frequency',type:'frequency',unit:'Hz',value:50.01,status:'online'},{id:'j3-s6',name:'Voltage',type:'voltage',unit:'V',value:232,status:'online'},
+            {id:'j3-s7',name:'Power Factor',type:'ratio',unit:'',value:0.95,status:'online'},{id:'j3-s8',name:'THD',type:'percentage',unit:'%',value:4.1,status:'online'}],
+          actuators:[]},
         {id:'dsmr-002',name:'Landis+Gyr E360',type:'Smart Meter',manufacturer:'Landis+Gyr',model:'E360 DSMR 5.0',
-          power:'—',status:'online',firmware:'DSMR 5.0.2',sensors:[],actuators:[]},
+          power:'—',status:'online',firmware:'DSMR 5.0.2',
+          sensors:[{id:'d2-s1',name:'P1 Import',type:'power',unit:'kW',value:12.4,status:'online'},{id:'d2-s2',name:'P1 Export',type:'power',unit:'kW',value:0,status:'online'},
+            {id:'d2-s3',name:'Total Import',type:'energy',unit:'kWh',value:28420,status:'online'},{id:'d2-s4',name:'Total Export',type:'energy',unit:'kWh',value:4280,status:'online'}],
+          actuators:[]},
         {id:'carlo-004',name:'Carlo Gavazzi EM340',type:'Energy Meter',manufacturer:'Carlo Gavazzi',model:'EM340',
-          power:'—',status:'online',firmware:'v2.14',sensors:[],actuators:[]}
+          power:'—',status:'online',firmware:'v2.14',
+          sensors:[{id:'c4-s1',name:'Active Power',type:'power',unit:'kW',value:6.2,status:'online'},{id:'c4-s2',name:'Reactive Power',type:'power',unit:'kvar',value:1.8,status:'online'},
+            {id:'c4-s3',name:'Import Energy',type:'energy',unit:'kWh',value:18240,status:'online'},{id:'c4-s4',name:'Export Energy',type:'energy',unit:'kWh',value:2840,status:'online'}],
+          actuators:[]}
+      ]}
+    ]
+  },
+  // ─── Site 6: Antwerp Logistics Depot (Acme Belgium) ───
+  { id:'antwerp', name:'Antwerp Logistics Depot', account:'acme', sub:'acme-be', location:'Antwerp, BE', type:'Logistics',
+    capacity:'48 kW', status:'online', selfConsumption:72, devices:8, lat:51.219,lng:4.402,
+    deviceGroups: [
+      { id:'ant-solar', name:'Rooftop Solar', type:'Generation', devices:2, power:'32 kW', devices_list:[
+        {id:'fronius-002',name:'Fronius Symo 20.0 #1',type:'Solar Inverter',manufacturer:'Fronius',model:'Symo 20.0-3-M',
+          power:'18.4 kW',status:'online',firmware:'v3.24.7-1',
+          sensors:[{id:'fr2-s1',name:'AC Power',type:'power',unit:'kW',value:18.4,status:'online'},{id:'fr2-s2',name:'String 1 Voltage',type:'voltage',unit:'V',value:580,status:'online'},
+            {id:'fr2-s3',name:'Temperature',type:'temperature',unit:'°C',value:36,status:'online'},{id:'fr2-s4',name:'Daily Yield',type:'energy',unit:'kWh',value:98.2,status:'online'}],
+          actuators:[{id:'fr2-a1',name:'Power Limit',type:'power_limit',unit:'%',value:100,status:'online'}]},
+        {id:'fronius-003',name:'Fronius Symo 20.0 #2',type:'Solar Inverter',manufacturer:'Fronius',model:'Symo 20.0-3-M',
+          power:'13.6 kW',status:'online',firmware:'v3.24.7-1',
+          sensors:[{id:'fr3-s1',name:'AC Power',type:'power',unit:'kW',value:13.6,status:'online'},{id:'fr3-s2',name:'String 1 Voltage',type:'voltage',unit:'V',value:560,status:'online'},
+            {id:'fr3-s3',name:'Temperature',type:'temperature',unit:'°C',value:34,status:'online'},{id:'fr3-s4',name:'Daily Yield',type:'energy',unit:'kWh',value:72.8,status:'online'}],
+          actuators:[{id:'fr3-a1',name:'Power Limit',type:'power_limit',unit:'%',value:100,status:'online'}]}
+      ]},
+      { id:'ant-ev', name:'Fleet EV Chargers', type:'EV Charging', devices:3, power:'16 kW', devices_list:[
+        {id:'antwerp-abb-1',name:'ABB Terra AC W22 #1',type:'EV Charger',manufacturer:'ABB',model:'Terra AC W22',
+          power:'11 kW',status:'online',firmware:'v1.6.3',
+          sensors:[{id:'aabb1-s1',name:'Power',type:'power',unit:'kW',value:11,status:'online'},{id:'aabb1-s2',name:'OCPP Status',type:'status',unit:'',value:'Charging',status:'online'},
+            {id:'aabb1-s3',name:'Session Energy',type:'energy',unit:'kWh',value:32.4,status:'online'}],
+          actuators:[{id:'aabb1-a1',name:'Current Limit',type:'current',unit:'A',value:32,status:'online'}]},
+        {id:'antwerp-abb-2',name:'ABB Terra AC W22 #2',type:'EV Charger',manufacturer:'ABB',model:'Terra AC W22',
+          power:'0 kW',status:'available',firmware:'v1.6.3',
+          sensors:[{id:'aabb2-s1',name:'Power',type:'power',unit:'kW',value:0,status:'online'},{id:'aabb2-s2',name:'OCPP Status',type:'status',unit:'',value:'Available',status:'online'},
+            {id:'aabb2-s3',name:'Total Sessions',type:'counter',unit:'',value:428,status:'online'}],
+          actuators:[{id:'aabb2-a1',name:'Current Limit',type:'current',unit:'A',value:32,status:'online'}]},
+        {id:'antwerp-abb-dc',name:'ABB Terra DC Wallbox',type:'DC Fast Charger',manufacturer:'ABB',model:'Terra DC Wallbox',
+          power:'5 kW',status:'online',firmware:'v2.1.0',
+          sensors:[{id:'adc-s1',name:'Power',type:'power',unit:'kW',value:5,status:'online'},{id:'adc-s2',name:'OCPP Status',type:'status',unit:'',value:'Charging',status:'online'},
+            {id:'adc-s3',name:'Session Energy',type:'energy',unit:'kWh',value:12.8,status:'online'},{id:'adc-s4',name:'DC Voltage',type:'voltage',unit:'V',value:400,status:'online'}],
+          actuators:[{id:'adc-a1',name:'Current Limit',type:'current',unit:'A',value:50,status:'online'},{id:'adc-a2',name:'Availability',type:'switch',unit:'',value:'operative',status:'online'}]}
+      ]},
+      { id:'ant-metering', name:'Loading Dock Metering', type:'Metering', devices:2, power:'—', devices_list:[
+        {id:'ant-pm',name:'Schneider PM5560',type:'Power Meter',manufacturer:'Schneider Electric',model:'PM5560',
+          power:'—',status:'online',firmware:'v3.1',
+          sensors:[{id:'apm-s1',name:'Total Power',type:'power',unit:'kW',value:38.2,status:'online'},{id:'apm-s2',name:'L1 Power',type:'power',unit:'kW',value:14.2,status:'online'},
+            {id:'apm-s3',name:'L2 Power',type:'power',unit:'kW',value:12.8,status:'online'},{id:'apm-s4',name:'L3 Power',type:'power',unit:'kW',value:11.2,status:'online'},
+            {id:'apm-s5',name:'Power Factor',type:'ratio',unit:'',value:0.94,status:'online'},{id:'apm-s6',name:'THD',type:'percentage',unit:'%',value:3.8,status:'online'}],
+          actuators:[]},
+        {id:'ant-em',name:'Carlo Gavazzi EM530',type:'Energy Meter',manufacturer:'Carlo Gavazzi',model:'EM530',
+          power:'—',status:'online',firmware:'v3.2',
+          sensors:[{id:'aem-s1',name:'Total Power',type:'power',unit:'kW',value:38.2,status:'online'},{id:'aem-s2',name:'Import Energy',type:'energy',unit:'kWh',value:62400,status:'online'},
+            {id:'aem-s3',name:'Export Energy',type:'energy',unit:'kWh',value:28200,status:'online'},{id:'aem-s4',name:'Power Factor',type:'ratio',unit:'',value:0.94,status:'online'}],
+          actuators:[]}
+      ]},
+      { id:'ant-gateway', name:'IoT Gateway', type:'Gateway', devices:1, power:'—', devices_list:[
+        {id:'ant-ewon',name:'Ewon Flexy 205',type:'IoT Gateway',manufacturer:'HMS Networks',model:'Ewon Flexy 205',
+          power:'—',status:'online',firmware:'v14.8',
+          sensors:[{id:'aew-s1',name:'CPU Load',type:'percentage',unit:'%',value:18,status:'online'},{id:'aew-s2',name:'Memory Usage',type:'percentage',unit:'%',value:42,status:'online'},
+            {id:'aew-s3',name:'Connected Devices',type:'counter',unit:'',value:8,status:'online'},{id:'aew-s4',name:'Uptime',type:'duration',unit:'days',value:28,status:'online'}],
+          actuators:[{id:'aew-a1',name:'Reboot',type:'command',unit:'',value:'—',status:'online'}]}
+      ]}
+    ]
+  },
+  // ─── Site 7: Leiden Residential Complex (GreenGrid Residential) ───
+  { id:'leiden', name:'Leiden Residential Complex', account:'greengrid', sub:'gg-residential', location:'Leiden, NL', type:'Residential Complex',
+    capacity:'22 kW', status:'online', selfConsumption:86, devices:6, lat:52.160,lng:4.497,
+    deviceGroups: [
+      { id:'lei-solar', name:'Shared Solar Carport', type:'Generation', devices:2, power:'8.2 kW', devices_list:[
+        {id:'solaredge-001',name:'SolarEdge SE10K',type:'Solar Inverter',manufacturer:'SolarEdge',model:'SE10K',
+          power:'7.4 kW',status:'online',firmware:'v4.18.28',
+          sensors:[{id:'se-s1',name:'AC Power',type:'power',unit:'kW',value:7.4,status:'online'},{id:'se-s2',name:'DC Power',type:'power',unit:'kW',value:7.8,status:'online'},
+            {id:'se-s3',name:'Daily Yield',type:'energy',unit:'kWh',value:42.6,status:'online'},{id:'se-s4',name:'Temperature',type:'temperature',unit:'°C',value:34,status:'online'}],
+          actuators:[{id:'se-a1',name:'Power Limit',type:'power_limit',unit:'%',value:100,status:'online'}]},
+        {id:'solaredge-opt',name:'SolarEdge P505 Optimizers',type:'Panel Optimizer',manufacturer:'SolarEdge',model:'P505',
+          power:'0.8 kW',status:'online',firmware:'v4.18.28',
+          sensors:[{id:'seo-s1',name:'Active Panels',type:'counter',unit:'',value:14,status:'online'},{id:'seo-s2',name:'Underperforming',type:'counter',unit:'',value:0,status:'online'},
+            {id:'seo-s3',name:'Array Efficiency',type:'percentage',unit:'%',value:98.4,status:'online'}],
+          actuators:[]}
+      ]},
+      { id:'lei-battery', name:'Communal Battery', type:'Storage', devices:1, power:'3.4 kW', devices_list:[
+        {id:'leiden-tesla',name:'Tesla Powerwall 2',type:'Battery',manufacturer:'Tesla',model:'Powerwall 2',
+          power:'+3.4 kW',status:'online',firmware:'v22.36.4',
+          sensors:[{id:'tp-s1',name:'SoC',type:'percentage',unit:'%',value:74,status:'online'},{id:'tp-s2',name:'SoH',type:'percentage',unit:'%',value:96.8,status:'online'},
+            {id:'tp-s3',name:'Power',type:'power',unit:'kW',value:3.4,status:'online'},{id:'tp-s4',name:'Temperature',type:'temperature',unit:'°C',value:26,status:'online'},
+            {id:'tp-s5',name:'Cycle Count',type:'counter',unit:'',value:624,status:'online'}],
+          actuators:[{id:'tp-a1',name:'Mode',type:'mode',unit:'',value:'charge',status:'online'},{id:'tp-a2',name:'Backup Reserve',type:'percentage',unit:'%',value:20,status:'online'}]}
+      ]},
+      { id:'lei-ev', name:'Resident EV Chargers', type:'EV Charging', devices:2, power:'7.4 kW', devices_list:[
+        {id:'lei-alfen-1',name:'Alfen Eve Single S-line #1',type:'EV Charger',manufacturer:'Alfen',model:'Eve Single S-line',
+          power:'7.4 kW',status:'online',firmware:'v5.8.1',
+          sensors:[{id:'la1-s1',name:'Charging Power',type:'power',unit:'kW',value:7.4,status:'online'},{id:'la1-s2',name:'OCPP Status',type:'status',unit:'',value:'Charging',status:'online'},
+            {id:'la1-s3',name:'Session Energy',type:'energy',unit:'kWh',value:14.8,status:'online'}],
+          actuators:[{id:'la1-a1',name:'Current Limit',type:'current',unit:'A',value:16,status:'online'}]},
+        {id:'lei-alfen-2',name:'Alfen Eve Single S-line #2',type:'EV Charger',manufacturer:'Alfen',model:'Eve Single S-line',
+          power:'0 kW',status:'available',firmware:'v5.8.1',
+          sensors:[{id:'la2-s1',name:'Power',type:'power',unit:'kW',value:0,status:'online'},{id:'la2-s2',name:'OCPP Status',type:'status',unit:'',value:'Available',status:'online'},
+            {id:'la2-s3',name:'Total Sessions',type:'counter',unit:'',value:142,status:'online'}],
+          actuators:[{id:'la2-a1',name:'Current Limit',type:'current',unit:'A',value:16,status:'online'}]}
+      ]},
+      { id:'lei-meter', name:'Smart Meter', type:'Metering', devices:1, power:'—', devices_list:[
+        {id:'lei-meter-dev',name:'Sagemcom T211',type:'Smart Meter',manufacturer:'Sagemcom',model:'T211',
+          power:'—',status:'online',firmware:'DSMR 5.0',
+          sensors:[{id:'lm-s1',name:'P1 Import',type:'power',unit:'kW',value:2.4,status:'online'},{id:'lm-s2',name:'P1 Export',type:'power',unit:'kW',value:4.8,status:'online'},
+            {id:'lm-s3',name:'Total Import',type:'energy',unit:'kWh',value:4280,status:'online'},{id:'lm-s4',name:'Gas Usage',type:'volume',unit:'m³',value:842,status:'online'}],
+          actuators:[]}
       ]}
     ]
   },
@@ -1571,18 +2246,21 @@ const SITES = [
 SITES.forEach(site => {
   // Site entity was already registered from SITE_SEEDS — merge the deviceGroups data
   const siteEntity = EntityStore.get(site.id);
-  // Register device groups, devices, sensors, actuators
-  (site.deviceGroups || []).forEach(dg => {
+  // Register device groups, devices, sensors, actuators (recursive for subGroups)
+  function registerDeviceGroup(dg, parentId) {
     EntityStore.put({
-      id: dg.id, entityType: 'deviceGroup', parentId: site.id, name: dg.name,
-      properties: { type: dg.type, deviceCount: dg.devices },
+      id: dg.id, entityType: 'deviceGroup', parentId: parentId, name: dg.name,
+      properties: { type: dg.type, deviceCount: dg.devices, tags: dg.tags || [] },
       state: { power: dg.power, status: 'online' },
       alarms: [], capabilities: ['group_control','aggregated_monitoring'],
     });
+    // Recursively register sub-groups
+    (dg.subGroups || []).forEach(sg => registerDeviceGroup(sg, dg.id));
+    // Register direct devices
     (dg.devices_list || []).forEach(dev => {
       EntityStore.put({
         id: dev.id, entityType: 'device', parentId: dg.id, name: dev.name,
-        properties: { type: dev.type, manufacturer: dev.manufacturer, model: dev.model, firmware: dev.firmware },
+        properties: { type: dev.type, manufacturer: dev.manufacturer, model: dev.model, firmware: dev.firmware, tags: dev.tags || [] },
         state: { power: dev.power, status: dev.status },
         alarms: [], capabilities: ['read_telemetry','control','configure','firmware_update'],
       });
@@ -1603,10 +2281,28 @@ SITES.forEach(site => {
         });
       });
     });
-  });
+  }
+  (site.deviceGroups || []).forEach(dg => registerDeviceGroup(dg, site.id));
 });
 // Store stats
 console.log(`EntityStore hydrated: ${EntityStore.size()} entities across 7 levels`);
+
+// ─── Seed device-level alarms for realistic hierarchy aggregation ───
+[
+  {id:'byd-rack1', alarms:[{id:'dal-1',sev:'warning',msg:'SoH trending below 92% — monitor degradation',time:'8 min ago',status:'active',dev:'BYD Rack 1'}]},
+  {id:'byd-002', alarms:[{id:'dal-2',sev:'info',msg:'Charge cycle count approaching limit',time:'22 min ago',status:'active',dev:'BYD HVS 7.7'}]},
+  {id:'schneider-002', alarms:[{id:'dal-3',sev:'warning',msg:'OCPP disconnected — communication lost',time:'5 min ago',status:'active',dev:'Schneider EVlink #2'}]},
+  {id:'byd-003', alarms:[{id:'dal-4',sev:'warning',msg:'SoH 94.5% — degradation trending',time:'1 hour ago',status:'active',dev:'BYD HVS 12.8'}]},
+  {id:'vestas-005', alarms:[{id:'dal-5',sev:'critical',msg:'Excessive vibration 4.8 mm/s — shutdown recommended',time:'3 min ago',status:'active',dev:'Vestas V27 #5'}]},
+  {id:'novec-001', alarms:[{id:'dal-6',sev:'info',msg:'Tank pressure check due in 14 days',time:'2 hours ago',status:'active',dev:'NOVEC 1230'}]},
+  {id:'abb-002', alarms:[{id:'dal-7',sev:'critical',msg:'Ground fault detected — service required',time:'1 min ago',status:'active',dev:'ABB Terra W22 #1'}]},
+  {id:'sma-004', alarms:[{id:'dal-8',sev:'warning',msg:'Underperforming — 60% expected yield',time:'15 min ago',status:'active',dev:'SMA Sunny Boy 3.0'}]},
+  {id:'antwerp-abb-dc', alarms:[{id:'dal-9',sev:'info',msg:'Firmware update available v2.2.0',time:'1 hour ago',status:'active',dev:'ABB Terra DC'}]},
+  {id:'leiden-tesla', alarms:[{id:'dal-10',sev:'warning',msg:'Gateway reconnecting — intermittent comms',time:'10 min ago',status:'active',dev:'Tesla Powerwall 2'}]},
+].forEach(({id, alarms}) => {
+  const entity = EntityStore.get(id);
+  if (entity) EntityStore.update(id, { alarms });
+});
 
 const USERS = [
   {name:'Jan de Vries',email:'jan@orbiteos.com',role:'Platform Admin',account:'—',status:'active',lastLogin:'Just now'},
@@ -1624,6 +2320,25 @@ const USERS = [
   {name:'Rob Willems',email:'rob@greengrid.nl',role:'API User',account:'GreenGrid Solutions',status:'active',lastLogin:'Via API'},
   {name:'System Bot',email:'system@orbiteos.com',role:'Service Account',account:'—',status:'active',lastLogin:'Continuous'},
 ];
+
+// ─── Seed: AccessStore (scoped user/role assignments) ───
+AccessStore._seed([
+  { userId:'user-jan', scopeId:'orbiteos', role:'Platform Admin', permissions:['*'] },
+  { userId:'user-groot', scopeId:'acme', role:'Account Admin', permissions:['sites.*','users.*','devices.*','billing.view'] },
+  { userId:'user-maria', scopeId:'acme', role:'Operator', permissions:['devices.view','alerts.manage','flows.view'] },
+  { userId:'user-sophie', scopeId:'acme', role:'Installer', permissions:['devices.configure','devices.create'] },
+  { userId:'user-lisa', scopeId:'greengrid', role:'Account Admin', permissions:['sites.*','users.*'] },
+  { userId:'user-kees', scopeId:'greengrid', role:'Operator', permissions:['devices.view','alerts.manage'] },
+  { userId:'user-groot', scopeId:'acme-nl', role:'Regional Admin', permissions:['sites.*','users.view'] },
+  { userId:'user-groot', scopeId:'dg-maasland', role:'Site Admin', permissions:['*'] },
+  { userId:'user-maria', scopeId:'dg-maasland', role:'Operator', permissions:['devices.view','alerts.manage'] },
+  { userId:'user-pieter', scopeId:'microgrid', role:'Site Admin', permissions:['*'] },
+  { userId:'user-lisa', scopeId:'utrecht', role:'Site Admin', permissions:['*'] },
+  { userId:'user-groot', scopeId:'amersfoort', role:'Site Admin', permissions:['*'] },
+  { userId:'user-kees', scopeId:'rotterdam', role:'Operator', permissions:['devices.view','alerts.manage'] },
+  { userId:'user-lisa', scopeId:'leiden', role:'Site Admin', permissions:['*'] },
+  { userId:'user-sophie', scopeId:'antwerp', role:'Installer', permissions:['devices.configure','devices.create'] },
+]);
 
 // ─── i18n ───
 const T = {
@@ -1661,6 +2376,23 @@ const T = {
     sources:'Sources', consumers:'Consumers', hub:'Energy Hub',
     solarPV:'Solar PV', wind:'Wind', grid:'Grid', batteryLabel:'Battery', evLabel:'EV Chargers',
     buildingLoads:'Building Loads', liveMetrics:'Live Metrics',
+    // Configuration page
+    entityManager:'Entity Manager', overview:'Overview', accounts:'Accounts', subAccounts:'Sub-accounts',
+    sites:'Sites', allDevices:'All Devices', sensors:'Sensors', actuators:'Actuators',
+    globalSettings:'Global Settings', domains:'Domains', events:'Events', alarmsTab:'Alarms', auditLog:'Audit Log',
+    tags:'Tags', billing:'Billing', regionalSettings:'Regional Settings',
+    siteSettingsTab:'Site Settings', complianceTab:'Compliance', locationTab:'Location',
+    subGroups:'Sub-groups', groupSettings:'Group Settings', metrics:'Metrics',
+    connection:'Connection', firmwareTab:'Firmware', thresholds:'Thresholds', calibration:'Calibration',
+    dataTab:'Data', commands:'Commands', schedule:'Schedule', limits:'Limits',
+    addEntity:'Add', editEntity:'Edit', deleteEntity:'Delete',
+    deleteConfirm:'Are you sure you want to delete', deleteWarning:'This will also remove',
+    childEntities:'child entities', noResults:'No results found',
+    searchEntities:'Search entities, alarms, tags...', filterTree:'Filter tree...',
+    expandAll:'Expand All', collapseAll:'Collapse', addTag:'Add Tag',
+    manufacturer:'Manufacturer', model:'Model', serialNumber:'Serial Number',
+    installDate:'Install Date', warrantyExpiry:'Warranty', firmwareVersion:'Firmware',
+    role:'Role', permissionsCol:'Permissions', lastLogin:'Last Login',
     welcome:'Welcome back', signIn:'Sign in to OrbitEOS', email:'Email', password:'Password',
     rememberMe:'Remember me', forgotPassword:'Forgot password?', signInBtn:'Sign In', ssoBtn:'Sign in with SSO',
     // SUD login errors — Simple (plain language), Useful (tells what to fix), Delightful (warm tone)
@@ -1712,6 +2444,23 @@ const T = {
     sources:'Bronnen', consumers:'Verbruikers', hub:'Energie Hub',
     solarPV:'Zonne-energie', wind:'Wind', grid:'Net', batteryLabel:'Batterij', evLabel:'EV Laders',
     buildingLoads:'Gebouwbelasting', liveMetrics:'Live Metingen',
+    // Configuration page
+    entityManager:'Entiteitbeheer', overview:'Overzicht', accounts:'Accounts', subAccounts:'Sub-accounts',
+    sites:'Locaties', allDevices:'Alle Apparaten', sensors:'Sensoren', actuators:'Actuatoren',
+    globalSettings:'Algemene Instellingen', domains:'Domeinen', events:'Gebeurtenissen', alarmsTab:'Alarmen', auditLog:'Auditlog',
+    tags:'Tags', billing:'Facturering', regionalSettings:'Regionale Instellingen',
+    siteSettingsTab:'Locatie-instellingen', complianceTab:'Naleving', locationTab:'Locatie',
+    subGroups:'Subgroepen', groupSettings:'Groepsinstellingen', metrics:'Metingen',
+    connection:'Verbinding', firmwareTab:'Firmware', thresholds:'Drempels', calibration:'Kalibratie',
+    dataTab:'Data', commands:'Commando\'s', schedule:'Schema', limits:'Limieten',
+    addEntity:'Toevoegen', editEntity:'Bewerken', deleteEntity:'Verwijderen',
+    deleteConfirm:'Weet u zeker dat u wilt verwijderen', deleteWarning:'Dit verwijdert ook',
+    childEntities:'kind-entiteiten', noResults:'Geen resultaten gevonden',
+    searchEntities:'Zoek entiteiten, alarmen, tags...', filterTree:'Filter boom...',
+    expandAll:'Alles Uitvouwen', collapseAll:'Invouwen', addTag:'Tag Toevoegen',
+    manufacturer:'Fabrikant', model:'Model', serialNumber:'Serienummer',
+    installDate:'Installatiedatum', warrantyExpiry:'Garantie', firmwareVersion:'Firmware',
+    role:'Rol', permissionsCol:'Machtigingen', lastLogin:'Laatste Login',
     welcome:'Welkom terug', signIn:'Inloggen bij OrbitEOS', email:'E-mail', password:'Wachtwoord',
     rememberMe:'Onthoud mij', forgotPassword:'Wachtwoord vergeten?', signInBtn:'Inloggen', ssoBtn:'Inloggen met SSO',
     errEmptyEmail:'Voer je e-mailadres in om te beginnen.',
@@ -2631,12 +3380,29 @@ function EntityScopeSelector({ focusedEntityId, setFocusedEntityId, lang }) {
 }
 
 // ─── Header Component ───
-function Header({ page, t, lang, setLang, themeName, setTheme, alarms, alarmCount, showAlarms, setShowAlarms, focusedEntityId, setFocusedEntityId, setPage, navigateWithLoader, setCurrentApp, currentApp }) {
+function Header({ page, t, lang, setLang, themeId, setThemeId, alarms, alarmCount, showAlarms, setShowAlarms, focusedEntityId, setFocusedEntityId, setPage, navigateWithLoader, setCurrentApp, currentApp }) {
   const titles = { dashboard:t.dashboard, energyFlow:t.energyFlow, fleet:t.fleet, devices:t.devices,
     alerts:t.alerts, rulesEngine:t.rulesEngine, tariffArbitrage:t.tariffArbitrage, peakShaving:t.peakShaving,
     batteryMgmt:t.batteryMgmt, evCharging:t.evCharging, configuration:t.configuration };
   const [bellRing, setBellRing] = useState(false);
+  const [spotlightOpen, setSpotlightOpen] = useState(false);
   useEffect(() => { if(alarmCount>0){setBellRing(true); setTimeout(()=>setBellRing(false),600);} }, [alarmCount]);
+
+  // Ctrl+K / Cmd+K shortcut
+  useEffect(() => {
+    const handler = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') { e.preventDefault(); setSpotlightOpen(true); }
+    };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, []);
+
+  const navigateToEntity = (entityId) => {
+    setFocusedEntityId(entityId);
+    setCurrentApp('configuration');
+    navigateWithLoader('configuration');
+  };
+
   const appObj = NavigationStore.getApp(currentApp);
   const appLabel = appObj ? appObj.label[lang] : '';
   return (
@@ -2649,12 +3415,21 @@ function Header({ page, t, lang, setLang, themeName, setTheme, alarms, alarmCoun
         </div>
       </div>
       <div className="header-right">
+        <button className="header-btn" onClick={() => setSpotlightOpen(true)} style={{display:'flex',alignItems:'center',gap:4,fontSize:12,color:'var(--text-tertiary)'}}>
+          <SearchOutlined/><span className="spotlight-kbd" style={{marginLeft:4}}>⌘K</span>
+        </button>
+        <SpotlightSearch open={spotlightOpen} onClose={() => setSpotlightOpen(false)} lang={lang} t={t} navigateToEntity={navigateToEntity}/>
         <button className="lang-toggle" onClick={()=>setLang(lang==='en'?'nl':'en')}>
           <GlobalOutlined style={{marginRight:4}}/>{lang==='en'?'EN':'NL'}
         </button>
-        <button className="theme-toggle" onClick={()=>setTheme(themeName==='dark'?'light':'dark')}>
-          {themeName==='dark'?<><SunOutlined style={{marginRight:4}}/>Light</>:<><MoonOutlined style={{marginRight:4}}/>Dark</>}
-        </button>
+        <Select value={themeId} onChange={v => setThemeId(v)} size="small" variant="borderless"
+          style={{minWidth:120}} popupMatchSelectWidth={false}
+          options={ThemeStore.getAll().map(th => ({
+            value: th.id,
+            label: React.createElement('span',{style:{display:'flex',alignItems:'center',gap:6}},
+              React.createElement('span',{style:{width:10,height:10,borderRadius:'50%',background:th.preview,display:'inline-block',border:'1px solid rgba(128,128,128,0.3)',flexShrink:0}}),
+              th.name)
+          }))}/>
         <div style={{position:'relative'}}>
           <div className={`alarm-bell ${bellRing?'ringing':''}`} onClick={()=>setShowAlarms(!showAlarms)}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -4452,60 +5227,1092 @@ function EVChargingPage({t, lang, currentSite}) {
   );
 }
 
-// ─── Configuration Page ───
-function ConfigurationPage({t}) {
-  const [section, setSection] = useState('general');
-  const sections = MockAPI.getConfigSections(t);
-  return (
-    <div className="page-enter config-layout">
-      <div className="card" style={{padding:4}}>
-        {sections.map(s => (
-          <div key={s.key} className={`nav-item ${section===s.key?'active':''}`} onClick={()=>setSection(s.key)}
-            style={{padding:'10px 16px'}}>{s.label}</div>
-        ))}
-      </div>
-      <div className="card">
-        <div className="card-title">{t.generalSettings}</div>
-        <div className="card-subtitle">Configure your OrbitEOS platform</div>
-        <div style={{display:'grid',gap:20,maxWidth:480,marginTop:16}}>
-          <div>
-            <div style={{fontSize:13,fontWeight:500,color:'var(--text-primary)',marginBottom:6}}>{t.platformName}</div>
-            <Input defaultValue="OrbitEOS" size="large"/>
-          </div>
-          <div>
-            <div style={{fontSize:13,fontWeight:500,color:'var(--text-primary)',marginBottom:6}}>{t.defaultLang}</div>
-            <Select defaultValue="en" style={{width:'100%'}} size="large"
-              options={[{value:'en',label:'English (EN)'},{value:'nl',label:'Nederlands (NL)'}]}/>
-          </div>
-          <div>
-            <div style={{fontSize:13,fontWeight:500,color:'var(--text-primary)',marginBottom:6}}>{t.timezone}</div>
-            <Select defaultValue="eu-ams" style={{width:'100%'}} size="large"
-              options={[{value:'eu-ams',label:'Europe/Amsterdam (UTC+1)'}]}/>
-          </div>
-          <div>
-            <div style={{fontSize:13,fontWeight:500,color:'var(--text-primary)',marginBottom:6}}>{t.currency}</div>
-            <Select defaultValue="eur" style={{width:'100%'}} size="large"
-              options={[{value:'eur',label:'EUR (€)'},{value:'usd',label:'USD ($)'}]}/>
-          </div>
-          <div style={{borderTop:'1px solid var(--border)',paddingTop:20}}>
-            <div style={{fontSize:14,fontWeight:600,color:'var(--text-primary)',marginBottom:16}}>{t.energySettings}</div>
-            <div style={{fontSize:13,fontWeight:500,color:'var(--text-primary)',marginBottom:8}}>{t.energyUnit}</div>
-            <Segmented options={['kWh','MWh','Wh']} defaultValue="kWh"/>
-          </div>
-          <div style={{borderTop:'1px solid var(--border)',paddingTop:20,display:'grid',gap:16}}>
-            {[t.enableRealtime, t.autoAckAlerts, t.sendDailyReports].map((label,i) => (
-              <div key={i} style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-                <span style={{fontSize:13,color:'var(--text-primary)'}}>{label}</span>
-                <Switch defaultChecked={i<2}/>
+// ─── Spotlight Search ───
+function SpotlightSearch({ open, onClose, lang, t, navigateToEntity }) {
+  const [query, setQuery] = useState('');
+  const [activeIdx, setActiveIdx] = useState(0);
+  const inputRef = useRef(null);
+
+  useEffect(() => { if (open && inputRef.current) { inputRef.current.focus(); setQuery(''); setActiveIdx(0); } }, [open]);
+
+  const results = useMemo(() => {
+    if (!query.trim()) return { entities: [], alarms: [], users: [] };
+    const q = query.toLowerCase();
+    const entities = EntityStore.getAll().filter(e => {
+      const tags = (e.properties?.tags || []).join(' ').toLowerCase();
+      const name = (e.name || '').toLowerCase();
+      const type = (e.entityType || '').toLowerCase();
+      const mfr = (e.properties?.manufacturer || '').toLowerCase();
+      const serial = (e.properties?.serialNumber || '').toLowerCase();
+      return name.includes(q) || type.includes(q) || tags.includes(q) || mfr.includes(q) || serial.includes(q);
+    }).slice(0, 6);
+    const allAlarms = EntityStore.getAggregatedAlarms('orbiteos');
+    const alarms = allAlarms.filter(a => (a.msg||'').toLowerCase().includes(q) || (a.dev||'').toLowerCase().includes(q)).slice(0, 3);
+    const users = USERS.filter(u => u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q) || u.role.toLowerCase().includes(q)).slice(0, 3);
+    return { entities, alarms, users };
+  }, [query]);
+
+  const allItems = [...results.entities.map(e => ({type:'entity',data:e})), ...results.alarms.map(a => ({type:'alarm',data:a})), ...results.users.map(u => ({type:'user',data:u}))];
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'ArrowDown') { e.preventDefault(); setActiveIdx(i => Math.min(i+1, allItems.length-1)); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); setActiveIdx(i => Math.max(i-1, 0)); }
+    else if (e.key === 'Enter' && allItems[activeIdx]) {
+      const item = allItems[activeIdx];
+      if (item.type === 'entity') navigateToEntity(item.data.id);
+      onClose();
+    }
+    else if (e.key === 'Escape') onClose();
+  };
+
+  if (!open) return null;
+
+  const getEntityPath = (entity) => {
+    const path = EntityStore.getPath(entity.id);
+    return path.slice(0, -1).map(p => p.name).join(' > ');
+  };
+
+  let idx = 0;
+  return ReactDOM.createPortal(
+    <div className="spotlight-overlay" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="spotlight-panel">
+        <input ref={inputRef} className="spotlight-input" placeholder={t.searchEntities}
+          value={query} onChange={e => { setQuery(e.target.value); setActiveIdx(0); }} onKeyDown={handleKeyDown}/>
+        <div className="spotlight-results">
+          {query.trim() && allItems.length === 0 && (
+            <div className="spotlight-empty">{t.noResults}<br/><span style={{fontSize:11}}>Try searching by tag, device name, or serial number</span></div>
+          )}
+          {results.entities.length > 0 && <div className="spotlight-section">Entities</div>}
+          {results.entities.map(e => {
+            const i = idx++;
+            return (
+              <div key={e.id} className={`spotlight-item ${i===activeIdx?'active':''}`}
+                onClick={() => { navigateToEntity(e.id); onClose(); }} onMouseEnter={() => setActiveIdx(i)}>
+                <div className="spotlight-item-icon"><EntityTypeIcon type={e.entityType}/></div>
+                <div className="spotlight-item-info">
+                  <div className="spotlight-item-name">{e.name}</div>
+                  <div className="spotlight-item-path">{e.entityType} · {getEntityPath(e)}</div>
+                </div>
+                {(e.properties?.tags||[]).slice(0,2).map(tag => <span key={tag} className="config-tag">{tag}</span>)}
               </div>
-            ))}
-          </div>
-          <div style={{display:'flex',gap:8,justifyContent:'flex-end',borderTop:'1px solid var(--border)',paddingTop:16}}>
-            <button className="header-btn">{t.cancel}</button>
-            <button className="header-btn primary">{t.saveChanges}</button>
-          </div>
+            );
+          })}
+          {results.alarms.length > 0 && <div className="spotlight-section">Alarms</div>}
+          {results.alarms.map((a,ai) => {
+            const i = idx++;
+            return (
+              <div key={ai} className={`spotlight-item ${i===activeIdx?'active':''}`} onMouseEnter={() => setActiveIdx(i)}>
+                <div className="spotlight-item-icon" style={{color:a.sev==='critical'?'var(--error)':a.sev==='warning'?'var(--warning)':'var(--info)'}}>
+                  <ExclamationCircleFilled/>
+                </div>
+                <div className="spotlight-item-info">
+                  <div className="spotlight-item-name">{a.msg}</div>
+                  <div className="spotlight-item-path">{a.sev} · {a.entityName||a.dev}</div>
+                </div>
+              </div>
+            );
+          })}
+          {results.users.length > 0 && <div className="spotlight-section">Users</div>}
+          {results.users.map((u,ui) => {
+            const i = idx++;
+            return (
+              <div key={ui} className={`spotlight-item ${i===activeIdx?'active':''}`} onMouseEnter={() => setActiveIdx(i)}>
+                <div className="spotlight-item-icon"><UserOutlined/></div>
+                <div className="spotlight-item-info">
+                  <div className="spotlight-item-name">{u.name}</div>
+                  <div className="spotlight-item-path">{u.role} · {u.account}</div>
+                </div>
+              </div>
+            );
+          })}
+          {!query.trim() && (
+            <div className="spotlight-empty" style={{padding:20}}>
+              <div style={{marginBottom:8}}>Type to search entities, alarms, users...</div>
+              <div style={{fontSize:11}}>
+                <span className="spotlight-kbd">↑↓</span> navigate &nbsp;
+                <span className="spotlight-kbd">↵</span> select &nbsp;
+                <span className="spotlight-kbd">esc</span> close
+              </div>
+            </div>
+          )}
         </div>
       </div>
+    </div>,
+    document.body
+  );
+}
+
+// ─── Config Nav List (recursive hierarchy with indent lines) ───
+function ConfigNavList({ entity, selectedId, onSelect, expandedNodes, onToggle, filter }) {
+  const children = EntityStore.getChildren(entity.id);
+  const hasChildren = children.length > 0;
+  const isExpanded = expandedNodes.has(entity.id);
+  const isActive = entity.id === selectedId;
+  const directChildren = children.length;
+  const status = entity.state?.status || '';
+
+  // Filter logic — name match on this entity or any descendant
+  if (filter) {
+    const q = filter.toLowerCase();
+    const nameMatch = entity.name.toLowerCase().includes(q);
+    const descendantMatch = EntityStore.getDescendants(entity.id).some(d => d.name.toLowerCase().includes(q));
+    if (!nameMatch && !descendantMatch) return null;
+  }
+
+  const statusColor = status === 'online' ? 'var(--success)' : status === 'warning' ? 'var(--warning)' : (status === 'fault' || status === 'error') ? 'var(--error)' : null;
+
+  const nameRef = useRef(null);
+  const [isTruncated, setIsTruncated] = useState(false);
+  useEffect(() => {
+    const el = nameRef.current;
+    if (el) setIsTruncated(el.scrollWidth > el.clientWidth);
+  });
+
+  const rowInner = (
+    <div className={`config-nav-item ${isActive ? 'active' : ''}`}
+      onClick={(e) => { e.stopPropagation(); onSelect(entity.id); }}>
+      {statusColor && <span style={{width:6,height:6,borderRadius:'50%',background:statusColor,flexShrink:0}}/>}
+      <span className="nav-icon">
+        <EntityTypeIcon type={entity.entityType} style={{fontSize:13, color:isActive?'var(--brand)':'var(--text-tertiary)'}}/>
+      </span>
+      <span className="nav-name" ref={nameRef}>{entity.name}</span>
+      {hasChildren && <span className="nav-count">{directChildren}</span>}
+      {hasChildren && (
+        <span className={`nav-arrow ${isExpanded ? 'open' : ''}`}
+          onClick={(e) => { e.stopPropagation(); onToggle(entity.id); }}>
+          <RightOutlined style={{fontSize:9}}/>
+        </span>
+      )}
+    </div>
+  );
+  const row = isTruncated
+    ? <Tooltip title={entity.name} placement="right" mouseEnterDelay={0.4}>{rowInner}</Tooltip>
+    : rowInner;
+
+  if (!hasChildren) return row;
+
+  return (
+    <div>
+      {row}
+      {isExpanded && (
+        <div className="config-nav-children">
+          {children.map(child => (
+            <ConfigNavList key={child.id} entity={child} selectedId={selectedId} onSelect={onSelect}
+              expandedNodes={expandedNodes} onToggle={onToggle} filter={filter}/>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Tab Content: Overview ───
+function OverviewTabContent({ entity, t, lang, editMode }) {
+  const props = entity.properties || {};
+  const state = entity.state || {};
+  const etype = entity.entityType;
+
+  const fields = [];
+  if (etype === 'platform') {
+    fields.push(['Version', props.version], ['Uptime', state.uptime], ['Accounts', state.totalAccounts], ['Sites', state.totalSites], ['Devices', state.totalDevices], ['Timezone', props.timezone], ['Currency', props.currency]);
+  } else if (etype === 'account') {
+    fields.push(['Type', props.type], ['Contact', props.contactEmail], ['Plan', props.plan], ['VAT', props.vatNumber], ['Contract Start', props.contractStart], ['Contract End', props.contractEnd], ['Users', state.users], ['Sites', state.sites], ['Devices', state.devices]);
+  } else if (etype === 'subAccount') {
+    fields.push(['Region', props.region], ['DSO', props.dso], ['Language', props.lang], ['Sites', state.sites], ['Devices', state.devices]);
+  } else if (etype === 'site') {
+    fields.push(['Location', props.location], ['Type', props.type], ['Capacity', props.capacity], ['DSO', props.dso], ['Connection', props.connection], ['Contract Limit', props.contractLimit ? `${props.contractLimit} kW` : '—'], ['Status', state.status], ['Self-consumption', state.selfConsumption ? `${state.selfConsumption}%` : '—']);
+  } else if (etype === 'deviceGroup') {
+    fields.push(['Type', props.type], ['Devices', props.deviceCount], ['Power', state.power], ['Status', state.status]);
+  } else if (etype === 'device') {
+    fields.push([t.manufacturer, props.manufacturer], [t.model, props.model], [t.firmwareVersion, props.firmware], ['Power', state.power], ['Status', state.status], [t.serialNumber, props.serialNumber || '—'], [t.installDate, props.installDate || '—']);
+  } else if (etype === 'sensor') {
+    fields.push(['Type', props.type], ['Unit', props.unit], ['Value', `${state.value} ${props.unit || ''}`], ['Status', state.status]);
+  } else if (etype === 'actuator') {
+    fields.push(['Type', props.type], ['Unit', props.unit], ['Value', `${state.value} ${props.unit || ''}`], ['Status', state.status]);
+  }
+
+  return (
+    <div className="config-prop-grid">
+      {fields.map(([label, value]) => (
+        <div key={label}>
+          <div className="config-prop-label">{label}</div>
+          {editMode ? <Input size="small" defaultValue={value || ''} style={{marginTop:2}}/> :
+            <div className="config-prop-value">{value || '—'}</div>}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ─── Tab Content: Entity List (generic CRUD table for child entities) ───
+function EntityListTab({ parentId, childType, t, lang, onNavigate, onAdd }) {
+  const children = EntityStore.getChildren(parentId).filter(c => c.entityType === childType);
+  const columns = [];
+  if (childType === 'account') columns.push({title:'Name',key:'name'},{title:'Type',key:'type'},{title:'Plan',key:'plan'},{title:'Users',key:'users'},{title:'Sites',key:'sites'},{title:'Status',key:'status'});
+  else if (childType === 'subAccount') columns.push({title:'Name',key:'name'},{title:'Region',key:'region'},{title:'Sites',key:'sites'},{title:'Devices',key:'devices'});
+  else if (childType === 'site') columns.push({title:'Name',key:'name'},{title:'Location',key:'location'},{title:'Type',key:'type'},{title:'Capacity',key:'capacity'},{title:'Devices',key:'devices'},{title:'Status',key:'status'});
+  else if (childType === 'deviceGroup') columns.push({title:'Name',key:'name'},{title:'Type',key:'type'},{title:'Devices',key:'deviceCount'},{title:'Power',key:'power'},{title:'Status',key:'status'});
+  else if (childType === 'device') columns.push({title:'Name',key:'name'},{title:'Type',key:'type'},{title:t.manufacturer,key:'manufacturer'},{title:'Power',key:'power'},{title:'Status',key:'status'});
+  else if (childType === 'sensor') columns.push({title:'Name',key:'name'},{title:'Type',key:'type'},{title:'Value',key:'value'},{title:'Unit',key:'unit'},{title:'Status',key:'status'});
+  else if (childType === 'actuator') columns.push({title:'Name',key:'name'},{title:'Type',key:'type'},{title:'Value',key:'value'},{title:'Unit',key:'unit'},{title:'Status',key:'status'});
+
+  const getVal = (entity, key) => {
+    if (key === 'name') return entity.name;
+    if (key === 'status') return entity.state?.status || '—';
+    if (key === 'power') return entity.state?.power || '—';
+    if (key === 'value') return entity.state?.value !== undefined ? `${entity.state.value}` : '—';
+    return entity.properties?.[key] || entity.state?.[key] || '—';
+  };
+
+  const typeLabels = { account:'Account', subAccount:'Sub-account', site:'Site', deviceGroup:'Device Group', device:'Device', sensor:'Sensor', actuator:'Actuator' };
+
+  return (
+    <div className="config-tab-content">
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
+        <span style={{fontSize:13,fontWeight:600,color:'var(--text-primary)'}}>{typeLabels[childType]}s ({children.length})</span>
+        <button className="header-btn primary" style={{fontSize:11,padding:'4px 12px'}} onClick={() => onAdd(childType)}>
+          <PlusOutlined style={{marginRight:4}}/>Add {typeLabels[childType]}
+        </button>
+      </div>
+      <table className="data-table" style={{fontSize:12}}>
+        <thead><tr>{columns.map(c => <th key={c.key}>{c.title}</th>)}<th style={{width:60}}>Actions</th></tr></thead>
+        <tbody>
+          {children.map(child => (
+            <tr key={child.id} style={{cursor:'pointer'}} onClick={() => onNavigate(child.id)}>
+              {columns.map(c => (
+                <td key={c.key}>
+                  {c.key === 'status' ? <span className={`status-dot ${getVal(child,c.key)==='online'||getVal(child,c.key)==='active'?'online':getVal(child,c.key)==='fault'?'error':getVal(child,c.key)==='warning'?'warning':'info'}`}>{getVal(child,c.key)}</span>
+                    : c.key === 'name' ? <span style={{fontWeight:500}}>{child.name}</span>
+                    : getVal(child, c.key)}
+                </td>
+              ))}
+              <td onClick={e => e.stopPropagation()}>
+                <span style={{cursor:'pointer',color:'var(--text-tertiary)',marginRight:8}} onClick={() => onNavigate(child.id)}><EditOutlined/></span>
+                <span style={{cursor:'pointer',color:'var(--error)'}} onClick={() => {
+                  const desc = EntityStore.getDescendants(child.id);
+                  Modal.confirm({ title:`Delete ${child.name}?`, content: desc.length > 0 ? `This will also remove ${desc.length} child entities.` : 'This action cannot be undone.',
+                    okText:'Delete', okType:'danger', onOk:() => { EntityStore.remove(child.id); }
+                  });
+                }}><DeleteOutlined/></span>
+              </td>
+            </tr>
+          ))}
+          {children.length === 0 && <tr><td colSpan={columns.length+1} style={{textAlign:'center',color:'var(--text-tertiary)',padding:20}}>No {typeLabels[childType].toLowerCase()}s yet</td></tr>}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+// ─── Tab Content: Users & Roles ───
+function UsersRolesTab({ entityId, t, lang }) {
+  const scopeUsers = AccessStore.getForScope(entityId);
+  const entity = EntityStore.get(entityId);
+
+  return (
+    <div className="config-tab-content">
+      <div style={{fontSize:13,fontWeight:600,color:'var(--text-primary)',marginBottom:12}}>Users with access to {entity?.name}</div>
+      <table className="data-table" style={{fontSize:12}}>
+        <thead><tr><th>User</th><th>{t.role}</th><th>{t.permissionsCol}</th></tr></thead>
+        <tbody>
+          {scopeUsers.map((su, i) => {
+            const user = UserStore.getUser(su.userId);
+            return (
+              <tr key={i}>
+                <td style={{fontWeight:500}}>{user?.name || su.userId}</td>
+                <td><Tag color="blue">{su.role}</Tag></td>
+                <td style={{fontSize:11,color:'var(--text-secondary)'}}>{su.permissions.slice(0,3).join(', ')}{su.permissions.length > 3 ? ` +${su.permissions.length-3}` : ''}</td>
+              </tr>
+            );
+          })}
+          {scopeUsers.length === 0 && <tr><td colSpan={3} style={{textAlign:'center',color:'var(--text-tertiary)',padding:16}}>No users assigned at this scope</td></tr>}
+        </tbody>
+      </table>
+      <div style={{fontSize:13,fontWeight:600,color:'var(--text-primary)',marginTop:24,marginBottom:12}}>Role Definitions</div>
+      <table className="data-table" style={{fontSize:11}}>
+        <thead><tr><th>Role</th><th>Level</th><th>Sites</th><th>Devices</th><th>Users</th><th>Flows</th><th>Config</th></tr></thead>
+        <tbody>
+          {ROLE_DEFINITIONS.map(r => (
+            <tr key={r.name}>
+              <td style={{fontWeight:500}}>{r.name}</td><td>{r.level}</td>
+              <td>{r.permissions.sites}</td><td>{r.permissions.devices}</td><td>{r.permissions.users}</td>
+              <td>{r.permissions.flows}</td><td>{r.permissions.config}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+// ─── Tab Content: Events ───
+function EventsTab({ entity, lang }) {
+  const events = useMemo(() => generateMockEvents(entity, lang), [entity.id, lang]);
+  return (
+    <div className="config-tab-content">
+      <div style={{fontSize:13,fontWeight:600,color:'var(--text-primary)',marginBottom:12}}>Event Log</div>
+      <table className="data-table" style={{fontSize:12}}>
+        <thead><tr><th>Event</th><th>Severity</th><th>Time</th></tr></thead>
+        <tbody>
+          {events.map(ev => (
+            <tr key={ev.id}>
+              <td style={{fontWeight:500}}>{ev.label}</td>
+              <td><span className={`status-dot ${ev.severity==='critical'?'error':ev.severity==='warning'?'warning':'info'}`}>{ev.severity}</span></td>
+              <td style={{color:'var(--text-tertiary)',fontSize:11}}>{ev.timeAgo}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+// ─── Tab Content: Alarms ───
+function AlarmsTab({ entity }) {
+  const alarms = EntityStore.getAggregatedAlarms(entity.id);
+  return (
+    <div className="config-tab-content">
+      <div style={{fontSize:13,fontWeight:600,color:'var(--text-primary)',marginBottom:12}}>Alarms ({alarms.length})</div>
+      {alarms.length === 0 ? <div style={{color:'var(--text-tertiary)',fontSize:12,padding:16,textAlign:'center'}}>No active alarms</div> :
+      <table className="data-table" style={{fontSize:12}}>
+        <thead><tr><th>Severity</th><th>Message</th><th>Entity</th><th>Time</th></tr></thead>
+        <tbody>
+          {alarms.map((a, i) => (
+            <tr key={i}>
+              <td><span className={`status-dot ${a.sev==='critical'?'error':a.sev==='warning'?'warning':'info'}`}>{a.sev}</span></td>
+              <td>{a.msg}</td>
+              <td style={{color:'var(--text-secondary)',fontSize:11}}>{a.entityName}</td>
+              <td style={{color:'var(--text-tertiary)',fontSize:11}}>{a.time}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>}
+    </div>
+  );
+}
+
+// ─── Tab Content: Audit Log ───
+function AuditLogTab({ entity }) {
+  const log = useMemo(() => generateAuditLog(entity), [entity.id]);
+  return (
+    <div className="config-tab-content">
+      <div style={{fontSize:13,fontWeight:600,color:'var(--text-primary)',marginBottom:12}}>Audit Log</div>
+      <table className="data-table" style={{fontSize:12}}>
+        <thead><tr><th>Action</th><th>User</th><th>Time</th></tr></thead>
+        <tbody>
+          {log.map(entry => (
+            <tr key={entry.id}>
+              <td style={{fontWeight:500}}>{entry.action}</td>
+              <td style={{color:'var(--text-secondary)'}}>{entry.user}</td>
+              <td style={{color:'var(--text-tertiary)',fontSize:11}}>{entry.timeAgo}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+// ─── Tab Content: Tags ───
+function TagsTab({ entity }) {
+  const [newTag, setNewTag] = useState('');
+  const tags = entity.properties?.tags || [];
+  return (
+    <div className="config-tab-content">
+      <div style={{fontSize:13,fontWeight:600,color:'var(--text-primary)',marginBottom:12}}>Tags</div>
+      <div style={{display:'flex',flexWrap:'wrap',gap:6,marginBottom:16}}>
+        {tags.map(tag => (
+          <Tag key={tag} closable onClose={() => {
+            const updated = tags.filter(t => t !== tag);
+            EntityStore.update(entity.id, { properties: { tags: updated } });
+          }}>{tag}</Tag>
+        ))}
+        {tags.length === 0 && <span style={{color:'var(--text-tertiary)',fontSize:12}}>No tags</span>}
+      </div>
+      <div style={{display:'flex',gap:8}}>
+        <Input size="small" placeholder="Add tag..." value={newTag} onChange={e => setNewTag(e.target.value)} style={{width:200}}
+          onPressEnter={() => { if (newTag.trim() && !tags.includes(newTag.trim())) {
+            EntityStore.update(entity.id, { properties: { tags: [...tags, newTag.trim()] } }); setNewTag('');
+          }}}/>
+        <button className="header-btn primary" style={{fontSize:11,padding:'2px 10px'}}
+          onClick={() => { if (newTag.trim() && !tags.includes(newTag.trim())) {
+            EntityStore.update(entity.id, { properties: { tags: [...tags, newTag.trim()] } }); setNewTag('');
+          }}}>Add</button>
+      </div>
+    </div>
+  );
+}
+
+// ─── Tab Content: Global Settings ───
+function GlobalSettingsTab({ entity, t }) {
+  const props = entity.properties || {};
+  return (
+    <div className="config-tab-content">
+      <div style={{display:'grid',gap:20,maxWidth:480}}>
+        <div>
+          <div style={{fontSize:13,fontWeight:500,color:'var(--text-primary)',marginBottom:6}}>{t.platformName}</div>
+          <Input defaultValue={entity.name} size="large"/>
+        </div>
+        <div>
+          <div style={{fontSize:13,fontWeight:500,color:'var(--text-primary)',marginBottom:6}}>{t.defaultLang}</div>
+          <Select defaultValue={props.defaultLang || 'en'} style={{width:'100%'}} size="large"
+            options={[{value:'en',label:'English (EN)'},{value:'nl',label:'Nederlands (NL)'}]}/>
+        </div>
+        <div>
+          <div style={{fontSize:13,fontWeight:500,color:'var(--text-primary)',marginBottom:6}}>{t.timezone}</div>
+          <Select defaultValue="eu-ams" style={{width:'100%'}} size="large"
+            options={[{value:'eu-ams',label:'Europe/Amsterdam (UTC+1)'}]}/>
+        </div>
+        <div>
+          <div style={{fontSize:13,fontWeight:500,color:'var(--text-primary)',marginBottom:6}}>{t.currency}</div>
+          <Select defaultValue={props.currency || 'EUR'} style={{width:'100%'}} size="large"
+            options={[{value:'EUR',label:'EUR (€)'},{value:'USD',label:'USD ($)'}]}/>
+        </div>
+        <div style={{borderTop:'1px solid var(--border)',paddingTop:20}}>
+          <div style={{fontSize:14,fontWeight:600,color:'var(--text-primary)',marginBottom:16}}>{t.energySettings}</div>
+          <div style={{fontSize:13,fontWeight:500,color:'var(--text-primary)',marginBottom:8}}>{t.energyUnit}</div>
+          <Segmented options={['kWh','MWh','Wh']} defaultValue={props.energyUnit || 'kWh'}/>
+        </div>
+        <div style={{borderTop:'1px solid var(--border)',paddingTop:20,display:'grid',gap:16}}>
+          {[{label:t.enableRealtime,key:'realtimeEnabled'},{label:t.autoAckAlerts,key:'autoAckAlerts'},{label:t.sendDailyReports,key:'dailyReports'}].map((item,i) => (
+            <div key={i} style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+              <span style={{fontSize:13,color:'var(--text-primary)'}}>{item.label}</span>
+              <Switch defaultChecked={props[item.key] !== false}/>
+            </div>
+          ))}
+        </div>
+        <div style={{display:'flex',gap:8,justifyContent:'flex-end',borderTop:'1px solid var(--border)',paddingTop:16}}>
+          <button className="header-btn">{t.cancel}</button>
+          <button className="header-btn primary">{t.saveChanges}</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Tab Content: Connection (Device) ───
+function ConnectionTab({ entity }) {
+  return (
+    <div className="config-tab-content">
+      <div className="config-prop-grid">
+        <div><div className="config-prop-label">Protocol</div><div className="config-prop-value">Modbus TCP</div></div>
+        <div><div className="config-prop-label">IP Address</div><div className="config-prop-value">192.168.1.{Math.floor(Math.random()*254)+1}</div></div>
+        <div><div className="config-prop-label">Port</div><div className="config-prop-value">502</div></div>
+        <div><div className="config-prop-label">Modbus ID</div><div className="config-prop-value">{Math.floor(Math.random()*247)+1}</div></div>
+        <div><div className="config-prop-label">Polling Interval</div><div className="config-prop-value">5s</div></div>
+        <div><div className="config-prop-label">MQTT Topic</div><div className="config-prop-value" style={{fontSize:10,wordBreak:'break-all'}}>orbiteos/acme/nl/{entity.id}/telemetry</div></div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Tab Content: Firmware (Device) ───
+function FirmwareTab({ entity }) {
+  const fw = entity.properties?.firmware || 'Unknown';
+  return (
+    <div className="config-tab-content">
+      <div className="config-prop-grid">
+        <div><div className="config-prop-label">Current Version</div><div className="config-prop-value">{fw}</div></div>
+        <div><div className="config-prop-label">Update Available</div><div className="config-prop-value" style={{color:'var(--success)'}}>No</div></div>
+        <div><div className="config-prop-label">Last Updated</div><div className="config-prop-value">2026-02-15</div></div>
+        <div><div className="config-prop-label">Auto-update</div><Switch defaultChecked={false} size="small"/></div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Tab Content: Sensor Thresholds ───
+function ThresholdsTab({ entity }) {
+  return (
+    <div className="config-tab-content">
+      <div style={{fontSize:13,fontWeight:600,color:'var(--text-primary)',marginBottom:12}}>Threshold Configuration</div>
+      <div style={{display:'grid',gap:16,maxWidth:400}}>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+          <span style={{fontSize:12,color:'var(--text-secondary)'}}>Warning Min</span>
+          <InputNumber size="small" defaultValue={0} style={{width:100}}/>
+        </div>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+          <span style={{fontSize:12,color:'var(--text-secondary)'}}>Warning Max</span>
+          <InputNumber size="small" defaultValue={80} style={{width:100}}/>
+        </div>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+          <span style={{fontSize:12,color:'var(--text-secondary)'}}>Critical Min</span>
+          <InputNumber size="small" defaultValue={-10} style={{width:100}}/>
+        </div>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+          <span style={{fontSize:12,color:'var(--text-secondary)'}}>Critical Max</span>
+          <InputNumber size="small" defaultValue={100} style={{width:100}}/>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Tab Content: Actuator Commands ───
+function CommandsTab({ entity }) {
+  const props = entity.properties || {};
+  return (
+    <div className="config-tab-content">
+      <div style={{fontSize:13,fontWeight:600,color:'var(--text-primary)',marginBottom:12}}>Available Commands</div>
+      <div style={{display:'grid',gap:12}}>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:10,background:'var(--bg-secondary)',borderRadius:6}}>
+          <div><div style={{fontSize:12,fontWeight:500,color:'var(--text-primary)'}}>Set Value</div><div style={{fontSize:11,color:'var(--text-tertiary)'}}>Current: {entity.state?.value} {props.unit}</div></div>
+          <div style={{display:'flex',gap:8,alignItems:'center'}}><InputNumber size="small" defaultValue={entity.state?.value} style={{width:80}}/><button className="header-btn primary" style={{fontSize:11,padding:'2px 10px'}}>Execute</button></div>
+        </div>
+        {props.type === 'mode' && <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:10,background:'var(--bg-secondary)',borderRadius:6}}>
+          <div><div style={{fontSize:12,fontWeight:500,color:'var(--text-primary)'}}>Change Mode</div></div>
+          <Select size="small" defaultValue={entity.state?.value} options={[{value:'auto',label:'Auto'},{value:'manual',label:'Manual'},{value:'idle',label:'Idle'}]} style={{width:100}}/>
+        </div>}
+      </div>
+    </div>
+  );
+}
+
+// ─── Tab Content: Site Settings ───
+function SiteSettingsTab({ entity, t }) {
+  const props = entity.properties || {};
+  return (
+    <div className="config-tab-content">
+      <div style={{display:'grid',gap:16,maxWidth:480}}>
+        <div><div style={{fontSize:13,fontWeight:500,color:'var(--text-primary)',marginBottom:6}}>Capacity</div>
+          <Input defaultValue={props.capacity || ''} size="small"/></div>
+        <div><div style={{fontSize:13,fontWeight:500,color:'var(--text-primary)',marginBottom:6}}>DSO Operator</div>
+          <Input defaultValue={props.dso || ''} size="small"/></div>
+        <div><div style={{fontSize:13,fontWeight:500,color:'var(--text-primary)',marginBottom:6}}>Contract Power Limit</div>
+          <InputNumber defaultValue={props.contractLimit || 0} addonAfter="kW" size="small" style={{width:'100%'}}/></div>
+        <div><div style={{fontSize:13,fontWeight:500,color:'var(--text-primary)',marginBottom:6}}>Grid Connection</div>
+          <Input defaultValue={props.connection || ''} size="small"/></div>
+        <div style={{display:'flex',gap:8,justifyContent:'flex-end',borderTop:'1px solid var(--border)',paddingTop:12}}>
+          <button className="header-btn">{t.cancel}</button>
+          <button className="header-btn primary">{t.saveChanges}</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Tab Content: Compliance ───
+function ComplianceTab({ entity }) {
+  const c = entity.properties?.compliance || {};
+  return (
+    <div className="config-tab-content">
+      <div style={{display:'flex',gap:24,marginBottom:20,flexWrap:'wrap'}}>
+        <div style={{textAlign:'center'}}><div style={{fontSize:28,fontWeight:700,color:c.score>=95?'var(--success)':c.score>=80?'var(--warning)':'var(--error)'}}>{c.score||0}%</div><div style={{fontSize:11,color:'var(--text-tertiary)'}}>Compliance Score</div></div>
+        <div style={{textAlign:'center'}}><div style={{fontSize:28,fontWeight:700,color:'var(--text-primary)'}}>{c.tracked||0}</div><div style={{fontSize:11,color:'var(--text-tertiary)'}}>Regulations Tracked</div></div>
+        <div style={{textAlign:'center'}}><div style={{fontSize:28,fontWeight:700,color:'var(--success)'}}>{c.compliant||0}</div><div style={{fontSize:11,color:'var(--text-tertiary)'}}>Compliant</div></div>
+        <div style={{textAlign:'center'}}><div style={{fontSize:28,fontWeight:700,color:c.actionNeeded>0?'var(--warning)':'var(--text-primary)'}}>{c.actionNeeded||0}</div><div style={{fontSize:11,color:'var(--text-tertiary)'}}>Action Needed</div></div>
+      </div>
+      <div className="config-prop-grid">
+        <div><div className="config-prop-label">Audit Entries</div><div className="config-prop-value">{c.auditEntries||'0'}</div></div>
+        <div><div className="config-prop-label">Data Retention</div><div className="config-prop-value">{c.retention||'5 yr'}</div></div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Tab Content: Location ───
+function LocationTab({ entity }) {
+  const props = entity.properties || {};
+  return (
+    <div className="config-tab-content">
+      <div className="config-prop-grid">
+        <div><div className="config-prop-label">Address</div><div className="config-prop-value">{props.location||'—'}</div></div>
+        <div><div className="config-prop-label">Latitude</div><div className="config-prop-value">{props.lat||'—'}</div></div>
+        <div><div className="config-prop-label">Longitude</div><div className="config-prop-value">{props.lng||'—'}</div></div>
+        <div><div className="config-prop-label">Timezone</div><div className="config-prop-value">Europe/Amsterdam (UTC+1)</div></div>
+      </div>
+      <div style={{marginTop:16,height:200,background:'var(--bg-secondary)',borderRadius:8,border:'1px solid var(--border)',display:'flex',alignItems:'center',justifyContent:'center'}}>
+        <div style={{textAlign:'center',color:'var(--text-tertiary)'}}>
+          <EnvironmentOutlined style={{fontSize:32,marginBottom:8,display:'block'}}/>
+          <div style={{fontSize:12}}>Map view — {props.lat?.toFixed(3)}, {props.lng?.toFixed(3)}</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Tab Content: Billing (Account) ───
+function BillingTab({ entity }) {
+  const props = entity.properties || {};
+  return (
+    <div className="config-tab-content">
+      <div className="config-prop-grid">
+        <div><div className="config-prop-label">Plan</div><div className="config-prop-value"><Tag color="blue">{props.plan||'Professional'}</Tag></div></div>
+        <div><div className="config-prop-label">Contract Start</div><div className="config-prop-value">{props.contractStart||'2024-01-01'}</div></div>
+        <div><div className="config-prop-label">Contract End</div><div className="config-prop-value">{props.contractEnd||'2026-12-31'}</div></div>
+        <div><div className="config-prop-label">VAT Number</div><div className="config-prop-value">{props.vatNumber||'—'}</div></div>
+        <div><div className="config-prop-label">Monthly Cost</div><div className="config-prop-value">€ 2,450</div></div>
+        <div><div className="config-prop-label">Payment Status</div><div className="config-prop-value"><span className="status-dot online">Paid</span></div></div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Tab Content: API Keys (Account) ───
+function ApiKeysTab({ entity }) {
+  const keys = [
+    {name:'Production API Key',prefix:'sk-prod-****',created:'2025-06-01',lastUsed:'2 min ago',status:'active'},
+    {name:'Staging API Key',prefix:'sk-stag-****',created:'2025-09-15',lastUsed:'3 days ago',status:'active'},
+    {name:'Legacy Key (deprecated)',prefix:'sk-leg-****',created:'2024-03-10',lastUsed:'1 month ago',status:'revoked'},
+  ];
+  return (
+    <div className="config-tab-content">
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
+        <span style={{fontSize:13,fontWeight:600,color:'var(--text-primary)'}}>API Keys</span>
+        <button className="header-btn primary" style={{fontSize:11,padding:'4px 12px'}}><PlusOutlined style={{marginRight:4}}/>Generate Key</button>
+      </div>
+      <table className="data-table" style={{fontSize:12}}>
+        <thead><tr><th>Name</th><th>Key</th><th>Created</th><th>Last Used</th><th>Status</th></tr></thead>
+        <tbody>{keys.map((k,i) => (
+          <tr key={i}><td style={{fontWeight:500}}>{k.name}</td><td style={{fontFamily:'monospace',fontSize:11}}>{k.prefix}</td>
+            <td>{k.created}</td><td>{k.lastUsed}</td>
+            <td><Tag color={k.status==='active'?'green':'red'}>{k.status}</Tag></td></tr>
+        ))}</tbody>
+      </table>
+    </div>
+  );
+}
+
+// ─── Tab Content: Domains (Platform) ───
+function DomainsTab({ entity }) {
+  const domains = [
+    {name:'orbiteos-energy',version:'1.4.2',status:'running',templates:14,lastSync:'2 min ago'},
+    {name:'orbiteos-ev',version:'0.9.1',status:'running',templates:6,lastSync:'5 min ago'},
+  ];
+  return (
+    <div className="config-tab-content">
+      <div style={{fontSize:13,fontWeight:600,color:'var(--text-primary)',marginBottom:12}}>Registered Domain Plugins</div>
+      <table className="data-table" style={{fontSize:12}}>
+        <thead><tr><th>Domain</th><th>Version</th><th>Templates</th><th>Last Sync</th><th>Status</th></tr></thead>
+        <tbody>{domains.map((d,i) => (
+          <tr key={i}><td style={{fontWeight:500}}>{d.name}</td><td>{d.version}</td><td>{d.templates}</td>
+            <td>{d.lastSync}</td><td><span className="status-dot online">{d.status}</span></td></tr>
+        ))}</tbody>
+      </table>
+    </div>
+  );
+}
+
+// ─── Tab Content: Regional Settings (Sub-account) ───
+function RegionalSettingsTab({ entity, t }) {
+  const props = entity.properties || {};
+  return (
+    <div className="config-tab-content">
+      <div style={{display:'grid',gap:16,maxWidth:480}}>
+        <div><div style={{fontSize:13,fontWeight:500,color:'var(--text-primary)',marginBottom:6}}>Region</div>
+          <Input defaultValue={props.region || ''} size="small"/></div>
+        <div><div style={{fontSize:13,fontWeight:500,color:'var(--text-primary)',marginBottom:6}}>DSO Operator</div>
+          <Input defaultValue={props.dso || ''} size="small"/></div>
+        <div><div style={{fontSize:13,fontWeight:500,color:'var(--text-primary)',marginBottom:6}}>Language</div>
+          <Select defaultValue={props.lang || 'en'} style={{width:'100%'}} size="small"
+            options={[{value:'en',label:'English'},{value:'nl',label:'Nederlands'},{value:'fr',label:'Français'},{value:'de',label:'Deutsch'}]}/></div>
+        <div style={{display:'flex',gap:8,justifyContent:'flex-end',borderTop:'1px solid var(--border)',paddingTop:12}}>
+          <button className="header-btn">{t.cancel}</button>
+          <button className="header-btn primary">{t.saveChanges}</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Tab Content: Group Settings (Device Group) ───
+function GroupSettingsTab({ entity, t }) {
+  const props = entity.properties || {};
+  return (
+    <div className="config-tab-content">
+      <div style={{display:'grid',gap:16,maxWidth:480}}>
+        <div><div style={{fontSize:13,fontWeight:500,color:'var(--text-primary)',marginBottom:6}}>Group Type</div>
+          <Input defaultValue={props.type || ''} size="small"/></div>
+        <div><div style={{fontSize:13,fontWeight:500,color:'var(--text-primary)',marginBottom:6}}>Aggregation Mode</div>
+          <Select defaultValue="sum" style={{width:'100%'}} size="small"
+            options={[{value:'sum',label:'Sum'},{value:'avg',label:'Average'},{value:'max',label:'Maximum'},{value:'min',label:'Minimum'}]}/></div>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+          <span style={{fontSize:13,color:'var(--text-primary)'}}>Propagate Alarms</span><Switch defaultChecked size="small"/></div>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+          <span style={{fontSize:13,color:'var(--text-primary)'}}>Auto-balance Load</span><Switch defaultChecked={false} size="small"/></div>
+        <div style={{display:'flex',gap:8,justifyContent:'flex-end',borderTop:'1px solid var(--border)',paddingTop:12}}>
+          <button className="header-btn">{t.cancel}</button>
+          <button className="header-btn primary">{t.saveChanges}</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Tab Content: Metrics (Device Group) ───
+function MetricsTab({ entity }) {
+  const children = EntityStore.getChildren(entity.id).filter(c => c.entityType === 'device' || c.entityType === 'deviceGroup');
+  const totalPower = children.reduce((sum, c) => sum + (parseFloat(c.state?.power) || 0), 0);
+  return (
+    <div className="config-tab-content">
+      <div style={{display:'flex',gap:24,marginBottom:20,flexWrap:'wrap'}}>
+        <div style={{textAlign:'center'}}><div style={{fontSize:24,fontWeight:700,color:'var(--brand)'}}>{totalPower.toFixed(1)} kW</div><div style={{fontSize:11,color:'var(--text-tertiary)'}}>Total Power</div></div>
+        <div style={{textAlign:'center'}}><div style={{fontSize:24,fontWeight:700,color:'var(--text-primary)'}}>{children.length}</div><div style={{fontSize:11,color:'var(--text-tertiary)'}}>Child Entities</div></div>
+        <div style={{textAlign:'center'}}><div style={{fontSize:24,fontWeight:700,color:'var(--success)'}}>{children.filter(c=>c.state?.status==='online').length}</div><div style={{fontSize:11,color:'var(--text-tertiary)'}}>Online</div></div>
+      </div>
+      <div style={{fontSize:13,fontWeight:600,color:'var(--text-primary)',marginBottom:8}}>Power Distribution</div>
+      <div style={{display:'grid',gap:6}}>
+        {children.filter(c => parseFloat(c.state?.power) > 0).map(c => (
+          <div key={c.id} style={{display:'flex',alignItems:'center',gap:8}}>
+            <span style={{fontSize:12,color:'var(--text-secondary)',width:180,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{c.name}</span>
+            <div className="progress-bar" style={{flex:1}}><div className="progress-bar-fill" style={{width:`${Math.min(100,(parseFloat(c.state?.power)/Math.max(totalPower,1))*100)}%`,background:'var(--brand)'}}/></div>
+            <span style={{fontSize:11,color:'var(--text-tertiary)',width:60,textAlign:'right'}}>{c.state?.power}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── Tab Content: Sensor Calibration ───
+function CalibrationTab({ entity }) {
+  return (
+    <div className="config-tab-content">
+      <div className="config-prop-grid">
+        <div><div className="config-prop-label">Offset</div><InputNumber size="small" defaultValue={0} step={0.01} style={{width:120}}/></div>
+        <div><div className="config-prop-label">Scale Factor</div><InputNumber size="small" defaultValue={1.0} step={0.01} style={{width:120}}/></div>
+        <div><div className="config-prop-label">Last Calibration</div><div className="config-prop-value">2026-01-15</div></div>
+        <div><div className="config-prop-label">Next Due</div><div className="config-prop-value">2027-01-15</div></div>
+        <div><div className="config-prop-label">Calibration Method</div>
+          <Select defaultValue="factory" size="small" style={{width:160}} options={[{value:'factory',label:'Factory'},{value:'field',label:'Field'},{value:'reference',label:'Reference Instrument'}]}/></div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Tab Content: Sensor Data (Last 24h) ───
+function SensorDataTab({ entity }) {
+  const val = entity.state?.value ?? 0;
+  const unit = entity.properties?.unit || '';
+  const points = useMemo(() => Array.from({length:24}, (_,i) => {
+    const variation = (Math.random() - 0.5) * val * 0.4;
+    return { hour: `${String(i).padStart(2,'0')}:00`, value: Math.max(0, val + variation).toFixed(1) };
+  }), [entity.id]);
+  const max = Math.max(...points.map(p => parseFloat(p.value)));
+  return (
+    <div className="config-tab-content">
+      <div style={{fontSize:13,fontWeight:600,color:'var(--text-primary)',marginBottom:12}}>Last 24 Hours — {entity.name}</div>
+      <div style={{display:'flex',alignItems:'flex-end',gap:2,height:120,padding:'0 4px'}}>
+        {points.map((p,i) => (
+          <div key={i} style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',gap:2}}>
+            <div style={{width:'100%',background:'var(--brand)',borderRadius:2,opacity:0.8,
+              height:`${max > 0 ? (parseFloat(p.value)/max)*100 : 0}%`,minHeight:2,transition:'height 0.3s'}}/>
+          </div>
+        ))}
+      </div>
+      <div style={{display:'flex',justifyContent:'space-between',padding:'4px',fontSize:9,color:'var(--text-tertiary)'}}>
+        <span>00:00</span><span>06:00</span><span>12:00</span><span>18:00</span><span>24:00</span>
+      </div>
+      <table className="data-table" style={{fontSize:11,marginTop:12}}>
+        <thead><tr><th>Time</th><th>Value ({unit})</th></tr></thead>
+        <tbody>{points.slice(-8).reverse().map((p,i) => (
+          <tr key={i}><td>{p.hour}</td><td>{p.value} {unit}</td></tr>
+        ))}</tbody>
+      </table>
+    </div>
+  );
+}
+
+// ─── Tab Content: Actuator Schedule ───
+function ScheduleTab({ entity }) {
+  const schedules = [
+    {time:'06:00',action:'Set to Auto',days:'Mon-Fri',active:true},
+    {time:'08:00',action:'Power limit 80%',days:'Mon-Fri',active:true},
+    {time:'18:00',action:'Set to Idle',days:'Mon-Fri',active:true},
+    {time:'00:00',action:'Night mode',days:'Every day',active:false},
+  ];
+  return (
+    <div className="config-tab-content">
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
+        <span style={{fontSize:13,fontWeight:600,color:'var(--text-primary)'}}>Schedule Entries</span>
+        <button className="header-btn primary" style={{fontSize:11,padding:'4px 12px'}}><PlusOutlined style={{marginRight:4}}/>Add Entry</button>
+      </div>
+      <table className="data-table" style={{fontSize:12}}>
+        <thead><tr><th>Time</th><th>Action</th><th>Days</th><th>Active</th></tr></thead>
+        <tbody>{schedules.map((s,i) => (
+          <tr key={i}><td style={{fontWeight:500}}>{s.time}</td><td>{s.action}</td><td>{s.days}</td>
+            <td><Switch size="small" defaultChecked={s.active}/></td></tr>
+        ))}</tbody>
+      </table>
+    </div>
+  );
+}
+
+// ─── Tab Content: Actuator Limits ───
+function LimitsTab({ entity }) {
+  return (
+    <div className="config-tab-content">
+      <div style={{fontSize:13,fontWeight:600,color:'var(--text-primary)',marginBottom:12}}>Safety & Rate Limits</div>
+      <div style={{display:'grid',gap:16,maxWidth:400}}>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+          <span style={{fontSize:12,color:'var(--text-secondary)'}}>Minimum Value</span>
+          <InputNumber size="small" defaultValue={0} style={{width:100}}/></div>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+          <span style={{fontSize:12,color:'var(--text-secondary)'}}>Maximum Value</span>
+          <InputNumber size="small" defaultValue={100} style={{width:100}}/></div>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+          <span style={{fontSize:12,color:'var(--text-secondary)'}}>Rate Limit (per min)</span>
+          <InputNumber size="small" defaultValue={10} style={{width:100}}/></div>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+          <span style={{fontSize:12,color:'var(--text-secondary)'}}>Ramp Rate (per sec)</span>
+          <InputNumber size="small" defaultValue={5} style={{width:100}}/></div>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+          <span style={{fontSize:12,color:'var(--text-primary)'}}>Safety Override Enabled</span>
+          <Switch defaultChecked size="small"/></div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Tab Content: All Devices (flat list for Site) ───
+function AllDevicesTab({ entity, t, lang, onNavigate }) {
+  const allDevices = EntityStore.getDescendants(entity.id).filter(e => e.entityType === 'device');
+  return (
+    <div className="config-tab-content">
+      <div style={{fontSize:13,fontWeight:600,color:'var(--text-primary)',marginBottom:12}}>All Devices ({allDevices.length})</div>
+      <table className="data-table" style={{fontSize:12}}>
+        <thead><tr><th>Name</th><th>Type</th><th>{t.manufacturer}</th><th>Group</th><th>Power</th><th>Status</th></tr></thead>
+        <tbody>{allDevices.map(dev => {
+          const parent = EntityStore.get(dev.parentId);
+          return (
+            <tr key={dev.id} style={{cursor:'pointer'}} onClick={() => onNavigate && onNavigate(dev.id)}>
+              <td style={{fontWeight:500}}>{dev.name}</td>
+              <td>{dev.properties?.type||'—'}</td>
+              <td>{dev.properties?.manufacturer||'—'}</td>
+              <td style={{color:'var(--text-secondary)',fontSize:11}}>{parent?.name||'—'}</td>
+              <td>{dev.state?.power||'—'}</td>
+              <td><span className={`status-dot ${dev.state?.status==='online'||dev.state?.status==='active'?'online':dev.state?.status==='fault'?'error':dev.state?.status==='warning'?'warning':'info'}`}>{dev.state?.status||'—'}</span></td>
+            </tr>
+          );
+        })}</tbody>
+      </table>
+    </div>
+  );
+}
+
+// ─── Create Entity Drawer ───
+function CreateEntityDrawer({ open, onClose, parentId, childType, t }) {
+  const [name, setName] = useState('');
+  const parent = EntityStore.get(parentId);
+  const typeLabels = { account:'Account', subAccount:'Sub-account', site:'Site', deviceGroup:'Device Group', device:'Device', sensor:'Sensor', actuator:'Actuator' };
+
+  const handleCreate = () => {
+    if (!name.trim()) return;
+    const newId = `${childType}-${Date.now()}`;
+    EntityStore.put({
+      id: newId, entityType: childType, parentId, name: name.trim(),
+      properties: { tags: [] }, state: { status: 'online' }, alarms: [], capabilities: [],
+    });
+    setName('');
+    onClose(newId);
+  };
+
+  return (
+    <Drawer title={`Add ${typeLabels[childType] || 'Entity'}`} open={open} onClose={() => onClose(null)} width={400}
+      extra={<button className="header-btn primary" onClick={handleCreate}>{t.saveChanges}</button>}>
+      <div style={{display:'grid',gap:16}}>
+        <div>
+          <div style={{fontSize:12,fontWeight:500,color:'var(--text-primary)',marginBottom:4}}>Parent</div>
+          <Input value={parent?.name || ''} disabled size="small"/>
+        </div>
+        <div>
+          <div style={{fontSize:12,fontWeight:500,color:'var(--text-primary)',marginBottom:4}}>Name</div>
+          <Input value={name} onChange={e => setName(e.target.value)} placeholder={`New ${typeLabels[childType]}`} onPressEnter={handleCreate}/>
+        </div>
+        <div>
+          <div style={{fontSize:12,fontWeight:500,color:'var(--text-primary)',marginBottom:4}}>Tags</div>
+          <Select mode="tags" style={{width:'100%'}} placeholder="Add tags..." defaultValue={[]}/>
+        </div>
+      </div>
+    </Drawer>
+  );
+}
+
+// ─── Configuration Page (Unified) ───
+function ConfigurationPage({ t, lang, navigateWithLoader, focusedEntityId, setFocusedEntityId }) {
+  const [selectedEntityId, setSelectedEntityId] = useState('orbiteos');
+  const [expandedNodes, setExpandedNodes] = useState(() => {
+    const set = new Set(['orbiteos']);
+    EntityStore.getByType('account').forEach(a => set.add(a.id));
+    EntityStore.getByType('subAccount').forEach(sa => set.add(sa.id));
+    return set;
+  });
+  const [treeFilter, setTreeFilter] = useState('');
+  const [activeTab, setActiveTab] = useState('overview');
+  const [editMode, setEditMode] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [drawerChildType, setDrawerChildType] = useState(null);
+
+  const selectedEntity = EntityStore.get(selectedEntityId);
+  const tabs = selectedEntity ? TabRegistry.getTabsForEntity(selectedEntity) : [];
+
+  const handleSelect = (entityId) => {
+    setSelectedEntityId(entityId);
+    setActiveTab('overview');
+    setEditMode(false);
+    // Auto-expand ancestors
+    const path = EntityStore.getPath(entityId);
+    setExpandedNodes(prev => {
+      const next = new Set(prev);
+      path.forEach(p => next.add(p.id));
+      return next;
+    });
+  };
+
+  const handleToggle = (id) => {
+    setExpandedNodes(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+
+  const handleAdd = (childType) => {
+    setDrawerChildType(childType);
+    setDrawerOpen(true);
+  };
+
+  const handleDrawerClose = (newId) => {
+    setDrawerOpen(false);
+    if (newId) handleSelect(newId);
+  };
+
+  const handleDelete = () => {
+    if (!selectedEntity || selectedEntity.entityType === 'platform') return;
+    const desc = EntityStore.getDescendants(selectedEntityId);
+    Modal.confirm({
+      title: `${t.deleteConfirm} ${selectedEntity.name}?`,
+      content: desc.length > 0 ? `${t.deleteWarning} ${desc.length} ${t.childEntities}.` : undefined,
+      okText: t.deleteEntity, okType: 'danger',
+      onOk: () => {
+        const parentId = selectedEntity.parentId;
+        EntityStore.remove(selectedEntityId);
+        handleSelect(parentId || 'orbiteos');
+      },
+    });
+  };
+
+  // Build breadcrumb
+  const breadcrumb = selectedEntity ? EntityStore.getPath(selectedEntityId) : [];
+
+  // Render tab content
+  const renderTabContent = (tabDef) => {
+    if (!selectedEntity) return null;
+    const key = tabDef.key;
+    if (key === 'overview') return <OverviewTabContent entity={selectedEntity} t={t} lang={lang} editMode={editMode}/>;
+    if (tabDef.type === 'children') return <EntityListTab parentId={selectedEntityId} childType={tabDef.childType} t={t} lang={lang} onNavigate={handleSelect} onAdd={handleAdd}/>;
+    if (key === 'usersRoles') return <UsersRolesTab entityId={selectedEntityId} t={t} lang={lang}/>;
+    if (key === 'events') return <EventsTab entity={selectedEntity} lang={lang}/>;
+    if (key === 'alarms') return <AlarmsTab entity={selectedEntity}/>;
+    if (key === 'auditLog') return <AuditLogTab entity={selectedEntity}/>;
+    if (key === 'tags') return <TagsTab entity={selectedEntity}/>;
+    if (key === 'globalSettings') return <GlobalSettingsTab entity={selectedEntity} t={t}/>;
+    if (key === 'connection') return <ConnectionTab entity={selectedEntity}/>;
+    if (key === 'firmware') return <FirmwareTab entity={selectedEntity}/>;
+    if (key === 'thresholds') return <ThresholdsTab entity={selectedEntity}/>;
+    if (key === 'commands') return <CommandsTab entity={selectedEntity}/>;
+    if (key === 'siteSettings') return <SiteSettingsTab entity={selectedEntity} t={t}/>;
+    if (key === 'compliance') return <ComplianceTab entity={selectedEntity}/>;
+    if (key === 'location') return <LocationTab entity={selectedEntity}/>;
+    if (key === 'billing') return <BillingTab entity={selectedEntity}/>;
+    if (key === 'apiKeys') return <ApiKeysTab entity={selectedEntity}/>;
+    if (key === 'domains') return <DomainsTab entity={selectedEntity}/>;
+    if (key === 'regionalSettings') return <RegionalSettingsTab entity={selectedEntity} t={t}/>;
+    if (key === 'groupSettings') return <GroupSettingsTab entity={selectedEntity} t={t}/>;
+    if (key === 'metrics') return <MetricsTab entity={selectedEntity}/>;
+    if (key === 'calibration') return <CalibrationTab entity={selectedEntity}/>;
+    if (key === 'data') return <SensorDataTab entity={selectedEntity}/>;
+    if (key === 'schedule') return <ScheduleTab entity={selectedEntity}/>;
+    if (key === 'limits') return <LimitsTab entity={selectedEntity}/>;
+    if (key === 'allDevices') return <AllDevicesTab entity={selectedEntity} t={t} lang={lang} onNavigate={handleSelect}/>;
+    // Fallback
+    return <div className="config-tab-content" style={{color:'var(--text-tertiary)',fontSize:12,padding:20,textAlign:'center'}}>{tabDef.label[lang]}</div>;
+  };
+
+  const platform = EntityStore.get('orbiteos');
+
+  return (
+    <div className="page-enter">
+      <div className="config-page">
+        {/* Tree Panel */}
+        <div className="config-tree-panel">
+          <div className="config-tree-header">
+            <Input size="small" prefix={<SearchOutlined style={{color:'var(--text-tertiary)'}}/>}
+              placeholder={t.filterTree} value={treeFilter} onChange={e => setTreeFilter(e.target.value)}
+              allowClear style={{borderRadius:6}}/>
+          </div>
+          <div className="config-tree-scroll config-nav-list" style={{padding:'4px 0'}}>
+            {platform && <ConfigNavList entity={platform} selectedId={selectedEntityId} onSelect={handleSelect}
+              expandedNodes={expandedNodes} onToggle={handleToggle} filter={treeFilter}/>}
+          </div>
+        </div>
+
+        {/* Detail Panel */}
+        <div className="config-detail-panel">
+          {selectedEntity ? (
+            <>
+              {/* Breadcrumb */}
+              <div className="config-breadcrumb">
+                {breadcrumb.map((b, i) => (
+                  <React.Fragment key={b.id}>
+                    {i > 0 && <span className="sep">/</span>}
+                    <span onClick={() => handleSelect(b.id)} style={{color: i===breadcrumb.length-1 ? 'var(--text-primary)' : undefined, fontWeight: i===breadcrumb.length-1 ? 500 : undefined}}>{b.name}</span>
+                  </React.Fragment>
+                ))}
+              </div>
+
+              {/* Entity Header */}
+              <div className="config-detail-header">
+                <div className="config-entity-header">
+                  <div className="config-entity-icon"><EntityTypeIcon type={selectedEntity.entityType}/></div>
+                  <div>
+                    <div className="config-entity-name">{selectedEntity.name}</div>
+                    <div className="config-entity-type">{selectedEntity.entityType}</div>
+                  </div>
+                </div>
+                <div className="config-actions">
+                  <button className="header-btn" style={{fontSize:11}} onClick={() => setEditMode(!editMode)}>
+                    <EditOutlined style={{marginRight:4}}/>{editMode ? t.cancel : t.editEntity}
+                  </button>
+                  {selectedEntity.entityType !== 'platform' && (
+                    <button className="header-btn" style={{fontSize:11,color:'var(--error)'}} onClick={handleDelete}>
+                      <DeleteOutlined style={{marginRight:4}}/>{t.deleteEntity}
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Tag pills */}
+              {(selectedEntity.properties?.tags || []).length > 0 && (
+                <div className="config-tag-pills">
+                  {(selectedEntity.properties.tags).map(tag => <span key={tag} className="config-tag">{tag}</span>)}
+                </div>
+              )}
+
+              {/* Tabs */}
+              <div className="config-detail-body">
+                <Tabs activeKey={activeTab} onChange={setActiveTab} style={{padding:'0 20px'}}
+                  items={tabs.map(tab => ({
+                    key: tab.key,
+                    label: tab.label[lang] || tab.label.en,
+                    children: renderTabContent(tab),
+                  }))}
+                />
+              </div>
+            </>
+          ) : (
+            <div style={{textAlign:'center',padding:40,color:'var(--text-tertiary)'}}>
+              <div style={{fontSize:40,marginBottom:12}}><ApartmentOutlined/></div>
+              <div style={{fontSize:14}}>Select an entity from the tree</div>
+              <div style={{fontSize:12,marginTop:4}}>Platform → Account → Site → Device Group → Device → Sensor/Actuator</div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Create Drawer */}
+      <CreateEntityDrawer open={drawerOpen} onClose={handleDrawerClose}
+        parentId={selectedEntityId} childType={drawerChildType} t={t}/>
     </div>
   );
 }
@@ -4721,7 +6528,7 @@ function OrbitLoaderOverlay({ onDone }) {
   );
 }
 
-function LoginPage({t, setPage, setCurrentApp, lang, setLang}) {
+function LoginPage({t, setPage, setCurrentApp, lang, setLang, themeId, setThemeId}) {
   const canvasRef = useRef(null);
   const [emailVal, setEmailVal] = useState('jan@orbiteos.com');
   const [passwordVal, setPasswordVal] = useState('orbit2026');
@@ -4735,6 +6542,7 @@ function LoginPage({t, setPage, setCurrentApp, lang, setLang}) {
   const [lockCountdown, setLockCountdown] = useState(0);
   const formRef = useRef(null);
   const timeGlow = useMemo(() => getTimeOfDayPalette(), []);
+  const activeTheme = ThemeStore.getById(themeId) || ThemeStore.getAll()[0];
 
   // Extract first name from email on blur (e.g. "jan.de.vries@acme.nl" → "Jan")
   const onEmailBlur = useCallback(() => {
@@ -4841,11 +6649,19 @@ function LoginPage({t, setPage, setCurrentApp, lang, setLang}) {
     setTimeout(() => setShaking(false), 500);
   }, [t]);
 
-  // Page background gradient — dark base with time-tinted corner
-  const bgGrad = `linear-gradient(135deg, #020617 0%, rgb(${Math.round(2 + timeGlow.bgR*0.3)},${Math.round(6 + timeGlow.bgG*0.3)},${Math.round(23 + timeGlow.bgB*0.3)}) 50%, rgb(${timeGlow.bgR},${timeGlow.bgG},${timeGlow.bgB}) 100%)`;
-  // Card picks up a whisper of the time color
-  const cardBorder = `rgba(${timeGlow.pr},${timeGlow.pg},${timeGlow.pb},0.12)`;
-  const cardBg = `rgba(${Math.round(15 + timeGlow.bgR * 0.4)},${Math.round(23 + timeGlow.bgG * 0.4)},${Math.round(42 + timeGlow.bgB * 0.4)},0.85)`;
+  // Page background gradient — uses theme's base colors with time tint
+  const themeBgBase = activeTheme.cssVars['--bg-primary'] || '#020617';
+  const themeBgSec = activeTheme.cssVars['--bg-secondary'] || '#0f172a';
+  const isDarkTheme = activeTheme.mode === 'dark';
+  const bgGrad = isDarkTheme
+    ? `linear-gradient(135deg, ${themeBgBase} 0%, rgb(${Math.round(2 + timeGlow.bgR*0.3)},${Math.round(6 + timeGlow.bgG*0.3)},${Math.round(23 + timeGlow.bgB*0.3)}) 50%, rgb(${timeGlow.bgR},${timeGlow.bgG},${timeGlow.bgB}) 100%)`
+    : `linear-gradient(135deg, ${themeBgBase} 0%, ${themeBgSec} 100%)`;
+  const cardBorder = isDarkTheme
+    ? `rgba(${timeGlow.pr},${timeGlow.pg},${timeGlow.pb},0.12)`
+    : (activeTheme.cssVars['--border'] || '#e2e8f0');
+  const cardBg = isDarkTheme
+    ? `rgba(${Math.round(15 + timeGlow.bgR * 0.4)},${Math.round(23 + timeGlow.bgG * 0.4)},${Math.round(42 + timeGlow.bgB * 0.4)},0.85)`
+    : (activeTheme.cssVars['--bg-card'] || 'rgba(255,255,255,0.92)');
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -4853,15 +6669,18 @@ function LoginPage({t, setPage, setCurrentApp, lang, setLang}) {
     const ctx = canvas.getContext('2d');
     const W = canvas.width = canvas.parentElement.clientWidth;
     const H = canvas.height = canvas.parentElement.clientHeight;
+    // Parse theme brand color to RGB for particles
+    const brandHex = activeTheme.preview || '#d97706';
+    const brandR = parseInt(brandHex.slice(1,3),16), brandG = parseInt(brandHex.slice(3,5),16), brandB = parseInt(brandHex.slice(5,7),16);
     // Gentle left→right river: each particle drifts rightward with slight vertical wobble
     const particles = Array.from({length:90}, () => {
-      const driftX = 0.12 + Math.random() * 0.18; // slow rightward: 0.12–0.30 px/frame
-      const driftY = (Math.random() - 0.5) * 0.08; // very slight vertical wander
+      const driftX = 0.12 + Math.random() * 0.18;
+      const driftY = (Math.random() - 0.5) * 0.08;
       return {
         x: Math.random()*W, y: Math.random()*H, r: 1+Math.random()*2,
         vx: driftX, vy: driftY, baseDriftX: driftX, baseDriftY: driftY,
         baseO: 0.12+Math.random()*0.3, o: 0, boost: 0,
-        origR: 0, color: [45,212,191],
+        origR: 0, color: [brandR,brandG,brandB],
       };
     });
     particles.forEach(p => { p.o = p.baseO; p.origR = p.r; });
@@ -4881,7 +6700,7 @@ function LoginPage({t, setPage, setCurrentApp, lang, setLang}) {
         p.vy += (dy / d) * force;
         p.boost = Math.max(0, 1 - d / 140);
         if (d < 120) {
-          p.color = [45 + Math.round(80 * (1 - d/120)), 212 + Math.round(20 * (1 - d/120)), 191 + Math.round(30 * (1 - d/120))];
+          p.color = [brandR + Math.round(80 * (1 - d/120)), brandG + Math.round(20 * (1 - d/120)), brandB + Math.round(30 * (1 - d/120))];
         }
       });
       ripples.push({ x: cx, y: cy, radius: 0, maxRadius: 150, opacity: 0.2, speed: 3 });
@@ -4917,13 +6736,13 @@ function LoginPage({t, setPage, setCurrentApp, lang, setLang}) {
         rip.opacity *= 0.96;
         if (rip.opacity < 0.005) { ripples.splice(i, 1); continue; }
         ctx.beginPath(); ctx.arc(rip.x, rip.y, rip.radius, 0, Math.PI * 2);
-        ctx.strokeStyle = `rgba(45,212,191,${rip.opacity})`;
+        ctx.strokeStyle = `rgba(${brandR},${brandG},${brandB},${rip.opacity})`;
         ctx.lineWidth = 1.5; ctx.stroke();
         // Inner glow
         if (rip.radius < 60) {
           const grad = ctx.createRadialGradient(rip.x, rip.y, 0, rip.x, rip.y, rip.radius);
-          grad.addColorStop(0, `rgba(45,212,191,${rip.opacity * 0.3})`);
-          grad.addColorStop(1, 'rgba(45,212,191,0)');
+          grad.addColorStop(0, `rgba(${brandR},${brandG},${brandB},${rip.opacity * 0.3})`);
+          grad.addColorStop(1, `rgba(${brandR},${brandG},${brandB},0)`);
           ctx.fillStyle = grad; ctx.fill();
         }
       }
@@ -4955,7 +6774,7 @@ function LoginPage({t, setPage, setCurrentApp, lang, setLang}) {
         // Glow halo on boosted particles
         if (p.boost > 0.1) {
           ctx.beginPath(); ctx.arc(p.x, p.y, drawR + 4, 0, Math.PI*2);
-          ctx.fillStyle = `rgba(45,212,191,${p.boost * 0.15})`;
+          ctx.fillStyle = `rgba(${brandR},${brandG},${brandB},${p.boost * 0.15})`;
           ctx.fill();
         }
       });
@@ -4975,8 +6794,16 @@ function LoginPage({t, setPage, setCurrentApp, lang, setLang}) {
 
       {/* Centered login card */}
       <div className={`login-card ${successPhase >= 2 ? 'login-card-exit' : ''}`} style={{borderColor: cardBorder, background: cardBg}}>
-        {/* Language selector — top right */}
-        <div style={{position:'absolute',top:12,right:12}}>
+        {/* Theme + Language selectors — top row */}
+        <div style={{position:'absolute',top:12,right:12,display:'flex',alignItems:'center',gap:4}}>
+          <Select value={themeId} onChange={v => setThemeId(v)} size="small" variant="borderless"
+            style={{minWidth:110}} popupMatchSelectWidth={false}
+            options={ThemeStore.getAll().map(th => ({
+              value: th.id,
+              label: React.createElement('span',{style:{display:'flex',alignItems:'center',gap:6}},
+                React.createElement('span',{style:{width:8,height:8,borderRadius:'50%',background:th.preview,display:'inline-block',border:'1px solid rgba(128,128,128,0.3)',flexShrink:0}}),
+                th.name)
+            }))}/>
           <Select value={lang} onChange={v=>setLang(v)} size="small" variant="borderless"
             style={{width:100}} options={[{value:'en',label:'English'},{value:'nl',label:'Nederlands'}]}/>
         </div>
@@ -5045,7 +6872,7 @@ function LoginPage({t, setPage, setCurrentApp, lang, setLang}) {
             background: lockCountdown > 0 ? 'var(--text-tertiary)' : 'var(--brand)',
             color:'#fff',cursor: lockCountdown > 0 ? 'not-allowed' : 'pointer',
             transition:'all 0.3s ease',letterSpacing:'0.02em',
-            boxShadow: lockCountdown > 0 ? 'none' : '0 2px 8px rgba(45,212,191,0.3)',
+            boxShadow: lockCountdown > 0 ? 'none' : `0 2px 8px ${activeTheme.cssVars['--brand-bg'] || 'rgba(217,119,6,0.3)'}`,
             opacity: submitting && !successPhase ? 0.7 : 1}}
             disabled={lockCountdown > 0 || submitting}
             onMouseEnter={e=>{if(lockCountdown<=0&&!successPhase)e.target.style.background='var(--brand-hover)';}}
@@ -5531,94 +7358,12 @@ function EntityBrowserPage({t, currentSite}) {
   );
 }
 
-// ─── Admin Page ───
-function AdminPage({t}) {
-  const [tab, setTab] = useState('accounts');
-  return (
-    <div className="page-enter">
-      <Segmented options={[
-        {label:`Accounts (${ACCOUNTS.length})`,value:'accounts'},
-        {label:`Users (${USERS.length})`,value:'users'},
-        {label:'Roles (6)',value:'roles'},
-        {label:`Sites (${SITES.length})`,value:'sites'},
-      ]} value={tab} onChange={setTab} style={{marginBottom:16}}/>
-
-      {tab === 'accounts' && (
-        <div className="card" style={{padding:0}}>
-          <table className="data-table">
-            <thead><tr><th>Account</th><th>Type</th><th>Sub-accounts</th><th>Users</th><th>Sites</th><th>Devices</th><th>{t.status}</th></tr></thead>
-            <tbody>{ACCOUNTS.map(a=>(
-              <tr key={a.id}>
-                <td style={{fontWeight:500}}>{a.name}</td>
-                <td style={{color:'var(--text-secondary)'}}>{a.type}</td>
-                <td>{a.subAccounts.length}</td>
-                <td>{a.users}</td><td>{a.sites}</td><td>{a.devices}</td>
-                <td><span className="status-dot online">{a.status}</span></td>
-              </tr>
-            ))}</tbody>
-          </table>
-        </div>
-      )}
-
-      {tab === 'users' && (
-        <div className="card" style={{padding:0}}>
-          <table className="data-table">
-            <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Account</th><th>{t.status}</th><th>Last Login</th></tr></thead>
-            <tbody>{USERS.map((u,i)=>(
-              <tr key={i}>
-                <td style={{fontWeight:500}}>{u.name}</td>
-                <td style={{color:'var(--text-secondary)',fontSize:12}}>{u.email}</td>
-                <td><span className="status-dot info" style={{fontSize:10}}>{u.role}</span></td>
-                <td style={{color:'var(--text-secondary)'}}>{u.account}</td>
-                <td><span className={`status-dot ${u.status==='active'?'online':'warning'}`}>{u.status}</span></td>
-                <td style={{color:'var(--text-tertiary)',fontSize:12}}>{u.lastLogin}</td>
-              </tr>
-            ))}</tbody>
-          </table>
-        </div>
-      )}
-
-      {tab === 'roles' && (
-        <div className="card" style={{padding:0}}>
-          <table className="data-table">
-            <thead><tr><th>Role</th><th>Level</th><th>Permissions</th><th>Users</th></tr></thead>
-            <tbody>
-              {MockAPI.getRoles().map((r,i) => (
-                <tr key={i}><td style={{fontWeight:500}}>{r.name}</td><td>{r.level}</td><td>{r.perms}</td><td>{r.users}</td></tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      {tab === 'sites' && (
-        <div className="card" style={{padding:0}}>
-          <table className="data-table">
-            <thead><tr><th>Site</th><th>Account</th><th>Location</th><th>Type</th><th>{t.capacity}</th><th>{t.devicesCol}</th><th>Groups</th><th>{t.status}</th></tr></thead>
-            <tbody>{SITES.map(s=>(
-              <tr key={s.id}>
-                <td style={{fontWeight:500}}>{s.name}</td>
-                <td style={{color:'var(--text-secondary)'}}>{ACCOUNTS.find(a=>a.id===s.account)?.name}</td>
-                <td style={{color:'var(--text-secondary)'}}>{s.location}</td>
-                <td>{s.type}</td>
-                <td>{s.capacity}</td>
-                <td>{s.devices}</td>
-                <td>{s.deviceGroups.length}</td>
-                <td><span className={`status-dot ${s.status==='online'?'online':'warning'}`}>{s.status==='online'?t.online:t.maintenance}</span></td>
-              </tr>
-            ))}</tbody>
-          </table>
-        </div>
-      )}
-    </div>
-  );
-}
-
 // ─── App ───
 function App() {
   const [page, setPage] = useState('login');
   const [lang, setLang] = useState(localStorage.getItem('orbiteos-lang') || 'en');
-  const [themeName, setThemeName] = useState(localStorage.getItem('orbiteos-theme') || 'dark');
+  const [themeId, setThemeId] = useState(ThemeStore.getActive().id);
+  const activeTheme = ThemeStore.getById(themeId) || ThemeStore.getAll()[0];
   const [alarms, setAlarms] = useState([]);
   const [alarmCount, setAlarmCount] = useState(0);
   const [showAlarms, setShowAlarms] = useState(false);
@@ -5632,9 +7377,15 @@ function App() {
   // Persist preferences
   useEffect(() => { localStorage.setItem('orbiteos-lang', lang); }, [lang]);
   useEffect(() => {
-    localStorage.setItem('orbiteos-theme', themeName);
-    document.body.setAttribute('data-theme', themeName);
-  }, [themeName]);
+    ThemeStore.setActive(themeId);
+    const theme = ThemeStore.getById(themeId);
+    if (!theme) return;
+    document.body.setAttribute('data-theme', theme.mode);
+    // Apply CSS variable overrides from the active theme
+    Object.entries(theme.cssVars || {}).forEach(([key, value]) => {
+      document.body.style.setProperty(key, value);
+    });
+  }, [themeId]);
 
   // Alarm generator
   useEffect(() => {
@@ -5664,7 +7415,7 @@ function App() {
 
   const navigateWithLoader = useCallback((targetPage) => {
     if (targetPage === pageRef.current) return;
-    LoaderStore.start();
+    LoaderStore.start({ mode: 'solid' });
     setPage(targetPage);
     // 1 full pulse cycle (2s) then exit fade (1.5s) = 3.5s total
     setTimeout(() => LoaderStore.stop(), 2000);
@@ -5673,18 +7424,17 @@ function App() {
   const onLoadingDone = useCallback(() => { /* overlay dissolved */ }, []);
 
   const antThemeConfig = useMemo(() => ({
-    algorithm: themeName === 'dark' ? antTheme.darkAlgorithm : antTheme.defaultAlgorithm,
+    algorithm: activeTheme.mode === 'dark' ? antTheme.darkAlgorithm : antTheme.defaultAlgorithm,
     token: {
-      colorPrimary: themeName === 'dark' ? '#2dd4bf' : '#0d9488',
+      ...activeTheme.antTokens,
       fontFamily: "'Inter', -apple-system, sans-serif",
-      borderRadius: 6,
     },
-  }), [themeName]);
+  }), [themeId]);
 
   if (page === 'login') {
     return (
       <ConfigProvider theme={antThemeConfig}>
-        <LoginPage t={t} setPage={setPage} setCurrentApp={setCurrentApp} lang={lang} setLang={setLang}/>
+        <LoginPage t={t} setPage={setPage} setCurrentApp={setCurrentApp} lang={lang} setLang={setLang} themeId={themeId} setThemeId={setThemeId}/>
       </ConfigProvider>
     );
   }
@@ -5702,7 +7452,6 @@ function App() {
     batteryMgmt: <BatteryPage {...sp}/>,
     evCharging: <EVChargingPage {...sp}/>,
     configuration: <ConfigurationPage {...sp}/>,
-    admin: <AdminPage {...sp}/>,
     // Map app
     siteMap: <SiteMapPage {...sp}/>,
     siteList: <FleetPage {...sp}/>,
@@ -5731,8 +7480,8 @@ function App() {
         <Sidebar page={page} setPage={setPage} navigateWithLoader={navigateWithLoader} t={t} lang={lang} focusedEntityId={focusedEntityId} setFocusedEntityId={setFocusedEntityId}
           currentApp={currentApp} setCurrentApp={setCurrentApp}/>
         <div className="main-area" style={{position:'relative'}}>
-          <Header page={page} t={t} lang={lang} setLang={setLang} themeName={themeName}
-            setTheme={setThemeName} alarms={alarms} alarmCount={alarmCount}
+          <Header page={page} t={t} lang={lang} setLang={setLang} themeId={themeId}
+            setThemeId={setThemeId} alarms={alarms} alarmCount={alarmCount}
             showAlarms={showAlarms} setShowAlarms={setShowAlarms}
             focusedEntityId={focusedEntityId} setFocusedEntityId={setFocusedEntityId}
             setPage={setPage} navigateWithLoader={navigateWithLoader} setCurrentApp={setCurrentApp} currentApp={currentApp}/>
