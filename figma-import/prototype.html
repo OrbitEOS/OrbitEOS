@@ -220,9 +220,11 @@
     .el-table tbody tr:hover { background:var(--bg-card-hover); }
     .el-table tbody tr.el-active { background:var(--brand-bg); }
     .el-actions { display:flex; gap:6px; align-items:center; }
-    .el-action { cursor:pointer; color:var(--text-tertiary); font-size:12px; transition:color 0.12s; }
-    .el-action:hover { color:var(--text-primary); }
-    .el-action.danger:hover { color:var(--error); }
+    .el-action { cursor:pointer; font-size:13px; transition:all 0.12s; width:24px; height:24px; display:inline-flex;
+      align-items:center; justify-content:center; border-radius:4px; color:var(--brand); }
+    .el-action:hover { background:var(--brand-bg); }
+    .el-action.danger { color:var(--error); opacity:0.7; }
+    .el-action.danger:hover { background:var(--error-bg); opacity:1; }
     .el-add-row { padding:8px 10px; cursor:pointer; display:flex; align-items:center; gap:5px;
       color:var(--text-tertiary); font-size:11px; border-top:1px dashed var(--border); transition:all 0.12s; }
     .el-add-row:hover { color:var(--brand); }
@@ -648,7 +650,7 @@
     .config-tree-scroll { flex:1; overflow-y:auto; overflow-x:auto; }
     .config-detail-panel { flex:1; margin-left:12px; background:var(--bg-card); border:1px solid var(--border);
       border-radius:8px; display:flex; flex-direction:column; overflow:hidden; }
-    .config-detail-header { padding:14px 20px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:12px; }
+    .config-detail-header { padding:8px 20px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:10px; }
     .config-detail-body { flex:1; overflow-y:auto; padding:0; }
     .config-breadcrumb { display:flex; align-items:center; gap:4px; font-size:12px; color:var(--text-tertiary); padding:10px 20px;
       border-bottom:1px solid var(--border); flex-wrap:wrap; }
@@ -656,11 +658,10 @@
     .config-breadcrumb span:hover { color:var(--brand); }
     .config-breadcrumb .sep { color:var(--text-tertiary); cursor:default; }
     .config-entity-header { display:flex; align-items:center; gap:12px; flex:1; }
-    .config-entity-icon { width:36px; height:36px; border-radius:8px; background:var(--brand-bg); display:flex;
-      align-items:center; justify-content:center; font-size:18px; color:var(--brand); }
-    .config-entity-name { font-size:15px; font-weight:600; color:var(--text-primary); }
-    .config-entity-type { font-size:11px; color:var(--text-tertiary); }
-    .config-actions { display:flex; gap:6px; margin-left:auto; }
+    .config-entity-icon { width:28px; height:28px; border-radius:6px; background:var(--brand-bg); display:flex;
+      align-items:center; justify-content:center; font-size:14px; color:var(--brand); }
+    .config-entity-name { font-size:14px; font-weight:600; color:var(--text-primary); line-height:1.2; }
+    .config-entity-type { font-size:10px; color:var(--brand); background:var(--brand-bg); padding:1px 8px; border-radius:8px; display:inline-block; }
     .config-tag-pills { display:flex; gap:4px; flex-wrap:wrap; padding:0 20px 8px; }
     .config-tag { padding:1px 8px; border-radius:10px; font-size:10px; font-weight:500;
       background:var(--brand-bg); color:var(--brand); cursor:default; }
@@ -1236,30 +1237,131 @@ function generateMockEvents(entity, lang) {
   return Array.from({length: 12}, (_, i) => {
     const code = codes[Math.floor(Math.random() * codes.length)];
     const ts = now - (i * 3600000 * (1 + Math.random() * 4));
+    const timeAgoI18n = i === 0 ? {en:'Just now',nl:'Zojuist',de:'Gerade eben'}
+      : i < 4 ? {en:`${i} hours ago`,nl:`${i} uur geleden`,de:`vor ${i} Stunden`}
+      : {en:`${Math.floor(i/4)} days ago`,nl:`${Math.floor(i/4)} dagen geleden`,de:`vor ${Math.floor(i/4)} Tagen`};
     return {
       id: `evt-${entity.id}-${i}`,
       code: code.code,
       severity: code.severity,
       label: code.label[lang || 'en'],
       timestamp: new Date(ts).toISOString(),
-      timeAgo: i === 0 ? 'Just now' : i < 4 ? `${i} hours ago` : `${Math.floor(i/4)} days ago`,
+      timeAgo: timeAgoI18n,
       entityId: entity.id, entityName: entity.name,
     };
   });
 }
 
-function generateAuditLog(entity) {
-  const actions = ['Created','Updated properties','Changed status','Modified settings','Added tag','User access changed','Config exported'];
+function generateAuditLog(entity, lang) {
+  const actions = [
+    {en:'Created',nl:'Aangemaakt',de:'Erstellt'},
+    {en:'Updated properties',nl:'Eigenschappen bijgewerkt',de:'Eigenschaften aktualisiert'},
+    {en:'Changed status',nl:'Status gewijzigd',de:'Status geändert'},
+    {en:'Modified settings',nl:'Instellingen gewijzigd',de:'Einstellungen geändert'},
+    {en:'Added tag',nl:'Label toegevoegd',de:'Stichwort hinzugefügt'},
+    {en:'User access changed',nl:'Gebruikerstoegang gewijzigd',de:'Benutzerzugang geändert'},
+    {en:'Config exported',nl:'Configuratie geëxporteerd',de:'Konfiguration exportiert'},
+  ];
   const users = ['Jan de Vries','Jan de Groot','Maria van Dijk','Lisa Vermeer','System Bot'];
   const now = Date.now();
   return Array.from({length: 8}, (_, i) => ({
     id: `audit-${entity.id}-${i}`,
-    action: actions[i % actions.length],
+    action: resolveI18n(actions[i % actions.length], lang),
     user: users[i % users.length],
     timestamp: new Date(now - (i * 86400000 * (1 + Math.random() * 3))).toISOString(),
-    timeAgo: i === 0 ? 'Today' : i < 3 ? `${i+1} days ago` : `${Math.floor(i/2)} weeks ago`,
+    timeAgo: resolveI18n(i === 0 ? {en:'Today',nl:'Vandaag',de:'Heute'}
+      : i < 3 ? {en:`${i+1} days ago`,nl:`${i+1} dagen geleden`,de:`vor ${i+1} Tagen`}
+      : {en:`${Math.floor(i/2)} weeks ago`,nl:`${Math.floor(i/2)} weken geleden`,de:`vor ${Math.floor(i/2)} Wochen`}, lang),
   }));
 }
+
+// ─── Centralized Registries (single source of truth) ───
+
+// Entity type labels and metadata
+const ENTITY_TYPE_REGISTRY = {
+  platform:    { label:{en:'Platform',nl:'Platform',de:'Plattform'}, icon:'GlobalOutlined', color:'var(--brand)' },
+  account:     { label:{en:'Account',nl:'Account',de:'Konto'}, icon:'BankOutlined', color:'var(--info)' },
+  subAccount:  { label:{en:'Sub-account',nl:'Sub-account',de:'Unterkonto'}, icon:'TeamOutlined', color:'var(--purple)' },
+  site:        { label:{en:'Site',nl:'Locatie',de:'Standort'}, icon:'HomeOutlined', color:'var(--success)' },
+  deviceGroup: { label:{en:'Device Group',nl:'Apparaatgroep',de:'Gerätegruppe'}, icon:'AppstoreOutlined', color:'var(--warning)' },
+  device:      { label:{en:'Device',nl:'Apparaat',de:'Gerät'}, icon:'HddOutlined', color:'var(--solar)' },
+  sensor:      { label:{en:'Sensor',nl:'Sensor',de:'Sensor'}, icon:'RadarChartOutlined', color:'var(--info)' },
+  actuator:    { label:{en:'Actuator',nl:'Actuator',de:'Aktor'}, icon:'SlidersOutlined', color:'var(--warning)' },
+};
+
+// Role styling (used by RolesTab, UsersTab)
+const ROLE_STYLING = {
+  'Platform Admin': { color:'red', priority:1 },
+  'Account Admin': { color:'orange', priority:2 },
+  'Regional Admin': { color:'gold', priority:3 },
+  'Site Admin': { color:'blue', priority:4 },
+  'Operator': { color:'cyan', priority:5 },
+  'Installer': { color:'green', priority:6 },
+  'Viewer': { color:'default', priority:7 },
+  'API User': { color:'purple', priority:8 },
+};
+
+// Severity levels
+const SEVERITY_LEVELS = {
+  critical: { label:{en:'Critical',nl:'Kritiek',de:'Kritisch'}, color:'var(--error)', dotClass:'error' },
+  warning:  { label:{en:'Warning',nl:'Waarschuwing',de:'Warnung'}, color:'var(--warning)', dotClass:'warning' },
+  info:     { label:{en:'Info',nl:'Info',de:'Info'}, color:'var(--info)', dotClass:'info' },
+};
+
+// Status labels
+const STATUS_LABELS = {
+  online:      { label:{en:'Online',nl:'Online'}, color:'var(--success)' },
+  active:      { label:{en:'Active',nl:'Actief'}, color:'var(--success)' },
+  offline:     { label:{en:'Offline',nl:'Offline'}, color:'var(--text-tertiary)' },
+  fault:       { label:{en:'Fault',nl:'Storing'}, color:'var(--error)' },
+  error:       { label:{en:'Error',nl:'Fout'}, color:'var(--error)' },
+  warning:     { label:{en:'Warning',nl:'Waarschuwing'}, color:'var(--warning)' },
+  maintenance: { label:{en:'Maintenance',nl:'Onderhoud'}, color:'var(--warning)' },
+  idle:        { label:{en:'Idle',nl:'Inactief'}, color:'var(--info)' },
+  available:   { label:{en:'Available',nl:'Beschikbaar'}, color:'var(--info)' },
+};
+
+// Form options registry — all select options in one place
+const FORM_OPTIONS = {
+  accountTypes:    [{value:'Commercial',label:{en:'Commercial',nl:'Commercieel'}},{value:'Industrial',label:{en:'Industrial',nl:'Industrieel'}},{value:'Residential',label:{en:'Residential',nl:'Residentieel'}},{value:'Government',label:{en:'Government',nl:'Overheid'}}],
+  plans:           [{value:'Starter',label:{en:'Starter'}},{value:'Professional',label:{en:'Professional'}},{value:'Enterprise',label:{en:'Enterprise'}}],
+  dsos:            [{value:'Stedin',label:{en:'Stedin'}},{value:'Liander',label:{en:'Liander'}},{value:'Enexis',label:{en:'Enexis'}},{value:'TenneT',label:{en:'TenneT'}},{value:'Elia',label:{en:'Elia'}},{value:'Fluvius',label:{en:'Fluvius'}}],
+  languages:       [{value:'en',label:{en:'English'}},{value:'nl',label:{en:'Nederlands'}},{value:'de',label:{en:'Deutsch'}},{value:'fr',label:{en:'Français'}}],
+  siteTypes:       [{value:'Agricultural',label:{en:'Agricultural',nl:'Agrarisch'}},{value:'Residential',label:{en:'Residential',nl:'Residentieel'}},{value:'Commercial Office',label:{en:'Commercial Office',nl:'Commercieel Kantoor'}},{value:'Industrial',label:{en:'Industrial',nl:'Industrieel'}},{value:'Microgrid',label:{en:'Microgrid'}},{value:'Campus',label:{en:'Campus'}}],
+  deviceGroupTypes:[{value:'Generation',label:{en:'Generation',nl:'Opwekking'}},{value:'Storage',label:{en:'Storage',nl:'Opslag'}},{value:'EV Charging',label:{en:'EV Charging',nl:'EV Laden'}},{value:'Metering',label:{en:'Metering',nl:'Meting'}},{value:'HVAC',label:{en:'HVAC'}},{value:'Infrastructure',label:{en:'Infrastructure',nl:'Infrastructuur'}},{value:'Grid',label:{en:'Grid',nl:'Net'}},{value:'Gateway',label:{en:'Gateway'}}],
+  deviceTypes:     [{value:'Solar Inverter',label:{en:'Solar Inverter',nl:'Zonne-omvormer'}},{value:'Battery',label:{en:'Battery',nl:'Batterij'}},{value:'EV Charger',label:{en:'EV Charger',nl:'EV Lader'}},{value:'Power Analyzer',label:{en:'Power Analyzer',nl:'Vermogensanalyzer'}},{value:'Energy Meter',label:{en:'Energy Meter',nl:'Energiemeter'}},{value:'Wind Turbine',label:{en:'Wind Turbine',nl:'Windturbine'}},{value:'Heat Pump',label:{en:'Heat Pump',nl:'Warmtepomp'}},{value:'Gateway',label:{en:'Gateway'}},{value:'Relay',label:{en:'Relay',nl:'Relais'}},{value:'Fire Suppression',label:{en:'Fire Suppression',nl:'Brandblussing'}},{value:'Climate Control',label:{en:'Climate Control',nl:'Klimaatbeheersing'}},{value:'Router',label:{en:'Router'}}],
+  sensorTypes:     [{value:'power',label:{en:'Power',nl:'Vermogen'}},{value:'energy',label:{en:'Energy',nl:'Energie'}},{value:'voltage',label:{en:'Voltage',nl:'Spanning'}},{value:'current',label:{en:'Current',nl:'Stroom'}},{value:'temperature',label:{en:'Temperature',nl:'Temperatuur'}},{value:'percentage',label:{en:'Percentage'}},{value:'counter',label:{en:'Counter',nl:'Teller'}},{value:'frequency',label:{en:'Frequency',nl:'Frequentie'}},{value:'humidity',label:{en:'Humidity',nl:'Vochtigheid'}},{value:'pressure',label:{en:'Pressure',nl:'Druk'}},{value:'status',label:{en:'Status'}},{value:'ratio',label:{en:'Ratio'}}],
+  actuatorTypes:   [{value:'power_limit',label:{en:'Power Limit',nl:'Vermogenslimiet'}},{value:'reactive_power',label:{en:'Reactive Power',nl:'Blindvermogen'}},{value:'mode',label:{en:'Mode',nl:'Modus'}},{value:'switch',label:{en:'Switch',nl:'Schakelaar'}},{value:'setpoint',label:{en:'Setpoint'}},{value:'valve',label:{en:'Valve',nl:'Klep'}},{value:'relay',label:{en:'Relay',nl:'Relais'}},{value:'temperature',label:{en:'Temperature',nl:'Temperatuur'}}],
+  protocols:       [{value:'Modbus TCP',label:{en:'Modbus TCP'}},{value:'Modbus RTU',label:{en:'Modbus RTU'}},{value:'MQTT',label:{en:'MQTT'}},{value:'OCPP',label:{en:'OCPP'}},{value:'SunSpec',label:{en:'SunSpec'}},{value:'REST API',label:{en:'REST API'}},{value:'BACnet',label:{en:'BACnet'}}],
+  gridConnections: [{value:'1×25A',label:{en:'1×25A'}},{value:'3×25A',label:{en:'3×25A'}},{value:'3×35A',label:{en:'3×35A'}},{value:'3×40A',label:{en:'3×40A'}},{value:'3×63A',label:{en:'3×63A'}},{value:'3×80A',label:{en:'3×80A'}}],
+  calibMethods:    [{value:'Manual',label:{en:'Manual',nl:'Handmatig'}},{value:'Automated',label:{en:'Automated',nl:'Automatisch'}},{value:'Factory',label:{en:'Factory',nl:'Fabriek'}}],
+  timezones:       [{value:'Europe/Amsterdam',label:{en:'Europe/Amsterdam'}},{value:'Europe/Brussels',label:{en:'Europe/Brussels'}},{value:'Europe/Berlin',label:{en:'Europe/Berlin'}},{value:'Europe/London',label:{en:'Europe/London'}},{value:'UTC',label:{en:'UTC'}}],
+  currencies:      [{value:'EUR',label:{en:'EUR (€)'}},{value:'USD',label:{en:'USD ($)'}},{value:'GBP',label:{en:'GBP (£)'}},{value:'CHF',label:{en:'CHF'}}],
+  dateFormats:     [{value:'DD-MM-YYYY',label:{en:'DD-MM-YYYY'}},{value:'MM-DD-YYYY',label:{en:'MM-DD-YYYY'}},{value:'YYYY-MM-DD',label:{en:'YYYY-MM-DD'}}],
+  energyUnits:     [{value:'kWh',label:{en:'kWh'}},{value:'MWh',label:{en:'MWh'}},{value:'Wh',label:{en:'Wh'}}],
+  retentionPeriods:[{value:'1 yr',label:{en:'1 year',nl:'1 jaar'}},{value:'3 yr',label:{en:'3 years',nl:'3 jaar'}},{value:'5 yr',label:{en:'5 years',nl:'5 jaar'}},{value:'7 yr',label:{en:'7 years',nl:'7 jaar'}},{value:'10 yr',label:{en:'10 years',nl:'10 jaar'}}],
+  scopeLevels:     [{value:'Platform',label:{en:'Platform'}},{value:'Account',label:{en:'Account'}},{value:'Sub-account',label:{en:'Sub-account',nl:'Sub-account'}},{value:'Site',label:{en:'Site',nl:'Locatie'}}],
+  severities:      [{value:'critical',label:{en:'Critical',nl:'Kritiek'}},{value:'warning',label:{en:'Warning',nl:'Waarschuwing'}},{value:'info',label:{en:'Info'}}],
+};
+
+// Column definitions registry — reusable across tabs
+const COLUMN_REGISTRY = {
+  severity: (lang) => ({ key:'sev', label:{en:'Severity',nl:'Ernst'}, filterable:true,
+    filterOptions:FORM_OPTIONS.severities,
+    render:(_,r) => { const s = SEVERITY_LEVELS[r.sev||r.severity]; return React.createElement('span',{className:`status-dot ${s?.dotClass||'info'}`},resolveI18n(s?.label,lang)||r.sev||r.severity); }
+  }),
+  status: (lang) => ({ key:'status', label:{en:'Status',nl:'Status'}, filterable:true,
+    getValue:r => r.state?.status,
+    render:(_,r) => { const s=r.state?.status; const sl=STATUS_LABELS[s]; return s ? React.createElement('span',{className:`status-dot ${sl?.dotClass||s}`},resolveI18n(sl?.label,lang)||s) : '—'; }
+  }),
+  entityName: (lang) => ({ key:'name', label:{en:'Name',nl:'Naam'}, sortable:true,
+    render:(_,r) => React.createElement('span',{style:{fontWeight:500}},r.name) }),
+  entityType: (lang) => ({ key:'entityType', label:{en:'Type',nl:'Type'}, filterable:true,
+    render:(_,r) => { const reg=ENTITY_TYPE_REGISTRY[r.properties?.type||r.entityType]; return React.createElement('span',{style:{fontSize:11,color:'var(--text-secondary)'}}, resolveI18n(reg?.label,lang)||r.properties?.type||r.entityType); }
+  }),
+  timeAgo: (lang) => ({ key:'time', label:{en:'Time',nl:'Tijd'}, sortable:true,
+    render:(_,r) => React.createElement('span',{style:{color:'var(--text-tertiary)',fontSize:11}},r.time||r.timeAgo||'—') }),
+};
 
 // ─── PrivilegeStore (app-scoped privileges) ───
 const ACTIONS = ['view','create','edit','delete','manage'];
@@ -2768,7 +2870,7 @@ const MockAPI = {
       const ratio = (dh.offline + dh.error) / dh.total;
       deviceStatus = {
         level: ratio > 0.3 ? 'critical' : 'warning',
-        color: ratio > 0.3 ? '#ef4444' : '#f59e0b',
+        color: ratio > 0.3 ? 'var(--error)' : 'var(--warning)',
         icon: ratio > 0.3 ? 'CloseCircleFilled' : 'ExclamationCircleFilled',
         label:{en:`${dh.offline+dh.error} Device Issue${(dh.offline+dh.error)>1?'s':''}`,nl:`${dh.offline+dh.error} Apparaatprobleem`},
         desc:{en:issues.join(', '),nl:issues.join(', ')},
@@ -2777,37 +2879,37 @@ const MockAPI = {
 
     let energyStatus;
     if (ef.gridPower === 0 && !ef.gridImporting && !ef.gridExporting && totalGen > 0) {
-      energyStatus = {level:'island', color:'#22c55e', icon:'CheckCircleFilled',
+      energyStatus = {level:'island', color:'var(--success)', icon:'CheckCircleFilled',
         label:{en:'Island Mode',nl:'Eilandmodus'},
         desc:{en:'Off-grid, fully self-sufficient',nl:'Autonoom, volledig zelfvoorzienend'},
         selfSufficiency:100};
     } else if (ef.gridExporting && ef.essSoc > 80) {
-      energyStatus = {level:'peak', color:'#22c55e', icon:'CheckCircleFilled',
+      energyStatus = {level:'peak', color:'var(--success)', icon:'CheckCircleFilled',
         label:{en:'Peak Production',nl:'Piekproductie'},
         desc:{en:`Exporting ${fmt(ef.gridPower)} kW, battery ${ef.essSoc}%`,nl:`Exporteert ${fmt(ef.gridPower)} kW, batterij ${ef.essSoc}%`},
         selfSufficiency};
     } else if (ef.gridExporting || selfSufficiency >= 90) {
-      energyStatus = {level:'optimal', color:'#22c55e', icon:'CheckCircleFilled',
+      energyStatus = {level:'optimal', color:'var(--success)', icon:'CheckCircleFilled',
         label:{en:'Optimal',nl:'Optimaal'},
         desc:{en:'Self-sufficient, exporting surplus',nl:'Zelfvoorzienend, exporteert overschot'},
         selfSufficiency};
     } else if (ef.gridImporting && totalGen > 0 && ef.gridPower <= totalGen * 2) {
-      energyStatus = {level:'importing', color:'#f59e0b', icon:'WarningFilled',
+      energyStatus = {level:'importing', color:'var(--warning)', icon:'WarningFilled',
         label:{en:'Importing',nl:'Importeert'},
         desc:{en:`Solar low, importing ${fmt(ef.gridPower)} kW`,nl:`Zon laag, importeert ${fmt(ef.gridPower)} kW`},
         selfSufficiency};
     } else if (ef.gridImporting && (ef.gridPower > totalGen * 2 || ef.essSoc < 30)) {
-      energyStatus = {level:'grid-heavy', color:'#ef4444', icon:'WarningFilled',
+      energyStatus = {level:'grid-heavy', color:'var(--error)', icon:'WarningFilled',
         label:{en:'High Grid Import',nl:'Hoge Netimport'},
         desc:{en:`Importing ${fmt(ef.gridPower)} kW, battery ${ef.essSoc}%`,nl:`Importeert ${fmt(ef.gridPower)} kW, batterij ${ef.essSoc}%`},
         selfSufficiency};
     } else if (ef.gridImporting && totalGen === 0) {
-      energyStatus = {level:'grid-dependent', color:'#ef4444', icon:'WarningFilled',
+      energyStatus = {level:'grid-dependent', color:'var(--error)', icon:'WarningFilled',
         label:{en:'Grid Dependent',nl:'Netafhankelijk'},
         desc:{en:`No generation, importing ${fmt(ef.gridPower)} kW`,nl:`Geen opwekking, importeert ${fmt(ef.gridPower)} kW`},
         selfSufficiency:0};
     } else {
-      energyStatus = {level:'normal', color:'#3b82f6', icon:'InfoCircleFilled',
+      energyStatus = {level:'normal', color:'var(--info)', icon:'InfoCircleFilled',
         label:{en:'Normal',nl:'Normaal'}, desc:{en:'System operating normally',nl:'Systeem functioneert normaal'},
         selfSufficiency};
     }
@@ -5763,6 +5865,8 @@ function FieldRenderer({ field, value, onChange, lang, readOnly }) {
       opts = NavigationStore.getVisibleApps().map(a => ({value:a.id, label:typeof a.label === 'object' ? (a.label[lang]||a.label.en) : a.label}));
     } else if (field.optionsFrom === 'sysPermCategories') {
       opts = SysPermStore.getCategories().map(c => ({value:c, label:c}));
+    } else if (field.optionsFrom && FORM_OPTIONS[field.optionsFrom]) {
+      opts = FORM_OPTIONS[field.optionsFrom].map(o => typeof o === 'string' ? {value:o,label:o} : {value:o.value, label:resolveI18n(o.label,lang)});
     } else {
       opts = (field.options||[]).map(o => typeof o === 'string' ? {value:o, label:o} : {value:o.value, label:resolveI18n(o.label,lang)});
     }
@@ -5801,37 +5905,37 @@ const ENTITY_EDIT_SCHEMA = {
       { key:'properties.tags', label:{en:'Tags',nl:'Labels',de:'Stichworte'}, type:'tags', full:true },
     ],
     account: [
-      { key:'properties.type', label:{en:'Account Type',nl:'Accounttype'}, type:'select', options:['Commercial','Industrial','Residential','Government'], required:true },
+      { key:'properties.type', label:{en:'Account Type',nl:'Accounttype'}, type:'select', optionsFrom:'accountTypes', required:true },
       { key:'properties.contactEmail', label:{en:'Contact Email',nl:'Contact E-mail'}, type:'text', inputType:'email', required:true },
-      { key:'properties.plan', label:{en:'Plan',nl:'Abonnement'}, type:'select', options:['Starter','Professional','Enterprise'], required:true },
+      { key:'properties.plan', label:{en:'Plan',nl:'Abonnement'}, type:'select', optionsFrom:'plans', required:true },
       { key:'properties.vatNumber', label:{en:'VAT Number',nl:'BTW-nummer'}, type:'text' },
     ],
     subAccount: [
       { key:'properties.region', label:{en:'Region',nl:'Regio'}, type:'text', required:true },
-      { key:'properties.dso', label:{en:'DSO',nl:'Netbeheerder'}, type:'select', options:['Stedin','Liander','Enexis','TenneT','Elia','Fluvius'] },
-      { key:'properties.lang', label:{en:'Language',nl:'Taal'}, type:'select', options:[{value:'en',label:{en:'English'}},{value:'nl',label:{en:'Nederlands'}},{value:'de',label:{en:'Deutsch'}},{value:'fr',label:{en:'Fran\u00e7ais'}}] },
+      { key:'properties.dso', label:{en:'DSO',nl:'Netbeheerder'}, type:'select', optionsFrom:'dsos' },
+      { key:'properties.lang', label:{en:'Language',nl:'Taal'}, type:'select', optionsFrom:'languages' },
     ],
     site: [
-      { key:'properties.type', label:{en:'Site Type',nl:'Locatietype'}, type:'select', options:['Agricultural','Residential','Commercial Office','Industrial','Microgrid','Campus'], required:true },
+      { key:'properties.type', label:{en:'Site Type',nl:'Locatietype'}, type:'select', optionsFrom:'siteTypes', required:true },
       { key:'properties.capacity', label:{en:'Capacity',nl:'Capaciteit'}, type:'text' },
-      { key:'properties.dso', label:{en:'DSO',nl:'Netbeheerder'}, type:'select', options:['Stedin','Liander','Enexis','TenneT','Elia'] },
+      { key:'properties.dso', label:{en:'DSO',nl:'Netbeheerder'}, type:'select', optionsFrom:'dsos' },
     ],
     deviceGroup: [
-      { key:'properties.type', label:{en:'Group Type',nl:'Groeptype'}, type:'select', options:['Generation','Storage','EV Charging','Metering','HVAC','Infrastructure','Grid','Gateway'], required:true },
+      { key:'properties.type', label:{en:'Group Type',nl:'Groeptype'}, type:'select', optionsFrom:'deviceGroupTypes', required:true },
     ],
     device: [
-      { key:'properties.type', label:{en:'Device Type',nl:'Apparaattype'}, type:'select', options:['Solar Inverter','Battery','EV Charger','Power Analyzer','Energy Meter','Wind Turbine','Heat Pump','Gateway','Relay','Fire Suppression','Climate Control','Router'], required:true },
+      { key:'properties.type', label:{en:'Device Type',nl:'Apparaattype'}, type:'select', optionsFrom:'deviceTypes', required:true },
       { key:'properties.manufacturer', label:{en:'Manufacturer',nl:'Fabrikant'}, type:'text', required:true },
       { key:'properties.model', label:{en:'Model',nl:'Model'}, type:'text', required:true },
       { key:'properties.serialNumber', label:{en:'Serial Number',nl:'Serienummer'}, type:'text' },
       { key:'properties.installDate', label:{en:'Install Date',nl:'Installatiedatum'}, type:'date' },
     ],
     sensor: [
-      { key:'properties.type', label:{en:'Sensor Type',nl:'Sensortype'}, type:'select', options:['power','energy','voltage','current','temperature','percentage','counter','frequency','humidity','pressure','status','ratio'], required:true },
+      { key:'properties.type', label:{en:'Sensor Type',nl:'Sensortype'}, type:'select', optionsFrom:'sensorTypes', required:true },
       { key:'properties.unit', label:{en:'Unit',nl:'Eenheid'}, type:'text', required:true },
     ],
     actuator: [
-      { key:'properties.type', label:{en:'Actuator Type',nl:'Actuatortype'}, type:'select', options:['power_limit','reactive_power','mode','switch','setpoint','valve','relay','temperature'], required:true },
+      { key:'properties.type', label:{en:'Actuator Type',nl:'Actuatortype'}, type:'select', optionsFrom:'actuatorTypes', required:true },
       { key:'properties.unit', label:{en:'Unit',nl:'Eenheid'}, type:'text', required:true },
     ],
   },
@@ -5851,12 +5955,12 @@ const ENTITY_EDIT_SCHEMA = {
     ],
     site: [
       { key:'properties.contractLimit', label:{en:'Contract Limit (kW)',nl:'Contractlimiet (kW)'}, type:'number', min:0 },
-      { key:'properties.connection', label:{en:'Grid Connection',nl:'Netaansluiting'}, type:'select', options:['1\u00d725A','3\u00d725A','3\u00d735A','3\u00d740A','3\u00d763A','3\u00d780A'] },
+      { key:'properties.connection', label:{en:'Grid Connection',nl:'Netaansluiting'}, type:'select', optionsFrom:'gridConnections' },
     ],
   },
   network: {
     _all: [
-      { key:'properties.protocol', label:{en:'Protocol',nl:'Protocol'}, type:'select', options:['Modbus TCP','Modbus RTU','MQTT','OCPP','SunSpec','REST API','BACnet'] },
+      { key:'properties.protocol', label:{en:'Protocol',nl:'Protocol'}, type:'select', optionsFrom:'protocols' },
       { key:'properties.ip', label:{en:'IP Address',nl:'IP-adres'}, type:'text' },
       { key:'properties.port', label:{en:'Port',nl:'Poort'}, type:'number', min:1, max:65535 },
       { key:'properties.modbusId', label:{en:'Modbus ID',nl:'Modbus ID'}, type:'number', min:1, max:247 },
@@ -5877,7 +5981,7 @@ const ENTITY_EDIT_SCHEMA = {
       { key:'properties.critMax', label:{en:'Critical Max',nl:'Kritiek Max'}, type:'number' },
       { key:'properties.calibOffset', label:{en:'Calibration Offset',nl:'Kalibratie Offset'}, type:'number' },
       { key:'properties.calibScaleFactor', label:{en:'Scale Factor',nl:'Schaalfactor'}, type:'number', step:0.01 },
-      { key:'properties.calibMethod', label:{en:'Calibration Method',nl:'Kalibratiemethode'}, type:'select', options:['Manual','Automated','Factory'] },
+      { key:'properties.calibMethod', label:{en:'Calibration Method',nl:'Kalibratiemethode'}, type:'select', optionsFrom:'calibMethods' },
     ],
   },
   limits: {
@@ -5891,11 +5995,11 @@ const ENTITY_EDIT_SCHEMA = {
   },
   platformSettings: {
     platform: [
-      { key:'properties.defaultLang', label:{en:'Default Language',nl:'Standaardtaal'}, type:'select', options:[{value:'en',label:{en:'English'}},{value:'nl',label:{en:'Nederlands'}},{value:'de',label:{en:'Deutsch'}}] },
-      { key:'properties.timezone', label:{en:'Timezone',nl:'Tijdzone'}, type:'select', options:['Europe/Amsterdam','Europe/Brussels','Europe/Berlin','Europe/London','UTC'] },
-      { key:'properties.currency', label:{en:'Currency',nl:'Valuta'}, type:'select', options:['EUR','USD','GBP','CHF'] },
-      { key:'properties.dateFormat', label:{en:'Date Format',nl:'Datumformaat'}, type:'select', options:['DD-MM-YYYY','MM-DD-YYYY','YYYY-MM-DD'] },
-      { key:'properties.energyUnit', label:{en:'Energy Unit',nl:'Energieeenheid'}, type:'select', options:['kWh','MWh','Wh'] },
+      { key:'properties.defaultLang', label:{en:'Default Language',nl:'Standaardtaal'}, type:'select', optionsFrom:'languages' },
+      { key:'properties.timezone', label:{en:'Timezone',nl:'Tijdzone'}, type:'select', optionsFrom:'timezones' },
+      { key:'properties.currency', label:{en:'Currency',nl:'Valuta'}, type:'select', optionsFrom:'currencies' },
+      { key:'properties.dateFormat', label:{en:'Date Format',nl:'Datumformaat'}, type:'select', optionsFrom:'dateFormats' },
+      { key:'properties.energyUnit', label:{en:'Energy Unit',nl:'Energieeenheid'}, type:'select', optionsFrom:'energyUnits' },
       { key:'properties.selfConsTarget', label:{en:'Self-consumption Target (%)',nl:'Zelfverbruiksdoel (%)'}, type:'slider', min:0, max:100, full:true },
       { key:'properties.realtimeEnabled', label:{en:'Enable Real-time',nl:'Realtime Inschakelen'}, type:'switch' },
       { key:'properties.autoAckAlerts', label:{en:'Auto-ack Info Alerts',nl:'Auto-bevestig Info'}, type:'switch' },
@@ -5904,7 +6008,7 @@ const ENTITY_EDIT_SCHEMA = {
   },
   compliance: {
     site: [
-      { key:'properties.compliance.retention', label:{en:'Data Retention',nl:'Dataretentie'}, type:'select', options:['1 yr','3 yr','5 yr','7 yr','10 yr'] },
+      { key:'properties.compliance.retention', label:{en:'Data Retention',nl:'Dataretentie'}, type:'select', optionsFrom:'retentionPeriods' },
     ],
   },
   // ─── Non-entity CRUD schemas (userAssignment, role, privilege, systemPermission) ───
@@ -5921,7 +6025,7 @@ const ENTITY_EDIT_SCHEMA = {
       role: [
         { key:'name', label:{en:'Role Name',nl:'Rolnaam'}, type:'text', required:true },
         { key:'level', label:{en:'Scope Level',nl:'Bereikniveau'}, type:'select', required:true,
-          options:['Platform','Account','Sub-account','Site'] },
+          optionsFrom:'scopeLevels' },
         { key:'description', label:{en:'Description',nl:'Beschrijving'}, type:'textarea' },
       ]
     }
@@ -6638,8 +6742,11 @@ function EntityList({ columns, dataSource, rowKey='id', title, lang='en',
             </Dropdown>
           )}
           {addButton && (typeof addButton === 'object'
-            ? <Button size="small" type="primary" icon={<PlusOutlined/>} onClick={addButton.onClick}>{resolveLabel(addButton.label)}</Button>
-            : <Button size="small" type="primary" icon={<PlusOutlined/>} onClick={() => setAdding(true)}>{lang==='nl'?'Toevoegen':'Add'}</Button>
+            ? <Button size="small" type="primary" shape={resolveLabel(addButton.label)?undefined:'circle'}
+                icon={<PlusOutlined/>} onClick={addButton.onClick}
+                style={{background:'var(--brand)',borderColor:'var(--brand)'}}>{resolveLabel(addButton.label) || null}</Button>
+            : <Button size="small" type="primary" shape="circle" icon={<PlusOutlined/>} onClick={() => setAdding(true)}
+                style={{background:'var(--brand)',borderColor:'var(--brand)'}}/>
           )}
           {headerExtra}
         </div>
@@ -6851,13 +6958,13 @@ function EntityListTab({ parentId, childType, t, lang, onNavigate, onAdd }) {
     { key:'name', label:{en:'Name',nl:'Naam'}, sortable:true, render:(_,r) => React.createElement('span',{style:{fontWeight:500}},r.name) },
     { key:'status', label:{en:'Status',nl:'Status'}, getValue:r => r.state?.status },
   ];
-  const typeLabels = { account:{en:'Account',nl:'Account'}, subAccount:{en:'Sub-account',nl:'Sub-account'}, site:{en:'Site',nl:'Locatie'}, deviceGroup:{en:'Device Group',nl:'Apparaatgroep'}, device:{en:'Device',nl:'Apparaat'}, sensor:{en:'Sensor',nl:'Sensor'}, actuator:{en:'Actuator',nl:'Actuator'} };
+  const typeLabels = Object.fromEntries(Object.entries(ENTITY_TYPE_REGISTRY).map(([k,v])=>([k,v.label])));
   return (
     <div className="config-tab-content">
       <EntityList columns={cols} dataSource={children} lang={lang} columnPicker={cols.length > 4}
         title={typeLabels[childType]} lazyLoad={children.length > 30} pageSize={30}
         onRowClick={row => onNavigate(row.id)}
-        addButton={onAdd ? { label:{en:`Add ${(typeLabels[childType]||{}).en||''}`,nl:`${(typeLabels[childType]||{}).nl||''} toevoegen`}, onClick:() => onAdd(childType) } : undefined}
+        addButton={onAdd ? { label:'', onClick:() => onAdd(childType) } : undefined}
         rowActions={[
           { key:'edit', icon:React.createElement(EditOutlined,{style:{fontSize:12}}), onClick:row => onNavigate(row.id) },
           { key:'delete', icon:React.createElement(DeleteOutlined,{style:{fontSize:12}}), danger:true, onClick:row => {
@@ -6937,7 +7044,7 @@ function UsersTab({ entityId, t, lang, onOpenModal }) {
     <div className="config-tab-content">
       <EntityList columns={userCols} dataSource={scopeUsers} rowKey="userId" lang={lang}
         title={{en:'Users',nl:'Gebruikers'}}
-        addButton={{label:{en:'Assign',nl:'Toewijzen'},onClick:() => onOpenModal && onOpenModal({mode:'create', entityType:'userAssignment', parentId:entityId})}}
+        addButton={{label:'',onClick:() => onOpenModal && onOpenModal({mode:'create', entityType:'userAssignment', parentId:entityId})}}
         rowActions={[
           {key:'edit',icon:React.createElement(EditOutlined,{style:{fontSize:12}}),onClick:row => onOpenModal && onOpenModal({mode:'edit', entityType:'userAssignment', entityId:row.userId+'@'+entityId, parentId:entityId})},
           {key:'delete',icon:React.createElement(DeleteOutlined,{style:{fontSize:12}}),danger:true,onClick:handleRemove},
@@ -6958,7 +7065,7 @@ function RolesTab({ entityId, t, lang, onOpenModal }) {
 
   const roleCounts = {};
   scopeUsers.forEach(su => { roleCounts[su.role] = (roleCounts[su.role] || 0) + 1; });
-  const roleColors = { 'Platform Admin':'red','Account Admin':'orange','Regional Admin':'gold','Site Admin':'blue','Operator':'cyan','Installer':'green','Viewer':'default','API User':'purple' };
+  const roleColors = Object.fromEntries(Object.entries(ROLE_STYLING).map(([k,v])=>([k,v.color])));
 
   const handleDelete = (row) => {
     const assignedCount = roleCounts[row.name] || 0;
@@ -6996,7 +7103,7 @@ function RolesTab({ entityId, t, lang, onOpenModal }) {
     <div className="config-tab-content">
       <EntityList columns={roleCols} dataSource={roles} lang={lang} columnPicker
         title={{en:'Roles',nl:'Rollen'}}
-        addButton={{label:{en:'New Role',nl:'Nieuwe Rol'},onClick:() => onOpenModal && onOpenModal({mode:'create', entityType:'role'})}}
+        addButton={{label:'',onClick:() => onOpenModal && onOpenModal({mode:'create', entityType:'role'})}}
         rowActions={[
           {key:'delete',icon:React.createElement(DeleteOutlined,{style:{fontSize:12}}),danger:true,onClick:handleDelete},
         ]}
@@ -7254,10 +7361,10 @@ function EventsTab({ entity, lang }) {
   const eventCols = [
     { key:'label', label:{en:'Event',nl:'Gebeurtenis'}, sortable:true, render:(_,r) => React.createElement('span',{style:{fontWeight:500}},r.label) },
     { key:'severity', label:{en:'Severity',nl:'Ernst'}, filterable:true,
-      filterOptions:[{value:'critical',label:'Critical'},{value:'warning',label:'Warning'},{value:'info',label:'Info'}],
-      render:(_,r) => React.createElement('span',{className:`status-dot ${r.severity==='critical'?'error':r.severity==='warning'?'warning':'info'}`},r.severity) },
+      filterOptions:FORM_OPTIONS.severities.map(o => ({value:o.value, label:resolveI18n(o.label,lang)})),
+      render:(_,r) => { const s = SEVERITY_LEVELS[r.severity]; return React.createElement('span',{className:`status-dot ${s?.dotClass||'info'}`},resolveI18n(s?.label,lang)||r.severity); } },
     { key:'timeAgo', label:{en:'Time',nl:'Tijd'}, sortable:true,
-      render:(_,r) => React.createElement('span',{style:{color:'var(--text-tertiary)',fontSize:11}},r.timeAgo) },
+      render:(_,r) => React.createElement('span',{style:{color:'var(--text-tertiary)',fontSize:11}},resolveI18n(r.timeAgo,lang)) },
   ];
   return (
     <div className="config-tab-content">
@@ -7273,8 +7380,8 @@ function AlarmsTab({ entity, lang }) {
   const alarms = EntityStore.getAggregatedAlarms(entity.id);
   const alarmCols = [
     { key:'sev', label:{en:'Severity',nl:'Ernst'}, filterable:true,
-      filterOptions:[{value:'critical',label:'Critical'},{value:'warning',label:'Warning'},{value:'info',label:'Info'}],
-      render:(_,r) => React.createElement('span',{className:`status-dot ${r.sev==='critical'?'error':r.sev==='warning'?'warning':'info'}`},r.sev) },
+      filterOptions:FORM_OPTIONS.severities.map(o => ({value:o.value, label:resolveI18n(o.label,lang)})),
+      render:(_,r) => { const s = SEVERITY_LEVELS[r.sev]; return React.createElement('span',{className:`status-dot ${s?.dotClass||'info'}`},resolveI18n(s?.label,lang)||r.sev); } },
     { key:'msg', label:{en:'Message',nl:'Bericht'}, sortable:true },
     { key:'entityName', label:{en:'Entity',nl:'Entiteit'}, filterable:true, sortable:true,
       render:(_,r) => React.createElement('span',{style:{color:'var(--text-secondary)',fontSize:11}},r.entityName) },
@@ -7292,7 +7399,7 @@ function AlarmsTab({ entity, lang }) {
 
 // ─── Tab Content: Audit Log ───
 function AuditLogTab({ entity, lang }) {
-  const logs = useMemo(() => generateAuditLog(entity), [entity.id]);
+  const logs = useMemo(() => generateAuditLog(entity, lang), [entity.id, lang]);
   const auditCols = [
     { key:'action', label:{en:'Action',nl:'Actie'}, sortable:true, filterable:true,
       render:(_,r) => React.createElement('span',{style:{fontWeight:500}},r.action) },
@@ -7311,12 +7418,12 @@ function AuditLogTab({ entity, lang }) {
 }
 
 // ─── Tab Content: Tags ───
-function TagsTab({ entity }) {
+function TagsTab({ entity, lang }) {
   const [newTag, setNewTag] = useState('');
   const tags = entity.properties?.tags || [];
   return (
     <div className="config-tab-content">
-      <div style={{fontSize:13,fontWeight:600,color:'var(--text-primary)',marginBottom:12}}>Tags</div>
+      <div style={{fontSize:13,fontWeight:600,color:'var(--text-primary)',marginBottom:12}}>{resolveI18n({en:'Tags',nl:'Labels',de:'Stichworte'},lang)}</div>
       <div style={{display:'flex',flexWrap:'wrap',gap:6,marginBottom:16}}>
         {tags.map(tag => (
           <Tag key={tag} closable onClose={() => {
@@ -7324,17 +7431,17 @@ function TagsTab({ entity }) {
             EntityStore.update(entity.id, { properties: { tags: updated } });
           }}>{tag}</Tag>
         ))}
-        {tags.length === 0 && <span style={{color:'var(--text-tertiary)',fontSize:12}}>No tags</span>}
+        {tags.length === 0 && <span style={{color:'var(--text-tertiary)',fontSize:12}}>{resolveI18n({en:'No tags',nl:'Geen labels',de:'Keine Stichworte'},lang)}</span>}
       </div>
       <div style={{display:'flex',gap:8}}>
-        <Input size="small" placeholder="Add tag..." value={newTag} onChange={e => setNewTag(e.target.value)} style={{width:200}}
+        <Input size="small" placeholder={resolveI18n({en:'Add tag...',nl:'Label toevoegen...',de:'Stichwort hinzufügen...'},lang)} value={newTag} onChange={e => setNewTag(e.target.value)} style={{width:200}}
           onPressEnter={() => { if (newTag.trim() && !tags.includes(newTag.trim())) {
             EntityStore.update(entity.id, { properties: { tags: [...tags, newTag.trim()] } }); setNewTag('');
           }}}/>
         <button className="header-btn primary" style={{fontSize:11,padding:'2px 10px'}}
           onClick={() => { if (newTag.trim() && !tags.includes(newTag.trim())) {
             EntityStore.update(entity.id, { properties: { tags: [...tags, newTag.trim()] } }); setNewTag('');
-          }}}>Add</button>
+          }}}>{resolveI18n({en:'Add',nl:'Toevoegen',de:'Hinzufügen'},lang)}</button>
       </div>
     </div>
   );
@@ -7343,19 +7450,19 @@ function TagsTab({ entity }) {
 // ─── Tab Content: Global Settings ───
 
 // ─── Tab Content: Actuator Commands ───
-function CommandsTab({ entity }) {
+function CommandsTab({ entity, lang }) {
   const props = entity.properties || {};
   return (
     <div className="config-tab-content">
-      <div style={{fontSize:13,fontWeight:600,color:'var(--text-primary)',marginBottom:12}}>Available Commands</div>
+      <div style={{fontSize:13,fontWeight:600,color:'var(--text-primary)',marginBottom:12}}>{resolveI18n({en:'Available Commands',nl:'Beschikbare Commando\'s',de:'Verfügbare Befehle'},lang)}</div>
       <div style={{display:'grid',gap:12}}>
         <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:10,background:'var(--bg-secondary)',borderRadius:6}}>
-          <div><div style={{fontSize:12,fontWeight:500,color:'var(--text-primary)'}}>Set Value</div><div style={{fontSize:11,color:'var(--text-tertiary)'}}>Current: {entity.state?.value} {props.unit}</div></div>
-          <div style={{display:'flex',gap:8,alignItems:'center'}}><InputNumber size="small" defaultValue={entity.state?.value} style={{width:80}}/><button className="header-btn primary" style={{fontSize:11,padding:'2px 10px'}}>Execute</button></div>
+          <div><div style={{fontSize:12,fontWeight:500,color:'var(--text-primary)'}}>{resolveI18n({en:'Set Value',nl:'Waarde Instellen',de:'Wert Setzen'},lang)}</div><div style={{fontSize:11,color:'var(--text-tertiary)'}}>{resolveI18n({en:'Current',nl:'Huidig',de:'Aktuell'},lang)}: {entity.state?.value} {props.unit}</div></div>
+          <div style={{display:'flex',gap:8,alignItems:'center'}}><InputNumber size="small" defaultValue={entity.state?.value} style={{width:80}}/><button className="header-btn primary" style={{fontSize:11,padding:'2px 10px'}}>{resolveI18n({en:'Execute',nl:'Uitvoeren',de:'Ausführen'},lang)}</button></div>
         </div>
         {props.type === 'mode' && <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:10,background:'var(--bg-secondary)',borderRadius:6}}>
-          <div><div style={{fontSize:12,fontWeight:500,color:'var(--text-primary)'}}>Change Mode</div></div>
-          <Select size="small" defaultValue={entity.state?.value} options={[{value:'auto',label:'Auto'},{value:'manual',label:'Manual'},{value:'idle',label:'Idle'}]} style={{width:100}}/>
+          <div><div style={{fontSize:12,fontWeight:500,color:'var(--text-primary)'}}>{resolveI18n({en:'Change Mode',nl:'Modus Wijzigen',de:'Modus Ändern'},lang)}</div></div>
+          <Select size="small" defaultValue={entity.state?.value} options={[{value:'auto',label:resolveI18n({en:'Auto',nl:'Auto',de:'Auto'},lang)},{value:'manual',label:resolveI18n({en:'Manual',nl:'Handmatig',de:'Manuell'},lang)},{value:'idle',label:resolveI18n({en:'Idle',nl:'Inactief',de:'Leerlauf'},lang)}]} style={{width:100}}/>
         </div>}
       </div>
     </div>
@@ -7364,41 +7471,42 @@ function CommandsTab({ entity }) {
 
 
 // ─── Tab Content: Billing (Account) ───
-function BillingTab({ entity }) {
+function BillingTab({ entity, lang }) {
   const props = entity.properties || {};
+  const paymentStatus = entity.state?.status === 'active' || entity.state?.status === 'online' ? 'paid' : 'pending';
   return (
     <div className="config-tab-content">
       <div className="config-prop-grid">
-        <div><div className="config-prop-label">Plan</div><div className="config-prop-value"><Tag color="blue">{props.plan||'Professional'}</Tag></div></div>
-        <div><div className="config-prop-label">Contract Start</div><div className="config-prop-value">{props.contractStart||'2024-01-01'}</div></div>
-        <div><div className="config-prop-label">Contract End</div><div className="config-prop-value">{props.contractEnd||'2026-12-31'}</div></div>
-        <div><div className="config-prop-label">VAT Number</div><div className="config-prop-value">{props.vatNumber||'—'}</div></div>
-        <div><div className="config-prop-label">Monthly Cost</div><div className="config-prop-value">€ 2,450</div></div>
-        <div><div className="config-prop-label">Payment Status</div><div className="config-prop-value"><span className="status-dot online">Paid</span></div></div>
+        <div><div className="config-prop-label">{resolveI18n({en:'Plan',nl:'Abonnement'},lang)}</div><div className="config-prop-value"><Tag color="blue">{props.plan||'—'}</Tag></div></div>
+        <div><div className="config-prop-label">{resolveI18n({en:'Contract Start',nl:'Contractstart'},lang)}</div><div className="config-prop-value">{props.contractStart||'—'}</div></div>
+        <div><div className="config-prop-label">{resolveI18n({en:'Contract End',nl:'Contracteinde'},lang)}</div><div className="config-prop-value">{props.contractEnd||'—'}</div></div>
+        <div><div className="config-prop-label">{resolveI18n({en:'VAT Number',nl:'BTW-nummer'},lang)}</div><div className="config-prop-value">{props.vatNumber||'—'}</div></div>
+        <div><div className="config-prop-label">{resolveI18n({en:'Monthly Cost',nl:'Maandkosten'},lang)}</div><div className="config-prop-value">{props.monthlyCost||'—'}</div></div>
+        <div><div className="config-prop-label">{resolveI18n({en:'Payment Status',nl:'Betalingsstatus'},lang)}</div><div className="config-prop-value"><span className={`status-dot ${paymentStatus==='paid'?'online':'warning'}`}>{resolveI18n(paymentStatus==='paid'?{en:'Paid',nl:'Betaald'}:{en:'Pending',nl:'In behandeling'},lang)}</span></div></div>
       </div>
     </div>
   );
 }
 
 // ─── Tab Content: API Keys (Account) ───
-function ApiKeysTab({ entity }) {
-  const keys = [
-    {name:'Production API Key',prefix:'sk-prod-****',created:'2025-06-01',lastUsed:'2 min ago',status:'active'},
-    {name:'Staging API Key',prefix:'sk-stag-****',created:'2025-09-15',lastUsed:'3 days ago',status:'active'},
-    {name:'Legacy Key (deprecated)',prefix:'sk-leg-****',created:'2024-03-10',lastUsed:'1 month ago',status:'revoked'},
+function ApiKeysTab({ entity, lang }) {
+  const keys = MockAPI.getApiKeys ? MockAPI.getApiKeys(entity.id) : [
+    {name:{en:'Production API Key',nl:'Productie API Sleutel'},prefix:'sk-prod-****',created:'2025-06-01',lastUsed:{en:'2 min ago',nl:'2 min geleden'},status:'active'},
+    {name:{en:'Staging API Key',nl:'Staging API Sleutel'},prefix:'sk-stag-****',created:'2025-09-15',lastUsed:{en:'3 days ago',nl:'3 dagen geleden'},status:'active'},
+    {name:{en:'Legacy Key (deprecated)',nl:'Verouderde Sleutel'},prefix:'sk-leg-****',created:'2024-03-10',lastUsed:{en:'1 month ago',nl:'1 maand geleden'},status:'revoked'},
   ];
   return (
     <div className="config-tab-content">
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
-        <span style={{fontSize:13,fontWeight:600,color:'var(--text-primary)'}}>API Keys</span>
-        <button className="header-btn primary" style={{fontSize:11,padding:'4px 12px'}}><PlusOutlined style={{marginRight:4}}/>Generate Key</button>
+        <span style={{fontSize:13,fontWeight:600,color:'var(--text-primary)'}}>{resolveI18n({en:'API Keys',nl:'API Sleutels'},lang)}</span>
+        <button className="header-btn primary" style={{fontSize:11,padding:'4px 12px'}}><PlusOutlined style={{marginRight:4}}/>{resolveI18n({en:'Generate Key',nl:'Sleutel Genereren'},lang)}</button>
       </div>
       <table className="data-table" style={{fontSize:12}}>
-        <thead><tr><th>Name</th><th>Key</th><th>Created</th><th>Last Used</th><th>Status</th></tr></thead>
+        <thead><tr><th>{resolveI18n({en:'Name',nl:'Naam'},lang)}</th><th>{resolveI18n({en:'Key',nl:'Sleutel'},lang)}</th><th>{resolveI18n({en:'Created',nl:'Aangemaakt'},lang)}</th><th>{resolveI18n({en:'Last Used',nl:'Laatst Gebruikt'},lang)}</th><th>{resolveI18n({en:'Status',nl:'Status'},lang)}</th></tr></thead>
         <tbody>{keys.map((k,i) => (
-          <tr key={i}><td style={{fontWeight:500}}>{k.name}</td><td style={{fontFamily:'monospace',fontSize:11}}>{k.prefix}</td>
-            <td>{k.created}</td><td>{k.lastUsed}</td>
-            <td><Tag color={k.status==='active'?'green':'red'}>{k.status}</Tag></td></tr>
+          <tr key={i}><td style={{fontWeight:500}}>{resolveI18n(k.name,lang)}</td><td style={{fontFamily:'monospace',fontSize:11}}>{k.prefix}</td>
+            <td>{k.created}</td><td>{resolveI18n(k.lastUsed,lang)}</td>
+            <td><Tag color={k.status==='active'?'green':'red'}>{resolveI18n(STATUS_LABELS[k.status]?.label||{en:k.status},lang)}</Tag></td></tr>
         ))}</tbody>
       </table>
     </div>
@@ -7406,19 +7514,19 @@ function ApiKeysTab({ entity }) {
 }
 
 // ─── Tab Content: Domains (Platform) ───
-function DomainsTab({ entity }) {
-  const domains = [
-    {name:'orbiteos-energy',version:'1.4.2',status:'running',templates:14,lastSync:'2 min ago'},
-    {name:'orbiteos-ev',version:'0.9.1',status:'running',templates:6,lastSync:'5 min ago'},
+function DomainsTab({ entity, lang }) {
+  const domains = MockAPI.getDomains ? MockAPI.getDomains() : [
+    {name:'orbiteos-energy',version:'1.4.2',status:'running',templates:14,lastSync:{en:'2 min ago',nl:'2 min geleden'}},
+    {name:'orbiteos-ev',version:'0.9.1',status:'running',templates:6,lastSync:{en:'5 min ago',nl:'5 min geleden'}},
   ];
   return (
     <div className="config-tab-content">
-      <div style={{fontSize:13,fontWeight:600,color:'var(--text-primary)',marginBottom:12}}>Registered Domain Plugins</div>
+      <div style={{fontSize:13,fontWeight:600,color:'var(--text-primary)',marginBottom:12}}>{resolveI18n({en:'Registered Domain Plugins',nl:'Geregistreerde Domein Plugins'},lang)}</div>
       <table className="data-table" style={{fontSize:12}}>
-        <thead><tr><th>Domain</th><th>Version</th><th>Templates</th><th>Last Sync</th><th>Status</th></tr></thead>
+        <thead><tr><th>{resolveI18n({en:'Domain',nl:'Domein'},lang)}</th><th>{resolveI18n({en:'Version',nl:'Versie'},lang)}</th><th>{resolveI18n({en:'Templates',nl:'Templates'},lang)}</th><th>{resolveI18n({en:'Last Sync',nl:'Laatste Sync'},lang)}</th><th>{resolveI18n({en:'Status',nl:'Status'},lang)}</th></tr></thead>
         <tbody>{domains.map((d,i) => (
           <tr key={i}><td style={{fontWeight:500}}>{d.name}</td><td>{d.version}</td><td>{d.templates}</td>
-            <td>{d.lastSync}</td><td><span className="status-dot online">{d.status}</span></td></tr>
+            <td>{resolveI18n(d.lastSync,lang)}</td><td><span className="status-dot online">{resolveI18n(STATUS_LABELS[d.status]?.label||{en:d.status},lang)}</span></td></tr>
         ))}</tbody>
       </table>
     </div>
@@ -7453,7 +7561,7 @@ function MetricsTab({ entity }) {
 
 
 // ─── Tab Content: Sensor Data (Last 24h) ───
-function SensorDataTab({ entity }) {
+function SensorDataTab({ entity, lang }) {
   const val = entity.state?.value ?? 0;
   const unit = entity.properties?.unit || '';
   const points = useMemo(() => Array.from({length:24}, (_,i) => {
@@ -7463,7 +7571,7 @@ function SensorDataTab({ entity }) {
   const max = Math.max(...points.map(p => parseFloat(p.value)));
   return (
     <div className="config-tab-content">
-      <div style={{fontSize:13,fontWeight:600,color:'var(--text-primary)',marginBottom:12}}>Last 24 Hours — {entity.name}</div>
+      <div style={{fontSize:13,fontWeight:600,color:'var(--text-primary)',marginBottom:12}}>{resolveI18n({en:'Last 24 Hours',nl:'Laatste 24 Uur',de:'Letzte 24 Stunden'},lang)} — {entity.name}</div>
       <div style={{display:'flex',alignItems:'flex-end',gap:2,height:120,padding:'0 4px'}}>
         {points.map((p,i) => (
           <div key={i} style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',gap:2}}>
@@ -7476,7 +7584,7 @@ function SensorDataTab({ entity }) {
         <span>00:00</span><span>06:00</span><span>12:00</span><span>18:00</span><span>24:00</span>
       </div>
       <table className="data-table" style={{fontSize:11,marginTop:12}}>
-        <thead><tr><th>Time</th><th>Value ({unit})</th></tr></thead>
+        <thead><tr><th>{resolveI18n({en:'Time',nl:'Tijd',de:'Zeit'},lang)}</th><th>{resolveI18n({en:'Value',nl:'Waarde',de:'Wert'},lang)} ({unit})</th></tr></thead>
         <tbody>{points.slice(-8).reverse().map((p,i) => (
           <tr key={i}><td>{p.hour}</td><td>{p.value} {unit}</td></tr>
         ))}</tbody>
@@ -7486,23 +7594,23 @@ function SensorDataTab({ entity }) {
 }
 
 // ─── Tab Content: Actuator Schedule ───
-function ScheduleTab({ entity }) {
-  const schedules = [
-    {time:'06:00',action:'Set to Auto',days:'Mon-Fri',active:true},
-    {time:'08:00',action:'Power limit 80%',days:'Mon-Fri',active:true},
-    {time:'18:00',action:'Set to Idle',days:'Mon-Fri',active:true},
-    {time:'00:00',action:'Night mode',days:'Every day',active:false},
+function ScheduleTab({ entity, lang }) {
+  const schedules = entity.properties?.schedules || [
+    {time:'06:00',action:{en:'Set to Auto',nl:'Instellen op Auto'},days:{en:'Mon-Fri',nl:'Ma-Vr'},active:true},
+    {time:'08:00',action:{en:'Power limit 80%',nl:'Vermogenslimiet 80%'},days:{en:'Mon-Fri',nl:'Ma-Vr'},active:true},
+    {time:'18:00',action:{en:'Set to Idle',nl:'Instellen op Inactief'},days:{en:'Mon-Fri',nl:'Ma-Vr'},active:true},
+    {time:'00:00',action:{en:'Night mode',nl:'Nachtmodus'},days:{en:'Every day',nl:'Elke dag'},active:false},
   ];
   return (
     <div className="config-tab-content">
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
-        <span style={{fontSize:13,fontWeight:600,color:'var(--text-primary)'}}>Schedule Entries</span>
-        <button className="header-btn primary" style={{fontSize:11,padding:'4px 12px'}}><PlusOutlined style={{marginRight:4}}/>Add Entry</button>
+        <span style={{fontSize:13,fontWeight:600,color:'var(--text-primary)'}}>{resolveI18n({en:'Schedule Entries',nl:'Schema Entries',de:'Zeitplan'},lang)}</span>
+        <button className="header-btn primary" style={{fontSize:11,padding:'4px 12px'}}><PlusOutlined style={{marginRight:4}}/>{resolveI18n({en:'Add Entry',nl:'Entry Toevoegen',de:'Eintrag Hinzufügen'},lang)}</button>
       </div>
       <table className="data-table" style={{fontSize:12}}>
-        <thead><tr><th>Time</th><th>Action</th><th>Days</th><th>Active</th></tr></thead>
+        <thead><tr><th>{resolveI18n({en:'Time',nl:'Tijd',de:'Zeit'},lang)}</th><th>{resolveI18n({en:'Action',nl:'Actie',de:'Aktion'},lang)}</th><th>{resolveI18n({en:'Days',nl:'Dagen',de:'Tage'},lang)}</th><th>{resolveI18n({en:'Active',nl:'Actief',de:'Aktiv'},lang)}</th></tr></thead>
         <tbody>{schedules.map((s,i) => (
-          <tr key={i}><td style={{fontWeight:500}}>{s.time}</td><td>{s.action}</td><td>{s.days}</td>
+          <tr key={i}><td style={{fontWeight:500}}>{s.time}</td><td>{resolveI18n(s.action,lang)}</td><td>{resolveI18n(s.days,lang)}</td>
             <td><Switch size="small" defaultChecked={s.active}/></td></tr>
         ))}</tbody>
       </table>
@@ -7594,20 +7702,6 @@ function ConfigurationPage({ t, lang, navigateWithLoader, focusedEntityId, setFo
     openCreateModal(childType, selectedEntityId);
   };
 
-  const handleDelete = () => {
-    if (!selectedEntity || selectedEntity.entityType === 'platform') return;
-    const desc = EntityStore.getDescendants(selectedEntityId);
-    Modal.confirm({
-      title: `${t.deleteConfirm} ${selectedEntity.name}?`,
-      content: desc.length > 0 ? `${t.deleteWarning} ${desc.length} ${t.childEntities}.` : undefined,
-      okText: t.deleteEntity, okType: 'danger',
-      onOk: () => {
-        const parentId = selectedEntity.parentId;
-        EntityStore.remove(selectedEntityId);
-        handleSelect(parentId || 'orbiteos');
-      },
-    });
-  };
 
   // Build breadcrumb
   const breadcrumb = selectedEntity ? EntityStore.getPath(selectedEntityId) : [];
@@ -7624,14 +7718,14 @@ function ConfigurationPage({ t, lang, navigateWithLoader, focusedEntityId, setFo
     if (key === 'events') return <EventsTab entity={selectedEntity} lang={lang}/>;
     if (key === 'alarms') return <AlarmsTab entity={selectedEntity} lang={lang}/>;
     if (key === 'auditLog') return <AuditLogTab entity={selectedEntity} lang={lang}/>;
-    if (key === 'tags') return <TagsTab entity={selectedEntity}/>;
-    if (key === 'commands') return <CommandsTab entity={selectedEntity}/>;
-    if (key === 'billing') return <BillingTab entity={selectedEntity}/>;
-    if (key === 'apiKeys') return <ApiKeysTab entity={selectedEntity}/>;
-    if (key === 'domains') return <DomainsTab entity={selectedEntity}/>;
+    if (key === 'tags') return <TagsTab entity={selectedEntity} lang={lang}/>;
+    if (key === 'commands') return <CommandsTab entity={selectedEntity} lang={lang}/>;
+    if (key === 'billing') return <BillingTab entity={selectedEntity} lang={lang}/>;
+    if (key === 'apiKeys') return <ApiKeysTab entity={selectedEntity} lang={lang}/>;
+    if (key === 'domains') return <DomainsTab entity={selectedEntity} lang={lang}/>;
     if (key === 'metrics') return <MetricsTab entity={selectedEntity}/>;
-    if (key === 'data') return <SensorDataTab entity={selectedEntity}/>;
-    if (key === 'schedule') return <ScheduleTab entity={selectedEntity}/>;
+    if (key === 'data') return <SensorDataTab entity={selectedEntity} lang={lang}/>;
+    if (key === 'schedule') return <ScheduleTab entity={selectedEntity} lang={lang}/>;
     if (key === 'allDevices') return <AllDevicesTab entity={selectedEntity} t={t} lang={lang} onNavigate={handleSelect}/>;
     // Fallback
     return <div className="config-tab-content" style={{color:'var(--text-tertiary)',fontSize:12,padding:20,textAlign:'center'}}>{tabDef.label[lang]}</div>;
@@ -7675,38 +7769,6 @@ function ConfigurationPage({ t, lang, navigateWithLoader, focusedEntityId, setFo
                     <div className="config-entity-name">{selectedEntity.name}</div>
                     <div className="config-entity-type">{selectedEntity.entityType}</div>
                   </div>
-                </div>
-                <div className="config-actions" style={{display:'flex',gap:6,alignItems:'center'}}>
-                  {(() => {
-                    const childTypeMap = {
-                      platform: [{key:'account',label:{en:'Account',nl:'Account'}}],
-                      account: [{key:'subAccount',label:{en:'Sub-account',nl:'Sub-account'}}],
-                      subAccount: [{key:'site',label:{en:'Site',nl:'Locatie'}}],
-                      site: [{key:'deviceGroup',label:{en:'Device Group',nl:'Apparaatgroep'}}],
-                      deviceGroup: [{key:'deviceGroup',label:{en:'Sub-group',nl:'Subgroep'}},{key:'device',label:{en:'Device',nl:'Apparaat'}}],
-                      device: [{key:'sensor',label:{en:'Sensor',nl:'Sensor'}},{key:'actuator',label:{en:'Actuator',nl:'Actuator'}}],
-                    };
-                    const childTypes = childTypeMap[selectedEntity.entityType] || [];
-                    if (childTypes.length === 0) return null;
-                    return React.createElement(Dropdown, {
-                      menu: { items: childTypes.map(ct => ({key:ct.key, label:resolveI18n(ct.label, lang)})), onClick: ({key}) => openCreateModal(key, selectedEntityId) },
-                      trigger: ['click']
-                    },
-                      React.createElement(Tooltip, {title: resolveI18n({en:'Add child entity',nl:'Onderliggende entiteit toevoegen'}, lang)},
-                        React.createElement(Button, {type:'primary', size:'small', shape:'circle',
-                          style:{background:'var(--brand)',borderColor:'var(--brand)',color:'white'},
-                          icon: React.createElement(PlusOutlined)})
-                      )
-                    );
-                  })()}
-                  <button className="header-btn" style={{fontSize:11,background:'var(--bg-secondary)',color:'var(--text-primary)',border:'1px solid var(--border)'}} onClick={() => openEditModal(selectedEntity)}>
-                    <EditOutlined style={{marginRight:4}}/>{resolveI18n({en:'Edit',nl:'Bewerken'}, lang)}
-                  </button>
-                  {selectedEntity.entityType !== 'platform' && (
-                    <button className="header-btn" style={{fontSize:11,color:'var(--error)',border:'1px solid color-mix(in srgb, var(--error) 20%, transparent)'}} onClick={handleDelete}>
-                      <DeleteOutlined style={{marginRight:4}}/>{t.deleteEntity}
-                    </button>
-                  )}
                 </div>
               </div>
 
