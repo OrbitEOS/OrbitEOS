@@ -234,6 +234,59 @@
     .el-expanded { padding:0 10px 10px; border-top:1px solid var(--border); animation:tabFadeIn 0.15s ease; }
     .el-col-picker { font-size:11px; }
 
+    /* Micro-frontend primitives */
+    .mfe-wrap { animation: tabFadeIn 0.15s ease; padding:16px 20px; }
+    .mfe-section { margin-bottom:16px; }
+    .mfe-section-title { font-size:11px; font-weight:600; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:8px; }
+
+    /* Property & Metric cards */
+    .prop-card { display:flex; align-items:center; gap:10px; padding:10px 14px; background:var(--bg-secondary); border:1px solid var(--border); border-radius:8px; }
+    .prop-card-icon { width:32px; height:32px; border-radius:8px; background:var(--brand-bg); display:flex; align-items:center; justify-content:center; font-size:14px; color:var(--brand); flex-shrink:0; }
+    .prop-card-label { font-size:10px; color:var(--text-tertiary); }
+    .prop-card-value { font-size:14px; font-weight:600; color:var(--text-primary); }
+    .metric-card { padding:12px 14px; background:var(--bg-secondary); border:1px solid var(--border); border-radius:8px; text-align:center; }
+    .metric-card-value { font-size:20px; font-weight:700; color:var(--text-primary); line-height:1.2; }
+    .metric-card-label { font-size:10px; color:var(--text-tertiary); margin-top:2px; }
+    .metric-card-bar { height:3px; border-radius:2px; margin-top:6px; background:var(--bg-card-hover); overflow:hidden; }
+    .metric-card-bar-fill { height:100%; border-radius:2px; transition:width 0.3s; }
+
+    /* Status hero */
+    .ov-hero { display:flex; gap:16px; align-items:stretch; margin-bottom:16px; }
+    .ov-hero-status { flex-shrink:0; width:120px; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:16px; background:var(--bg-secondary); border:1px solid var(--border); border-radius:8px; gap:8px; }
+    .ov-hero-icon { font-size:28px; color:var(--brand); }
+    .ov-hero-status-dot { display:flex; align-items:center; gap:5px; font-size:11px; font-weight:600; }
+    .ov-hero-props { flex:1; display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+    .ov-metrics { display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); gap:8px; margin-bottom:16px; }
+    .ov-split { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px; }
+    .ov-map { background:var(--bg-secondary); border:1px solid var(--border); border-radius:8px; padding:16px; min-height:140px; display:flex; align-items:center; justify-content:center; color:var(--text-tertiary); font-size:12px; }
+    .ov-children { background:var(--bg-secondary); border:1px solid var(--border); border-radius:8px; padding:12px; }
+    .ov-activity { background:var(--bg-secondary); border:1px solid var(--border); border-radius:8px; padding:12px; }
+
+    /* Edit Modal */
+    .eem-overlay { position:fixed; inset:0; z-index:500; background:rgba(0,0,0,0.45); display:flex; align-items:center; justify-content:center; animation:tabFadeIn 0.15s ease; }
+    .eem-modal { width:80vw; max-width:900px; height:85vh; max-height:700px; background:var(--bg-card); border:1px solid var(--border); border-radius:12px; display:flex; flex-direction:column; box-shadow:0 16px 48px rgba(0,0,0,0.3); overflow:hidden; }
+    .eem-header { display:flex; align-items:center; gap:10px; padding:14px 20px; border-bottom:1px solid var(--border); flex-shrink:0; }
+    .eem-header-icon { width:32px; height:32px; border-radius:8px; background:var(--brand-bg); display:flex; align-items:center; justify-content:center; font-size:16px; color:var(--brand); }
+    .eem-header-title { font-size:15px; font-weight:600; color:var(--text-primary); flex:1; }
+    .eem-header-badge { font-size:10px; color:var(--text-tertiary); background:var(--bg-secondary); padding:2px 8px; border-radius:10px; }
+    .eem-header-close { cursor:pointer; color:var(--text-tertiary); font-size:14px; padding:4px; border-radius:4px; transition:all 0.12s; }
+    .eem-header-close:hover { background:var(--bg-card-hover); color:var(--text-primary); }
+    .eem-body { display:flex; flex:1; overflow:hidden; }
+    .eem-tabs { width:180px; flex-shrink:0; border-right:1px solid var(--border); padding:8px 0; overflow-y:auto; }
+    .eem-tab { padding:8px 16px; cursor:pointer; font-size:12px; color:var(--text-secondary); display:flex; align-items:center; gap:8px; transition:all 0.12s; border-left:3px solid transparent; }
+    .eem-tab:hover { background:var(--bg-card-hover); color:var(--text-primary); }
+    .eem-tab.active { color:var(--brand); background:var(--brand-bg); border-left-color:var(--brand); font-weight:500; }
+    .eem-tab-icon { font-size:13px; width:16px; text-align:center; }
+    .eem-content { flex:1; overflow-y:auto; padding:16px 20px; }
+    .eem-footer { display:flex; align-items:center; justify-content:space-between; padding:10px 20px; border-top:1px solid var(--border); flex-shrink:0; }
+    .eem-dirty { font-size:11px; color:var(--warning); display:flex; align-items:center; gap:4px; }
+    .eem-form-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px 20px; }
+    .eem-form-field { display:flex; flex-direction:column; gap:3px; }
+    .eem-form-field.full { grid-column:1/-1; }
+    .eem-form-label { font-size:11px; font-weight:500; color:var(--text-secondary); }
+    .eem-form-error { font-size:10px; color:var(--error); }
+    .eem-form-help { font-size:10px; color:var(--text-tertiary); }
+
     .stat-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px;
       padding: 16px 20px; transition: all 0.2s ease; position: relative; overflow: hidden; }
     .stat-card:hover { border-color: var(--border-active); transform: translateY(-1px); box-shadow: var(--shadow); }
@@ -1359,7 +1412,6 @@ const TabRegistry = (() => {
       { key:'users', label:{en:'Users',nl:'Gebruikers'}, icon:'TeamOutlined', type:'property' },
       { key:'roles', label:{en:'Roles',nl:'Rollen'}, icon:'SafetyCertificateOutlined', type:'property' },
       { key:'privileges', label:{en:'Privileges',nl:'Rechten'}, icon:'LockOutlined', type:'property' },
-      { key:'globalSettings', label:{en:'Global Settings',nl:'Algemene Instellingen'}, icon:'SettingOutlined', type:'property' },
       { key:'domains', label:{en:'Domains',nl:'Domeinen'}, icon:'CloudOutlined', type:'property' },
       { key:'events', label:{en:'Events',nl:'Gebeurtenissen'}, icon:'HistoryOutlined', type:'action' },
       { key:'alarms', label:{en:'Alarms',nl:'Alarmen'}, icon:'AlertOutlined', type:'action' },
@@ -1385,7 +1437,6 @@ const TabRegistry = (() => {
       { key:'users', label:{en:'Users',nl:'Gebruikers'}, type:'property' },
       { key:'roles', label:{en:'Roles',nl:'Rollen'}, type:'property' },
       { key:'privileges', label:{en:'Privileges',nl:'Rechten'}, type:'property' },
-      { key:'regionalSettings', label:{en:'Regional Settings',nl:'Regionale Instellingen'}, type:'property' },
       { key:'events', label:{en:'Events',nl:'Gebeurtenissen'}, type:'action' },
       { key:'alarms', label:{en:'Alarms',nl:'Alarmen'}, type:'action' },
       { key:'auditLog', label:{en:'Audit Log',nl:'Auditlog'}, type:'action' },
@@ -1398,9 +1449,6 @@ const TabRegistry = (() => {
       { key:'users', label:{en:'Users',nl:'Gebruikers'}, type:'property' },
       { key:'roles', label:{en:'Roles',nl:'Rollen'}, type:'property' },
       { key:'privileges', label:{en:'Privileges',nl:'Rechten'}, type:'property' },
-      { key:'siteSettings', label:{en:'Site Settings',nl:'Locatie-instellingen'}, type:'property' },
-      { key:'compliance', label:{en:'Compliance',nl:'Naleving'}, type:'property' },
-      { key:'location', label:{en:'Location',nl:'Locatie'}, type:'property' },
       { key:'events', label:{en:'Events',nl:'Gebeurtenissen'}, type:'action' },
       { key:'alarms', label:{en:'Alarms',nl:'Alarmen'}, type:'action' },
       { key:'auditLog', label:{en:'Audit Log',nl:'Auditlog'}, type:'action' },
@@ -1410,7 +1458,6 @@ const TabRegistry = (() => {
       { key:'overview', label:{en:'Overview',nl:'Overzicht'}, type:'property' },
       { key:'subGroups', label:{en:'Sub-groups',nl:'Subgroepen'}, type:'children', childType:'deviceGroup' },
       { key:'devices', label:{en:'Devices',nl:'Apparaten'}, type:'children', childType:'device' },
-      { key:'groupSettings', label:{en:'Group Settings',nl:'Groepsinstellingen'}, type:'property' },
       { key:'metrics', label:{en:'Metrics',nl:'Metingen'}, type:'property' },
       { key:'events', label:{en:'Events',nl:'Gebeurtenissen'}, type:'action' },
       { key:'alarms', label:{en:'Alarms',nl:'Alarmen'}, type:'action' },
@@ -1421,8 +1468,6 @@ const TabRegistry = (() => {
       { key:'overview', label:{en:'Overview',nl:'Overzicht'}, type:'property' },
       { key:'sensors', label:{en:'Sensors',nl:'Sensoren'}, type:'children', childType:'sensor' },
       { key:'actuators', label:{en:'Actuators',nl:'Actuatoren'}, type:'children', childType:'actuator' },
-      { key:'connection', label:{en:'Connection',nl:'Verbinding'}, type:'property' },
-      { key:'firmware', label:{en:'Firmware',nl:'Firmware'}, type:'property' },
       { key:'events', label:{en:'Events',nl:'Gebeurtenissen'}, type:'action' },
       { key:'alarms', label:{en:'Alarms',nl:'Alarmen'}, type:'action' },
       { key:'auditLog', label:{en:'Audit Log',nl:'Auditlog'}, type:'action' },
@@ -1430,8 +1475,6 @@ const TabRegistry = (() => {
     ],
     sensor: [
       { key:'overview', label:{en:'Overview',nl:'Overzicht'}, type:'property' },
-      { key:'thresholds', label:{en:'Thresholds',nl:'Drempels'}, type:'property' },
-      { key:'calibration', label:{en:'Calibration',nl:'Kalibratie'}, type:'property' },
       { key:'data', label:{en:'Data',nl:'Data'}, type:'property' },
       { key:'events', label:{en:'Events',nl:'Gebeurtenissen'}, type:'action' },
       { key:'alarms', label:{en:'Alarms',nl:'Alarmen'}, type:'action' },
@@ -1441,7 +1484,6 @@ const TabRegistry = (() => {
       { key:'overview', label:{en:'Overview',nl:'Overzicht'}, type:'property' },
       { key:'commands', label:{en:'Commands',nl:'Commando\'s'}, type:'property' },
       { key:'schedule', label:{en:'Schedule',nl:'Schema'}, type:'property' },
-      { key:'limits', label:{en:'Limits',nl:'Limieten'}, type:'property' },
       { key:'events', label:{en:'Events',nl:'Gebeurtenissen'}, type:'action' },
       { key:'alarms', label:{en:'Alarms',nl:'Alarmen'}, type:'action' },
       { key:'tags', label:{en:'Tags',nl:'Tags'}, type:'action' },
@@ -5647,41 +5689,644 @@ function ConfigNavList({ entity, selectedId, onSelect, expandedNodes, onToggle, 
   );
 }
 
-// ─── Tab Content: Overview ───
-function OverviewTabContent({ entity, t, lang, editMode }) {
-  const props = entity.properties || {};
-  const state = entity.state || {};
-  const etype = entity.entityType;
+// ─── Shared Primitives ───
+function resolveI18n(label, lang) {
+  if (!label) return '';
+  if (typeof label === 'string') return label;
+  return label[lang] || label.en || label[Object.keys(label)[0]] || '';
+}
 
-  const fields = [];
-  if (etype === 'platform') {
-    fields.push(['Version', props.version], ['Uptime', state.uptime], ['Accounts', state.totalAccounts], ['Sites', state.totalSites], ['Devices', state.totalDevices], ['Timezone', props.timezone], ['Currency', props.currency]);
-  } else if (etype === 'account') {
-    fields.push(['Type', props.type], ['Contact', props.contactEmail], ['Plan', props.plan], ['VAT', props.vatNumber], ['Contract Start', props.contractStart], ['Contract End', props.contractEnd], ['Users', state.users], ['Sites', state.sites], ['Devices', state.devices]);
-  } else if (etype === 'subAccount') {
-    fields.push(['Region', props.region], ['DSO', props.dso], ['Language', props.lang], ['Sites', state.sites], ['Devices', state.devices]);
-  } else if (etype === 'site') {
-    fields.push(['Location', props.location], ['Type', props.type], ['Capacity', props.capacity], ['DSO', props.dso], ['Connection', props.connection], ['Contract Limit', props.contractLimit ? `${props.contractLimit} kW` : '—'], ['Status', state.status], ['Self-consumption', state.selfConsumption ? `${state.selfConsumption}%` : '—']);
-  } else if (etype === 'deviceGroup') {
-    fields.push(['Type', props.type], ['Devices', props.deviceCount], ['Power', state.power], ['Status', state.status]);
-  } else if (etype === 'device') {
-    fields.push([t.manufacturer, props.manufacturer], [t.model, props.model], [t.firmwareVersion, props.firmware], ['Power', state.power], ['Status', state.status], [t.serialNumber, props.serialNumber || '—'], [t.installDate, props.installDate || '—']);
-  } else if (etype === 'sensor') {
-    fields.push(['Type', props.type], ['Unit', props.unit], ['Value', `${state.value} ${props.unit || ''}`], ['Status', state.status]);
-  } else if (etype === 'actuator') {
-    fields.push(['Type', props.type], ['Unit', props.unit], ['Value', `${state.value} ${props.unit || ''}`], ['Status', state.status]);
+function getNestedValue(obj, path) {
+  return path.split('.').reduce((o, k) => o?.[k], obj);
+}
+
+function setNestedValue(obj, path, value) {
+  const keys = path.split('.');
+  const last = keys.pop();
+  const target = keys.reduce((o, k) => { if (!o[k]) o[k] = {}; return o[k]; }, obj);
+  target[last] = value;
+  return obj;
+}
+
+function StatusIndicator({ status }) {
+  const colors = { online:'var(--success)', active:'var(--success)', warning:'var(--warning)', fault:'var(--error)', error:'var(--error)', maintenance:'var(--warning)', offline:'var(--text-tertiary)', idle:'var(--info)', available:'var(--info)' };
+  return React.createElement('span', { className:'ov-hero-status-dot', style:{color:colors[status]||'var(--text-tertiary)'} },
+    React.createElement('span', {style:{width:8,height:8,borderRadius:'50%',background:colors[status]||'var(--text-tertiary)',display:'inline-block'}}),
+    status || '\u2014');
+}
+
+function PropertyCard({ icon, label, value, lang }) {
+  return React.createElement('div', {className:'prop-card'},
+    icon && React.createElement('div', {className:'prop-card-icon'}, icon),
+    React.createElement('div', null,
+      React.createElement('div', {className:'prop-card-label'}, resolveI18n(label, lang)),
+      React.createElement('div', {className:'prop-card-value'}, value || '\u2014')
+    )
+  );
+}
+
+function MetricCard({ value, label, color, pct, lang }) {
+  return React.createElement('div', {className:'metric-card'},
+    React.createElement('div', {className:'metric-card-value', style:{color: color||'var(--text-primary)'}}, value),
+    React.createElement('div', {className:'metric-card-label'}, resolveI18n(label, lang)),
+    pct != null && React.createElement('div', {className:'metric-card-bar'},
+      React.createElement('div', {className:'metric-card-bar-fill', style:{width:`${Math.min(100,pct)}%`, background:color||'var(--brand)'}})
+    )
+  );
+}
+
+function FieldRenderer({ field, value, onChange, lang, readOnly }) {
+  const label = resolveI18n(field.label, lang);
+  const placeholder = resolveI18n(field.placeholder, lang) || label;
+  const type = field.type;
+
+  if (readOnly || field.readOnly) {
+    return React.createElement('div', {className:'prop-card-value', style:{fontSize:13}},
+      type === 'switch' ? (value ? '\u2713' : '\u2717') : (value || '\u2014'));
   }
 
-  return (
-    <div className="config-prop-grid">
-      {fields.map(([label, value]) => (
-        <div key={label}>
-          <div className="config-prop-label">{label}</div>
-          {editMode ? <Input size="small" defaultValue={value || ''} style={{marginTop:2}}/> :
-            <div className="config-prop-value">{value || '—'}</div>}
-        </div>
-      ))}
-    </div>
+  if (type === 'text' || type === 'email' || type === 'url' || type === 'tel') {
+    return React.createElement(Input, { size:'small', value:value||'', placeholder, type:field.inputType||'text',
+      onChange: e => onChange(e.target.value) });
+  }
+  if (type === 'number') {
+    return React.createElement(InputNumber, { size:'small', value:value, placeholder, min:field.min, max:field.max, step:field.step||1,
+      style:{width:'100%'}, onChange: v => onChange(v) });
+  }
+  if (type === 'select') {
+    const opts = (field.options||[]).map(o => typeof o === 'string' ? {value:o, label:o} : {value:o.value, label:resolveI18n(o.label,lang)});
+    return React.createElement(Select, { size:'small', value:value||undefined, placeholder, style:{width:'100%'},
+      options:opts, onChange: v => onChange(v), allowClear:!field.required });
+  }
+  if (type === 'switch') {
+    return React.createElement(Switch, { size:'small', checked:!!value, onChange: v => onChange(v) });
+  }
+  if (type === 'date') {
+    return React.createElement('input', { type:'date', value:value||'', onChange:e=>onChange(e.target.value),
+      style:{width:'100%',padding:'3px 8px',fontSize:12,borderRadius:6,border:'1px solid var(--border)',background:'var(--bg-input)',color:'var(--text-primary)'} });
+  }
+  if (type === 'tags') {
+    return React.createElement(Select, { mode:'tags', size:'small', value:value||[], placeholder, style:{width:'100%'},
+      onChange: v => onChange(v) });
+  }
+  if (type === 'slider') {
+    return React.createElement('div', {style:{display:'flex',alignItems:'center',gap:8}},
+      React.createElement(Slider, { value:value||0, min:field.min||0, max:field.max||100, style:{flex:1}, onChange:v=>onChange(v) }),
+      React.createElement('span', {style:{fontSize:12,color:'var(--text-secondary)',minWidth:30}}, `${value||0}%`)
+    );
+  }
+  if (type === 'textarea') {
+    return React.createElement(Input.TextArea, { size:'small', value:value||'', placeholder, rows:3, onChange:e=>onChange(e.target.value) });
+  }
+  return React.createElement(Input, { size:'small', value:value||'', placeholder, onChange:e=>onChange(e.target.value) });
+}
+
+// ─── Entity Edit Schema (declarative field definitions) ───
+const ENTITY_EDIT_SCHEMA = {
+  general: {
+    _all: [
+      { key:'name', label:{en:'Name',nl:'Naam',de:'Name'}, type:'text', required:true, minLength:2 },
+      { key:'properties.tags', label:{en:'Tags',nl:'Labels',de:'Stichworte'}, type:'tags', full:true },
+    ],
+    account: [
+      { key:'properties.type', label:{en:'Account Type',nl:'Accounttype'}, type:'select', options:['Commercial','Industrial','Residential','Government'], required:true },
+      { key:'properties.contactEmail', label:{en:'Contact Email',nl:'Contact E-mail'}, type:'text', inputType:'email', required:true },
+      { key:'properties.plan', label:{en:'Plan',nl:'Abonnement'}, type:'select', options:['Starter','Professional','Enterprise'], required:true },
+      { key:'properties.vatNumber', label:{en:'VAT Number',nl:'BTW-nummer'}, type:'text' },
+    ],
+    subAccount: [
+      { key:'properties.region', label:{en:'Region',nl:'Regio'}, type:'text', required:true },
+      { key:'properties.dso', label:{en:'DSO',nl:'Netbeheerder'}, type:'select', options:['Stedin','Liander','Enexis','TenneT','Elia','Fluvius'] },
+      { key:'properties.lang', label:{en:'Language',nl:'Taal'}, type:'select', options:[{value:'en',label:{en:'English'}},{value:'nl',label:{en:'Nederlands'}},{value:'de',label:{en:'Deutsch'}},{value:'fr',label:{en:'Fran\u00e7ais'}}] },
+    ],
+    site: [
+      { key:'properties.type', label:{en:'Site Type',nl:'Locatietype'}, type:'select', options:['Agricultural','Residential','Commercial Office','Industrial','Microgrid','Campus'], required:true },
+      { key:'properties.capacity', label:{en:'Capacity',nl:'Capaciteit'}, type:'text' },
+      { key:'properties.dso', label:{en:'DSO',nl:'Netbeheerder'}, type:'select', options:['Stedin','Liander','Enexis','TenneT','Elia'] },
+    ],
+    deviceGroup: [
+      { key:'properties.type', label:{en:'Group Type',nl:'Groeptype'}, type:'select', options:['Generation','Storage','EV Charging','Metering','HVAC','Infrastructure','Grid','Gateway'], required:true },
+    ],
+    device: [
+      { key:'properties.type', label:{en:'Device Type',nl:'Apparaattype'}, type:'select', options:['Solar Inverter','Battery','EV Charger','Power Analyzer','Energy Meter','Wind Turbine','Heat Pump','Gateway','Relay','Fire Suppression','Climate Control','Router'], required:true },
+      { key:'properties.manufacturer', label:{en:'Manufacturer',nl:'Fabrikant'}, type:'text', required:true },
+      { key:'properties.model', label:{en:'Model',nl:'Model'}, type:'text', required:true },
+      { key:'properties.serialNumber', label:{en:'Serial Number',nl:'Serienummer'}, type:'text' },
+      { key:'properties.installDate', label:{en:'Install Date',nl:'Installatiedatum'}, type:'date' },
+    ],
+    sensor: [
+      { key:'properties.type', label:{en:'Sensor Type',nl:'Sensortype'}, type:'select', options:['power','energy','voltage','current','temperature','percentage','counter','frequency','humidity','pressure','status','ratio'], required:true },
+      { key:'properties.unit', label:{en:'Unit',nl:'Eenheid'}, type:'text', required:true },
+    ],
+    actuator: [
+      { key:'properties.type', label:{en:'Actuator Type',nl:'Actuatortype'}, type:'select', options:['power_limit','reactive_power','mode','switch','setpoint','valve','relay','temperature'], required:true },
+      { key:'properties.unit', label:{en:'Unit',nl:'Eenheid'}, type:'text', required:true },
+    ],
+  },
+  location: {
+    site: [
+      { key:'properties.location', label:{en:'Address',nl:'Adres'}, type:'text', full:true },
+      { key:'properties.lat', label:{en:'Latitude',nl:'Breedtegraad'}, type:'number', min:-90, max:90, step:0.001 },
+      { key:'properties.lng', label:{en:'Longitude',nl:'Lengtegraad'}, type:'number', min:-180, max:180, step:0.001 },
+    ],
+  },
+  contract: {
+    account: [
+      { key:'properties.maxSites', label:{en:'Max Sites',nl:'Max Locaties'}, type:'number', min:1 },
+      { key:'properties.maxUsers', label:{en:'Max Users',nl:'Max Gebruikers'}, type:'number', min:1 },
+      { key:'properties.contractStart', label:{en:'Contract Start',nl:'Contractstart'}, type:'date' },
+      { key:'properties.contractEnd', label:{en:'Contract End',nl:'Contracteinde'}, type:'date' },
+    ],
+    site: [
+      { key:'properties.contractLimit', label:{en:'Contract Limit (kW)',nl:'Contractlimiet (kW)'}, type:'number', min:0 },
+      { key:'properties.connection', label:{en:'Grid Connection',nl:'Netaansluiting'}, type:'select', options:['1\u00d725A','3\u00d725A','3\u00d735A','3\u00d740A','3\u00d763A','3\u00d780A'] },
+    ],
+  },
+  network: {
+    _all: [
+      { key:'properties.protocol', label:{en:'Protocol',nl:'Protocol'}, type:'select', options:['Modbus TCP','Modbus RTU','MQTT','OCPP','SunSpec','REST API','BACnet'] },
+      { key:'properties.ip', label:{en:'IP Address',nl:'IP-adres'}, type:'text' },
+      { key:'properties.port', label:{en:'Port',nl:'Poort'}, type:'number', min:1, max:65535 },
+      { key:'properties.modbusId', label:{en:'Modbus ID',nl:'Modbus ID'}, type:'number', min:1, max:247 },
+      { key:'properties.pollInterval', label:{en:'Poll Interval (s)',nl:'Poll Interval (s)'}, type:'number', min:1 },
+    ],
+  },
+  firmware: {
+    device: [
+      { key:'properties.firmware', label:{en:'Firmware Version',nl:'Firmwareversie'}, type:'text', readOnly:true },
+      { key:'properties.autoUpdate', label:{en:'Auto Update',nl:'Automatisch Updaten'}, type:'switch' },
+    ],
+  },
+  thresholds: {
+    sensor: [
+      { key:'properties.warnMin', label:{en:'Warning Min',nl:'Waarschuwing Min'}, type:'number' },
+      { key:'properties.warnMax', label:{en:'Warning Max',nl:'Waarschuwing Max'}, type:'number' },
+      { key:'properties.critMin', label:{en:'Critical Min',nl:'Kritiek Min'}, type:'number' },
+      { key:'properties.critMax', label:{en:'Critical Max',nl:'Kritiek Max'}, type:'number' },
+      { key:'properties.calibOffset', label:{en:'Calibration Offset',nl:'Kalibratie Offset'}, type:'number' },
+      { key:'properties.calibScaleFactor', label:{en:'Scale Factor',nl:'Schaalfactor'}, type:'number', step:0.01 },
+      { key:'properties.calibMethod', label:{en:'Calibration Method',nl:'Kalibratiemethode'}, type:'select', options:['Manual','Automated','Factory'] },
+    ],
+  },
+  limits: {
+    actuator: [
+      { key:'properties.minValue', label:{en:'Min Value',nl:'Min Waarde'}, type:'number' },
+      { key:'properties.maxValue', label:{en:'Max Value',nl:'Max Waarde'}, type:'number' },
+      { key:'properties.rateLimit', label:{en:'Rate Limit',nl:'Snelheidslimiet'}, type:'number', min:0 },
+      { key:'properties.rampRate', label:{en:'Ramp Rate',nl:'Opvoersnelheid'}, type:'number', min:0 },
+      { key:'properties.safetyOverride', label:{en:'Safety Override',nl:'Veiligheidsoverride'}, type:'switch' },
+    ],
+  },
+  platformSettings: {
+    platform: [
+      { key:'properties.defaultLang', label:{en:'Default Language',nl:'Standaardtaal'}, type:'select', options:[{value:'en',label:{en:'English'}},{value:'nl',label:{en:'Nederlands'}},{value:'de',label:{en:'Deutsch'}}] },
+      { key:'properties.timezone', label:{en:'Timezone',nl:'Tijdzone'}, type:'select', options:['Europe/Amsterdam','Europe/Brussels','Europe/Berlin','Europe/London','UTC'] },
+      { key:'properties.currency', label:{en:'Currency',nl:'Valuta'}, type:'select', options:['EUR','USD','GBP','CHF'] },
+      { key:'properties.dateFormat', label:{en:'Date Format',nl:'Datumformaat'}, type:'select', options:['DD-MM-YYYY','MM-DD-YYYY','YYYY-MM-DD'] },
+      { key:'properties.energyUnit', label:{en:'Energy Unit',nl:'Energieeenheid'}, type:'select', options:['kWh','MWh','Wh'] },
+      { key:'properties.selfConsTarget', label:{en:'Self-consumption Target (%)',nl:'Zelfverbruiksdoel (%)'}, type:'slider', min:0, max:100, full:true },
+      { key:'properties.realtimeEnabled', label:{en:'Enable Real-time',nl:'Realtime Inschakelen'}, type:'switch' },
+      { key:'properties.autoAckAlerts', label:{en:'Auto-ack Info Alerts',nl:'Auto-bevestig Info'}, type:'switch' },
+      { key:'properties.dailyReports', label:{en:'Daily Reports',nl:'Dagelijkse Rapporten'}, type:'switch' },
+    ],
+  },
+  compliance: {
+    site: [
+      { key:'properties.compliance.retention', label:{en:'Data Retention',nl:'Dataretentie'}, type:'select', options:['1 yr','3 yr','5 yr','7 yr','10 yr'] },
+    ],
+  },
+};
+
+// Sub-tab definitions
+const EDIT_SUB_TABS = [
+  { key:'general', label:{en:'General',nl:'Algemeen',de:'Allgemein'}, icon:'SettingOutlined' },
+  { key:'location', label:{en:'Location',nl:'Locatie',de:'Standort'}, icon:'EnvironmentOutlined' },
+  { key:'contract', label:{en:'Contract',nl:'Contract',de:'Vertrag'}, icon:'EuroCircleOutlined' },
+  { key:'network', label:{en:'Network',nl:'Netwerk',de:'Netzwerk'}, icon:'ApiOutlined' },
+  { key:'firmware', label:{en:'Firmware',nl:'Firmware',de:'Firmware'}, icon:'CloudServerOutlined' },
+  { key:'thresholds', label:{en:'Thresholds',nl:'Drempels',de:'Schwellenwerte'}, icon:'ControlOutlined' },
+  { key:'limits', label:{en:'Limits',nl:'Limieten',de:'Grenzen'}, icon:'SlidersOutlined' },
+  { key:'platformSettings', label:{en:'Settings',nl:'Instellingen',de:'Einstellungen'}, icon:'GlobalOutlined' },
+  { key:'compliance', label:{en:'Compliance',nl:'Naleving',de:'Compliance'}, icon:'SafetyCertificateOutlined' },
+];
+
+// Icon lookup for sub-tabs
+const SUB_TAB_ICONS = {
+  SettingOutlined, EnvironmentOutlined, EuroCircleOutlined, ApiOutlined, CloudServerOutlined,
+  ControlOutlined, SlidersOutlined, GlobalOutlined, SafetyCertificateOutlined
+};
+
+// Get fields for a specific sub-tab and entity type
+function getSubTabFields(subTabKey, entityType) {
+  const schema = ENTITY_EDIT_SCHEMA[subTabKey];
+  if (!schema) return [];
+  const allFields = schema._all || [];
+  const typeFields = schema[entityType] || [];
+  return [...allFields, ...typeFields];
+}
+
+// Get applicable sub-tabs for an entity type
+function getApplicableSubTabs(entityType) {
+  return EDIT_SUB_TABS.filter(tab => {
+    const fields = getSubTabFields(tab.key, entityType);
+    return fields.length > 0;
+  });
+}
+
+// Overview schema
+const OVERVIEW_SCHEMA = {
+  platform: {
+    properties: [
+      { key:'properties.version', label:{en:'Version',nl:'Versie'}, icon:React.createElement(CodeOutlined,{style:{fontSize:14}}) },
+      { key:'properties.timezone', label:{en:'Timezone',nl:'Tijdzone'}, icon:React.createElement(ClockCircleOutlined,{style:{fontSize:14}}) },
+      { key:'properties.currency', label:{en:'Currency',nl:'Valuta'}, icon:React.createElement(EuroCircleOutlined,{style:{fontSize:14}}) },
+      { key:'properties.energyUnit', label:{en:'Energy Unit',nl:'Energieeenheid'}, icon:React.createElement(ThunderboltOutlined,{style:{fontSize:14}}) },
+    ],
+    kpis: [
+      { key:'state.totalAccounts', label:{en:'Accounts',nl:'Accounts'}, color:'var(--info)', icon:'TeamOutlined' },
+      { key:'state.totalSites', label:{en:'Sites',nl:'Locaties'}, color:'var(--success)', icon:'HomeOutlined' },
+      { key:'state.totalDevices', label:{en:'Devices',nl:'Apparaten'}, color:'var(--brand)', icon:'HddOutlined' },
+      { key:'_activeAlarms', label:{en:'Active Alarms',nl:'Actieve Alarmen'}, color:'var(--error)', icon:'AlertOutlined' },
+      { key:'_onlineRate', label:{en:'Online Rate',nl:'Online Ratio'}, color:'var(--success)', suffix:'%', icon:'CheckCircleFilled' },
+      { key:'state.uptime', label:{en:'Uptime',nl:'Uptime'}, color:'var(--text-secondary)', icon:'ClockCircleOutlined' },
+    ],
+  },
+  account: {
+    properties: [
+      { key:'properties.type', label:{en:'Type',nl:'Type'} },
+      { key:'properties.plan', label:{en:'Plan',nl:'Plan'} },
+      { key:'properties.contactEmail', label:{en:'Contact',nl:'Contact'} },
+      { key:'properties.vatNumber', label:{en:'VAT',nl:'BTW'} },
+      { key:'properties.contractStart', label:{en:'Contract Start',nl:'Contractstart'} },
+      { key:'properties.contractEnd', label:{en:'Contract End',nl:'Contracteinde'} },
+    ],
+    kpis: [
+      { key:'state.sites', label:{en:'Sites',nl:'Locaties'}, color:'var(--success)', icon:'HomeOutlined' },
+      { key:'state.devices', label:{en:'Devices',nl:'Apparaten'}, color:'var(--brand)', icon:'HddOutlined' },
+      { key:'state.users', label:{en:'Users',nl:'Gebruikers'}, color:'var(--info)', icon:'TeamOutlined' },
+      { key:'_activeAlarms', label:{en:'Active Alarms',nl:'Actieve Alarmen'}, color:'var(--error)', icon:'AlertOutlined' },
+      { key:'_totalEnergy', label:{en:'Energy Generated',nl:'Energie Opgewekt'}, color:'var(--solar)', icon:'ThunderboltOutlined', suffix:'kWh' },
+      { key:'_costSaved', label:{en:'Cost Saved',nl:'Bespaard'}, color:'var(--success)', icon:'EuroCircleOutlined' },
+    ],
+  },
+  subAccount: {
+    properties: [
+      { key:'properties.region', label:{en:'Region',nl:'Regio'} },
+      { key:'properties.dso', label:{en:'DSO',nl:'Netbeheerder'} },
+      { key:'properties.lang', label:{en:'Language',nl:'Taal'} },
+    ],
+    kpis: [
+      { key:'state.sites', label:{en:'Sites',nl:'Locaties'}, color:'var(--success)', icon:'HomeOutlined' },
+      { key:'state.devices', label:{en:'Devices',nl:'Apparaten'}, color:'var(--brand)', icon:'HddOutlined' },
+      { key:'_activeAlarms', label:{en:'Active Alarms',nl:'Actieve Alarmen'}, color:'var(--error)', icon:'AlertOutlined' },
+      { key:'_totalCapacity', label:{en:'Total Capacity',nl:'Totale Capaciteit'}, color:'var(--solar)', icon:'ThunderboltOutlined' },
+      { key:'_onlineRate', label:{en:'Online Rate',nl:'Online Ratio'}, color:'var(--success)', suffix:'%', icon:'CheckCircleFilled' },
+    ],
+  },
+  site: {
+    properties: [
+      { key:'properties.type', label:{en:'Type',nl:'Type'} },
+      { key:'properties.capacity', label:{en:'Capacity',nl:'Capaciteit'} },
+      { key:'properties.dso', label:{en:'DSO',nl:'Netbeheerder'} },
+      { key:'properties.connection', label:{en:'Connection',nl:'Aansluiting'} },
+      { key:'properties.contractLimit', label:{en:'Contract Limit',nl:'Contractlimiet'} },
+      { key:'properties.location', label:{en:'Location',nl:'Locatie'} },
+    ],
+    kpis: [
+      { key:'state.selfConsumption', label:{en:'Self-consumption',nl:'Zelfverbruik'}, color:'var(--success)', suffix:'%', pct:true, icon:'PieChartOutlined' },
+      { key:'_solarPower', label:{en:'Solar Production',nl:'Zonne-energie'}, color:'var(--solar)', suffix:'kW', icon:'ThunderboltOutlined' },
+      { key:'_batterySoc', label:{en:'Battery SoC',nl:'Batterij SoC'}, color:'var(--brand)', suffix:'%', pct:true, icon:'DatabaseOutlined' },
+      { key:'_peakDemand', label:{en:'Peak Demand',nl:'Piekvraag'}, color:'var(--warning)', suffix:'%', pct:true, icon:'FundOutlined' },
+      { key:'_gridPower', label:{en:'Grid',nl:'Net'}, color:'var(--error)', suffix:'kW', icon:'SwapOutlined' },
+      { key:'state.devices', label:{en:'Devices',nl:'Apparaten'}, color:'var(--brand)', icon:'HddOutlined' },
+      { key:'_activeAlarms', label:{en:'Active Alarms',nl:'Actieve Alarmen'}, color:'var(--error)', icon:'AlertOutlined' },
+      { key:'_costSaved', label:{en:'Cost Saved',nl:'Bespaard'}, color:'var(--success)', icon:'EuroCircleOutlined' },
+    ],
+    showMap: true,
+  },
+  deviceGroup: {
+    properties: [
+      { key:'properties.type', label:{en:'Type',nl:'Type'} },
+    ],
+    kpis: [
+      { key:'_totalPower', label:{en:'Total Power',nl:'Totaal Vermogen'}, color:'var(--solar)', suffix:'kW', icon:'ThunderboltOutlined' },
+      { key:'_deviceCount', label:{en:'Devices',nl:'Apparaten'}, color:'var(--brand)', icon:'HddOutlined' },
+      { key:'_onlineCount', label:{en:'Online',nl:'Online'}, color:'var(--success)', icon:'CheckCircleFilled' },
+      { key:'_faultCount', label:{en:'Faults',nl:'Storingen'}, color:'var(--error)', icon:'WarningOutlined' },
+      { key:'_activeAlarms', label:{en:'Active Alarms',nl:'Actieve Alarmen'}, color:'var(--error)', icon:'AlertOutlined' },
+    ],
+  },
+  device: {
+    properties: [
+      { key:'properties.type', label:{en:'Type',nl:'Type'} },
+      { key:'properties.manufacturer', label:{en:'Manufacturer',nl:'Fabrikant'} },
+      { key:'properties.model', label:{en:'Model',nl:'Model'} },
+      { key:'properties.firmware', label:{en:'Firmware',nl:'Firmware'} },
+      { key:'properties.serialNumber', label:{en:'Serial',nl:'Serie'} },
+      { key:'properties.installDate', label:{en:'Installed',nl:'Ge\u00efnstalleerd'} },
+    ],
+    kpis: [
+      { key:'state.power', label:{en:'Current Power',nl:'Huidig Vermogen'}, color:'var(--solar)', icon:'ThunderboltOutlined' },
+      { key:'_sensorCount', label:{en:'Sensors',nl:'Sensoren'}, color:'var(--info)', icon:'DashboardOutlined' },
+      { key:'_activeAlarms', label:{en:'Active Alarms',nl:'Actieve Alarmen'}, color:'var(--error)', icon:'AlertOutlined' },
+    ],
+  },
+  sensor: {
+    properties: [
+      { key:'properties.type', label:{en:'Type',nl:'Type'} },
+      { key:'properties.unit', label:{en:'Unit',nl:'Eenheid'} },
+    ],
+    kpis: [
+      { key:'state.value', label:{en:'Current Value',nl:'Huidige Waarde'}, color:'var(--brand)', suffix:true, icon:'DashboardOutlined' },
+      { key:'_min24h', label:{en:'Min (24h)',nl:'Min (24u)'}, color:'var(--info)', suffix:true, icon:'DashboardOutlined' },
+      { key:'_max24h', label:{en:'Max (24h)',nl:'Max (24u)'}, color:'var(--warning)', suffix:true, icon:'WarningOutlined' },
+      { key:'_activeAlarms', label:{en:'Alarm Status',nl:'Alarmstatus'}, color:'var(--error)', icon:'AlertOutlined' },
+    ],
+  },
+  actuator: {
+    properties: [
+      { key:'properties.type', label:{en:'Type',nl:'Type'} },
+      { key:'properties.unit', label:{en:'Unit',nl:'Eenheid'} },
+    ],
+    kpis: [
+      { key:'state.value', label:{en:'Current Value',nl:'Huidige Waarde'}, color:'var(--brand)', icon:'ControlOutlined' },
+      { key:'_mode', label:{en:'Mode',nl:'Modus'}, color:'var(--info)', icon:'ControlOutlined' },
+      { key:'_activeAlarms', label:{en:'Active Alarms',nl:'Actieve Alarmen'}, color:'var(--error)', icon:'AlertOutlined' },
+      { key:'_lastCommand', label:{en:'Last Command',nl:'Laatste Commando'}, color:'var(--text-secondary)', icon:'HistoryOutlined' },
+    ],
+  },
+};
+
+// ─── FormPanel — renders schema fields as an editable form ───
+function FormPanel({ fields, values, errors, onChange, lang }) {
+  return React.createElement('div', {className:'eem-form-grid'},
+    fields.map(field => {
+      const val = getNestedValue(values, field.key);
+      const err = errors?.[field.key];
+      return React.createElement('div', {key:field.key, className:`eem-form-field ${field.full?'full':''}`},
+        field.type !== 'switch' && React.createElement('div', {className:'eem-form-label'},
+          resolveI18n(field.label, lang), field.required && React.createElement('span',{style:{color:'var(--error)',marginLeft:2}},'*')),
+        field.type === 'switch'
+          ? React.createElement('div', {style:{display:'flex',alignItems:'center',justifyContent:'space-between'}},
+              React.createElement('span', {className:'eem-form-label'}, resolveI18n(field.label, lang)),
+              React.createElement(FieldRenderer, { field, value:val, onChange:v=>onChange(field.key,v), lang }))
+          : React.createElement(FieldRenderer, { field, value:val, onChange:v=>onChange(field.key,v), lang }),
+        err && React.createElement('div', {className:'eem-form-error'}, err),
+        field.helpText && React.createElement('div', {className:'eem-form-help'}, resolveI18n(field.helpText, lang))
+      );
+    })
+  );
+}
+
+// ─── EntityEditModal — unified edit/create modal ───
+function EntityEditModal({ visible, mode, entityType, entityId, parentId, onSave, onCancel, lang }) {
+  const [activeTab, setActiveTab] = useState('general');
+  const [values, setValues] = useState({});
+  const [errors, setErrors] = useState({});
+  const [dirty, setDirty] = useState(false);
+
+  useEffect(() => {
+    if (!visible) return;
+    if (mode === 'edit' && entityId) {
+      const entity = EntityStore.get(entityId);
+      if (entity) {
+        setValues(JSON.parse(JSON.stringify(entity)));
+      }
+    } else {
+      setValues({ name:'', entityType, parentId, properties:{tags:[]}, state:{status:'online'}, alarms:[], capabilities:[] });
+    }
+    setErrors({});
+    setDirty(false);
+    setActiveTab('general');
+  }, [visible, entityId, mode, entityType, parentId]);
+
+  const subTabs = getApplicableSubTabs(entityType);
+
+  const handleChange = (key, val) => {
+    setValues(prev => {
+      const next = JSON.parse(JSON.stringify(prev));
+      setNestedValue(next, key, val);
+      return next;
+    });
+    setDirty(true);
+    if (errors[key]) setErrors(prev => { const n = {...prev}; delete n[key]; return n; });
+  };
+
+  const validate = () => {
+    const errs = {};
+    subTabs.forEach(tab => {
+      getSubTabFields(tab.key, entityType).forEach(field => {
+        const val = getNestedValue(values, field.key);
+        if (field.required && (val == null || val === '' || (Array.isArray(val) && val.length === 0))) {
+          errs[field.key] = resolveI18n({en:'Required',nl:'Verplicht',de:'Erforderlich'}, lang);
+        }
+        if (field.minLength && typeof val === 'string' && val.length < field.minLength) {
+          errs[field.key] = resolveI18n({en:`Min ${field.minLength} characters`,nl:`Min ${field.minLength} tekens`}, lang);
+        }
+      });
+    });
+    return errs;
+  };
+
+  const handleSave = () => {
+    const errs = validate();
+    if (Object.keys(errs).length > 0) {
+      setErrors(errs);
+      const firstErrKey = Object.keys(errs)[0];
+      for (const tab of subTabs) {
+        if (getSubTabFields(tab.key, entityType).some(f => f.key === firstErrKey)) {
+          setActiveTab(tab.key);
+          break;
+        }
+      }
+      return;
+    }
+    if (mode === 'create') {
+      const newId = `${entityType}-${Date.now()}`;
+      const entity = { ...values, id:newId, entityType, parentId };
+      EntityStore.put(entity);
+      onSave(newId);
+    } else {
+      EntityStore.put(values);
+      onSave(entityId);
+    }
+  };
+
+  const handleCancel = () => {
+    if (dirty) {
+      Modal.confirm({
+        title: resolveI18n({en:'Unsaved changes',nl:'Niet-opgeslagen wijzigingen'}, lang),
+        content: resolveI18n({en:'Discard changes?',nl:'Wijzigingen verwerpen?'}, lang),
+        okText: resolveI18n({en:'Discard',nl:'Verwerpen'}, lang),
+        okType: 'danger',
+        onOk: onCancel,
+      });
+    } else {
+      onCancel();
+    }
+  };
+
+  if (!visible) return null;
+
+  const currentFields = getSubTabFields(activeTab, entityType);
+  const title = mode === 'create'
+    ? resolveI18n({en:`Create ${entityType}`,nl:`${entityType} aanmaken`}, lang)
+    : (values.name || '');
+
+  return ReactDOM.createPortal(
+    React.createElement('div', {className:'eem-overlay', onClick:handleCancel},
+      React.createElement('div', {className:'eem-modal', onClick:e=>e.stopPropagation()},
+        // Header
+        React.createElement('div', {className:'eem-header'},
+          React.createElement('div', {className:'eem-header-icon'}, React.createElement(EntityTypeIcon, {type:entityType})),
+          React.createElement('div', {className:'eem-header-title'}, title),
+          React.createElement('span', {className:'eem-header-badge'}, entityType),
+          React.createElement('span', {className:'eem-header-close', onClick:handleCancel}, React.createElement(CloseOutlined))
+        ),
+        // Body
+        React.createElement('div', {className:'eem-body'},
+          // Left tabs
+          React.createElement('div', {className:'eem-tabs'},
+            subTabs.map(tab => {
+              const Icon = SUB_TAB_ICONS[tab.icon] || SettingOutlined;
+              const hasError = getSubTabFields(tab.key, entityType).some(f => errors[f.key]);
+              return React.createElement('div', {
+                key:tab.key, className:`eem-tab ${activeTab===tab.key?'active':''}`,
+                onClick:()=>setActiveTab(tab.key)
+              },
+                React.createElement('span', {className:'eem-tab-icon', style:{color:hasError?'var(--error)':undefined}}, React.createElement(Icon, {style:{fontSize:13}})),
+                React.createElement('span', null, resolveI18n(tab.label, lang)),
+                hasError && React.createElement('span', {style:{width:6,height:6,borderRadius:'50%',background:'var(--error)',marginLeft:'auto'}})
+              );
+            })
+          ),
+          // Right content
+          React.createElement('div', {className:'eem-content'},
+            React.createElement(FormPanel, { fields:currentFields, values, errors, onChange:handleChange, lang })
+          )
+        ),
+        // Footer
+        React.createElement('div', {className:'eem-footer'},
+          dirty ? React.createElement('span', {className:'eem-dirty'}, React.createElement(ExclamationCircleOutlined,{style:{fontSize:12}}), resolveI18n({en:'Unsaved changes',nl:'Niet-opgeslagen'}, lang))
+            : React.createElement('span'),
+          React.createElement('div', {style:{display:'flex',gap:8}},
+            React.createElement(Button, {size:'small', onClick:handleCancel}, resolveI18n({en:'Cancel',nl:'Annuleren'}, lang)),
+            React.createElement(Button, {size:'small', type:'primary', onClick:handleSave},
+              resolveI18n(mode === 'create' ? {en:'Create',nl:'Aanmaken'} : {en:'Save',nl:'Opslaan'}, lang))
+          )
+        )
+      )
+    ),
+    document.body
+  );
+}
+
+// ─── Overview Micro-Frontend — rich entity overview ───
+function OverviewMicroFrontend({ entity, lang, onEdit }) {
+  const schema = OVERVIEW_SCHEMA[entity.entityType];
+  if (!schema) return React.createElement('div', {className:'mfe-wrap'}, 'No overview schema');
+  const status = entity.state?.status || 'unknown';
+
+  // Compute KPI values — aggregated counts, no child entity lists
+  const KPI_ICONS = { TeamOutlined, HomeOutlined, HddOutlined, AlertOutlined, CheckCircleFilled, ClockCircleOutlined,
+    ThunderboltOutlined, EuroCircleOutlined, PieChartOutlined, DatabaseOutlined, FundOutlined, SwapOutlined,
+    WarningOutlined, DashboardOutlined, ControlOutlined, HistoryOutlined };
+
+  const resolveKpi = (kpi) => {
+    const desc = EntityStore.getDescendants(entity.id);
+    const alarms = EntityStore.getAggregatedAlarms ? EntityStore.getAggregatedAlarms(entity.id) : (entity.alarms || []);
+    switch (kpi.key) {
+      case '_activeAlarms': return alarms.length;
+      case '_onlineRate': {
+        const all = desc.filter(d => d.entityType === 'device');
+        return all.length === 0 ? 0 : Math.round(all.filter(d => d.state?.status === 'online').length / all.length * 100);
+      }
+      case '_totalEnergy': return `${Math.round(desc.filter(d=>d.entityType==='device').reduce((s,d)=> s + (parseFloat(d.state?.power)||0), 0) * 8.2)}`;
+      case '_costSaved': return entity.properties?.costSaved?.value || '\u20AC0';
+      case '_totalCapacity': { const sites = desc.filter(d=>d.entityType==='site'); return sites.length > 0 ? `${sites.length} sites` : '\u2014'; }
+      case '_solarPower': return entity.state?.energyFlow?.solarPower != null ? entity.state.energyFlow.solarPower : '\u2014';
+      case '_batterySoc': return entity.state?.energyFlow?.essSoc != null ? entity.state.energyFlow.essSoc : '\u2014';
+      case '_peakDemand': return entity.state?.peakShaving?.demandPct != null ? entity.state.peakShaving.demandPct : '\u2014';
+      case '_gridPower': return entity.state?.energyFlow?.gridPower != null ? entity.state.energyFlow.gridPower : '\u2014';
+      case '_totalPower': {
+        const devices = EntityStore.getChildren(entity.id).filter(c=>c.entityType==='device');
+        return devices.reduce((s,d) => s + (parseFloat(d.state?.power)||0), 0).toFixed(1);
+      }
+      case '_deviceCount': return EntityStore.getChildren(entity.id).filter(c=>c.entityType==='device').length;
+      case '_onlineCount': return EntityStore.getChildren(entity.id).filter(c=>c.entityType==='device'&&c.state?.status==='online').length;
+      case '_faultCount': return EntityStore.getChildren(entity.id).filter(c=>c.entityType==='device'&&(c.state?.status==='fault'||c.state?.status==='error')).length;
+      case '_sensorCount': return EntityStore.getChildren(entity.id).filter(c=>c.entityType==='sensor').length;
+      case '_min24h': { const v = entity.state?.value; return v != null ? Math.round(v * 0.7) : '\u2014'; }
+      case '_max24h': { const v = entity.state?.value; return v != null ? Math.round(v * 1.3) : '\u2014'; }
+      case '_mode': return entity.state?.value || '\u2014';
+      case '_lastCommand': return '2 min ago';
+      default: {
+        const val = getNestedValue(entity, kpi.key);
+        if (val == null) return '\u2014';
+        if (kpi.suffix === true && entity.properties?.unit) return `${val}`;
+        return val;
+      }
+    }
+  };
+
+  const recentAlarms = (EntityStore.getAggregatedAlarms ? EntityStore.getAggregatedAlarms(entity.id) : (entity.alarms || [])).slice(0, 4);
+
+  return React.createElement('div', {className:'mfe-wrap'},
+    // Status Hero + Key Properties
+    React.createElement('div', {className:'ov-hero'},
+      React.createElement('div', {className:'ov-hero-status'},
+        React.createElement('div', {className:'ov-hero-icon'}, React.createElement(EntityTypeIcon, {type:entity.entityType, style:{fontSize:28}})),
+        React.createElement(StatusIndicator, {status}),
+        entity.state?.uptime && React.createElement('div', {style:{fontSize:10,color:'var(--text-tertiary)'}}, entity.state.uptime)
+      ),
+      React.createElement('div', {className:'ov-hero-props'},
+        (schema.properties || []).map(p =>
+          React.createElement(PropertyCard, { key:p.key, icon:p.icon, label:p.label, value:getNestedValue(entity, p.key), lang })
+        )
+      )
+    ),
+
+    // KPI Dashboard Cards
+    schema.kpis && schema.kpis.length > 0 && React.createElement('div', null,
+      React.createElement('div', {className:'mfe-section-title'}, resolveI18n({en:'Key Metrics',nl:'Kerngetallen'}, lang)),
+      React.createElement('div', {className:'ov-metrics'},
+        schema.kpis.map(kpi => {
+          const Icon = KPI_ICONS[kpi.icon] || HddOutlined;
+          const val = resolveKpi(kpi);
+          const displayVal = kpi.suffix && kpi.suffix !== true && val !== '\u2014' ? `${val} ${kpi.suffix}` : (kpi.suffix === true && entity.properties?.unit && val !== '\u2014' ? `${val} ${entity.properties.unit}` : val);
+          return React.createElement('div', {key:kpi.key, className:'metric-card'},
+            React.createElement('div', {style:{display:'flex',alignItems:'center',justifyContent:'center',gap:6,marginBottom:4}},
+              React.createElement(Icon, {style:{fontSize:14,color:kpi.color}})),
+            React.createElement('div', {className:'metric-card-value', style:{color:kpi.color}}, displayVal),
+            React.createElement('div', {className:'metric-card-label'}, resolveI18n(kpi.label, lang)),
+            kpi.pct && typeof val === 'number' && React.createElement('div', {className:'metric-card-bar'},
+              React.createElement('div', {className:'metric-card-bar-fill', style:{width:`${Math.min(100,val)}%`, background:kpi.color}}))
+          );
+        })
+      )
+    ),
+
+    // Location Map (site only, no children list)
+    schema.showMap && React.createElement('div', {className:'mfe-section'},
+      React.createElement('div', {className:'mfe-section-title'}, resolveI18n({en:'Location',nl:'Locatie'}, lang)),
+      React.createElement('div', {className:'ov-map'},
+        React.createElement(EnvironmentOutlined, {style:{fontSize:24,marginRight:8}}),
+        entity.properties?.lat && entity.properties?.lng
+          ? `${entity.properties.lat.toFixed(4)}\u00b0 N, ${entity.properties.lng.toFixed(4)}\u00b0 E \u2014 ${entity.properties.location || ''}`
+          : resolveI18n({en:'No coordinates set',nl:'Geen co\u00f6rdinaten ingesteld'}, lang)
+      )
+    ),
+
+    // Recent Alarms (aggregated, scales to 1000s — only shows top 4)
+    recentAlarms.length > 0 && React.createElement('div', {className:'ov-activity'},
+      React.createElement('div', {className:'mfe-section-title'}, resolveI18n({en:'Recent Alarms',nl:'Recente Alarmen'}, lang)),
+      recentAlarms.map((a, i) => React.createElement('div', {key:i, style:{display:'flex',alignItems:'center',gap:8,padding:'4px 0',fontSize:11}},
+        React.createElement('span', {className:`status-dot ${a.sev==='critical'?'error':a.sev==='warning'?'warning':'info'}`}, a.sev),
+        React.createElement('span', {style:{flex:1,color:'var(--text-primary)'}}, a.msg),
+        a.entityName && React.createElement('span', {style:{fontSize:10,color:'var(--text-tertiary)',marginRight:8}}, a.entityName),
+        React.createElement('span', {style:{fontSize:10,color:'var(--text-tertiary)'}}, a.time)
+      ))
+    )
   );
 }
 
@@ -6585,109 +7230,6 @@ function TagsTab({ entity }) {
 }
 
 // ─── Tab Content: Global Settings ───
-function GlobalSettingsTab({ entity, t }) {
-  const props = entity.properties || {};
-  return (
-    <div className="config-tab-content">
-      <div style={{display:'grid',gap:20,maxWidth:480}}>
-        <div>
-          <div style={{fontSize:13,fontWeight:500,color:'var(--text-primary)',marginBottom:6}}>{t.platformName}</div>
-          <Input defaultValue={entity.name} size="large"/>
-        </div>
-        <div>
-          <div style={{fontSize:13,fontWeight:500,color:'var(--text-primary)',marginBottom:6}}>{t.defaultLang}</div>
-          <Select defaultValue={props.defaultLang || 'en'} style={{width:'100%'}} size="large"
-            options={[{value:'en',label:'English (EN)'},{value:'nl',label:'Nederlands (NL)'}]}/>
-        </div>
-        <div>
-          <div style={{fontSize:13,fontWeight:500,color:'var(--text-primary)',marginBottom:6}}>{t.timezone}</div>
-          <Select defaultValue="eu-ams" style={{width:'100%'}} size="large"
-            options={[{value:'eu-ams',label:'Europe/Amsterdam (UTC+1)'}]}/>
-        </div>
-        <div>
-          <div style={{fontSize:13,fontWeight:500,color:'var(--text-primary)',marginBottom:6}}>{t.currency}</div>
-          <Select defaultValue={props.currency || 'EUR'} style={{width:'100%'}} size="large"
-            options={[{value:'EUR',label:'EUR (€)'},{value:'USD',label:'USD ($)'}]}/>
-        </div>
-        <div style={{borderTop:'1px solid var(--border)',paddingTop:20}}>
-          <div style={{fontSize:14,fontWeight:600,color:'var(--text-primary)',marginBottom:16}}>{t.energySettings}</div>
-          <div style={{fontSize:13,fontWeight:500,color:'var(--text-primary)',marginBottom:8}}>{t.energyUnit}</div>
-          <Segmented options={['kWh','MWh','Wh']} defaultValue={props.energyUnit || 'kWh'}/>
-        </div>
-        <div style={{borderTop:'1px solid var(--border)',paddingTop:20,display:'grid',gap:16}}>
-          {[{label:t.enableRealtime,key:'realtimeEnabled'},{label:t.autoAckAlerts,key:'autoAckAlerts'},{label:t.sendDailyReports,key:'dailyReports'}].map((item,i) => (
-            <div key={i} style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-              <span style={{fontSize:13,color:'var(--text-primary)'}}>{item.label}</span>
-              <Switch defaultChecked={props[item.key] !== false}/>
-            </div>
-          ))}
-        </div>
-        <div style={{display:'flex',gap:8,justifyContent:'flex-end',borderTop:'1px solid var(--border)',paddingTop:16}}>
-          <button className="header-btn">{t.cancel}</button>
-          <button className="header-btn primary">{t.saveChanges}</button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ─── Tab Content: Connection (Device) ───
-function ConnectionTab({ entity }) {
-  return (
-    <div className="config-tab-content">
-      <div className="config-prop-grid">
-        <div><div className="config-prop-label">Protocol</div><div className="config-prop-value">Modbus TCP</div></div>
-        <div><div className="config-prop-label">IP Address</div><div className="config-prop-value">192.168.1.{Math.floor(Math.random()*254)+1}</div></div>
-        <div><div className="config-prop-label">Port</div><div className="config-prop-value">502</div></div>
-        <div><div className="config-prop-label">Modbus ID</div><div className="config-prop-value">{Math.floor(Math.random()*247)+1}</div></div>
-        <div><div className="config-prop-label">Polling Interval</div><div className="config-prop-value">5s</div></div>
-        <div><div className="config-prop-label">MQTT Topic</div><div className="config-prop-value" style={{fontSize:10,wordBreak:'break-all'}}>orbiteos/acme/nl/{entity.id}/telemetry</div></div>
-      </div>
-    </div>
-  );
-}
-
-// ─── Tab Content: Firmware (Device) ───
-function FirmwareTab({ entity }) {
-  const fw = entity.properties?.firmware || 'Unknown';
-  return (
-    <div className="config-tab-content">
-      <div className="config-prop-grid">
-        <div><div className="config-prop-label">Current Version</div><div className="config-prop-value">{fw}</div></div>
-        <div><div className="config-prop-label">Update Available</div><div className="config-prop-value" style={{color:'var(--success)'}}>No</div></div>
-        <div><div className="config-prop-label">Last Updated</div><div className="config-prop-value">2026-02-15</div></div>
-        <div><div className="config-prop-label">Auto-update</div><Switch defaultChecked={false} size="small"/></div>
-      </div>
-    </div>
-  );
-}
-
-// ─── Tab Content: Sensor Thresholds ───
-function ThresholdsTab({ entity }) {
-  return (
-    <div className="config-tab-content">
-      <div style={{fontSize:13,fontWeight:600,color:'var(--text-primary)',marginBottom:12}}>Threshold Configuration</div>
-      <div style={{display:'grid',gap:16,maxWidth:400}}>
-        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-          <span style={{fontSize:12,color:'var(--text-secondary)'}}>Warning Min</span>
-          <InputNumber size="small" defaultValue={0} style={{width:100}}/>
-        </div>
-        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-          <span style={{fontSize:12,color:'var(--text-secondary)'}}>Warning Max</span>
-          <InputNumber size="small" defaultValue={80} style={{width:100}}/>
-        </div>
-        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-          <span style={{fontSize:12,color:'var(--text-secondary)'}}>Critical Min</span>
-          <InputNumber size="small" defaultValue={-10} style={{width:100}}/>
-        </div>
-        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-          <span style={{fontSize:12,color:'var(--text-secondary)'}}>Critical Max</span>
-          <InputNumber size="small" defaultValue={100} style={{width:100}}/>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 // ─── Tab Content: Actuator Commands ───
 function CommandsTab({ entity }) {
@@ -6709,68 +7251,6 @@ function CommandsTab({ entity }) {
   );
 }
 
-// ─── Tab Content: Site Settings ───
-function SiteSettingsTab({ entity, t }) {
-  const props = entity.properties || {};
-  return (
-    <div className="config-tab-content">
-      <div style={{display:'grid',gap:16,maxWidth:480}}>
-        <div><div style={{fontSize:13,fontWeight:500,color:'var(--text-primary)',marginBottom:6}}>Capacity</div>
-          <Input defaultValue={props.capacity || ''} size="small"/></div>
-        <div><div style={{fontSize:13,fontWeight:500,color:'var(--text-primary)',marginBottom:6}}>DSO Operator</div>
-          <Input defaultValue={props.dso || ''} size="small"/></div>
-        <div><div style={{fontSize:13,fontWeight:500,color:'var(--text-primary)',marginBottom:6}}>Contract Power Limit</div>
-          <InputNumber defaultValue={props.contractLimit || 0} addonAfter="kW" size="small" style={{width:'100%'}}/></div>
-        <div><div style={{fontSize:13,fontWeight:500,color:'var(--text-primary)',marginBottom:6}}>Grid Connection</div>
-          <Input defaultValue={props.connection || ''} size="small"/></div>
-        <div style={{display:'flex',gap:8,justifyContent:'flex-end',borderTop:'1px solid var(--border)',paddingTop:12}}>
-          <button className="header-btn">{t.cancel}</button>
-          <button className="header-btn primary">{t.saveChanges}</button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ─── Tab Content: Compliance ───
-function ComplianceTab({ entity }) {
-  const c = entity.properties?.compliance || {};
-  return (
-    <div className="config-tab-content">
-      <div style={{display:'flex',gap:24,marginBottom:20,flexWrap:'wrap'}}>
-        <div style={{textAlign:'center'}}><div style={{fontSize:28,fontWeight:700,color:c.score>=95?'var(--success)':c.score>=80?'var(--warning)':'var(--error)'}}>{c.score||0}%</div><div style={{fontSize:11,color:'var(--text-tertiary)'}}>Compliance Score</div></div>
-        <div style={{textAlign:'center'}}><div style={{fontSize:28,fontWeight:700,color:'var(--text-primary)'}}>{c.tracked||0}</div><div style={{fontSize:11,color:'var(--text-tertiary)'}}>Regulations Tracked</div></div>
-        <div style={{textAlign:'center'}}><div style={{fontSize:28,fontWeight:700,color:'var(--success)'}}>{c.compliant||0}</div><div style={{fontSize:11,color:'var(--text-tertiary)'}}>Compliant</div></div>
-        <div style={{textAlign:'center'}}><div style={{fontSize:28,fontWeight:700,color:c.actionNeeded>0?'var(--warning)':'var(--text-primary)'}}>{c.actionNeeded||0}</div><div style={{fontSize:11,color:'var(--text-tertiary)'}}>Action Needed</div></div>
-      </div>
-      <div className="config-prop-grid">
-        <div><div className="config-prop-label">Audit Entries</div><div className="config-prop-value">{c.auditEntries||'0'}</div></div>
-        <div><div className="config-prop-label">Data Retention</div><div className="config-prop-value">{c.retention||'5 yr'}</div></div>
-      </div>
-    </div>
-  );
-}
-
-// ─── Tab Content: Location ───
-function LocationTab({ entity }) {
-  const props = entity.properties || {};
-  return (
-    <div className="config-tab-content">
-      <div className="config-prop-grid">
-        <div><div className="config-prop-label">Address</div><div className="config-prop-value">{props.location||'—'}</div></div>
-        <div><div className="config-prop-label">Latitude</div><div className="config-prop-value">{props.lat||'—'}</div></div>
-        <div><div className="config-prop-label">Longitude</div><div className="config-prop-value">{props.lng||'—'}</div></div>
-        <div><div className="config-prop-label">Timezone</div><div className="config-prop-value">Europe/Amsterdam (UTC+1)</div></div>
-      </div>
-      <div style={{marginTop:16,height:200,background:'var(--bg-secondary)',borderRadius:8,border:'1px solid var(--border)',display:'flex',alignItems:'center',justifyContent:'center'}}>
-        <div style={{textAlign:'center',color:'var(--text-tertiary)'}}>
-          <EnvironmentOutlined style={{fontSize:32,marginBottom:8,display:'block'}}/>
-          <div style={{fontSize:12}}>Map view — {props.lat?.toFixed(3)}, {props.lng?.toFixed(3)}</div>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 // ─── Tab Content: Billing (Account) ───
 function BillingTab({ entity }) {
@@ -6834,51 +7314,6 @@ function DomainsTab({ entity }) {
   );
 }
 
-// ─── Tab Content: Regional Settings (Sub-account) ───
-function RegionalSettingsTab({ entity, t }) {
-  const props = entity.properties || {};
-  return (
-    <div className="config-tab-content">
-      <div style={{display:'grid',gap:16,maxWidth:480}}>
-        <div><div style={{fontSize:13,fontWeight:500,color:'var(--text-primary)',marginBottom:6}}>Region</div>
-          <Input defaultValue={props.region || ''} size="small"/></div>
-        <div><div style={{fontSize:13,fontWeight:500,color:'var(--text-primary)',marginBottom:6}}>DSO Operator</div>
-          <Input defaultValue={props.dso || ''} size="small"/></div>
-        <div><div style={{fontSize:13,fontWeight:500,color:'var(--text-primary)',marginBottom:6}}>Language</div>
-          <Select defaultValue={props.lang || 'en'} style={{width:'100%'}} size="small"
-            options={[{value:'en',label:'English'},{value:'nl',label:'Nederlands'},{value:'fr',label:'Français'},{value:'de',label:'Deutsch'}]}/></div>
-        <div style={{display:'flex',gap:8,justifyContent:'flex-end',borderTop:'1px solid var(--border)',paddingTop:12}}>
-          <button className="header-btn">{t.cancel}</button>
-          <button className="header-btn primary">{t.saveChanges}</button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ─── Tab Content: Group Settings (Device Group) ───
-function GroupSettingsTab({ entity, t }) {
-  const props = entity.properties || {};
-  return (
-    <div className="config-tab-content">
-      <div style={{display:'grid',gap:16,maxWidth:480}}>
-        <div><div style={{fontSize:13,fontWeight:500,color:'var(--text-primary)',marginBottom:6}}>Group Type</div>
-          <Input defaultValue={props.type || ''} size="small"/></div>
-        <div><div style={{fontSize:13,fontWeight:500,color:'var(--text-primary)',marginBottom:6}}>Aggregation Mode</div>
-          <Select defaultValue="sum" style={{width:'100%'}} size="small"
-            options={[{value:'sum',label:'Sum'},{value:'avg',label:'Average'},{value:'max',label:'Maximum'},{value:'min',label:'Minimum'}]}/></div>
-        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-          <span style={{fontSize:13,color:'var(--text-primary)'}}>Propagate Alarms</span><Switch defaultChecked size="small"/></div>
-        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-          <span style={{fontSize:13,color:'var(--text-primary)'}}>Auto-balance Load</span><Switch defaultChecked={false} size="small"/></div>
-        <div style={{display:'flex',gap:8,justifyContent:'flex-end',borderTop:'1px solid var(--border)',paddingTop:12}}>
-          <button className="header-btn">{t.cancel}</button>
-          <button className="header-btn primary">{t.saveChanges}</button>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 // ─── Tab Content: Metrics (Device Group) ───
 function MetricsTab({ entity }) {
@@ -6905,21 +7340,6 @@ function MetricsTab({ entity }) {
   );
 }
 
-// ─── Tab Content: Sensor Calibration ───
-function CalibrationTab({ entity }) {
-  return (
-    <div className="config-tab-content">
-      <div className="config-prop-grid">
-        <div><div className="config-prop-label">Offset</div><InputNumber size="small" defaultValue={0} step={0.01} style={{width:120}}/></div>
-        <div><div className="config-prop-label">Scale Factor</div><InputNumber size="small" defaultValue={1.0} step={0.01} style={{width:120}}/></div>
-        <div><div className="config-prop-label">Last Calibration</div><div className="config-prop-value">2026-01-15</div></div>
-        <div><div className="config-prop-label">Next Due</div><div className="config-prop-value">2027-01-15</div></div>
-        <div><div className="config-prop-label">Calibration Method</div>
-          <Select defaultValue="factory" size="small" style={{width:160}} options={[{value:'factory',label:'Factory'},{value:'field',label:'Field'},{value:'reference',label:'Reference Instrument'}]}/></div>
-      </div>
-    </div>
-  );
-}
 
 // ─── Tab Content: Sensor Data (Last 24h) ───
 function SensorDataTab({ entity }) {
@@ -6979,31 +7399,6 @@ function ScheduleTab({ entity }) {
   );
 }
 
-// ─── Tab Content: Actuator Limits ───
-function LimitsTab({ entity }) {
-  return (
-    <div className="config-tab-content">
-      <div style={{fontSize:13,fontWeight:600,color:'var(--text-primary)',marginBottom:12}}>Safety & Rate Limits</div>
-      <div style={{display:'grid',gap:16,maxWidth:400}}>
-        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-          <span style={{fontSize:12,color:'var(--text-secondary)'}}>Minimum Value</span>
-          <InputNumber size="small" defaultValue={0} style={{width:100}}/></div>
-        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-          <span style={{fontSize:12,color:'var(--text-secondary)'}}>Maximum Value</span>
-          <InputNumber size="small" defaultValue={100} style={{width:100}}/></div>
-        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-          <span style={{fontSize:12,color:'var(--text-secondary)'}}>Rate Limit (per min)</span>
-          <InputNumber size="small" defaultValue={10} style={{width:100}}/></div>
-        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-          <span style={{fontSize:12,color:'var(--text-secondary)'}}>Ramp Rate (per sec)</span>
-          <InputNumber size="small" defaultValue={5} style={{width:100}}/></div>
-        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-          <span style={{fontSize:12,color:'var(--text-primary)'}}>Safety Override Enabled</span>
-          <Switch defaultChecked size="small"/></div>
-      </div>
-    </div>
-  );
-}
 
 // ─── Tab Content: All Devices (flat list for Site) ───
 function AllDevicesTab({ entity, t, lang, onNavigate }) {
@@ -7028,44 +7423,6 @@ function AllDevicesTab({ entity, t, lang, onNavigate }) {
   );
 }
 
-// ─── Create Entity Drawer ───
-function CreateEntityDrawer({ open, onClose, parentId, childType, t }) {
-  const [name, setName] = useState('');
-  const parent = EntityStore.get(parentId);
-  const typeLabels = { account:'Account', subAccount:'Sub-account', site:'Site', deviceGroup:'Device Group', device:'Device', sensor:'Sensor', actuator:'Actuator' };
-
-  const handleCreate = () => {
-    if (!name.trim()) return;
-    const newId = `${childType}-${Date.now()}`;
-    EntityStore.put({
-      id: newId, entityType: childType, parentId, name: name.trim(),
-      properties: { tags: [] }, state: { status: 'online' }, alarms: [], capabilities: [],
-    });
-    setName('');
-    onClose(newId);
-  };
-
-  return (
-    <Drawer title={`Add ${typeLabels[childType] || 'Entity'}`} open={open} onClose={() => onClose(null)} width={400}
-      extra={<button className="header-btn primary" onClick={handleCreate}>{t.saveChanges}</button>}>
-      <div style={{display:'grid',gap:16}}>
-        <div>
-          <div style={{fontSize:12,fontWeight:500,color:'var(--text-primary)',marginBottom:4}}>Parent</div>
-          <Input value={parent?.name || ''} disabled size="small"/>
-        </div>
-        <div>
-          <div style={{fontSize:12,fontWeight:500,color:'var(--text-primary)',marginBottom:4}}>Name</div>
-          <Input value={name} onChange={e => setName(e.target.value)} placeholder={`New ${typeLabels[childType]}`} onPressEnter={handleCreate}/>
-        </div>
-        <div>
-          <div style={{fontSize:12,fontWeight:500,color:'var(--text-primary)',marginBottom:4}}>Tags</div>
-          <Select mode="tags" style={{width:'100%'}} placeholder="Add tags..." defaultValue={[]}/>
-        </div>
-      </div>
-    </Drawer>
-  );
-}
-
 // ─── Configuration Page (Unified) ───
 function ConfigurationPage({ t, lang, navigateWithLoader, focusedEntityId, setFocusedEntityId }) {
   const loader = useLazyLoader();
@@ -7078,9 +7435,11 @@ function ConfigurationPage({ t, lang, navigateWithLoader, focusedEntityId, setFo
   });
   const [treeFilter, setTreeFilter] = useState('');
   const [activeTab, setActiveTab] = useState('overview');
-  const [editMode, setEditMode] = useState(false);
-  const [drawerOpen, setDrawerOpen] = useState(false);
-  const [drawerChildType, setDrawerChildType] = useState(null);
+  const [editModalState, setEditModalState] = useState({ visible:false, mode:'edit', entityType:null, entityId:null, parentId:null });
+  const openEditModal = (entity) => setEditModalState({ visible:true, mode:'edit', entityType:entity.entityType, entityId:entity.id, parentId:null });
+  const openCreateModal = (childType, parentId) => setEditModalState({ visible:true, mode:'create', entityType:childType, entityId:null, parentId });
+  const closeEditModal = () => setEditModalState({ visible:false, mode:'edit', entityType:null, entityId:null, parentId:null });
+  const handleModalSave = (id) => { closeEditModal(); handleSelect(id); };
 
   const selectedEntity = EntityStore.get(selectedEntityId);
   const tabs = selectedEntity ? TabRegistry.getTabsForEntity(selectedEntity) : [];
@@ -7090,7 +7449,6 @@ function ConfigurationPage({ t, lang, navigateWithLoader, focusedEntityId, setFo
   const handleSelect = (entityId) => {
     setSelectedEntityId(entityId);
     setActiveTab('overview');
-    setEditMode(false);
     const path = EntityStore.getPath(entityId);
     setExpandedNodes(prev => {
       const next = new Set(prev);
@@ -7108,13 +7466,7 @@ function ConfigurationPage({ t, lang, navigateWithLoader, focusedEntityId, setFo
   };
 
   const handleAdd = (childType) => {
-    setDrawerChildType(childType);
-    setDrawerOpen(true);
-  };
-
-  const handleDrawerClose = (newId) => {
-    setDrawerOpen(false);
-    if (newId) handleSelect(newId);
+    openCreateModal(childType, selectedEntityId);
   };
 
   const handleDelete = () => {
@@ -7139,7 +7491,7 @@ function ConfigurationPage({ t, lang, navigateWithLoader, focusedEntityId, setFo
   const renderTabContent = (tabDef) => {
     if (!selectedEntity) return null;
     const key = tabDef.key;
-    if (key === 'overview') return <OverviewTabContent entity={selectedEntity} t={t} lang={lang} editMode={editMode}/>;
+    if (key === 'overview') return <OverviewMicroFrontend entity={selectedEntity} lang={lang} onEdit={() => openEditModal(selectedEntity)}/>;
     if (tabDef.type === 'children') return <EntityListTab parentId={selectedEntityId} childType={tabDef.childType} t={t} lang={lang} onNavigate={handleSelect} onAdd={handleAdd}/>;
     if (key === 'users') return <UsersTab entityId={selectedEntityId} t={t} lang={lang}/>;
     if (key === 'roles') return <RolesTab entityId={selectedEntityId} t={t} lang={lang}/>;
@@ -7148,24 +7500,13 @@ function ConfigurationPage({ t, lang, navigateWithLoader, focusedEntityId, setFo
     if (key === 'alarms') return <AlarmsTab entity={selectedEntity} lang={lang}/>;
     if (key === 'auditLog') return <AuditLogTab entity={selectedEntity} lang={lang}/>;
     if (key === 'tags') return <TagsTab entity={selectedEntity}/>;
-    if (key === 'globalSettings') return <GlobalSettingsTab entity={selectedEntity} t={t}/>;
-    if (key === 'connection') return <ConnectionTab entity={selectedEntity}/>;
-    if (key === 'firmware') return <FirmwareTab entity={selectedEntity}/>;
-    if (key === 'thresholds') return <ThresholdsTab entity={selectedEntity}/>;
     if (key === 'commands') return <CommandsTab entity={selectedEntity}/>;
-    if (key === 'siteSettings') return <SiteSettingsTab entity={selectedEntity} t={t}/>;
-    if (key === 'compliance') return <ComplianceTab entity={selectedEntity}/>;
-    if (key === 'location') return <LocationTab entity={selectedEntity}/>;
     if (key === 'billing') return <BillingTab entity={selectedEntity}/>;
     if (key === 'apiKeys') return <ApiKeysTab entity={selectedEntity}/>;
     if (key === 'domains') return <DomainsTab entity={selectedEntity}/>;
-    if (key === 'regionalSettings') return <RegionalSettingsTab entity={selectedEntity} t={t}/>;
-    if (key === 'groupSettings') return <GroupSettingsTab entity={selectedEntity} t={t}/>;
     if (key === 'metrics') return <MetricsTab entity={selectedEntity}/>;
-    if (key === 'calibration') return <CalibrationTab entity={selectedEntity}/>;
     if (key === 'data') return <SensorDataTab entity={selectedEntity}/>;
     if (key === 'schedule') return <ScheduleTab entity={selectedEntity}/>;
-    if (key === 'limits') return <LimitsTab entity={selectedEntity}/>;
     if (key === 'allDevices') return <AllDevicesTab entity={selectedEntity} t={t} lang={lang} onNavigate={handleSelect}/>;
     // Fallback
     return <div className="config-tab-content" style={{color:'var(--text-tertiary)',fontSize:12,padding:20,textAlign:'center'}}>{tabDef.label[lang]}</div>;
@@ -7211,8 +7552,8 @@ function ConfigurationPage({ t, lang, navigateWithLoader, focusedEntityId, setFo
                   </div>
                 </div>
                 <div className="config-actions">
-                  <button className="header-btn" style={{fontSize:11}} onClick={() => setEditMode(!editMode)}>
-                    <EditOutlined style={{marginRight:4}}/>{editMode ? t.cancel : t.editEntity}
+                  <button className="header-btn" style={{fontSize:11}} onClick={() => openEditModal(selectedEntity)}>
+                    <EditOutlined style={{marginRight:4}}/>{resolveI18n({en:'Edit',nl:'Bewerken'}, lang)}
                   </button>
                   {selectedEntity.entityType !== 'platform' && (
                     <button className="header-btn" style={{fontSize:11,color:'var(--error)'}} onClick={handleDelete}>
@@ -7250,9 +7591,10 @@ function ConfigurationPage({ t, lang, navigateWithLoader, focusedEntityId, setFo
         </div>
       </div>
 
-      {/* Create Drawer */}
-      <CreateEntityDrawer open={drawerOpen} onClose={handleDrawerClose}
-        parentId={selectedEntityId} childType={drawerChildType} t={t}/>
+      {/* Edit/Create Modal */}
+      <EntityEditModal visible={editModalState.visible} mode={editModalState.mode} entityType={editModalState.entityType}
+        entityId={editModalState.entityId} parentId={editModalState.parentId} lang={lang}
+        onSave={handleModalSave} onCancel={closeEditModal}/>
     </div>
   );
 }
