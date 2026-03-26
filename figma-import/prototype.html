@@ -429,9 +429,9 @@
     .login-layout { position: relative; height: 100vh; width: 100%;
       background: var(--bg-primary);
       display: flex; align-items: center; justify-content: center; overflow: hidden; }
-    .login-card { position: relative; z-index: 1; width: 380px; max-width: calc(100% - 48px);
+    .login-card { position: relative; z-index: 1; width: 340px; max-width: calc(100% - 48px);
       backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
-      border-radius: 16px; padding: 32px; }
+      border-radius: 14px; padding: 24px 24px 16px; }
     [data-theme="dark"] .login-card { box-shadow: 0 24px 80px rgba(0,0,0,0.5); }
     [data-theme="light"] .login-card { box-shadow: 0 8px 40px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.06); }
     .login-particle { position: absolute; border-radius: 50%; background: var(--brand); opacity: 0.15; }
@@ -564,9 +564,18 @@
       .charger-card { padding: 12px; }
       .entity-layout { grid-template-columns: 300px 1fr; }
       .config-layout { grid-template-columns: 200px 1fr; }
+      /* Config page — narrower tree */
+      .config-tree-panel { width: 240px; min-width: 240px; }
+      /* Edit modal — narrower tabs */
+      .eem-modal { width: 90vw; }
+      .eem-tabs { width: 150px; }
+      /* Overview metrics */
+      .ov-metrics { grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); }
+      .ov-hero-props { grid-template-columns: 1fr; }
     }
     @media (max-width: 768px) {
       :root { --sidebar-w: 48px; --sidebar-rail-w: 48px; }
+      .main-area { margin-left: 48px; }
       .sidebar-rail { width: 48px; padding: 4px 0; }
       .sidebar-rail-icon { width: 36px; height: 36px; font-size: 16px; }
       .flow-svg-layer { display: none; }
@@ -579,6 +588,7 @@
       .flow-battery-soc { font-size: 16px; }
       .flow-icon-box { width: 40px; height: 40px; }
       .data-table th, .data-table td { padding: 8px 10px; font-size: 12px; }
+      .el-table th, .el-table td { padding: 5px 8px; font-size: 11px; }
       .header { padding: 0 12px; }
       .header-breadcrumb { font-size: 12px; }
       .header-right { gap: 8px; }
@@ -586,7 +596,7 @@
       .theme-toggle *, .lang-toggle * { font-size: 14px; margin: 0; }
       .content { padding: 12px; }
       .alarm-dropdown { width: 300px; right: -40px; }
-      .login-card { padding: 24px; width: 340px; }
+      .login-card { padding: 20px 18px 14px; width: 320px; }
       .device-grid { grid-template-columns: repeat(2, 1fr); }
       .charger-grid { grid-template-columns: 1fr 1fr; }
       .battery-grid { grid-template-columns: 1fr; }
@@ -597,10 +607,35 @@
       .widget-grid { grid-template-columns: 1fr; }
       .customize-drawer { width: 100%; max-width: 100%; }
       .data-table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+      /* Config page — stack tree above detail */
+      .config-page { flex-direction: column; height: auto; }
+      .config-tree-panel { width: 100%; min-width: 100%; max-height: 200px; border-radius: 8px 8px 0 0; }
+      .config-detail-panel { margin-left: 0; border-radius: 0 0 8px 8px; flex: 1; min-height: calc(100vh - var(--header-h) - 248px); }
+      .config-detail-header { padding: 6px 12px; }
+      .config-breadcrumb { padding: 6px 12px; font-size: 11px; }
+      /* Edit modal — full width, tabs on top */
+      .eem-modal { width: 95vw; max-width: none; height: 90vh; }
+      .eem-body { flex-direction: column; }
+      .eem-tabs { width: 100%; border-right: none; border-bottom: 1px solid var(--border); padding: 4px 8px;
+        display: flex; overflow-x: auto; gap: 2px; }
+      .eem-tab { padding: 6px 12px; border-left: none; border-bottom: 3px solid transparent; white-space: nowrap; }
+      .eem-tab.active { border-left-color: transparent; border-bottom-color: var(--brand); }
+      /* Overview */
+      .ov-hero { flex-direction: column; gap: 10px; }
+      .ov-hero-status { width: 100%; flex-direction: row; padding: 10px 14px; }
+      .ov-hero-props { grid-template-columns: 1fr 1fr; }
+      .ov-metrics { grid-template-columns: repeat(3, 1fr); }
+      .ov-split { grid-template-columns: 1fr; }
+      .mfe-wrap { padding: 12px; }
+      /* EntityList */
+      .el-header { flex-direction: column; align-items: stretch; gap: 6px; }
+      .el-toolbar { justify-content: flex-end; }
+      .el-scroll { max-height: calc(100vh - 400px); }
     }
     @media (max-width: 480px) {
-      :root { --sidebar-w: 0px; }
+      :root { --sidebar-w: 0px; --sidebar-rail-w: 0px; }
       .sidebar { display: none; }
+      .main-area { margin-left: 0; }
       .stat-grid-4, .stat-grid-3 { grid-template-columns: 1fr; }
       .flow-hub { padding: 20px 12px 36px; }
       .flow-col-left, .flow-col-right { flex-direction: column; gap: 12px; align-items: center; }
@@ -612,12 +647,28 @@
       .flow-battery-label { font-size: 8px; }
       .flow-battery-power { font-size: 9px; }
       .flow-node, .flow-node-right { gap: 8px; }
-      .login-card { padding: 20px; width: 100%; max-width: calc(100% - 32px); }
+      .login-card { padding: 18px 16px 12px; width: 100%; max-width: calc(100% - 24px); border-radius: 12px; }
       .alarm-dropdown { width: calc(100vw - 32px); right: -60px; }
       .device-grid, .charger-grid { grid-template-columns: 1fr; }
       .marketplace-grid { grid-template-columns: 1fr; }
       .header { padding: 0 8px; }
       .content { padding: 8px; }
+      /* Config — full stack */
+      .config-tree-panel { max-height: 160px; }
+      .config-entity-name { font-size: 13px; }
+      .config-detail-header { gap: 8px; }
+      /* Edit modal — full screen */
+      .eem-modal { width: 100vw; height: 100vh; max-width: 100vw; max-height: 100vh; border-radius: 0; }
+      .eem-tabs { padding: 2px 4px; }
+      .eem-tab { padding: 5px 8px; font-size: 11px; }
+      .eem-content { padding: 12px; }
+      .eem-form-grid { grid-template-columns: 1fr; }
+      /* Overview */
+      .ov-hero-props { grid-template-columns: 1fr; }
+      .ov-metrics { grid-template-columns: 1fr 1fr; }
+      .prop-card { padding: 8px 10px; }
+      .metric-card { padding: 8px 10px; }
+      .metric-card-value { font-size: 16px; }
     }
 
     /* ─── Spotlight Search ─── */
@@ -1067,7 +1118,7 @@ const AccessStore = (() => {
 const ThemeStore = (() => {
   const _themes = [
     {
-      id: 'classic', name: 'Classic', description: 'Teal on slate. Clean and familiar.',
+      id: 'classic', name: 'Teal', description: 'Teal on slate. Clean and familiar.',
       mode: 'dark', default: true,
       preview: '#2dd4bf',
       loaderColor: '#2dd4bf',
@@ -1084,10 +1135,10 @@ const ThemeStore = (() => {
       },
     },
     {
-      id: 'obsidian', name: 'Obsidian', description: 'Deep charcoal with warm amber. Premium industrial feel.',
+      id: 'obsidian', name: 'Char', description: 'Charcoal with warm amber.',
       mode: 'dark',
       preview: '#d97706',
-      loaderColor: '#0284c7',
+      loaderColor: '#d97706',
       antTokens: { colorPrimary:'#d97706', colorSuccess:'#65a30d', colorWarning:'#ea580c', colorError:'#dc2626', colorInfo:'#0284c7', borderRadius:6 },
       cssVars: {
         '--brand':'#d97706','--brand-hover':'#b45309','--brand-bg':'rgba(217,119,6,0.10)',
@@ -1101,10 +1152,10 @@ const ThemeStore = (() => {
       },
     },
     {
-      id: 'sandstone', name: 'Sandstone', description: 'Warm neutrals with terracotta. Clean architectural light theme.',
+      id: 'sandstone', name: 'Sand', description: 'Warm terracotta on cream.',
       mode: 'light',
       preview: '#c2410c',
-      loaderColor: '#0d9488',
+      loaderColor: '#ea580c',
       antTokens: { colorPrimary:'#c2410c', colorSuccess:'#15803d', colorWarning:'#b45309', colorError:'#b91c1c', colorInfo:'#1d4ed8', borderRadius:8 },
       cssVars: {
         '--brand':'#c2410c','--brand-hover':'#9a3412','--brand-bg':'rgba(194,65,12,0.08)',
@@ -1118,10 +1169,10 @@ const ThemeStore = (() => {
       },
     },
     {
-      id: 'polar', name: 'Polar', description: 'High-contrast slate on white. Maximum readability and accessibility.',
+      id: 'polar', name: 'Snow', description: 'Slate on white. High contrast.',
       mode: 'light',
       preview: '#475569',
-      loaderColor: '#4f46e5',
+      loaderColor: '#6b7280',
       antTokens: { colorPrimary:'#334155', colorSuccess:'#16a34a', colorWarning:'#ca8a04', colorError:'#dc2626', colorInfo:'#2563eb', borderRadius:4 },
       cssVars: {
         '--brand':'#334155','--brand-hover':'#1e293b','--brand-bg':'rgba(51,65,85,0.08)',
@@ -1135,7 +1186,7 @@ const ThemeStore = (() => {
       },
     },
     {
-      id: 'vercel', name: 'Noir', description: 'Pure black with white. Minimal, stark, no distractions.',
+      id: 'vercel', name: 'Noir', description: 'Pure black. Minimal and stark.',
       mode: 'dark',
       preview: '#000000',
       loaderColor: '#0070f3',
@@ -8220,8 +8271,8 @@ function LoginPage({t, setPage, setCurrentApp, lang, setLang, themeId, setThemeI
   const themeBrand = activeTheme.cssVars['--brand'] || '#2dd4bf';
   const themeAccent = activeTheme.loaderColor || themeBrand;
   const bgGrad = isDarkTheme
-    ? `radial-gradient(ellipse at 50% 50%, color-mix(in srgb, ${themeAccent} 14%, ${themeBgBase}) 0%, ${themeBgBase} 70%)`
-    : `radial-gradient(ellipse 120% 100% at 30% 80%, color-mix(in srgb, ${themeAccent} 18%, ${themeBgBase}) 0%, color-mix(in srgb, ${themeBrand} 6%, ${themeBgBase}) 40%, ${themeBgBase} 100%)`;
+    ? `radial-gradient(farthest-corner at 50% 50%, color-mix(in srgb, ${themeAccent} 18%, ${themeBgBase}) 0%, ${themeBgBase} 100%)`
+    : `radial-gradient(farthest-corner at 50% 50%, color-mix(in srgb, ${themeAccent} 14%, ${themeBgBase}) 0%, color-mix(in srgb, ${themeBrand} 6%, ${themeBgBase}) 100%)`;
   const cardBorder = isDarkTheme
     ? `color-mix(in srgb, ${themeAccent} 20%, transparent)`
     : `color-mix(in srgb, ${themeBrand} 15%, ${activeTheme.cssVars['--border']||'#e2e8f0'})`;
@@ -8290,7 +8341,7 @@ function LoginPage({t, setPage, setCurrentApp, lang, setLang, themeId, setThemeI
 
       // Ambient brand glow — wide radial wash centered on the login card
       const glowStrength = isLight ? 0.12 : 0.18;
-      const g1 = ctx.createRadialGradient(W*0.5, H*0.5, 0, W*0.5, H*0.5, Math.max(W,H)*0.7);
+      const g1 = ctx.createRadialGradient(W*0.5, H*0.5, 0, W*0.5, H*0.5, Math.max(W,H));
       g1.addColorStop(0, `rgba(${brandR},${brandG},${brandB},${glowStrength})`);
       g1.addColorStop(0.4, `rgba(${brandR},${brandG},${brandB},${glowStrength*0.3})`);
       g1.addColorStop(1, 'rgba(0,0,0,0)');
@@ -8362,31 +8413,16 @@ function LoginPage({t, setPage, setCurrentApp, lang, setLang, themeId, setThemeI
 
       {/* Centered login card */}
       <div className={`login-card ${successPhase >= 2 ? 'login-card-exit' : ''}`} style={{borderColor: cardBorder, background: cardBg}}>
-        {/* Theme + Language — subtle top-right row */}
-        <div style={{display:'flex',justifyContent:'flex-end',alignItems:'center',gap:6,marginBottom:20}}>
-          <Select value={themeId} onChange={v => setThemeId(v)} size="small" variant="borderless"
-            style={{fontSize:11}} popupMatchSelectWidth={false}
-            options={ThemeStore.getAll().map(th => ({
-              value: th.id,
-              label: React.createElement('span',{style:{display:'flex',alignItems:'center',gap:5,fontSize:11}},
-                React.createElement('span',{style:{width:7,height:7,borderRadius:'50%',background:th.preview,display:'inline-block',border:'1px solid var(--border)',flexShrink:0}}),
-                th.name)
-            }))}/>
-          <span style={{width:1,height:14,background:'var(--border)'}}/>
-          <Select value={lang} onChange={v=>setLang(v)} size="small" variant="borderless"
-            style={{fontSize:11,width:56}} options={[{value:'en',label:'EN'},{value:'nl',label:'NL'}]}/>
-        </div>
-
         {/* Logo + greeting */}
-        <div style={{textAlign:'center',marginBottom:24}}>
-          <div style={{width:48,height:48,background:'var(--bg-primary)',borderRadius:12,display:'inline-flex',
-            alignItems:'center',justifyContent:'center',marginBottom:16}}>
-            <svg viewBox="0 0 24 24" width="24" height="24" fill="none">
+        <div style={{textAlign:'center',marginBottom:14}}>
+          <div style={{width:36,height:36,background:'var(--bg-primary)',borderRadius:8,display:'inline-flex',
+            alignItems:'center',justifyContent:'center',marginBottom:8}}>
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none">
               <ellipse cx="12" cy="12" rx="10" ry="7" transform="rotate(-20 12 12)" stroke="var(--brand)" strokeWidth="2"/>
               <circle cx="12" cy="12" r="3" fill="var(--brand)"/>
             </svg>
           </div>
-          {greetName && <div style={{fontSize:15,color:'var(--brand)',fontWeight:500,transition:'all 0.3s ease'}}>{(() => {
+          {greetName && <div style={{fontSize:14,color:'var(--brand)',fontWeight:500,transition:'all 0.3s ease'}}>{(() => {
             const h = new Date().getHours();
             const greetings = {
               en: h < 5 ? 'Good evening' : h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening',
@@ -8406,15 +8442,15 @@ function LoginPage({t, setPage, setCurrentApp, lang, setLang, themeId, setThemeI
 
         {/* Form fields */}
         <div ref={formRef} className={shaking ? 'login-shake' : ''}>
-          <div style={{marginBottom:16}}>
-            <div style={{fontSize:12,fontWeight:500,color:'var(--text-primary)',marginBottom:4}}>{t.email}</div>
+          <div style={{marginBottom:12}}>
+            <div style={{fontSize:11,fontWeight:500,color:'var(--text-primary)',marginBottom:3}}>{t.email}</div>
             <Input placeholder="jan@orbiteos.com" value={emailVal}
               className={fieldErrors.email ? 'login-field-error' : ''}
               onChange={e => { setEmailVal(e.target.value); if(fieldErrors.email) setFieldErrors(p=>({...p,email:null})); }}
               onBlur={onEmailBlur} onKeyDown={onKeyDown} status={fieldErrors.email ? 'error' : ''}/>
           </div>
           <div style={{marginBottom:4}}>
-            <div style={{fontSize:12,fontWeight:500,color:'var(--text-primary)',marginBottom:4}}>{t.password}</div>
+            <div style={{fontSize:11,fontWeight:500,color:'var(--text-primary)',marginBottom:3}}>{t.password}</div>
             <Input.Password placeholder="••••••••" value={passwordVal}
               className={fieldErrors.password ? 'login-field-error' : ''}
               onChange={e => { setPasswordVal(e.target.value); if(fieldErrors.password) setFieldErrors(p=>({...p,password:null})); }}
@@ -8432,14 +8468,14 @@ function LoginPage({t, setPage, setCurrentApp, lang, setLang, themeId, setThemeI
               0:{String(lockCountdown).padStart(2,'0')}
             </div>
           )}
-          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:20}}>
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14}}>
             <label style={{fontSize:11,color:'var(--text-secondary)',display:'flex',alignItems:'center',gap:6,cursor:'pointer'}}>
               <input type="checkbox"/> {t.rememberMe}
             </label>
             <span style={{fontSize:11,color:'var(--brand)',cursor:'pointer'}}>{t.forgotPassword}</span>
           </div>
           <button className={successPhase >= 1 ? 'login-btn-success' : ''}
-            style={{width:'100%',padding:'10px',fontSize:14,fontWeight:600,borderRadius:8,border:'none',
+            style={{width:'100%',padding:'8px',fontSize:13,fontWeight:600,borderRadius:8,border:'none',
             background: lockCountdown > 0 ? 'var(--text-tertiary)' : 'var(--brand)',
             color: activeTheme.antTokens?.colorTextLightSolid || '#fff',
             cursor: lockCountdown > 0 ? 'not-allowed' : 'pointer',
@@ -8467,7 +8503,7 @@ function LoginPage({t, setPage, setCurrentApp, lang, setLang, themeId, setThemeI
         </div>
 
         {/* SSO divider */}
-        <div style={{display:'flex',alignItems:'center',gap:12,margin:'16px 0 12px'}}>
+        <div style={{display:'flex',alignItems:'center',gap:12,margin:'12px 0 10px'}}>
           <div style={{flex:1,height:1,background:'rgba(255,255,255,0.08)'}}/>
           <span style={{fontSize:10,color:'var(--text-tertiary)',textTransform:'uppercase',letterSpacing:'0.05em'}}>{lang==='nl'?'of':'or'}</span>
           <div style={{flex:1,height:1,background:'rgba(255,255,255,0.08)'}}/>
@@ -8501,9 +8537,19 @@ function LoginPage({t, setPage, setCurrentApp, lang, setLang, themeId, setThemeI
           </button>
         </div>
 
-        {/* Footer */}
-        <div style={{textAlign:'center',marginTop:16,paddingTop:12,borderTop:'1px solid rgba(255,255,255,0.06)'}}>
-          <div style={{fontSize:10,color:'var(--text-tertiary)'}}>Powered by OrbitEOS</div>
+        {/* Theme + Language — bottom row */}
+        <div style={{display:'flex',justifyContent:'center',alignItems:'center',gap:8,marginTop:14,paddingTop:10,borderTop:'1px solid var(--border)'}}>
+          <Select value={themeId} onChange={v => setThemeId(v)} size="small" variant="borderless"
+            style={{fontSize:10}} popupMatchSelectWidth={false}
+            options={ThemeStore.getAll().map(th => ({
+              value: th.id,
+              label: React.createElement('span',{style:{display:'flex',alignItems:'center',gap:4,fontSize:10,color:'var(--text-tertiary)'}},
+                React.createElement('span',{style:{width:6,height:6,borderRadius:'50%',background:th.preview,display:'inline-block',border:'1px solid var(--border)',flexShrink:0}}),
+                th.name)
+            }))}/>
+          <span style={{width:1,height:10,background:'var(--border)'}}/>
+          <Select value={lang} onChange={v=>setLang(v)} size="small" variant="borderless"
+            style={{fontSize:10,minWidth:50}} popupMatchSelectWidth={false} options={[{value:'en',label:'en'},{value:'nl',label:'nl'}]}/>
         </div>
       </div>
     </div>
