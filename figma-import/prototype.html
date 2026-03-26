@@ -45,8 +45,9 @@
     ::-webkit-scrollbar-thumb:hover { background: var(--text-tertiary); }
     ::-webkit-scrollbar-corner { background: transparent; }
 
-    .app-layout { display: flex; height: 100vh; background: var(--bg-primary); }
-    .sidebar { display: flex; flex-shrink: 0; transition: all 0.25s ease; height: 100vh; }
+    .app-layout { display: flex; height: 100vh; background: var(--bg-primary); position: relative; }
+    .sidebar { display: flex; flex-shrink: 0; transition: width 0.2s ease, box-shadow 0.2s ease; height: 100vh;
+      position: fixed; left: 0; top: 0; z-index: 200; box-shadow: 4px 0 24px rgba(0,0,0,0.15); }
     .sidebar-rail { width: var(--sidebar-rail-w); background: var(--bg-sidebar); border-right: 1px solid var(--border);
       display: flex; flex-direction: column; align-items: center; padding: 8px 0; flex-shrink: 0; }
     .sidebar-rail-icon { width: 40px; height: 40px; border-radius: 8px; display: flex; align-items: center;
@@ -121,7 +122,8 @@
     .sidebar-user-name { font-size: 13px; font-weight: 500; color: var(--text-primary); }
     .sidebar-user-role { font-size: 11px; color: var(--text-tertiary); }
 
-    .main-area { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+    .main-area { flex: 1; display: flex; flex-direction: column; overflow: hidden;
+      margin-left: var(--sidebar-rail-w); }
     .header { height: var(--header-h); background: var(--bg-header); border-bottom: 1px solid var(--border);
       display: flex; align-items: center; justify-content: space-between; padding: 0 24px; flex-shrink: 0; }
     .header-left { display: flex; flex-direction: column; }
@@ -193,6 +195,44 @@
     .content { flex: 1; overflow-y: auto; padding: 20px 24px; }
     .page-enter { animation: fadeIn 0.2s ease; }
     @keyframes fadeIn { from{opacity:0;transform:translateY(4px)} to{opacity:1;transform:translateY(0)} }
+    .config-tab-content { animation: tabFadeIn 0.15s ease; }
+    @keyframes tabFadeIn { from{opacity:0} to{opacity:1} }
+
+    /* EntityList shared component */
+    .el-wrap { animation: tabFadeIn 0.15s ease; }
+    .el-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; gap:8px; flex-wrap:wrap; }
+    .el-title { font-size:13px; font-weight:600; color:var(--text-primary); }
+    .el-count { font-weight:400; color:var(--text-tertiary); margin-left:4px; }
+    .el-toolbar { display:flex; gap:6px; align-items:center; }
+    .el-filters { display:flex; gap:4px; flex-wrap:wrap; margin-bottom:8px; }
+    .el-filter-pill { display:inline-flex; align-items:center; gap:4px; padding:2px 8px; border-radius:10px;
+      font-size:10px; font-weight:500; background:var(--brand-bg); color:var(--brand); cursor:pointer; }
+    .el-filter-pill:hover .el-pill-x { opacity:1; }
+    .el-pill-x { opacity:0.5; font-size:8px; }
+    .el-scroll { max-height:calc(100vh - 340px); overflow-y:auto; }
+    .el-table { width:100%; border-collapse:separate; border-spacing:0; font-size:12px; }
+    .el-table th { padding:6px 10px; text-align:left; font-weight:600; font-size:11px; color:var(--text-secondary);
+      border-bottom:2px solid var(--border); white-space:nowrap; position:sticky; top:0; background:var(--bg-card); z-index:1; }
+    .el-table th.sortable { cursor:pointer; user-select:none; }
+    .el-table th.sortable:hover { color:var(--brand); }
+    .el-table td { padding:6px 10px; border-bottom:1px solid var(--border); color:var(--text-primary); vertical-align:middle; }
+    .el-table tr { transition:background 0.1s; }
+    .el-table tbody tr:hover { background:var(--bg-card-hover); }
+    .el-table tbody tr.el-active { background:var(--brand-bg); }
+    .el-actions { display:flex; gap:6px; align-items:center; }
+    .el-action { cursor:pointer; color:var(--text-tertiary); font-size:12px; transition:color 0.12s; }
+    .el-action:hover { color:var(--text-primary); }
+    .el-action.danger:hover { color:var(--error); }
+    .el-add-row { padding:8px 10px; cursor:pointer; display:flex; align-items:center; gap:5px;
+      color:var(--text-tertiary); font-size:11px; border-top:1px dashed var(--border); transition:all 0.12s; }
+    .el-add-row:hover { color:var(--brand); }
+    .el-inline-add { display:flex; align-items:center; gap:6px; padding:6px 10px;
+      border-top:1px solid var(--border); background:var(--bg-secondary); animation:tabFadeIn 0.15s ease; }
+    .el-empty { text-align:center; color:var(--text-tertiary); font-size:12px; padding:32px 20px; }
+    .el-empty-icon { font-size:28px; margin-bottom:8px; opacity:0.4; }
+    .el-load-more { text-align:center; padding:10px; }
+    .el-expanded { padding:0 10px 10px; border-top:1px solid var(--border); animation:tabFadeIn 0.15s ease; }
+    .el-col-picker { font-size:11px; }
 
     .stat-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px;
       padding: 16px 20px; transition: all 0.2s ease; position: relative; overflow: hidden; }
@@ -232,17 +272,9 @@
 
     /* Energy Flow Hub */
     .flow-hub { position: relative; width: 100%; aspect-ratio: 3/1; min-height: 280px; max-height: 360px;
-      background: #0f172a; border-radius: 1rem; border: 1px solid rgba(255,255,255,0.06);
+      background: var(--bg-secondary); border-radius: 1rem; border: 1px solid var(--border);
       overflow: hidden; display: flex; align-items: center; justify-content: center; padding: 32px 48px;
       transition: box-shadow 1.2s ease, border-color 1.2s ease; }
-    [data-theme="light"] .flow-hub { background: #f1f5f9; border-color: rgba(0,0,0,0.06); }
-    [data-theme="light"] .flow-node-label { color: #334155; text-shadow: 0 1px 3px rgba(255,255,255,0.8); }
-    [data-theme="light"] .flow-node-value { color: #0f172a; text-shadow: 0 1px 3px rgba(255,255,255,0.8); }
-    [data-theme="light"] .flow-node-unit { color: #475569; text-shadow: 0 1px 3px rgba(255,255,255,0.8); }
-    [data-theme="light"] .flow-battery-soc { color: #0f172a; text-shadow: 0 1px 3px rgba(255,255,255,0.8); }
-    [data-theme="light"] .flow-battery-label { color: rgba(13,148,136,0.9); text-shadow: none; }
-    [data-theme="light"] .flow-battery-power { color: #475569; text-shadow: 0 1px 3px rgba(255,255,255,0.8); }
-    [data-theme="light"] .flow-live-text { color: #334155; text-shadow: 0 1px 3px rgba(255,255,255,0.8); }
     /* Ambient hue — blurred color blobs that melt together like liquid */
     .flow-hue { position: absolute; inset: 0; pointer-events: none; border-radius: 1rem; overflow: hidden; }
     .flow-blob { position: absolute; border-radius: 50%; filter: blur(120px); transition: opacity 1.5s ease; }
@@ -257,50 +289,45 @@
     .flow-node-right { display: flex; flex-direction: row-reverse; align-items: center; gap: 16px; cursor: pointer; }
     .flow-node-right:hover { transform: scale(1.03); }
     .flow-icon-box { position: relative; width: 52px; height: 52px; border-radius: 0.75rem;
-      background: rgba(0,0,0,0.25); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-      border: 1px solid rgba(255,255,255,0.15);
+      background: color-mix(in srgb, var(--bg-card) 70%, transparent); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--border);
       display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 200ms; z-index: 2; }
-    [data-theme="light"] .flow-icon-box { background: rgba(255,255,255,0.4); border-color: rgba(0,0,0,0.08); }
-    .flow-node:hover .flow-icon-box, .flow-node-right:hover .flow-icon-box { background: rgba(0,0,0,0.35); border-color: rgba(255,255,255,0.25); }
-    .flow-node-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #ffffff;
-      text-shadow: 0 0 6px rgba(0,0,0,0.9), 0 0 12px rgba(0,0,0,0.6), 0 1px 2px rgba(0,0,0,0.9); }
-    .flow-node-value { font-size: 16px; font-weight: 700; color: #ffffff; font-variant-numeric: tabular-nums; line-height: 1.3;
-      text-shadow: 0 0 6px rgba(0,0,0,0.9), 0 0 14px rgba(0,0,0,0.6), 0 1px 2px rgba(0,0,0,0.9); }
-    .flow-node-unit { font-size: 10px; font-weight: 500; color: #ffffff; margin-left: 2px;
-      text-shadow: 0 0 6px rgba(0,0,0,0.9), 0 0 12px rgba(0,0,0,0.6); }
+    .flow-node:hover .flow-icon-box, .flow-node-right:hover .flow-icon-box { background: color-mix(in srgb, var(--bg-card) 85%, transparent); border-color: var(--border-active); }
+    .flow-node-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-primary);
+      text-shadow: 0 0 6px color-mix(in srgb, var(--bg-primary) 90%, transparent), 0 0 12px color-mix(in srgb, var(--bg-primary) 60%, transparent); }
+    .flow-node-value { font-size: 16px; font-weight: 700; color: var(--text-primary); font-variant-numeric: tabular-nums; line-height: 1.3;
+      text-shadow: 0 0 6px color-mix(in srgb, var(--bg-primary) 90%, transparent), 0 0 14px color-mix(in srgb, var(--bg-primary) 60%, transparent); }
+    .flow-node-unit { font-size: 10px; font-weight: 500; color: var(--text-secondary); margin-left: 2px;
+      text-shadow: 0 0 6px color-mix(in srgb, var(--bg-primary) 90%, transparent), 0 0 12px color-mix(in srgb, var(--bg-primary) 60%, transparent); }
     .flow-battery-center { display: flex; flex-direction: column; align-items: center; flex-shrink: 0; }
     .flow-battery-circle { width: 108px; height: 108px; border-radius: 50%;
-      background: rgba(0,0,0,0.25); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-      border: 1px solid rgba(45,212,191,0.3);
+      background: color-mix(in srgb, var(--bg-card) 70%, transparent); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+      border: 1px solid color-mix(in srgb, var(--brand) 30%, transparent);
       display: flex; flex-direction: column; align-items: center; justify-content: center;
-      position: relative; box-shadow: 0 0 30px rgba(45,212,191,0.08); animation: battery-pulse 4s ease-in-out infinite; }
-    .flow-battery-soc { font-size: 18px; font-weight: 700; color: #ffffff; font-variant-numeric: tabular-nums; line-height: 1;
-      margin-top: 3px; text-shadow: 0 0 6px rgba(0,0,0,0.9), 0 0 14px rgba(0,0,0,0.6), 0 1px 2px rgba(0,0,0,0.9); }
-    .flow-battery-label { font-size: 8px; font-weight: 700; text-transform: uppercase; color: #2dd4bf; margin-top: 2px;
-      letter-spacing: 0.08em; text-shadow: 0 0 6px rgba(0,0,0,0.9), 0 0 12px rgba(0,0,0,0.6); }
-    .flow-battery-power { font-size: 11px; font-weight: 500; color: #ffffff; margin-top: 8px;
-      text-shadow: 0 0 6px rgba(0,0,0,0.9), 0 0 12px rgba(0,0,0,0.6); }
+      position: relative; box-shadow: 0 0 30px color-mix(in srgb, var(--brand) 8%, transparent); animation: battery-pulse 4s ease-in-out infinite; }
+    .flow-battery-soc { font-size: 18px; font-weight: 700; color: var(--text-primary); font-variant-numeric: tabular-nums; line-height: 1;
+      margin-top: 3px; text-shadow: 0 0 6px color-mix(in srgb, var(--bg-primary) 90%, transparent), 0 0 14px color-mix(in srgb, var(--bg-primary) 60%, transparent); }
+    .flow-battery-label { font-size: 8px; font-weight: 700; text-transform: uppercase; color: var(--brand); margin-top: 2px;
+      letter-spacing: 0.08em; text-shadow: 0 0 6px color-mix(in srgb, var(--bg-primary) 90%, transparent), 0 0 12px color-mix(in srgb, var(--bg-primary) 60%, transparent); }
+    .flow-battery-power { font-size: 11px; font-weight: 500; color: var(--text-secondary); margin-top: 8px;
+      text-shadow: 0 0 6px color-mix(in srgb, var(--bg-primary) 90%, transparent), 0 0 12px color-mix(in srgb, var(--bg-primary) 60%, transparent); }
     .flow-footer { position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%); z-index: 3;
       display: flex; align-items: center; gap: 6px; padding: 5px 14px;
-      background: rgba(0,0,0,0.35); backdrop-filter: blur(16px);
-      border-radius: 9999px; border: 1px solid rgba(255,255,255,0.1); white-space: nowrap; }
-    [data-theme="light"] .flow-footer { background: rgba(255,255,255,0.5); border-color: rgba(0,0,0,0.08); }
-    [data-theme="light"] .flow-battery-circle { background: rgba(255,255,255,0.4); }
-    [data-theme="light"] .flow-ambient-toggle { background: rgba(255,255,255,0.4); color: rgba(0,0,0,0.4); border-color: rgba(0,0,0,0.08); }
-    [data-theme="light"] .flow-ambient-toggle:hover { background: rgba(255,255,255,0.6); color: rgba(0,0,0,0.6); }
-    .flow-live-dot { width: 8px; height: 8px; border-radius: 50%; background: #14b8a6; animation: live-pulse 2s ease-in-out infinite; }
-    .flow-live-text { font-size: 10px; font-weight: 700; color: #ffffff; text-transform: uppercase; letter-spacing: 0.1em; font-style: italic;
-      text-shadow: 0 0 6px rgba(0,0,0,0.9), 0 0 12px rgba(0,0,0,0.6); transition: color 1s ease; }
+      background: color-mix(in srgb, var(--bg-primary) 35%, transparent); backdrop-filter: blur(16px);
+      border-radius: 9999px; border: 1px solid var(--border); white-space: nowrap; }
+    .flow-live-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--brand); animation: live-pulse 2s ease-in-out infinite; }
+    .flow-live-text { font-size: 10px; font-weight: 700; color: var(--text-primary); text-transform: uppercase; letter-spacing: 0.1em; font-style: italic;
+      text-shadow: 0 0 6px color-mix(in srgb, var(--bg-primary) 90%, transparent), 0 0 12px color-mix(in srgb, var(--bg-primary) 60%, transparent); transition: color 1s ease; }
     .flow-device-alert { display: flex; align-items: center; margin-left: 4px; transition: transform 0.2s; }
     .flow-device-alert:hover { transform: scale(1.2); }
     .flow-ambient-toggle { position: absolute; top: 10px; right: 12px; z-index: 4; cursor: pointer;
       width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
-      background: rgba(0,0,0,0.3); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.1);
-      color: rgba(255,255,255,0.5); font-size: 13px; transition: all 0.2s; }
-    .flow-ambient-toggle:hover { background: rgba(0,0,0,0.5); color: rgba(255,255,255,0.8); }
+      background: color-mix(in srgb, var(--bg-card) 70%, transparent); backdrop-filter: blur(8px); border: 1px solid var(--border);
+      color: var(--text-secondary); font-size: 13px; transition: all 0.2s; }
+    .flow-ambient-toggle:hover { background: color-mix(in srgb, var(--bg-card) 90%, transparent); color: var(--text-primary); }
     .solar-rings { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; pointer-events: none; }
     .solar-ring { position: absolute; width: 48px; height: 48px; border-radius: 50%;
-      border: 2px solid rgba(245,158,11,0.4); opacity: 0; animation: pulse-ring 2.5s ease-out infinite; }
+      border: 2px solid color-mix(in srgb, var(--solar) 40%, transparent); opacity: 0; animation: pulse-ring 2.5s ease-out infinite; }
     .solar-ring:nth-child(2) { animation-delay: 0.8s; }
     .solar-ring:nth-child(3) { animation-delay: 1.6s; }
     .ev-anim-wrap { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; pointer-events: none; }
@@ -312,19 +339,19 @@
     .wind-blades { transform-origin: center; animation: wind-spin 3s linear infinite; }
     .wind-rings { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; pointer-events: none; }
     .wind-ring { position: absolute; width: 48px; height: 48px; border-radius: 50%;
-      border: 2px solid rgba(34,211,238,0.3); opacity: 0; animation: pulse-ring 3s ease-out infinite; }
+      border: 2px solid color-mix(in srgb, var(--wind) 30%, transparent); opacity: 0; animation: pulse-ring 3s ease-out infinite; }
     .wind-ring:nth-child(2) { animation-delay: 1s; }
     .wind-ring:nth-child(3) { animation-delay: 2s; }
     /* Building load pulse */
     .building-pulse { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; pointer-events: none; }
     .building-glow { position: absolute; width: 52px; height: 52px; border-radius: 12px;
-      background: rgba(249,115,22,0.12); border: 1px solid rgba(249,115,22,0.2); animation: building-breathe 2s ease-in-out infinite; }
+      background: color-mix(in srgb, var(--solar) 12%, transparent); border: 1px solid color-mix(in srgb, var(--solar) 20%, transparent); animation: building-breathe 2s ease-in-out infinite; }
     /* Grid active spark */
     .grid-spark { position: absolute; inset: 0; pointer-events: none; }
     .grid-spark-dot { position: absolute; width: 4px; height: 4px; border-radius: 50%; }
-    .grid-spark-dot:nth-child(1) { top: 8px; right: 8px; background: rgba(59,130,246,0.6); animation: spark-flash 2s ease-in-out infinite; }
-    .grid-spark-dot:nth-child(2) { bottom: 12px; left: 10px; background: rgba(59,130,246,0.4); animation: spark-flash 2s ease-in-out infinite 0.7s; }
-    .grid-spark-dot:nth-child(3) { top: 50%; right: 6px; background: rgba(59,130,246,0.5); animation: spark-flash 2s ease-in-out infinite 1.3s; }
+    .grid-spark-dot:nth-child(1) { top: 8px; right: 8px; background: color-mix(in srgb, var(--info) 60%, transparent); animation: spark-flash 2s ease-in-out infinite; }
+    .grid-spark-dot:nth-child(2) { bottom: 12px; left: 10px; background: color-mix(in srgb, var(--info) 40%, transparent); animation: spark-flash 2s ease-in-out infinite 0.7s; }
+    .grid-spark-dot:nth-child(3) { top: 50%; right: 6px; background: color-mix(in srgb, var(--info) 50%, transparent); animation: spark-flash 2s ease-in-out infinite 1.3s; }
 
     @keyframes pulse-ring { 0%{transform:scale(0.2);opacity:0} 30%{opacity:0.8} 100%{transform:scale(1.8);opacity:0} }
     @keyframes battery-pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.02)} }
@@ -588,21 +615,22 @@
     .config-prop-label { font-size:11px; color:var(--text-tertiary); margin-bottom:2px; }
     .config-prop-value { font-size:13px; font-weight:500; color:var(--text-primary); }
     .config-tab-content { padding:16px 20px; }
-    /* Config Nav List */
+    /* Config Nav List (accordion) */
     .config-nav-item { padding:5px 8px; cursor:pointer; font-size:12px; color:var(--text-secondary);
       display:flex; align-items:center; gap:6px; transition:all 0.12s; border-radius:5px; margin:1px 4px;
-      min-height:28px; position:relative; white-space:nowrap; }
+      min-height:28px; }
     .config-nav-item:hover { background:var(--bg-card-hover); color:var(--text-primary); }
     .config-nav-item.active { color:var(--brand); background:var(--brand-bg); }
     .config-nav-item .nav-icon { font-size:12px; flex-shrink:0; display:flex; align-items:center; }
-    .config-nav-item .nav-name { flex:1; font-weight:500; white-space:nowrap; line-height:1.3; min-width:0; overflow:hidden; text-overflow:ellipsis; }
-    .config-nav-item .nav-count { font-size:9px; color:var(--text-tertiary); background:var(--bg-secondary);
-      padding:0 5px; border-radius:8px; font-weight:500; flex-shrink:0; line-height:16px; }
+    .config-nav-item .nav-name { flex:1; font-weight:500; white-space:nowrap; line-height:1.3; }
     .config-nav-item .nav-arrow { font-size:9px; color:var(--text-tertiary); transition:transform 0.2s; flex-shrink:0;
       width:16px; height:16px; display:flex; align-items:center; justify-content:center; border-radius:3px; }
     .config-nav-item .nav-arrow:hover { background:var(--bg-card-hover); color:var(--text-primary); }
     .config-nav-item .nav-arrow.open { transform:rotate(90deg); }
     .config-nav-children { padding-left:10px; margin-left:14px; }
+    .nav-spinner { width:10px; height:10px; border:1.5px solid var(--text-tertiary); border-top-color:var(--brand);
+      border-radius:50%; animation:navSpin 0.6s linear infinite; display:inline-block; flex-shrink:0; }
+    @keyframes navSpin { to { transform:rotate(360deg); } }
     .config-status-dot { width:6px; height:6px; border-radius:50%; flex-shrink:0; }
     .config-status-dot.online { background:var(--success); }
     .config-status-dot.warning { background:var(--warning); }
@@ -625,7 +653,7 @@
 <script type="text/babel">
 const { useState, useEffect, useRef, useCallback, useMemo } = React;
 const { ConfigProvider, theme: antTheme, Button, Table, Tag, Badge, Switch, Select, Input, Tabs, Segmented,
-  Progress, Slider, Form, InputNumber, Tooltip, Dropdown, Space, Modal, Drawer } = antd;
+  Progress, Slider, Form, InputNumber, Tooltip, Dropdown, Space, Modal, Drawer, Menu } = antd;
 const icons = window.icons;
 const { DashboardOutlined, ThunderboltOutlined, ClusterOutlined, ApiOutlined, ApartmentOutlined,
   LineChartOutlined, DollarOutlined, DatabaseOutlined, CarOutlined, SettingOutlined, BellOutlined,
@@ -642,7 +670,7 @@ const { DashboardOutlined, ThunderboltOutlined, ClusterOutlined, ApiOutlined, Ap
   ExclamationCircleOutlined, SearchOutlined, PlusOutlined, EditOutlined, DeleteOutlined,
   TagOutlined, UserOutlined, AuditOutlined, FileSearchOutlined, ClockCircleOutlined,
   ThunderboltFilled, ExpandOutlined, CompressOutlined, CopyOutlined, ReloadOutlined,
-  SendOutlined, ScheduleOutlined, SafetyOutlined, RightOutlined } = icons;
+  SendOutlined, ScheduleOutlined, SafetyOutlined, RightOutlined, MenuOutlined, CloseOutlined } = icons;
 
 // Icon lookup for nav items
 const NAV_ICONS = {
@@ -1180,17 +1208,145 @@ function generateAuditLog(entity) {
   }));
 }
 
-// ─── Role Definitions ───
-const ROLE_DEFINITIONS = [
-  { name:'Platform Admin', level:'Platform', permissions:{ sites:'Full', devices:'Full', users:'Full', flows:'Full', billing:'Full', config:'Full', audit:'View' } },
-  { name:'Account Admin', level:'Account', permissions:{ sites:'Full', devices:'Full', users:'Full', flows:'Edit', billing:'View', config:'Edit', audit:'View' } },
-  { name:'Regional Admin', level:'Sub-account', permissions:{ sites:'Full', devices:'Edit', users:'Edit', flows:'Edit', billing:'—', config:'Edit', audit:'View' } },
-  { name:'Site Admin', level:'Site', permissions:{ sites:'Edit', devices:'Full', users:'Edit', flows:'Edit', billing:'—', config:'Edit', audit:'View' } },
-  { name:'Operator', level:'Site', permissions:{ sites:'View', devices:'View', users:'—', flows:'View', billing:'—', config:'—', audit:'View' } },
-  { name:'Installer', level:'Site', permissions:{ sites:'View', devices:'Create/Edit', users:'—', flows:'—', billing:'—', config:'View', audit:'—' } },
-  { name:'Viewer', level:'Site', permissions:{ sites:'View', devices:'View', users:'—', flows:'View', billing:'—', config:'—', audit:'—' } },
-  { name:'API User', level:'Account', permissions:{ sites:'View', devices:'View', users:'—', flows:'View', billing:'—', config:'—', audit:'—' } },
+// ─── PrivilegeStore (app-scoped privileges) ───
+const ACTIONS = ['view','create','edit','delete','manage'];
+const PrivilegeStore = (() => {
+  const _privs = new Map();
+  function put(p) { _privs.set(p.id, p); }
+  function get(id) { return _privs.get(id); }
+  function remove(id) { _privs.delete(id); }
+  function getAll() { return Array.from(_privs.values()); }
+  function getByApp(appId) { return getAll().filter(p => p.appId === appId); }
+  function getApps() { return [...new Set(getAll().map(p => p.appId))]; }
+  return { put, get, remove, getAll, getByApp, getApps };
+})();
+
+// Seed privileges per app
+const PRIV_SEEDS = [
+  // Dashboard app
+  {appId:'dashboard', resource:'overview',     actions:['view']},
+  {appId:'dashboard', resource:'fleet',        actions:['view','edit']},
+  {appId:'dashboard', resource:'devices',      actions:['view','create','edit','delete']},
+  {appId:'dashboard', resource:'energy-flow',  actions:['view']},
+  {appId:'dashboard', resource:'peak-shaving', actions:['view','edit','manage']},
+  {appId:'dashboard', resource:'tariff',       actions:['view','edit','manage']},
+  {appId:'dashboard', resource:'battery',      actions:['view','edit','manage']},
+  {appId:'dashboard', resource:'ev-charging',  actions:['view','edit','manage']},
+  {appId:'dashboard', resource:'rules-engine', actions:['view','create','edit','delete','manage']},
+  // Configuration app
+  {appId:'configuration', resource:'entities',  actions:['view','create','edit','delete']},
+  {appId:'configuration', resource:'users',     actions:['view','create','edit','delete']},
+  {appId:'configuration', resource:'roles',     actions:['view','create','edit','delete']},
+  {appId:'configuration', resource:'privileges',actions:['view','edit','manage']},
+  {appId:'configuration', resource:'settings',  actions:['view','edit']},
+  // Alarms app
+  {appId:'alarms', resource:'alerts',     actions:['view','create','edit','delete','manage']},
+  {appId:'alarms', resource:'alert-rules',actions:['view','create','edit','delete']},
+  {appId:'alarms', resource:'history',    actions:['view']},
+  // Map app
+  {appId:'map', resource:'sites',  actions:['view']},
+  {appId:'map', resource:'layers', actions:['view','edit']},
+  // Marketplace
+  {appId:'marketplace', resource:'apps',         actions:['view','create','delete']},
+  {appId:'marketplace', resource:'integrations', actions:['view','create','edit','delete']},
+  // Developer Studio
+  {appId:'developerStudio', resource:'templates',  actions:['view','create','edit','delete']},
+  {appId:'developerStudio', resource:'properties', actions:['view','create','edit','delete']},
+  {appId:'developerStudio', resource:'api-keys',   actions:['view','create','delete']},
+  {appId:'developerStudio', resource:'domains',    actions:['view','create','edit','delete','manage']},
+  {appId:'developerStudio', resource:'flows',      actions:['view','create','edit','delete']},
+  {appId:'developerStudio', resource:'mcp-tools',  actions:['view','manage']},
 ];
+PRIV_SEEDS.forEach(s => {
+  s.actions.forEach(a => {
+    const id = `${s.appId}.${s.resource}.${a}`;
+    PrivilegeStore.put({ id, appId:s.appId, resource:s.resource, action:a });
+  });
+});
+
+// System-level permissions (not app-scoped — for API users, service accounts, platform ops)
+const SysPermStore = (() => {
+  const _perms = [];
+  function add(p) { _perms.push(p); }
+  function remove(id) { const i = _perms.findIndex(p => p.id === id); if (i >= 0) _perms.splice(i,1); }
+  function getAll() { return _perms; }
+  function getCategories() { return [...new Set(_perms.map(p => p.category))]; }
+  function getByCategory(cat) { return _perms.filter(p => p.category === cat); }
+  return { add, remove, getAll, getCategories, getByCategory };
+})();
+[
+  { id:'sys.api.read',        category:'API',        label:'API Read Access',       description:'Read entities, state, events via REST API' },
+  { id:'sys.api.write',       category:'API',        label:'API Write Access',      description:'Create/update entities, trigger actions via REST API' },
+  { id:'sys.api.admin',       category:'API',        label:'API Admin',             description:'Manage API keys, rate limits, CORS settings' },
+  { id:'sys.webhooks.manage', category:'Integration', label:'Manage Webhooks',      description:'Create, edit, delete outbound webhooks' },
+  { id:'sys.tokens.create',   category:'Integration', label:'Create Service Tokens', description:'Issue domain service tokens (dst_...)' },
+  { id:'sys.domains.register',category:'Integration', label:'Register Domains',     description:'Register new domain plugin containers' },
+  { id:'sys.mqtt.subscribe',  category:'Messaging',   label:'MQTT Subscribe',       description:'Subscribe to MQTT topics for real-time data' },
+  { id:'sys.mqtt.publish',    category:'Messaging',   label:'MQTT Publish',         description:'Publish commands/events to MQTT' },
+  { id:'sys.ws.connect',      category:'Messaging',   label:'WebSocket Connect',    description:'Establish WebSocket connections for live data' },
+  { id:'sys.mcp.execute',     category:'Automation',   label:'Execute MCP Tools',   description:'Invoke MCP tools via API' },
+  { id:'sys.flows.execute',   category:'Automation',   label:'Execute Flows',       description:'Trigger flow automations programmatically' },
+  { id:'sys.flows.deploy',    category:'Automation',   label:'Deploy Flows',        description:'Deploy/undeploy flow automations to runtime' },
+  { id:'sys.audit.export',    category:'Compliance',   label:'Export Audit Logs',   description:'Export audit trail data for compliance' },
+  { id:'sys.billing.manage',  category:'Compliance',   label:'Manage Billing',      description:'View/edit billing, invoices, subscriptions' },
+].forEach(p => SysPermStore.add(p));
+// Legacy compat
+const SYSTEM_PERMISSIONS = SysPermStore.getAll();
+
+// ─── RoleStore (CRUD roles with app-scoped privileges + system perms) ───
+const RoleStore = (() => {
+  const _roles = new Map();
+  let _nextId = 100;
+  function put(r) { if (!r.id) r.id = `role-${_nextId++}`; _roles.set(r.id, r); return r; }
+  function get(id) { return _roles.get(id); }
+  function remove(id) { _roles.delete(id); }
+  function getAll() { return Array.from(_roles.values()); }
+  function getByLevel(level) { return getAll().filter(r => r.level === level); }
+  return { put, get, remove, getAll, getByLevel };
+})();
+
+// Seed roles
+const ROLE_SEEDS = [
+  { id:'role-platform-admin', name:'Platform Admin', level:'Platform', description:'Full platform access',
+    privileges: PrivilegeStore.getAll().map(p => p.id),
+    systemPerms: SYSTEM_PERMISSIONS.map(s => s.id) },
+  { id:'role-account-admin', name:'Account Admin', level:'Account', description:'Full account management',
+    privileges: PrivilegeStore.getAll().filter(p => !['delete','manage'].every(a => a === p.action && p.appId === 'developerStudio')).map(p => p.id),
+    systemPerms: ['sys.api.read','sys.api.write','sys.webhooks.manage','sys.ws.connect','sys.audit.export'] },
+  { id:'role-regional-admin', name:'Regional Admin', level:'Sub-account', description:'Regional site & device management',
+    privileges: PrivilegeStore.getAll().filter(p => ['dashboard','configuration','alarms','map'].includes(p.appId) && ['view','edit'].includes(p.action)).map(p => p.id),
+    systemPerms: ['sys.api.read','sys.ws.connect'] },
+  { id:'role-site-admin', name:'Site Admin', level:'Site', description:'Full site-level access',
+    privileges: PrivilegeStore.getAll().filter(p => ['dashboard','configuration','alarms'].includes(p.appId)).map(p => p.id),
+    systemPerms: ['sys.api.read','sys.api.write','sys.ws.connect','sys.mqtt.subscribe'] },
+  { id:'role-operator', name:'Operator', level:'Site', description:'View devices, manage alerts',
+    privileges: PrivilegeStore.getAll().filter(p => p.action === 'view').map(p => p.id),
+    systemPerms: ['sys.api.read','sys.ws.connect'] },
+  { id:'role-installer', name:'Installer', level:'Site', description:'Device provisioning & configuration',
+    privileges: ['dashboard.devices.view','dashboard.devices.create','dashboard.devices.edit','configuration.entities.view','configuration.entities.create','configuration.entities.edit','configuration.settings.view'],
+    systemPerms: ['sys.api.read','sys.api.write','sys.mqtt.subscribe','sys.mqtt.publish'] },
+  { id:'role-viewer', name:'Viewer', level:'Site', description:'Read-only access',
+    privileges: PrivilegeStore.getAll().filter(p => p.action === 'view').map(p => p.id),
+    systemPerms: ['sys.api.read'] },
+  { id:'role-api-user', name:'API User', level:'Account', description:'Programmatic access for integrations',
+    privileges: PrivilegeStore.getAll().filter(p => ['view','create','edit'].includes(p.action) && ['dashboard','alarms'].includes(p.appId)).map(p => p.id),
+    systemPerms: ['sys.api.read','sys.api.write','sys.webhooks.manage','sys.tokens.create','sys.mcp.execute','sys.flows.execute'] },
+];
+ROLE_SEEDS.forEach(r => RoleStore.put(r));
+
+// Legacy compat — flat array for components that still reference ROLE_DEFINITIONS
+const ROLE_DEFINITIONS = RoleStore.getAll().map(r => ({
+  name: r.name, level: r.level, id: r.id,
+  permissions: {
+    sites: r.privileges.some(p => p.includes('.edit') || p.includes('.manage') || p.includes('.delete')) ? (r.privileges.some(p => p.includes('.delete') && p.includes('entities')) ? 'Full' : 'Edit') : r.privileges.some(p => p.includes('entities.view') || p.includes('sites.view')) ? 'View' : '—',
+    devices: r.privileges.some(p => p.includes('devices.delete')) ? 'Full' : r.privileges.some(p => p.includes('devices.create')) ? 'Create/Edit' : r.privileges.some(p => p.includes('devices.view')) ? 'View' : '—',
+    users: r.privileges.some(p => p.includes('users.delete')) ? 'Full' : r.privileges.some(p => p.includes('users.edit')) ? 'Edit' : r.privileges.some(p => p.includes('users.view')) ? 'View' : '—',
+    flows: r.privileges.some(p => p.includes('rules-engine.manage')) ? 'Full' : r.privileges.some(p => p.includes('rules-engine.edit')) ? 'Edit' : r.privileges.some(p => p.includes('rules-engine.view')) ? 'View' : '—',
+    billing: r.systemPerms?.includes('sys.billing.manage') ? 'Full' : r.privileges.some(p => p.includes('billing')) ? 'View' : '—',
+    config: r.privileges.some(p => p.includes('settings.edit')) ? 'Edit' : r.privileges.some(p => p.includes('settings.view')) ? 'View' : '—',
+    audit: r.systemPerms?.includes('sys.audit.export') ? 'View' : r.privileges.some(p => p.includes('history.view')) ? 'View' : '—',
+  }
+}));
 
 // ═══════════════════════════════════════════════════════════════════════
 // ─── TabRegistry (entity type → ordered tab definitions) ───
@@ -1200,7 +1356,9 @@ const TabRegistry = (() => {
     platform: [
       { key:'overview', label:{en:'Overview',nl:'Overzicht'}, icon:'DashboardOutlined', type:'property' },
       { key:'accounts', label:{en:'Accounts',nl:'Accounts'}, icon:'BankOutlined', type:'children', childType:'account' },
-      { key:'usersRoles', label:{en:'Users & Roles',nl:'Gebruikers & Rollen'}, icon:'TeamOutlined', type:'property' },
+      { key:'users', label:{en:'Users',nl:'Gebruikers'}, icon:'TeamOutlined', type:'property' },
+      { key:'roles', label:{en:'Roles',nl:'Rollen'}, icon:'SafetyCertificateOutlined', type:'property' },
+      { key:'privileges', label:{en:'Privileges',nl:'Rechten'}, icon:'LockOutlined', type:'property' },
       { key:'globalSettings', label:{en:'Global Settings',nl:'Algemene Instellingen'}, icon:'SettingOutlined', type:'property' },
       { key:'domains', label:{en:'Domains',nl:'Domeinen'}, icon:'CloudOutlined', type:'property' },
       { key:'events', label:{en:'Events',nl:'Gebeurtenissen'}, icon:'HistoryOutlined', type:'action' },
@@ -1211,7 +1369,9 @@ const TabRegistry = (() => {
     account: [
       { key:'overview', label:{en:'Overview',nl:'Overzicht'}, type:'property' },
       { key:'subAccounts', label:{en:'Sub-accounts',nl:'Sub-accounts'}, type:'children', childType:'subAccount' },
-      { key:'usersRoles', label:{en:'Users & Roles',nl:'Gebruikers & Rollen'}, type:'property' },
+      { key:'users', label:{en:'Users',nl:'Gebruikers'}, type:'property' },
+      { key:'roles', label:{en:'Roles',nl:'Rollen'}, type:'property' },
+      { key:'privileges', label:{en:'Privileges',nl:'Rechten'}, type:'property' },
       { key:'billing', label:{en:'Billing',nl:'Facturering'}, type:'property' },
       { key:'apiKeys', label:{en:'API Keys',nl:'API Sleutels'}, type:'property' },
       { key:'events', label:{en:'Events',nl:'Gebeurtenissen'}, type:'action' },
@@ -1222,7 +1382,9 @@ const TabRegistry = (() => {
     subAccount: [
       { key:'overview', label:{en:'Overview',nl:'Overzicht'}, type:'property' },
       { key:'sites', label:{en:'Sites',nl:'Locaties'}, type:'children', childType:'site' },
-      { key:'usersRoles', label:{en:'Users & Roles',nl:'Gebruikers & Rollen'}, type:'property' },
+      { key:'users', label:{en:'Users',nl:'Gebruikers'}, type:'property' },
+      { key:'roles', label:{en:'Roles',nl:'Rollen'}, type:'property' },
+      { key:'privileges', label:{en:'Privileges',nl:'Rechten'}, type:'property' },
       { key:'regionalSettings', label:{en:'Regional Settings',nl:'Regionale Instellingen'}, type:'property' },
       { key:'events', label:{en:'Events',nl:'Gebeurtenissen'}, type:'action' },
       { key:'alarms', label:{en:'Alarms',nl:'Alarmen'}, type:'action' },
@@ -1233,7 +1395,9 @@ const TabRegistry = (() => {
       { key:'overview', label:{en:'Overview',nl:'Overzicht'}, type:'property' },
       { key:'deviceGroups', label:{en:'Device Groups',nl:'Apparaatgroepen'}, type:'children', childType:'deviceGroup' },
       { key:'allDevices', label:{en:'All Devices',nl:'Alle Apparaten'}, type:'property' },
-      { key:'usersRoles', label:{en:'Users & Roles',nl:'Gebruikers & Rollen'}, type:'property' },
+      { key:'users', label:{en:'Users',nl:'Gebruikers'}, type:'property' },
+      { key:'roles', label:{en:'Roles',nl:'Rollen'}, type:'property' },
+      { key:'privileges', label:{en:'Privileges',nl:'Rechten'}, type:'property' },
       { key:'siteSettings', label:{en:'Site Settings',nl:'Locatie-instellingen'}, type:'property' },
       { key:'compliance', label:{en:'Compliance',nl:'Naleving'}, type:'property' },
       { key:'location', label:{en:'Location',nl:'Locatie'}, type:'property' },
@@ -3109,9 +3273,9 @@ function Sidebar({ page, setPage, navigateWithLoader, t, lang, focusedEntityId, 
     <div className="sidebar" style={{
       width: expanded ? expandedW : railW,
       transition: 'width 0.2s ease',
-      display:'flex', flexDirection:'column', flexShrink:0,
+      display:'flex', flexDirection:'column',
       background:'var(--bg-sidebar)', borderRight:'1px solid var(--border)',
-      overflow:'hidden', position:'relative', zIndex:100,
+      overflow:'hidden',
     }}
       onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave}>
 
@@ -3486,9 +3650,9 @@ const WidgetEnergyFlow = React.memo(function WidgetEnergyFlow({t, lang, currentS
   const { solarActive, windActive, consumptionActive, gridExporting, gridImporting, essSoc } = ef;
   return (
     <div style={{marginBottom:16}}>
-      <div className="flow-hub" style={{margin:0, borderColor: ambientOn ? `${status.color}30` : 'rgba(255,255,255,0.06)',
+      <div className="flow-hub" style={{margin:0, borderColor: ambientOn ? `${status.color}30` : 'var(--border)',
         boxShadow: ambientOn ? `0 0 24px ${status.color}25, 0 0 48px ${status.color}10` : 'none',
-        background: ambientOn ? '#0f172a' : 'var(--bg-card)'}}>
+        background: ambientOn ? 'var(--bg-secondary)' : 'var(--bg-card)'}}>
         <Tooltip title={ambientOn ? 'Standard view' : 'Ambient view'} placement="left">
           <div className="flow-ambient-toggle" onClick={() => { const next = !ambientOn; setAmbientOn(next); localStorage.setItem('orbiteos-flow-ambient', next); }}>
             {React.createElement(ambientOn ? EyeOutlined : EyeInvisibleOutlined)}
@@ -4457,6 +4621,7 @@ const WidgetGrid = React.memo(function WidgetGrid({visibleWidgets, entityId, t, 
 // Large, high-opacity blobs on a solid dark base (#0f172a).
 // They overlap and blur into each other creating a living, colored atmosphere.
 const EnergyAmbientHues = React.memo(function EnergyAmbientHues({ef}) {
+  const colors = getFlowColors();
   const sz = (pwr, min, max) => Math.round(Math.min(max, min + (pwr / 25) * (max - min)));
   const blobs = [];
 
@@ -4466,35 +4631,35 @@ const EnergyAmbientHues = React.memo(function EnergyAmbientHues({ef}) {
   // Solar — warm amber glow
   if (ef.solarPower > 0) {
     const noWind = ef.windPower <= 0;
-    blobs.push({color:'rgb(245,158,11)', x:'30%', y: noWind ? '50%' : '30%',
+    blobs.push({color:colors.solar, x:'30%', y: noWind ? '50%' : '30%',
       size:sz(ef.solarPower, noWind ? 450 : 380, noWind ? 700 : 600), op:0.45, key:'solar'});
   }
 
   // Wind — cool cyan
   if (ef.windPower > 0) {
     const noSolar = ef.solarPower <= 0;
-    blobs.push({color:'rgb(34,211,238)', x:'30%', y: noSolar ? '50%' : '70%',
+    blobs.push({color:colors.wind, x:'30%', y: noSolar ? '50%' : '70%',
       size:sz(ef.windPower, noSolar ? 450 : 350, noSolar ? 700 : 550), op:0.40, key:'wind'});
   }
 
   // Building — warm orange
   if (ef.buildingPower > 0) blobs.push(
-    {color:'rgb(249,115,22)', x: hasLeft ? '68%' : '50%', y:'25%',
+    {color:colors.building, x: hasLeft ? '68%' : '50%', y:'25%',
       size:sz(ef.buildingPower, 350, 540), op:0.35, key:'bldg'});
 
   // EV — soft violet
   if (ef.evPower > 0) blobs.push(
-    {color:'rgb(167,139,250)', x: hasLeft ? '68%' : '50%', y:'50%',
+    {color:colors.ev, x: hasLeft ? '68%' : '50%', y:'50%',
       size:sz(ef.evPower, 320, 500), op:0.35, key:'ev'});
 
   // Grid import — rose
   if (ef.gridImporting && ef.gridPower > 0) blobs.push(
-    {color:'rgb(244,63,94)', x: hasLeft ? '68%' : '45%', y:'75%',
+    {color:colors.import, x: hasLeft ? '68%' : '45%', y:'75%',
       size:sz(ef.gridPower, 380, 650), op:0.40, key:'grid'});
 
   // Grid export — emerald green
   if (ef.gridExporting && ef.gridPower > 0) blobs.push(
-    {color:'rgb(52,211,153)', x: hasLeft ? '68%' : '50%', y:'75%',
+    {color:colors.export, x: hasLeft ? '68%' : '50%', y:'75%',
       size:sz(ef.gridPower, 350, 560), op:0.40, key:'grid'});
 
   // Fill guarantee: if no left sources, right blobs shift center to cover
@@ -4515,9 +4680,36 @@ const EnergyAmbientHues = React.memo(function EnergyAmbientHues({ef}) {
 // Format number to 1 decimal place — standardised across all dashboard widgets
 function fmt(n) { return Number(n).toFixed(1); }
 
+// Theme-aware color reader — pulls from CSS custom properties
+function getFlowColors() {
+  const s = getComputedStyle(document.body);
+  const get = (v) => s.getPropertyValue(v).trim() || v;
+  return {
+    solar: get('--solar'),
+    wind: get('--wind'),
+    battery: get('--brand'),
+    building: '#f97316',  // orange stays universal for building loads
+    ev: get('--ev'),
+    export: get('--success'),
+    import: get('--error'),
+    brand: get('--brand'),
+  };
+}
+// Fallback constants used by icon components — refreshed on theme change
+let _fc = null;
+function fc() { if (!_fc) _fc = getFlowColors(); return _fc; }
+// Initialize on DOM ready, invalidate on theme change
+document.addEventListener('DOMContentLoaded', () => { _fc = getFlowColors(); });
+// MutationObserver to detect data-theme changes and refresh colors
+new MutationObserver(() => { _fc = null; }).observe(document.body, {attributes: true, attributeFilter: ['data-theme', 'style']});
+
 const TEAL = '#2dd4bf', AMBER = '#f59e0b', TEAL_300 = '#5eead4';
-const COLOR_BUILDING = '#f97316', COLOR_EV = '#a78bfa', COLOR_EXPORT = '#34d399', COLOR_IMPORT = '#f43f5e';
-const COLOR_WIND = '#22d3ee', COLOR_SOLAR = AMBER;
+Object.defineProperty(window, 'COLOR_SOLAR', { get() { return fc().solar; } });
+Object.defineProperty(window, 'COLOR_WIND', { get() { return fc().wind; } });
+Object.defineProperty(window, 'COLOR_BUILDING', { get() { return fc().building; } });
+Object.defineProperty(window, 'COLOR_EV', { get() { return fc().ev; } });
+Object.defineProperty(window, 'COLOR_EXPORT', { get() { return fc().export; } });
+Object.defineProperty(window, 'COLOR_IMPORT', { get() { return fc().import; } });
 
 function SunIcon() {
   return React.createElement('svg', {width:32,height:32,viewBox:'0 0 24 24',fill:'none',stroke:COLOR_SOLAR,strokeWidth:2,strokeLinecap:'round',strokeLinejoin:'round',
@@ -4563,7 +4755,7 @@ function ZapSmall() {
   );
 }
 function GridPoleIcon({active, exporting}) {
-  const color = active ? (exporting ? COLOR_EXPORT : COLOR_IMPORT) : '#94a3b8';
+  const color = active ? (exporting ? COLOR_EXPORT : COLOR_IMPORT) : (getComputedStyle(document.body).getPropertyValue('--text-tertiary').trim() || '#94a3b8');
   const glow = active ? (exporting ? 'rgba(52,211,153,0.4)' : 'rgba(244,63,94,0.4)') : 'none';
   return React.createElement('svg', {width:32,height:32,viewBox:'0 0 24 24',fill:'none',stroke:color,strokeWidth:1.5,strokeLinecap:'round',strokeLinejoin:'round',
     style:active?{filter:`drop-shadow(0 0 6px ${glow})`}:undefined},
@@ -4581,15 +4773,15 @@ function GridPoleIcon({active, exporting}) {
 function BatteryGaugeIcon({soc}) {
   const level = soc != null ? Math.max(0, Math.min(100, soc)) : 0;
   const segs = 4, filled = Math.ceil((level/100)*segs);
-  const color = level <= 20 ? '#ef4444' : level <= 40 ? '#f59e0b' : TEAL;
+  const color = level <= 20 ? '#ef4444' : level <= 40 ? '#f59e0b' : fc().brand;
   const rects = [];
   for(let i=0;i<segs;i++) {
     rects.push(React.createElement('rect',{key:i,x:3+i*5.5,y:5,width:4,height:10,rx:1,
       fill:i<filled?color:'rgba(255,255,255,0.08)',opacity:i<filled?0.6+(i/segs)*0.4:1}));
   }
   return React.createElement('svg', {width:28,height:20,viewBox:'0 0 28 20',style:{display:'block',margin:'0 auto'}},
-    React.createElement('rect', {x:1,y:2,width:23,height:16,rx:3,ry:3,fill:'none',stroke:'rgba(45,212,191,0.4)',strokeWidth:1.5}),
-    React.createElement('rect', {x:25,y:7,width:2.5,height:6,rx:1,fill:'rgba(45,212,191,0.4)'}),
+    React.createElement('rect', {x:1,y:2,width:23,height:16,rx:3,ry:3,fill:'none',stroke:fc().brand,strokeWidth:1.5,strokeOpacity:0.4}),
+    React.createElement('rect', {x:25,y:7,width:2.5,height:6,rx:1,fill:fc().brand,fillOpacity:0.4}),
     ...rects
   );
 }
@@ -4662,19 +4854,20 @@ function FlowCanvasLayer({ef}) {
       const particles = [];
       const ef = efRef.current;
       const paths = getActivePaths();
+      const colors = getFlowColors();
       const channels = [];
       if (ef.solarActive && ef.solarPower > 0)
-        channels.push({path: paths.solar, color: COLOR_SOLAR, power: ef.solarPower});
+        channels.push({path: paths.solar, color: colors.solar, power: ef.solarPower});
       if (ef.windActive && ef.windPower > 0)
-        channels.push({path: paths.wind, color: COLOR_WIND, power: ef.windPower});
+        channels.push({path: paths.wind, color: colors.wind, power: ef.windPower});
       if (ef.consumptionActive && ef.buildingPower > 0)
-        channels.push({path: paths.load, color: COLOR_BUILDING, power: ef.buildingPower});
+        channels.push({path: paths.load, color: colors.building, power: ef.buildingPower});
       if (ef.consumptionActive && ef.evPower > 0)
-        channels.push({path: paths.ev, color: COLOR_EV, power: ef.evPower});
+        channels.push({path: paths.ev, color: colors.ev, power: ef.evPower});
       if (ef.gridExporting && ef.gridPower > 0)
-        channels.push({path: paths.grid, color: COLOR_EXPORT, power: ef.gridPower});
+        channels.push({path: paths.grid, color: colors.export, power: ef.gridPower});
       if (ef.gridImporting && ef.gridPower > 0)
-        channels.push({path: paths.gridIn, color: COLOR_IMPORT, power: ef.gridPower});
+        channels.push({path: paths.gridIn, color: colors.import, power: ef.gridPower});
 
       channels.forEach(ch => {
         const n = ch.power > 20 ? 4 : ch.power > 8 ? 3 : 2;
@@ -5342,45 +5535,90 @@ function SpotlightSearch({ open, onClose, lang, t, navigateToEntity }) {
   );
 }
 
-// ─── Config Nav List (recursive hierarchy with indent lines) ───
-function ConfigNavList({ entity, selectedId, onSelect, expandedNodes, onToggle, filter }) {
-  const children = EntityStore.getChildren(entity.id);
-  const hasChildren = children.length > 0;
+// ─── Lazy Entity Loader (simulates server-side fetch) ───
+const LazyEntityLoader = (() => {
+  const _loaded = new Set(['orbiteos']); // platform root always loaded
+  const _loading = new Set();
+  const _listeners = [];
+
+  function isLoaded(parentId) { return _loaded.has(parentId); }
+  function isLoading(parentId) { return _loading.has(parentId); }
+
+  function loadChildren(parentId) {
+    if (_loaded.has(parentId) || _loading.has(parentId)) return;
+    _loading.add(parentId);
+    _notify();
+    // Simulate server round-trip (150-400ms)
+    const delay = 150 + Math.random() * 250;
+    setTimeout(() => {
+      _loaded.add(parentId);
+      _loading.delete(parentId);
+      _notify();
+    }, delay);
+  }
+
+  function subscribe(fn) { _listeners.push(fn); return () => { const i = _listeners.indexOf(fn); if (i >= 0) _listeners.splice(i, 1); }; }
+  function _notify() { _listeners.forEach(fn => fn()); }
+  // Pre-load first two levels so tree isn't empty on open
+  function preload() {
+    EntityStore.getChildren('orbiteos').forEach(a => { _loaded.add(a.id);
+      EntityStore.getChildren(a.id).forEach(sa => _loaded.add(sa.id));
+    });
+  }
+  return { isLoaded, isLoading, loadChildren, subscribe, preload };
+})();
+LazyEntityLoader.preload();
+
+function useLazyLoader() {
+  const [, setTick] = useState(0);
+  const pending = useRef(false);
+  useEffect(() => LazyEntityLoader.subscribe(() => {
+    if (!pending.current) { pending.current = true; requestAnimationFrame(() => { pending.current = false; setTick(t => t + 1); }); }
+  }), []);
+  return LazyEntityLoader;
+}
+
+// ─── Config Nav List (recursive accordion-style, lazy loaded) ───
+function ConfigNavList({ entity, selectedId, onSelect, expandedNodes, onToggle, filter, loader }) {
+  const loaded = loader.isLoaded(entity.id);
+  const loading = loader.isLoading(entity.id);
+  const children = loaded ? EntityStore.getChildren(entity.id) : [];
+  const hasChildren = (entity.state?.childCount > 0) || EntityStore.getChildren(entity.id).length > 0;
   const isExpanded = expandedNodes.has(entity.id);
   const isActive = entity.id === selectedId;
-  const directChildren = children.length;
   const status = entity.state?.status || '';
 
-  // Filter logic — name match on this entity or any descendant
   if (filter) {
     const q = filter.toLowerCase();
     const nameMatch = entity.name.toLowerCase().includes(q);
-    const descendantMatch = EntityStore.getDescendants(entity.id).some(d => d.name.toLowerCase().includes(q));
+    const descendantMatch = loaded && EntityStore.getDescendants(entity.id).some(d => d.name.toLowerCase().includes(q));
     if (!nameMatch && !descendantMatch) return null;
   }
 
   const statusColor = status === 'online' ? 'var(--success)' : status === 'warning' ? 'var(--warning)' : (status === 'fault' || status === 'error') ? 'var(--error)' : null;
 
   const nameRef = useRef(null);
-  const [isTruncated, setIsTruncated] = useState(false);
+  const isTruncated = nameRef.current ? nameRef.current.scrollWidth > nameRef.current.clientWidth : false;
+
+  // Trigger lazy load when expanding
   useEffect(() => {
-    const el = nameRef.current;
-    if (el) setIsTruncated(el.scrollWidth > el.clientWidth);
-  });
+    if (isExpanded && !loaded && !loading) {
+      loader.loadChildren(entity.id);
+    }
+  }, [isExpanded, loaded, loading, entity.id]);
 
   const rowInner = (
     <div className={`config-nav-item ${isActive ? 'active' : ''}`}
       onClick={(e) => { e.stopPropagation(); onSelect(entity.id); }}>
-      {statusColor && <span style={{width:6,height:6,borderRadius:'50%',background:statusColor,flexShrink:0}}/>}
+      {statusColor && <span style={{width:5,height:5,borderRadius:'50%',background:statusColor,flexShrink:0}}/>}
       <span className="nav-icon">
         <EntityTypeIcon type={entity.entityType} style={{fontSize:13, color:isActive?'var(--brand)':'var(--text-tertiary)'}}/>
       </span>
       <span className="nav-name" ref={nameRef}>{entity.name}</span>
-      {hasChildren && <span className="nav-count">{directChildren}</span>}
       {hasChildren && (
         <span className={`nav-arrow ${isExpanded ? 'open' : ''}`}
           onClick={(e) => { e.stopPropagation(); onToggle(entity.id); }}>
-          <RightOutlined style={{fontSize:9}}/>
+          {loading ? <span className="nav-spinner"/> : <RightOutlined style={{fontSize:9}}/>}
         </span>
       )}
     </div>
@@ -5396,9 +5634,12 @@ function ConfigNavList({ entity, selectedId, onSelect, expandedNodes, onToggle, 
       {row}
       {isExpanded && (
         <div className="config-nav-children">
+          {loading && <div style={{padding:'4px 8px',display:'flex',alignItems:'center',gap:6,fontSize:11,color:'var(--text-tertiary)'}}>
+            <span className="nav-spinner"/> Loading...
+          </div>}
           {children.map(child => (
             <ConfigNavList key={child.id} entity={child} selectedId={selectedId} onSelect={onSelect}
-              expandedNodes={expandedNodes} onToggle={onToggle} filter={filter}/>
+              expandedNodes={expandedNodes} onToggle={onToggle} filter={filter} loader={loader}/>
           ))}
         </div>
       )}
@@ -5444,103 +5685,809 @@ function OverviewTabContent({ entity, t, lang, editMode }) {
   );
 }
 
-// ─── Tab Content: Entity List (generic CRUD table for child entities) ───
-function EntityListTab({ parentId, childType, t, lang, onNavigate, onAdd }) {
-  const children = EntityStore.getChildren(parentId).filter(c => c.entityType === childType);
-  const columns = [];
-  if (childType === 'account') columns.push({title:'Name',key:'name'},{title:'Type',key:'type'},{title:'Plan',key:'plan'},{title:'Users',key:'users'},{title:'Sites',key:'sites'},{title:'Status',key:'status'});
-  else if (childType === 'subAccount') columns.push({title:'Name',key:'name'},{title:'Region',key:'region'},{title:'Sites',key:'sites'},{title:'Devices',key:'devices'});
-  else if (childType === 'site') columns.push({title:'Name',key:'name'},{title:'Location',key:'location'},{title:'Type',key:'type'},{title:'Capacity',key:'capacity'},{title:'Devices',key:'devices'},{title:'Status',key:'status'});
-  else if (childType === 'deviceGroup') columns.push({title:'Name',key:'name'},{title:'Type',key:'type'},{title:'Devices',key:'deviceCount'},{title:'Power',key:'power'},{title:'Status',key:'status'});
-  else if (childType === 'device') columns.push({title:'Name',key:'name'},{title:'Type',key:'type'},{title:t.manufacturer,key:'manufacturer'},{title:'Power',key:'power'},{title:'Status',key:'status'});
-  else if (childType === 'sensor') columns.push({title:'Name',key:'name'},{title:'Type',key:'type'},{title:'Value',key:'value'},{title:'Unit',key:'unit'},{title:'Status',key:'status'});
-  else if (childType === 'actuator') columns.push({title:'Name',key:'name'},{title:'Type',key:'type'},{title:'Value',key:'value'},{title:'Unit',key:'unit'},{title:'Status',key:'status'});
+// ─── EntityList — Shared reusable list component ───
+function EntityList({ columns, dataSource, rowKey='id', title, lang='en',
+  searchable=true, searchPlaceholder, searchFields, columnPicker=false,
+  defaultSortKey, defaultSortOrder='ascend', pageSize=30, lazyLoad=false,
+  onRowClick, rowActions, addButton, inlineAdd, selectable=false,
+  selectedKeys, onSelectionChange, emptyText, emptyIcon,
+  headerExtra, expandable, size='small', className, style }) {
 
-  const getVal = (entity, key) => {
-    if (key === 'name') return entity.name;
-    if (key === 'status') return entity.state?.status || '—';
-    if (key === 'power') return entity.state?.power || '—';
-    if (key === 'value') return entity.state?.value !== undefined ? `${entity.state.value}` : '—';
-    return entity.properties?.[key] || entity.state?.[key] || '—';
+  const [search, setSearch] = useState('');
+  const [sortKey, setSortKey] = useState(defaultSortKey || null);
+  const [sortOrder, setSortOrder] = useState(defaultSortOrder);
+  const [filters, setFilters] = useState({});
+  const [visibleCols, setVisibleCols] = useState(() => columns.filter(c => !c.hidden).map(c => c.key));
+  const [expanded, setExpanded] = useState(expandable?.expandedRowKeys || []);
+  const [adding, setAdding] = useState(false);
+  const [addValues, setAddValues] = useState({});
+  const [visibleCount, setVisibleCount] = useState(pageSize);
+  const scrollRef = useRef(null);
+
+  const resolveLabel = (label) => typeof label === 'object' ? (label[lang] || label.en || '') : (label || '');
+  const getKey = (row) => typeof rowKey === 'function' ? rowKey(row) : row[rowKey];
+  const getValue = (row, col) => col.getValue ? col.getValue(row) : row[col.key];
+
+  // Active columns (visible + not hidden)
+  const activeCols = columns.filter(c => visibleCols.includes(c.key));
+
+  // Search filter
+  let filtered = dataSource;
+  if (search && searchable) {
+    const q = search.toLowerCase();
+    const searchCols = searchFields ? columns.filter(c => searchFields.includes(c.key)) : activeCols.filter(c => c.searchable !== false);
+    filtered = filtered.filter(row => searchCols.some(col => {
+      const val = getValue(row, col);
+      return val != null && String(val).toLowerCase().includes(q);
+    }));
+  }
+
+  // Column filters
+  Object.entries(filters).forEach(([key, filterVal]) => {
+    if (!filterVal || (Array.isArray(filterVal) && filterVal.length === 0)) return;
+    const col = columns.find(c => c.key === key);
+    if (!col) return;
+    if (col.filterFn) {
+      filtered = filtered.filter(row => col.filterFn(filterVal, row));
+    } else {
+      filtered = filtered.filter(row => {
+        const val = String(getValue(row, col) || '');
+        return Array.isArray(filterVal) ? filterVal.includes(val) : val === filterVal;
+      });
+    }
+  });
+
+  // Sort
+  if (sortKey) {
+    const col = columns.find(c => c.key === sortKey);
+    if (col) {
+      filtered = [...filtered].sort((a, b) => {
+        if (col.sortFn) return sortOrder === 'ascend' ? col.sortFn(a, b) : col.sortFn(b, a);
+        const va = getValue(a, col), vb = getValue(b, col);
+        const cmp = va < vb ? -1 : va > vb ? 1 : 0;
+        return sortOrder === 'ascend' ? cmp : -cmp;
+      });
+    }
+  }
+
+  // Lazy loading slice
+  const displayed = lazyLoad ? filtered.slice(0, visibleCount) : filtered;
+  const hasMore = lazyLoad && visibleCount < filtered.length;
+
+  // Scroll handler for lazy loading
+  useEffect(() => {
+    if (!lazyLoad || !scrollRef.current) return;
+    const el = scrollRef.current;
+    const onScroll = () => {
+      if (el.scrollTop + el.clientHeight >= el.scrollHeight - 40 && visibleCount < filtered.length) {
+        setVisibleCount(prev => Math.min(prev + pageSize, filtered.length));
+      }
+    };
+    el.addEventListener('scroll', onScroll);
+    return () => el.removeEventListener('scroll', onScroll);
+  }, [lazyLoad, visibleCount, filtered.length, pageSize]);
+
+  // Reset visible count when filters change
+  useEffect(() => { setVisibleCount(pageSize); }, [search, filters, pageSize]);
+
+  const handleSort = (key) => {
+    if (sortKey === key) {
+      setSortOrder(prev => prev === 'ascend' ? 'descend' : 'ascend');
+    } else {
+      setSortKey(key);
+      setSortOrder('ascend');
+    }
   };
 
-  const typeLabels = { account:'Account', subAccount:'Sub-account', site:'Site', deviceGroup:'Device Group', device:'Device', sensor:'Sensor', actuator:'Actuator' };
+  const setFilter = (key, val) => {
+    setFilters(prev => ({...prev, [key]: val}));
+  };
+  const clearFilter = (key) => {
+    setFilters(prev => { const n = {...prev}; delete n[key]; return n; });
+  };
+
+  const toggleExpand = (id) => {
+    setExpanded(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+    expandable?.onExpand?.(id);
+  };
+
+  // Inline add
+  const handleInlineSave = () => {
+    if (inlineAdd?.onSave) inlineAdd.onSave(addValues);
+    setAdding(false); setAddValues({});
+  };
+
+  // Build filter options from data if not provided
+  const getFilterOptions = (col) => {
+    if (col.filterOptions) return col.filterOptions;
+    const vals = [...new Set(dataSource.map(row => getValue(row, col)).filter(v => v != null && v !== ''))];
+    return vals.sort().map(v => ({ value: String(v), label: String(v) }));
+  };
+
+  // Active filter pills
+  const activeFilters = Object.entries(filters).filter(([, v]) => v && (!Array.isArray(v) || v.length > 0));
 
   return (
-    <div className="config-tab-content">
-      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
-        <span style={{fontSize:13,fontWeight:600,color:'var(--text-primary)'}}>{typeLabels[childType]}s ({children.length})</span>
-        <button className="header-btn primary" style={{fontSize:11,padding:'4px 12px'}} onClick={() => onAdd(childType)}>
-          <PlusOutlined style={{marginRight:4}}/>Add {typeLabels[childType]}
-        </button>
+    <div className={`el-wrap ${className||''}`} style={style}>
+      {/* Header */}
+      <div className="el-header">
+        <span className="el-title">
+          {resolveLabel(title)}{title && <span className="el-count">({filtered.length})</span>}
+        </span>
+        <div className="el-toolbar">
+          {searchable && <Input size="small" prefix={<SearchOutlined style={{color:'var(--text-tertiary)'}}/>}
+            placeholder={searchPlaceholder || (lang==='nl'?'Zoeken...':'Search...')}
+            value={search} onChange={e => setSearch(e.target.value)} allowClear style={{width:160,borderRadius:6}}/>}
+          {columnPicker && (
+            <Dropdown trigger={['click']} dropdownRender={() => (
+              <div style={{padding:8,background:'var(--bg-card)',border:'1px solid var(--border)',borderRadius:8,boxShadow:'var(--shadow)',minWidth:150}}>
+                <div style={{fontSize:11,fontWeight:600,color:'var(--text-secondary)',marginBottom:6}}>{lang==='nl'?'Kolommen':'Columns'}</div>
+                {columns.map(c => (
+                  <div key={c.key} style={{display:'flex',alignItems:'center',gap:6,padding:'3px 0',fontSize:11,cursor:'pointer',color:'var(--text-primary)'}}
+                    onClick={() => setVisibleCols(prev => prev.includes(c.key) ? prev.filter(k=>k!==c.key) : [...prev,c.key])}>
+                    <Switch size="small" checked={visibleCols.includes(c.key)}/>
+                    <span>{resolveLabel(c.label)}</span>
+                  </div>
+                ))}
+              </div>
+            )}>
+              <Button size="small" icon={<SettingOutlined/>} style={{fontSize:11}}/>
+            </Dropdown>
+          )}
+          {addButton && (typeof addButton === 'object'
+            ? <Button size="small" type="primary" icon={<PlusOutlined/>} onClick={addButton.onClick}>{resolveLabel(addButton.label)}</Button>
+            : <Button size="small" type="primary" icon={<PlusOutlined/>} onClick={() => setAdding(true)}>{lang==='nl'?'Toevoegen':'Add'}</Button>
+          )}
+          {headerExtra}
+        </div>
       </div>
-      <table className="data-table" style={{fontSize:12}}>
-        <thead><tr>{columns.map(c => <th key={c.key}>{c.title}</th>)}<th style={{width:60}}>Actions</th></tr></thead>
-        <tbody>
-          {children.map(child => (
-            <tr key={child.id} style={{cursor:'pointer'}} onClick={() => onNavigate(child.id)}>
-              {columns.map(c => (
-                <td key={c.key}>
-                  {c.key === 'status' ? <span className={`status-dot ${getVal(child,c.key)==='online'||getVal(child,c.key)==='active'?'online':getVal(child,c.key)==='fault'?'error':getVal(child,c.key)==='warning'?'warning':'info'}`}>{getVal(child,c.key)}</span>
-                    : c.key === 'name' ? <span style={{fontWeight:500}}>{child.name}</span>
-                    : getVal(child, c.key)}
-                </td>
-              ))}
-              <td onClick={e => e.stopPropagation()}>
-                <span style={{cursor:'pointer',color:'var(--text-tertiary)',marginRight:8}} onClick={() => onNavigate(child.id)}><EditOutlined/></span>
-                <span style={{cursor:'pointer',color:'var(--error)'}} onClick={() => {
-                  const desc = EntityStore.getDescendants(child.id);
-                  Modal.confirm({ title:`Delete ${child.name}?`, content: desc.length > 0 ? `This will also remove ${desc.length} child entities.` : 'This action cannot be undone.',
-                    okText:'Delete', okType:'danger', onOk:() => { EntityStore.remove(child.id); }
-                  });
-                }}><DeleteOutlined/></span>
-              </td>
-            </tr>
-          ))}
-          {children.length === 0 && <tr><td colSpan={columns.length+1} style={{textAlign:'center',color:'var(--text-tertiary)',padding:20}}>No {typeLabels[childType].toLowerCase()}s yet</td></tr>}
-        </tbody>
-      </table>
+
+      {/* Active filter pills */}
+      {activeFilters.length > 0 && (
+        <div className="el-filters">
+          {activeFilters.map(([key, val]) => {
+            const col = columns.find(c => c.key === key);
+            return (
+              <span key={key} className="el-filter-pill" onClick={() => clearFilter(key)}>
+                {resolveLabel(col?.label)}: {Array.isArray(val) ? val.join(', ') : val}
+                <CloseOutlined className="el-pill-x"/>
+              </span>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Table */}
+      <div className="el-scroll" ref={scrollRef}>
+        {displayed.length === 0 && !adding ? (
+          <div className="el-empty">
+            {emptyIcon && <div className="el-empty-icon">{emptyIcon}</div>}
+            <div>{resolveLabel(emptyText) || (lang==='nl'?'Geen gegevens':'No data')}</div>
+          </div>
+        ) : (
+          <table className="el-table">
+            <thead>
+              <tr>
+                {selectable && <th style={{width:32}}></th>}
+                {expandable && <th style={{width:28}}></th>}
+                {activeCols.map(col => (
+                  <th key={col.key} className={col.sortable ? 'sortable' : ''} style={{width:col.width,textAlign:col.align}}
+                    onClick={col.sortable ? () => handleSort(col.key) : undefined}>
+                    <span style={{display:'inline-flex',alignItems:'center',gap:4}}>
+                      {resolveLabel(col.label)}
+                      {col.sortable && sortKey === col.key && (
+                        <span style={{fontSize:8,color:'var(--brand)'}}>{sortOrder === 'ascend' ? '\u25B2' : '\u25BC'}</span>
+                      )}
+                      {col.filterable && (
+                        <Dropdown trigger={['click']} dropdownRender={() => (
+                          <div style={{padding:8,background:'var(--bg-card)',border:'1px solid var(--border)',borderRadius:8,boxShadow:'var(--shadow)',minWidth:120,maxHeight:200,overflowY:'auto'}}>
+                            {getFilterOptions(col).map(opt => (
+                              <div key={opt.value} style={{padding:'3px 6px',fontSize:11,cursor:'pointer',borderRadius:4,
+                                color:filters[col.key] === opt.value || (Array.isArray(filters[col.key]) && filters[col.key].includes(opt.value)) ? 'var(--brand)' : 'var(--text-primary)',
+                                background:filters[col.key] === opt.value || (Array.isArray(filters[col.key]) && filters[col.key].includes(opt.value)) ? 'var(--brand-bg)' : 'transparent'}}
+                                onClick={(e) => { e.stopPropagation(); setFilter(col.key, opt.value); }}>
+                                {opt.label}
+                              </div>
+                            ))}
+                            {filters[col.key] && (
+                              <div style={{padding:'3px 6px',fontSize:10,cursor:'pointer',color:'var(--text-tertiary)',borderTop:'1px solid var(--border)',marginTop:4}}
+                                onClick={(e) => { e.stopPropagation(); clearFilter(col.key); }}>
+                                {lang==='nl'?'Wissen':'Clear'}
+                              </div>
+                            )}
+                          </div>
+                        )}>
+                          <FilterOutlined style={{fontSize:9,color:filters[col.key]?'var(--brand)':'var(--text-tertiary)',cursor:'pointer'}}
+                            onClick={e => e.stopPropagation()}/>
+                        </Dropdown>
+                      )}
+                    </span>
+                  </th>
+                ))}
+                {rowActions && <th style={{width:rowActions.length * 24 + 8}}></th>}
+              </tr>
+            </thead>
+            <tbody>
+              {displayed.map((row, ri) => {
+                const key = getKey(row);
+                const isExp = expandable && expanded.includes(key);
+                return (
+                  <React.Fragment key={key}>
+                    <tr style={{cursor:onRowClick?'pointer':undefined}} onClick={() => onRowClick?.(row)}>
+                      {selectable && <td style={{width:32,textAlign:'center'}}>
+                        <input type="checkbox" checked={selectedKeys?.includes(key)}
+                          onChange={() => {
+                            const next = selectedKeys?.includes(key) ? selectedKeys.filter(k=>k!==key) : [...(selectedKeys||[]),key];
+                            onSelectionChange?.(next, dataSource.filter(r=>next.includes(getKey(r))));
+                          }}/>
+                      </td>}
+                      {expandable && <td style={{width:28,textAlign:'center',cursor:'pointer'}} onClick={e => { e.stopPropagation(); toggleExpand(key); }}>
+                        <RightOutlined style={{fontSize:8,color:'var(--text-tertiary)',transform:isExp?'rotate(90deg)':'none',transition:'transform 0.15s'}}/>
+                      </td>}
+                      {activeCols.map(col => (
+                        <td key={col.key} style={{textAlign:col.align, maxWidth:col.width,
+                          overflow:col.ellipsis?'hidden':undefined, textOverflow:col.ellipsis?'ellipsis':undefined, whiteSpace:col.ellipsis?'nowrap':undefined}}>
+                          {col.render ? col.render(getValue(row, col), row, ri) : (getValue(row, col) ?? '\u2014')}
+                        </td>
+                      ))}
+                      {rowActions && <td>
+                        <span className="el-actions">
+                          {rowActions.map(a => (
+                            <span key={a.key} className={`el-action ${a.danger?'danger':''}`}
+                              onClick={e => { e.stopPropagation(); a.onClick?.(row); }}>
+                              {a.icon}
+                            </span>
+                          ))}
+                        </span>
+                      </td>}
+                    </tr>
+                    {isExp && expandable?.expandedRowRender && (
+                      <tr><td colSpan={99} style={{padding:0}}>
+                        <div className="el-expanded">{expandable.expandedRowRender(row)}</div>
+                      </td></tr>
+                    )}
+                  </React.Fragment>
+                );
+              })}
+            </tbody>
+          </table>
+        )}
+
+        {/* Lazy load sentinel */}
+        {hasMore && <div className="el-load-more"><span className="nav-spinner"/> {lang==='nl'?'Laden...':'Loading...'}</div>}
+
+        {/* Inline add */}
+        {inlineAdd && !adding && displayed.length > 0 && (
+          <div className="el-add-row" onClick={() => setAdding(true)}>
+            <PlusOutlined style={{fontSize:10}}/> {resolveLabel(inlineAdd.label) || (lang==='nl'?'Toevoegen':'Add')}
+          </div>
+        )}
+        {adding && inlineAdd && (
+          <div className="el-inline-add">
+            {inlineAdd.fields.map(f => (
+              <Input key={f.key} size="small" placeholder={resolveLabel(f.placeholder)} style={{flex:f.flex||1,fontSize:11}}
+                value={addValues[f.key]||''} onChange={e => setAddValues(prev => ({...prev,[f.key]:e.target.value}))}
+                autoFocus={f.autoFocus} onPressEnter={handleInlineSave}/>
+            ))}
+            <CheckOutlined style={{fontSize:11,color:'var(--success)',cursor:'pointer'}} onClick={handleInlineSave}/>
+            <CloseOutlined style={{fontSize:11,color:'var(--text-tertiary)',cursor:'pointer'}}
+              onClick={() => { setAdding(false); setAddValues({}); }}/>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Column definitions per entity type (data-driven, i18n-aware) ───
+const ENTITY_COLUMNS = {
+  account: [
+    { key:'name', label:{en:'Name',nl:'Naam'}, sortable:true, render:(_,r) => React.createElement('span',{style:{fontWeight:500}},r.name) },
+    { key:'type', label:{en:'Type',nl:'Type'}, filterable:true, getValue:r => r.properties?.type },
+    { key:'plan', label:{en:'Plan',nl:'Plan'}, filterable:true, getValue:r => r.properties?.plan },
+    { key:'contact', label:{en:'Contact',nl:'Contact'}, getValue:r => r.properties?.contactEmail, hidden:true },
+    { key:'sites', label:{en:'Sites',nl:'Locaties'}, getValue:r => r.state?.sites, sortable:true },
+    { key:'devices', label:{en:'Devices',nl:'Apparaten'}, getValue:r => r.state?.devices, sortable:true },
+    { key:'status', label:{en:'Status',nl:'Status'}, filterable:true, getValue:r => r.state?.status,
+      render:(_,r) => { const s=r.state?.status; return s ? React.createElement('span',{className:`status-dot ${s==='online'?'online':s==='warning'?'warning':s==='fault'||s==='error'?'error':'info'}`},s) : '\u2014'; } },
+  ],
+  subAccount: [
+    { key:'name', label:{en:'Name',nl:'Naam'}, sortable:true, render:(_,r) => React.createElement('span',{style:{fontWeight:500}},r.name) },
+    { key:'region', label:{en:'Region',nl:'Regio'}, filterable:true, getValue:r => r.properties?.region },
+    { key:'dso', label:{en:'DSO',nl:'DSO'}, getValue:r => r.properties?.dso },
+    { key:'sites', label:{en:'Sites',nl:'Locaties'}, getValue:r => r.state?.sites, sortable:true },
+    { key:'devices', label:{en:'Devices',nl:'Apparaten'}, getValue:r => r.state?.devices, sortable:true },
+    { key:'status', label:{en:'Status',nl:'Status'}, filterable:true, getValue:r => r.state?.status,
+      render:(_,r) => { const s=r.state?.status; return s ? React.createElement('span',{className:`status-dot ${s==='online'?'online':s}`},s) : '\u2014'; } },
+  ],
+  site: [
+    { key:'name', label:{en:'Name',nl:'Naam'}, sortable:true, render:(_,r) => React.createElement('span',{style:{fontWeight:500}},r.name) },
+    { key:'type', label:{en:'Type',nl:'Type'}, filterable:true, getValue:r => r.properties?.type },
+    { key:'capacity', label:{en:'Capacity',nl:'Capaciteit'}, getValue:r => r.properties?.capacity, sortable:true },
+    { key:'city', label:{en:'City',nl:'Stad'}, getValue:r => r.properties?.city, filterable:true },
+    { key:'devices', label:{en:'Devices',nl:'Apparaten'}, getValue:r => r.state?.devices, sortable:true },
+    { key:'status', label:{en:'Status',nl:'Status'}, filterable:true, getValue:r => r.state?.status,
+      render:(_,r) => { const s=r.state?.status; return s ? React.createElement('span',{className:`status-dot ${s==='online'?'online':s}`},s) : '\u2014'; } },
+  ],
+  deviceGroup: [
+    { key:'name', label:{en:'Name',nl:'Naam'}, sortable:true, render:(_,r) => React.createElement('span',{style:{fontWeight:500}},r.name) },
+    { key:'type', label:{en:'Type',nl:'Type'}, filterable:true, getValue:r => r.properties?.type },
+    { key:'devices', label:{en:'Devices',nl:'Apparaten'}, getValue:r => EntityStore.getChildren(r.id).filter(c=>c.entityType==='device').length, sortable:true },
+    { key:'status', label:{en:'Status',nl:'Status'}, filterable:true, getValue:r => r.state?.status,
+      render:(_,r) => { const s=r.state?.status; return s ? React.createElement('span',{className:`status-dot ${s==='online'?'online':s}`},s) : '\u2014'; } },
+  ],
+  device: [
+    { key:'name', label:{en:'Name',nl:'Naam'}, sortable:true, render:(_,r) => React.createElement('span',{style:{fontWeight:500}},r.name) },
+    { key:'type', label:{en:'Type',nl:'Type'}, filterable:true, getValue:r => r.properties?.type },
+    { key:'manufacturer', label:{en:'Manufacturer',nl:'Fabrikant'}, filterable:true, getValue:r => r.properties?.manufacturer },
+    { key:'model', label:{en:'Model',nl:'Model'}, getValue:r => r.properties?.model, hidden:true },
+    { key:'power', label:{en:'Power',nl:'Vermogen'}, getValue:r => r.state?.power, sortable:true },
+    { key:'status', label:{en:'Status',nl:'Status'}, filterable:true, getValue:r => r.state?.status,
+      render:(_,r) => { const s=r.state?.status; return s ? React.createElement('span',{className:`status-dot ${s==='online'?'online':s==='fault'||s==='error'?'error':s}`},s) : '\u2014'; } },
+  ],
+  sensor: [
+    { key:'name', label:{en:'Name',nl:'Naam'}, sortable:true, render:(_,r) => React.createElement('span',{style:{fontWeight:500}},r.name) },
+    { key:'type', label:{en:'Type',nl:'Type'}, filterable:true, getValue:r => r.properties?.type },
+    { key:'unit', label:{en:'Unit',nl:'Eenheid'}, getValue:r => r.properties?.unit },
+    { key:'value', label:{en:'Value',nl:'Waarde'}, getValue:r => r.state?.value != null ? `${r.state.value}` : '\u2014', sortable:true },
+    { key:'status', label:{en:'Status',nl:'Status'}, filterable:true, getValue:r => r.state?.status,
+      render:(_,r) => { const s=r.state?.status; return s ? React.createElement('span',{className:`status-dot ${s==='online'?'online':s}`},s) : '\u2014'; } },
+  ],
+  actuator: [
+    { key:'name', label:{en:'Name',nl:'Naam'}, sortable:true, render:(_,r) => React.createElement('span',{style:{fontWeight:500}},r.name) },
+    { key:'type', label:{en:'Type',nl:'Type'}, filterable:true, getValue:r => r.properties?.type },
+    { key:'state', label:{en:'State',nl:'Stand'}, getValue:r => r.state?.position || r.state?.mode || '\u2014' },
+    { key:'status', label:{en:'Status',nl:'Status'}, filterable:true, getValue:r => r.state?.status,
+      render:(_,r) => { const s=r.state?.status; return s ? React.createElement('span',{className:`status-dot ${s==='online'?'online':s}`},s) : '\u2014'; } },
+  ],
+};
+
+function EntityListTab({ parentId, childType, t, lang, onNavigate, onAdd }) {
+  const children = EntityStore.getChildren(parentId).filter(c => c.entityType === childType);
+  const cols = ENTITY_COLUMNS[childType] || [
+    { key:'name', label:{en:'Name',nl:'Naam'}, sortable:true, render:(_,r) => React.createElement('span',{style:{fontWeight:500}},r.name) },
+    { key:'status', label:{en:'Status',nl:'Status'}, getValue:r => r.state?.status },
+  ];
+  const typeLabels = { account:{en:'Account',nl:'Account'}, subAccount:{en:'Sub-account',nl:'Sub-account'}, site:{en:'Site',nl:'Locatie'}, deviceGroup:{en:'Device Group',nl:'Apparaatgroep'}, device:{en:'Device',nl:'Apparaat'}, sensor:{en:'Sensor',nl:'Sensor'}, actuator:{en:'Actuator',nl:'Actuator'} };
+  return (
+    <div className="config-tab-content">
+      <EntityList columns={cols} dataSource={children} lang={lang} columnPicker={cols.length > 4}
+        title={typeLabels[childType]} lazyLoad={children.length > 30} pageSize={30}
+        onRowClick={row => onNavigate(row.id)}
+        addButton={onAdd ? { label:{en:`Add ${(typeLabels[childType]||{}).en||''}`,nl:`${(typeLabels[childType]||{}).nl||''} toevoegen`}, onClick:() => onAdd(childType) } : undefined}
+        rowActions={[
+          { key:'edit', icon:React.createElement(EditOutlined,{style:{fontSize:12}}), onClick:row => onNavigate(row.id) },
+          { key:'delete', icon:React.createElement(DeleteOutlined,{style:{fontSize:12}}), danger:true, onClick:row => {
+            const desc = EntityStore.getDescendants(row.id);
+            Modal.confirm({ title:`Delete ${row.name}?`, content:desc.length > 0 ? `This will also remove ${desc.length} child entities.` : undefined,
+              okText:'Delete', okType:'danger', onOk:() => {} });
+          }},
+        ]}
+        emptyIcon={React.createElement(InboxOutlined)} emptyText={{en:'No items',nl:'Geen items'}}/>
     </div>
   );
 }
 
 // ─── Tab Content: Users & Roles ───
-function UsersRolesTab({ entityId, t, lang }) {
+// ─── Action Badge (SUD visual indicator for privilege actions) ───
+function ActionBadge({ action, active, onClick }) {
+  const config = {
+    view:   { color:'var(--text-tertiary)', bg:'var(--bg-card-hover)', icon:<EyeOutlined style={{fontSize:9}}/> },
+    create: { color:'var(--success)', bg:'var(--success-bg)', icon:<PlusOutlined style={{fontSize:9}}/> },
+    edit:   { color:'var(--info)', bg:'rgba(59,130,246,0.1)', icon:<EditOutlined style={{fontSize:9}}/> },
+    delete: { color:'var(--error)', bg:'var(--error-bg)', icon:<DeleteOutlined style={{fontSize:9}}/> },
+    manage: { color:'var(--warning)', bg:'var(--warning-bg)', icon:<SettingOutlined style={{fontSize:9}}/> },
+  };
+  const c = config[action] || config.view;
+  return (
+    <span onClick={onClick} style={{display:'inline-flex',alignItems:'center',gap:2,padding:'2px 7px',borderRadius:10,cursor:onClick?'pointer':'default',
+      background:active ? c.bg : 'transparent', color:active ? c.color : 'var(--text-tertiary)',
+      fontSize:10,fontWeight:active?500:400, border:`1px solid ${active ? c.color+'40' : 'var(--border)'}`,
+      opacity:active?1:0.5, transition:'all 0.12s', textTransform:'capitalize'}}>
+      {c.icon}<span>{action}</span>
+    </span>
+  );
+}
+
+// ─── Tab: Users (CRUD) ───
+function UsersTab({ entityId, t, lang }) {
+  const [, setTick] = useState(0);
+  const rerender = () => setTick(t => t+1);
   const scopeUsers = AccessStore.getForScope(entityId);
   const entity = EntityStore.get(entityId);
+  const [addOpen, setAddOpen] = useState(false);
+  const [editUser, setEditUser] = useState(null);
+  const [addUserId, setAddUserId] = useState('');
+  const [addRole, setAddRole] = useState('');
+  const allUsers = UserStore.getAllUsers();
+  const roles = RoleStore.getAll();
+
+  const handleAdd = () => {
+    if (!addUserId || !addRole) return;
+    AccessStore.add({ userId:addUserId, scopeId:entityId, role:addRole, permissions:[] });
+    setAddOpen(false); setAddUserId(''); setAddRole(''); rerender();
+  };
+  const handleRemove = (row) => {
+    Modal.confirm({ title:{en:'Remove user from this scope?',nl:'Gebruiker verwijderen uit deze scope?'}[lang]||'Remove user?', okText:{en:'Remove',nl:'Verwijderen'}[lang], okType:'danger',
+      onOk:() => { AccessStore.remove(row.userId, entityId); rerender(); } });
+  };
+  const handleEditSave = () => {
+    if (!editUser) return;
+    AccessStore.remove(editUser.userId, entityId);
+    AccessStore.add({ userId:editUser.userId, scopeId:entityId, role:editUser.role, permissions:editUser.permissions||[] });
+    setEditUser(null); rerender();
+  };
+
+  const userCols = [
+    { key:'name', label:{en:'User',nl:'Gebruiker'}, sortable:true, searchable:true,
+      render:(_,row) => {
+        const user = UserStore.getUser(row.userId);
+        const sc = user?.status === 'online' ? 'var(--success)' : user?.status === 'away' ? 'var(--warning)' : 'var(--text-tertiary)';
+        return React.createElement('div',{style:{display:'flex',alignItems:'center',gap:8}},
+          React.createElement('div',{style:{width:28,height:28,borderRadius:'50%',background:'var(--brand-bg)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,fontWeight:600,color:'var(--brand)',flexShrink:0,overflow:'hidden'}},
+            user?.avatar ? React.createElement('img',{src:user.avatar,style:{width:28,height:28,borderRadius:'50%',objectFit:'cover'}}) : (user?.initials||'?')),
+          React.createElement('div',{style:{minWidth:0}},
+            React.createElement('div',{style:{fontSize:12,fontWeight:500,color:'var(--text-primary)',display:'flex',alignItems:'center',gap:4}}, user?.name||row.userId, React.createElement('span',{style:{width:5,height:5,borderRadius:'50%',background:sc}})),
+            React.createElement('div',{style:{fontSize:10,color:'var(--text-tertiary)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}, user?.email))
+        );
+      },
+      getValue: row => { const u = UserStore.getUser(row.userId); return `${u?.name||''} ${u?.email||''}`; }
+    },
+    { key:'role', label:{en:'Role',nl:'Rol'}, filterable:true, getValue:r => r.role,
+      render:(_,row) => React.createElement(Tag,{color:'blue',style:{margin:0,fontSize:10}},row.role) },
+    { key:'lastLogin', label:{en:'Last Login',nl:'Laatste Login'}, sortable:true,
+      getValue:r => UserStore.getUser(r.userId)?.lastLogin || '\u2014',
+      render:(_,row) => React.createElement('span',{style:{fontSize:10,color:'var(--text-tertiary)'}}, UserStore.getUser(row.userId)?.lastLogin||'\u2014') },
+  ];
 
   return (
     <div className="config-tab-content">
-      <div style={{fontSize:13,fontWeight:600,color:'var(--text-primary)',marginBottom:12}}>Users with access to {entity?.name}</div>
-      <table className="data-table" style={{fontSize:12}}>
-        <thead><tr><th>User</th><th>{t.role}</th><th>{t.permissionsCol}</th></tr></thead>
-        <tbody>
-          {scopeUsers.map((su, i) => {
+      <EntityList columns={userCols} dataSource={scopeUsers} rowKey="userId" lang={lang}
+        title={{en:'Users',nl:'Gebruikers'}}
+        addButton={{label:{en:'Assign',nl:'Toewijzen'},onClick:()=>setAddOpen(true)}}
+        rowActions={[
+          {key:'edit',icon:React.createElement(EditOutlined,{style:{fontSize:12}}),onClick:row=>setEditUser({...row})},
+          {key:'delete',icon:React.createElement(DeleteOutlined,{style:{fontSize:12}}),danger:true,onClick:handleRemove},
+        ]}
+        emptyIcon={React.createElement(TeamOutlined)} emptyText={{en:'No users at this scope',nl:'Geen gebruikers in deze scope'}}/>
+      {/* Drawers stay the same */}
+      <Drawer title={{en:'Assign User',nl:'Gebruiker Toewijzen'}[lang]} open={addOpen} onClose={()=>setAddOpen(false)} width={360}
+        extra={React.createElement(Button,{type:'primary',size:'small',onClick:handleAdd,disabled:!addUserId||!addRole},{en:'Assign',nl:'Toewijzen'}[lang])}>
+        <div style={{display:'grid',gap:14}}>
+          <div><div style={{fontSize:11,fontWeight:500,color:'var(--text-primary)',marginBottom:4}}>{lang==='nl'?'Gebruiker':'User'}</div>
+            <Select size="small" style={{width:'100%'}} placeholder={lang==='nl'?'Selecteer...':'Select...'} value={addUserId||undefined} onChange={setAddUserId}
+              showSearch filterOption={(input,opt)=>(opt?.label||'').toLowerCase().includes(input.toLowerCase())}
+              options={allUsers.map(u=>({value:u.id,label:`${u.name} (${u.email})`}))}/></div>
+          <div><div style={{fontSize:11,fontWeight:500,color:'var(--text-primary)',marginBottom:4}}>{lang==='nl'?'Rol':'Role'}</div>
+            <Select size="small" style={{width:'100%'}} placeholder={lang==='nl'?'Selecteer...':'Select...'} value={addRole||undefined} onChange={setAddRole}
+              options={roles.map(r=>({value:r.name,label:`${r.name} \u2014 ${r.level}`}))}/></div>
+        </div>
+      </Drawer>
+      <Drawer title={{en:'Edit Assignment',nl:'Toewijzing Bewerken'}[lang]} open={!!editUser} onClose={()=>setEditUser(null)} width={360}
+        extra={React.createElement(Button,{type:'primary',size:'small',onClick:handleEditSave},{en:'Save',nl:'Opslaan'}[lang])}>
+        {editUser && <div style={{display:'grid',gap:14}}>
+          <div><div style={{fontSize:11,fontWeight:500,color:'var(--text-primary)',marginBottom:4}}>{lang==='nl'?'Gebruiker':'User'}</div>
+            <Input size="small" value={UserStore.getUser(editUser.userId)?.name||editUser.userId} disabled/></div>
+          <div><div style={{fontSize:11,fontWeight:500,color:'var(--text-primary)',marginBottom:4}}>{lang==='nl'?'Rol':'Role'}</div>
+            <Select size="small" style={{width:'100%'}} value={editUser.role} onChange={v=>setEditUser({...editUser,role:v})}
+              options={roles.map(r=>({value:r.name,label:`${r.name} \u2014 ${r.level}`}))}/></div>
+        </div>}
+      </Drawer>
+    </div>
+  );
+}
+
+// ─── Tab: Roles (CRUD with app-scoped privileges) ───
+function RolesTab({ entityId, t, lang }) {
+  const [, setTick] = useState(0);
+  const rerender = () => setTick(t => t+1);
+  const entity = EntityStore.get(entityId);
+  const scopeUsers = AccessStore.getForScope(entityId);
+  const [expanded, setExpanded] = useState(null);
+  const [addOpen, setAddOpen] = useState(false);
+  const [newName, setNewName] = useState('');
+  const [newLevel, setNewLevel] = useState('Site');
+  const roles = RoleStore.getAll();
+  const apps = NavigationStore.getVisibleApps();
+
+  const roleCounts = {};
+  scopeUsers.forEach(su => { roleCounts[su.role] = (roleCounts[su.role] || 0) + 1; });
+  const roleColors = { 'Platform Admin':'red','Account Admin':'orange','Regional Admin':'gold','Site Admin':'blue','Operator':'cyan','Installer':'green','Viewer':'default','API User':'purple' };
+
+  const handleCreate = () => {
+    if (!newName.trim()) return;
+    RoleStore.put({ name:newName, level:newLevel, description:'', privileges:[], systemPerms:[] });
+    setAddOpen(false); setNewName(''); rerender();
+  };
+  const handleDelete = (row) => {
+    Modal.confirm({ title:`${lang==='nl'?'Rol verwijderen':'Delete role'} "${row.name}"?`, okText:lang==='nl'?'Verwijderen':'Delete', okType:'danger',
+      onOk:() => { RoleStore.remove(row.id); rerender(); } });
+  };
+  const togglePriv = (role, privId) => {
+    const r = RoleStore.get(role.id); if (!r) return;
+    const idx = r.privileges.indexOf(privId);
+    if (idx >= 0) r.privileges.splice(idx,1); else r.privileges.push(privId);
+    rerender();
+  };
+  const toggleSysPerm = (role, permId) => {
+    const r = RoleStore.get(role.id); if (!r) return;
+    const idx = r.systemPerms.indexOf(permId);
+    if (idx >= 0) r.systemPerms.splice(idx,1); else r.systemPerms.push(permId);
+    rerender();
+  };
+
+  const roleCols = [
+    { key:'name', label:{en:'Role',nl:'Rol'}, sortable:true, render:(_,r) => React.createElement(Tag,{color:roleColors[r.name]||'default',style:{margin:0,fontWeight:600,fontSize:11}},r.name) },
+    { key:'level', label:{en:'Scope',nl:'Bereik'}, filterable:true },
+    { key:'description', label:{en:'Description',nl:'Beschrijving'}, render:(_,r) => React.createElement('span',{style:{fontSize:11,color:'var(--text-tertiary)'}},r.description||'\u2014') },
+    { key:'users', label:{en:'Users',nl:'Gebruikers'}, getValue:r => roleCounts[r.name]||0, sortable:true,
+      render:(_,r) => { const c = roleCounts[r.name]||0; return c > 0 ? React.createElement('span',{style:{fontSize:10,background:'var(--bg-card-hover)',padding:'1px 6px',borderRadius:8}},c) : '\u2014'; } },
+    { key:'privCount', label:{en:'Privileges',nl:'Rechten'}, getValue:r => r.privileges?.length||0, sortable:true,
+      render:(_,r) => React.createElement('span',{style:{fontSize:10,color:'var(--text-tertiary)'}},`${r.privileges?.length||0} app + ${r.systemPerms?.length||0} sys`) },
+  ];
+
+  return (
+    <div className="config-tab-content">
+      <EntityList columns={roleCols} dataSource={roles} lang={lang} columnPicker
+        title={{en:'Roles',nl:'Rollen'}}
+        addButton={{label:{en:'New Role',nl:'Nieuwe Rol'},onClick:()=>setAddOpen(true)}}
+        rowActions={[
+          {key:'delete',icon:React.createElement(DeleteOutlined,{style:{fontSize:12}}),danger:true,onClick:handleDelete},
+        ]}
+        expandable={{
+          expandedRowKeys: expanded ? [expanded] : [],
+          onExpand: (id) => setExpanded(expanded === id ? null : id),
+          expandedRowRender: (role) => React.createElement(RolePrivilegePanel, { role, apps, lang, togglePriv, toggleSysPerm, scopeUsers }),
+        }}
+        emptyIcon={React.createElement(SafetyCertificateOutlined)} emptyText={{en:'No roles defined',nl:'Geen rollen gedefinieerd'}}/>
+      <Drawer title={{en:'Create Role',nl:'Rol Aanmaken'}[lang]} open={addOpen} onClose={()=>setAddOpen(false)} width={360}
+        extra={React.createElement(Button,{type:'primary',size:'small',onClick:handleCreate,disabled:!newName.trim()},{en:'Create',nl:'Aanmaken'}[lang])}>
+        <div style={{display:'grid',gap:14}}>
+          <div><div style={{fontSize:11,fontWeight:500,color:'var(--text-primary)',marginBottom:4}}>{lang==='nl'?'Rolnaam':'Role Name'}</div>
+            <Input size="small" value={newName} onChange={e=>setNewName(e.target.value)} placeholder={lang==='nl'?'bijv. Energy Manager':'e.g. Energy Manager'}/></div>
+          <div><div style={{fontSize:11,fontWeight:500,color:'var(--text-primary)',marginBottom:4}}>{lang==='nl'?'Bereikniveau':'Scope Level'}</div>
+            <Select size="small" style={{width:'100%'}} value={newLevel} onChange={setNewLevel}
+              options={['Platform','Account','Sub-account','Site'].map(l=>({value:l,label:l}))}/></div>
+        </div>
+      </Drawer>
+    </div>
+  );
+}
+
+// ─── RolePrivilegePanel (extracted subcomponent for expandable role row) ───
+function RolePrivilegePanel({ role, apps, lang, togglePriv, toggleSysPerm, scopeUsers }) {
+  const roleCounts = {};
+  scopeUsers.forEach(su => { roleCounts[su.role] = (roleCounts[su.role] || 0) + 1; });
+  return (
+    <div>
+      {apps.map(app => {
+        const appPrivs = PrivilegeStore.getByApp(app.id);
+        if (appPrivs.length === 0) return null;
+        const resources = [...new Set(appPrivs.map(p => p.resource))];
+        return React.createElement('div',{key:app.id,style:{marginTop:8}},
+          React.createElement('div',{style:{fontSize:10,fontWeight:600,color:'var(--text-secondary)',textTransform:'uppercase',letterSpacing:'0.05em',marginBottom:4}},
+            typeof app.label === 'object' ? (app.label[lang]||app.label.en) : app.label),
+          React.createElement('div',{style:{display:'grid',gap:3}},
+            resources.map(res => {
+              const resPrivs = appPrivs.filter(p => p.resource === res);
+              return React.createElement('div',{key:res,style:{display:'flex',alignItems:'center',gap:6,padding:'2px 0'}},
+                React.createElement('span',{style:{fontSize:10,color:'var(--text-primary)',minWidth:80,textTransform:'capitalize',fontWeight:500}},res.replace(/-/g,' ')),
+                React.createElement('div',{style:{display:'flex',gap:3,flexWrap:'wrap'}},
+                  resPrivs.map(p => React.createElement(ActionBadge,{key:p.id,action:p.action,active:role.privileges.includes(p.id),onClick:()=>togglePriv(role,p.id)}))
+                )
+              );
+            })
+          )
+        );
+      })}
+      {/* System permissions */}
+      <div style={{marginTop:10,paddingTop:8,borderTop:'1px solid var(--border)'}}>
+        <div style={{fontSize:10,fontWeight:600,color:'var(--text-secondary)',textTransform:'uppercase',letterSpacing:'0.05em',marginBottom:4}}>
+          {lang==='nl'?'Systeemrechten':'System Permissions'}
+        </div>
+        {SysPermStore.getCategories().map(cat => {
+          const catPerms = SysPermStore.getByCategory(cat);
+          return React.createElement('div',{key:cat,style:{marginBottom:4}},
+            React.createElement('div',{style:{fontSize:9,color:'var(--text-tertiary)',fontWeight:500,marginBottom:2}},cat),
+            React.createElement('div',{style:{display:'flex',gap:3,flexWrap:'wrap'}},
+              catPerms.map(sp => {
+                const active = (role.systemPerms||[]).includes(sp.id);
+                return React.createElement(Tooltip,{key:sp.id,title:sp.description,placement:'top',mouseEnterDelay:0.3},
+                  React.createElement('span',{onClick:()=>toggleSysPerm(role,sp.id),style:{
+                    display:'inline-flex',alignItems:'center',gap:3,padding:'2px 7px',borderRadius:10,cursor:'pointer',
+                    background:active?'var(--brand-bg)':'transparent',color:active?'var(--brand)':'var(--text-tertiary)',
+                    fontSize:10,fontWeight:active?500:400,border:`1px solid ${active?'var(--brand)':'var(--border)'}`,
+                    opacity:active?1:0.5,transition:'all 0.12s'}},
+                    React.createElement(active?CheckCircleFilled:CloseCircleFilled,{style:{fontSize:8}}),
+                    sp.label)
+                );
+              })
+            )
+          );
+        })}
+      </div>
+      {/* Assigned users */}
+      {(roleCounts[role.name]||0) > 0 && (
+        <div style={{marginTop:6,paddingTop:6,borderTop:'1px solid var(--border)',display:'flex',gap:4,flexWrap:'wrap',alignItems:'center'}}>
+          <span style={{fontSize:9,color:'var(--text-tertiary)'}}>
+            {lang==='nl'?'Toegewezen:':'Assigned:'}
+          </span>
+          {scopeUsers.filter(su=>su.role===role.name).map(su => {
             const user = UserStore.getUser(su.userId);
+            return React.createElement(Tag,{key:su.userId,style:{margin:0,fontSize:9}},user?.name||su.userId);
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Tab: Privileges (CRUD — app-scoped privilege definitions) ───
+function PrivilegesTab({ entityId, t, lang }) {
+  const [, setTick] = useState(0);
+  const rerender = () => setTick(t => t+1);
+  const entity = EntityStore.get(entityId);
+  const apps = NavigationStore.getVisibleApps();
+  const [expandedApp, setExpandedApp] = useState(null);
+  const [addingApp, setAddingApp] = useState(null);
+  const [newResource, setNewResource] = useState('');
+  const [newActions, setNewActions] = useState([]);
+
+  const handleCreate = (appId) => {
+    if (!newResource.trim() || newActions.length === 0) return;
+    const res = newResource.trim().toLowerCase().replace(/\s+/g,'-');
+    newActions.forEach(a => { PrivilegeStore.put({ id:`${appId}.${res}.${a}`, appId, resource:res, action:a }); });
+    setAddingApp(null); setNewResource(''); setNewActions([]); rerender();
+  };
+  const handleRemovePriv = (privId) => {
+    PrivilegeStore.remove(privId);
+    RoleStore.getAll().forEach(r => { const idx = r.privileges.indexOf(privId); if(idx >= 0) r.privileges.splice(idx,1); });
+    rerender();
+  };
+
+  // Build per-app resource data
+  const buildAppData = (appId) => {
+    const appPrivs = PrivilegeStore.getByApp(appId);
+    const resources = [...new Set(appPrivs.map(p => p.resource))];
+    return resources.map(res => ({
+      id: `${appId}.${res}`,
+      resource: res,
+      appId,
+      privs: appPrivs.filter(p => p.resource === res),
+      activeActions: appPrivs.filter(p => p.resource === res).map(p => p.action),
+    }));
+  };
+
+  const privCols = [
+    { key:'resource', label:{en:'Resource',nl:'Resource'}, sortable:true,
+      render:(_,r) => React.createElement('span',{style:{fontWeight:500,textTransform:'capitalize'}},r.resource.replace(/-/g,' ')) },
+    { key:'actions', label:{en:'Actions',nl:'Acties'}, searchable:false,
+      render:(_,r) => React.createElement('div',{style:{display:'flex',gap:3,flexWrap:'wrap'}},
+        ACTIONS.map(a => React.createElement(ActionBadge,{key:a,action:a,active:r.activeActions.includes(a),
+          onClick:() => {
+            const privId = `${r.appId}.${r.resource}.${a}`;
+            if (r.activeActions.includes(a)) { handleRemovePriv(privId); }
+            else { PrivilegeStore.put({id:privId,appId:r.appId,resource:r.resource,action:a}); rerender(); }
+          }}))
+      ) },
+  ];
+
+  const sysPermCols = [
+    { key:'label', label:{en:'Permission',nl:'Recht'}, sortable:true },
+    { key:'id', label:{en:'Key',nl:'Sleutel'},
+      render:(_,r) => React.createElement('span',{style:{fontSize:9,fontFamily:'monospace',color:'var(--text-tertiary)',background:'var(--bg-card-hover)',padding:'1px 6px',borderRadius:4}},r.id) },
+    { key:'description', label:{en:'Description',nl:'Beschrijving'}, hidden:true },
+  ];
+
+  return (
+    <div className="config-tab-content">
+      <div style={{fontSize:13,fontWeight:600,color:'var(--text-primary)',marginBottom:4}}>{lang==='nl'?'Rechten per App':'Privileges by App'}</div>
+      <div style={{fontSize:11,color:'var(--text-tertiary)',marginBottom:12}}>{lang==='nl'?'Definieer welke acties beschikbaar zijn per resource in elke applicatie':'Define what actions are available per resource in each application'}</div>
+
+      <div style={{display:'grid',gap:6}}>
+        {apps.map(app => {
+          const data = buildAppData(app.id);
+          if (data.length === 0 && expandedApp !== app.id) return null;
+          const isOpen = expandedApp === app.id;
+          const appLabel = typeof app.label === 'object' ? (app.label[lang]||app.label.en) : app.label;
+          return (
+            <div key={app.id} style={{background:'var(--bg-secondary)',borderRadius:8,border:'1px solid var(--border)',overflow:'hidden'}}>
+              <div style={{display:'flex',alignItems:'center',gap:8,padding:'8px 12px',cursor:'pointer'}}
+                onClick={() => setExpandedApp(isOpen ? null : app.id)}>
+                <span style={{fontSize:12,fontWeight:600,color:'var(--text-primary)'}}>{appLabel}</span>
+                <span style={{fontSize:10,color:'var(--text-tertiary)',flex:1}}>{data.length} {lang==='nl'?'resources':'resources'}</span>
+                <RightOutlined style={{fontSize:8,color:'var(--text-tertiary)',transform:isOpen?'rotate(90deg)':'none',transition:'transform 0.15s'}}/>
+              </div>
+              {isOpen && (
+                <div style={{padding:'0 4px 4px',borderTop:'1px solid var(--border)'}}>
+                  <EntityList columns={privCols} dataSource={data} lang={lang} searchable={false}
+                    rowActions={[{key:'delete',icon:React.createElement(DeleteOutlined,{style:{fontSize:10}}),danger:true,
+                      onClick:row => row.privs.forEach(p => handleRemovePriv(p.id))}]}
+                    inlineAdd={{
+                      label:{en:'Add resource',nl:'Resource toevoegen'},
+                      fields:[{key:'resource',placeholder:{en:'Resource name...',nl:'Resourcenaam...'},autoFocus:true}],
+                      onSave:(vals) => {
+                        if (!vals.resource?.trim()) return;
+                        const res = vals.resource.trim().toLowerCase().replace(/\s+/g,'-');
+                        ['view'].forEach(a => PrivilegeStore.put({id:`${app.id}.${res}.${a}`,appId:app.id,resource:res,action:a}));
+                        rerender();
+                      }
+                    }}/>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* System Permissions */}
+      <div style={{marginTop:20}}>
+        <div style={{fontSize:13,fontWeight:600,color:'var(--text-primary)',marginBottom:4}}>{lang==='nl'?'Systeemrechten':'System Permissions'}</div>
+        <div style={{fontSize:11,color:'var(--text-tertiary)',marginBottom:10}}>{lang==='nl'?'Platform-niveau rechten voor API-gebruikers en serviceaccounts':'Platform-level permissions for API users and service accounts'}</div>
+        <div style={{display:'grid',gap:6}}>
+          {SysPermStore.getCategories().map(cat => {
+            const catPerms = SysPermStore.getByCategory(cat);
+            const isOpen = expandedApp === `sys-${cat}`;
             return (
-              <tr key={i}>
-                <td style={{fontWeight:500}}>{user?.name || su.userId}</td>
-                <td><Tag color="blue">{su.role}</Tag></td>
-                <td style={{fontSize:11,color:'var(--text-secondary)'}}>{su.permissions.slice(0,3).join(', ')}{su.permissions.length > 3 ? ` +${su.permissions.length-3}` : ''}</td>
-              </tr>
+              <div key={cat} style={{background:'var(--bg-secondary)',borderRadius:8,border:'1px solid var(--border)',overflow:'hidden'}}>
+                <div style={{display:'flex',alignItems:'center',gap:8,padding:'8px 12px',cursor:'pointer'}}
+                  onClick={() => setExpandedApp(isOpen ? null : `sys-${cat}`)}>
+                  <LockOutlined style={{fontSize:11,color:'var(--text-tertiary)'}}/>
+                  <span style={{fontSize:12,fontWeight:600,color:'var(--text-primary)'}}>{cat}</span>
+                  <span style={{fontSize:10,color:'var(--text-tertiary)',flex:1}}>{catPerms.length} {lang==='nl'?'rechten':'permissions'}</span>
+                  <RightOutlined style={{fontSize:8,color:'var(--text-tertiary)',transform:isOpen?'rotate(90deg)':'none',transition:'transform 0.15s'}}/>
+                </div>
+                {isOpen && (
+                  <div style={{padding:'0 4px 4px',borderTop:'1px solid var(--border)'}}>
+                    <EntityList columns={sysPermCols} dataSource={catPerms} lang={lang} searchable={false} columnPicker
+                      rowActions={[{key:'delete',icon:React.createElement(DeleteOutlined,{style:{fontSize:10}}),danger:true,
+                        onClick:row => { SysPermStore.remove(row.id); RoleStore.getAll().forEach(r=>{const i=r.systemPerms.indexOf(row.id);if(i>=0)r.systemPerms.splice(i,1);}); rerender(); }}]}
+                      inlineAdd={{
+                        label:{en:'Add permission',nl:'Recht toevoegen'},
+                        fields:[{key:'label',placeholder:{en:'Permission label...',nl:'Rechtnaam...'},autoFocus:true}],
+                        onSave:(vals) => {
+                          if (!vals.label?.trim()) return;
+                          const id = `sys.${cat.toLowerCase().replace(/\s+/g,'-')}.${vals.label.trim().toLowerCase().replace(/\s+/g,'-')}`;
+                          SysPermStore.add({id,category:cat,label:vals.label.trim(),description:''});
+                          rerender();
+                        }
+                      }}/>
+                  </div>
+                )}
+              </div>
             );
           })}
-          {scopeUsers.length === 0 && <tr><td colSpan={3} style={{textAlign:'center',color:'var(--text-tertiary)',padding:16}}>No users assigned at this scope</td></tr>}
-        </tbody>
-      </table>
-      <div style={{fontSize:13,fontWeight:600,color:'var(--text-primary)',marginTop:24,marginBottom:12}}>Role Definitions</div>
-      <table className="data-table" style={{fontSize:11}}>
-        <thead><tr><th>Role</th><th>Level</th><th>Sites</th><th>Devices</th><th>Users</th><th>Flows</th><th>Config</th></tr></thead>
-        <tbody>
-          {ROLE_DEFINITIONS.map(r => (
-            <tr key={r.name}>
-              <td style={{fontWeight:500}}>{r.name}</td><td>{r.level}</td>
-              <td>{r.permissions.sites}</td><td>{r.permissions.devices}</td><td>{r.permissions.users}</td>
-              <td>{r.permissions.flows}</td><td>{r.permissions.config}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+          {/* Add new category */}
+          {addingApp === 'sys-new-cat' ? (
+            <div style={{display:'flex',alignItems:'center',gap:6,padding:'8px 12px',background:'var(--bg-secondary)',borderRadius:8,border:'1px solid var(--border)',animation:'tabFadeIn 0.15s ease'}}>
+              <LockOutlined style={{fontSize:11,color:'var(--text-tertiary)'}}/>
+              <Input size="small" value={newResource} onChange={e => setNewResource(e.target.value)}
+                placeholder={lang==='nl'?'Categorienaam...':'Category name...'} style={{flex:1,fontSize:11}} autoFocus
+                onPressEnter={() => {
+                  if (!newResource.trim()) return;
+                  const cat = newResource.trim();
+                  SysPermStore.add({id:`sys.${cat.toLowerCase().replace(/\s+/g,'-')}.default`,category:cat,label:`${cat} Access`,description:`Default permission for ${cat}`});
+                  setAddingApp(null); setNewResource(''); rerender();
+                }}/>
+              <CheckOutlined style={{fontSize:11,color:'var(--success)',cursor:'pointer'}} onClick={() => {
+                if (!newResource.trim()) return;
+                const cat = newResource.trim();
+                SysPermStore.add({id:`sys.${cat.toLowerCase().replace(/\s+/g,'-')}.default`,category:cat,label:`${cat} Access`,description:`Default permission for ${cat}`});
+                setAddingApp(null); setNewResource(''); rerender();
+              }}/>
+              <CloseOutlined style={{fontSize:11,color:'var(--text-tertiary)',cursor:'pointer'}} onClick={()=>{setAddingApp(null);setNewResource('');}}/>
+            </div>
+          ) : (
+            <div style={{padding:'8px 12px',cursor:'pointer',display:'flex',alignItems:'center',gap:4,color:'var(--text-tertiary)',
+              fontSize:11,borderRadius:8,border:'1px dashed var(--border)',transition:'all 0.12s'}}
+              onMouseEnter={e=>e.currentTarget.style.borderColor='var(--brand)'}
+              onMouseLeave={e=>e.currentTarget.style.borderColor='var(--border)'}
+              onClick={()=>{setAddingApp('sys-new-cat');setNewResource('');}}>
+              <PlusOutlined style={{fontSize:10}}/> {lang==='nl'?'Categorie toevoegen':'Add category'}
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
@@ -5548,67 +6495,61 @@ function UsersRolesTab({ entityId, t, lang }) {
 // ─── Tab Content: Events ───
 function EventsTab({ entity, lang }) {
   const events = useMemo(() => generateMockEvents(entity, lang), [entity.id, lang]);
+  const eventCols = [
+    { key:'label', label:{en:'Event',nl:'Gebeurtenis'}, sortable:true, render:(_,r) => React.createElement('span',{style:{fontWeight:500}},r.label) },
+    { key:'severity', label:{en:'Severity',nl:'Ernst'}, filterable:true,
+      filterOptions:[{value:'critical',label:'Critical'},{value:'warning',label:'Warning'},{value:'info',label:'Info'}],
+      render:(_,r) => React.createElement('span',{className:`status-dot ${r.severity==='critical'?'error':r.severity==='warning'?'warning':'info'}`},r.severity) },
+    { key:'timeAgo', label:{en:'Time',nl:'Tijd'}, sortable:true,
+      render:(_,r) => React.createElement('span',{style:{color:'var(--text-tertiary)',fontSize:11}},r.timeAgo) },
+  ];
   return (
     <div className="config-tab-content">
-      <div style={{fontSize:13,fontWeight:600,color:'var(--text-primary)',marginBottom:12}}>Event Log</div>
-      <table className="data-table" style={{fontSize:12}}>
-        <thead><tr><th>Event</th><th>Severity</th><th>Time</th></tr></thead>
-        <tbody>
-          {events.map(ev => (
-            <tr key={ev.id}>
-              <td style={{fontWeight:500}}>{ev.label}</td>
-              <td><span className={`status-dot ${ev.severity==='critical'?'error':ev.severity==='warning'?'warning':'info'}`}>{ev.severity}</span></td>
-              <td style={{color:'var(--text-tertiary)',fontSize:11}}>{ev.timeAgo}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <EntityList columns={eventCols} dataSource={events} lang={lang}
+        title={{en:'Events',nl:'Gebeurtenissen'}} lazyLoad={events.length>30} pageSize={30}
+        emptyIcon={React.createElement(HistoryOutlined)} emptyText={{en:'No events',nl:'Geen gebeurtenissen'}}/>
     </div>
   );
 }
 
 // ─── Tab Content: Alarms ───
-function AlarmsTab({ entity }) {
+function AlarmsTab({ entity, lang }) {
   const alarms = EntityStore.getAggregatedAlarms(entity.id);
+  const alarmCols = [
+    { key:'sev', label:{en:'Severity',nl:'Ernst'}, filterable:true,
+      filterOptions:[{value:'critical',label:'Critical'},{value:'warning',label:'Warning'},{value:'info',label:'Info'}],
+      render:(_,r) => React.createElement('span',{className:`status-dot ${r.sev==='critical'?'error':r.sev==='warning'?'warning':'info'}`},r.sev) },
+    { key:'msg', label:{en:'Message',nl:'Bericht'}, sortable:true },
+    { key:'entityName', label:{en:'Entity',nl:'Entiteit'}, filterable:true, sortable:true,
+      render:(_,r) => React.createElement('span',{style:{color:'var(--text-secondary)',fontSize:11}},r.entityName) },
+    { key:'time', label:{en:'Time',nl:'Tijd'}, sortable:true,
+      render:(_,r) => React.createElement('span',{style:{color:'var(--text-tertiary)',fontSize:11}},r.time) },
+  ];
   return (
     <div className="config-tab-content">
-      <div style={{fontSize:13,fontWeight:600,color:'var(--text-primary)',marginBottom:12}}>Alarms ({alarms.length})</div>
-      {alarms.length === 0 ? <div style={{color:'var(--text-tertiary)',fontSize:12,padding:16,textAlign:'center'}}>No active alarms</div> :
-      <table className="data-table" style={{fontSize:12}}>
-        <thead><tr><th>Severity</th><th>Message</th><th>Entity</th><th>Time</th></tr></thead>
-        <tbody>
-          {alarms.map((a, i) => (
-            <tr key={i}>
-              <td><span className={`status-dot ${a.sev==='critical'?'error':a.sev==='warning'?'warning':'info'}`}>{a.sev}</span></td>
-              <td>{a.msg}</td>
-              <td style={{color:'var(--text-secondary)',fontSize:11}}>{a.entityName}</td>
-              <td style={{color:'var(--text-tertiary)',fontSize:11}}>{a.time}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>}
+      <EntityList columns={alarmCols} dataSource={alarms} lang={lang} rowKey={r => r.id || `${r.msg}-${r.entityId}-${r.time}`}
+        title={{en:`Alarms (${alarms.length})`,nl:`Alarmen (${alarms.length})`}}
+        emptyIcon={React.createElement(AlertOutlined)} emptyText={{en:'No active alarms',nl:'Geen actieve alarmen'}}/>
     </div>
   );
 }
 
 // ─── Tab Content: Audit Log ───
-function AuditLogTab({ entity }) {
-  const log = useMemo(() => generateAuditLog(entity), [entity.id]);
+function AuditLogTab({ entity, lang }) {
+  const logs = useMemo(() => generateAuditLog(entity), [entity.id]);
+  const auditCols = [
+    { key:'action', label:{en:'Action',nl:'Actie'}, sortable:true, filterable:true,
+      render:(_,r) => React.createElement('span',{style:{fontWeight:500}},r.action) },
+    { key:'user', label:{en:'User',nl:'Gebruiker'}, filterable:true,
+      render:(_,r) => React.createElement('span',{style:{color:'var(--text-secondary)'}},r.user) },
+    { key:'timeAgo', label:{en:'Time',nl:'Tijd'}, sortable:true,
+      render:(_,r) => React.createElement('span',{style:{color:'var(--text-tertiary)',fontSize:11}},r.timeAgo) },
+  ];
   return (
     <div className="config-tab-content">
-      <div style={{fontSize:13,fontWeight:600,color:'var(--text-primary)',marginBottom:12}}>Audit Log</div>
-      <table className="data-table" style={{fontSize:12}}>
-        <thead><tr><th>Action</th><th>User</th><th>Time</th></tr></thead>
-        <tbody>
-          {log.map(entry => (
-            <tr key={entry.id}>
-              <td style={{fontWeight:500}}>{entry.action}</td>
-              <td style={{color:'var(--text-secondary)'}}>{entry.user}</td>
-              <td style={{color:'var(--text-tertiary)',fontSize:11}}>{entry.timeAgo}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <EntityList columns={auditCols} dataSource={logs} lang={lang} lazyLoad={logs.length>30} pageSize={30}
+        title={{en:'Audit Log',nl:'Auditlog'}}
+        emptyIcon={React.createElement(AuditOutlined)} emptyText={{en:'No audit entries',nl:'Geen audit entries'}}/>
     </div>
   );
 }
@@ -6066,26 +7007,23 @@ function LimitsTab({ entity }) {
 
 // ─── Tab Content: All Devices (flat list for Site) ───
 function AllDevicesTab({ entity, t, lang, onNavigate }) {
-  const allDevices = EntityStore.getDescendants(entity.id).filter(e => e.entityType === 'device');
+  const devices = useMemo(() => EntityStore.getDescendants(entity.id, ['device']), [entity.id]);
+  const deviceCols = [
+    { key:'name', label:{en:'Device',nl:'Apparaat'}, sortable:true, render:(_,r) => React.createElement('span',{style:{fontWeight:500}},r.name) },
+    { key:'type', label:{en:'Type',nl:'Type'}, filterable:true, getValue:r => r.properties?.type },
+    { key:'manufacturer', label:{en:'Manufacturer',nl:'Fabrikant'}, filterable:true, getValue:r => r.properties?.manufacturer },
+    { key:'group', label:{en:'Group',nl:'Groep'}, filterable:true, getValue:r => EntityStore.get(r.parentId)?.name || '\u2014',
+      render:(_,r) => React.createElement('span',{style:{color:'var(--text-secondary)',fontSize:11}},EntityStore.get(r.parentId)?.name||'\u2014') },
+    { key:'power', label:{en:'Power',nl:'Vermogen'}, sortable:true, getValue:r => r.state?.power },
+    { key:'status', label:{en:'Status',nl:'Status'}, filterable:true, getValue:r => r.state?.status,
+      render:(_,r) => { const s=r.state?.status; return s ? React.createElement('span',{className:`status-dot ${s==='online'||s==='active'?'online':s==='fault'?'error':s==='warning'?'warning':'info'}`},s) : '\u2014'; } },
+  ];
   return (
     <div className="config-tab-content">
-      <div style={{fontSize:13,fontWeight:600,color:'var(--text-primary)',marginBottom:12}}>All Devices ({allDevices.length})</div>
-      <table className="data-table" style={{fontSize:12}}>
-        <thead><tr><th>Name</th><th>Type</th><th>{t.manufacturer}</th><th>Group</th><th>Power</th><th>Status</th></tr></thead>
-        <tbody>{allDevices.map(dev => {
-          const parent = EntityStore.get(dev.parentId);
-          return (
-            <tr key={dev.id} style={{cursor:'pointer'}} onClick={() => onNavigate && onNavigate(dev.id)}>
-              <td style={{fontWeight:500}}>{dev.name}</td>
-              <td>{dev.properties?.type||'—'}</td>
-              <td>{dev.properties?.manufacturer||'—'}</td>
-              <td style={{color:'var(--text-secondary)',fontSize:11}}>{parent?.name||'—'}</td>
-              <td>{dev.state?.power||'—'}</td>
-              <td><span className={`status-dot ${dev.state?.status==='online'||dev.state?.status==='active'?'online':dev.state?.status==='fault'?'error':dev.state?.status==='warning'?'warning':'info'}`}>{dev.state?.status||'—'}</span></td>
-            </tr>
-          );
-        })}</tbody>
-      </table>
+      <EntityList columns={deviceCols} dataSource={devices} lang={lang} columnPicker
+        title={{en:'All Devices',nl:'Alle Apparaten'}} lazyLoad={devices.length>30} pageSize={30}
+        onRowClick={row => onNavigate?.(row.id)}
+        emptyIcon={React.createElement(HddOutlined)} emptyText={{en:'No devices',nl:'Geen apparaten'}}/>
     </div>
   );
 }
@@ -6130,6 +7068,7 @@ function CreateEntityDrawer({ open, onClose, parentId, childType, t }) {
 
 // ─── Configuration Page (Unified) ───
 function ConfigurationPage({ t, lang, navigateWithLoader, focusedEntityId, setFocusedEntityId }) {
+  const loader = useLazyLoader();
   const [selectedEntityId, setSelectedEntityId] = useState('orbiteos');
   const [expandedNodes, setExpandedNodes] = useState(() => {
     const set = new Set(['orbiteos']);
@@ -6146,11 +7085,12 @@ function ConfigurationPage({ t, lang, navigateWithLoader, focusedEntityId, setFo
   const selectedEntity = EntityStore.get(selectedEntityId);
   const tabs = selectedEntity ? TabRegistry.getTabsForEntity(selectedEntity) : [];
 
+  const platform = EntityStore.get('orbiteos');
+
   const handleSelect = (entityId) => {
     setSelectedEntityId(entityId);
     setActiveTab('overview');
     setEditMode(false);
-    // Auto-expand ancestors
     const path = EntityStore.getPath(entityId);
     setExpandedNodes(prev => {
       const next = new Set(prev);
@@ -6201,10 +7141,12 @@ function ConfigurationPage({ t, lang, navigateWithLoader, focusedEntityId, setFo
     const key = tabDef.key;
     if (key === 'overview') return <OverviewTabContent entity={selectedEntity} t={t} lang={lang} editMode={editMode}/>;
     if (tabDef.type === 'children') return <EntityListTab parentId={selectedEntityId} childType={tabDef.childType} t={t} lang={lang} onNavigate={handleSelect} onAdd={handleAdd}/>;
-    if (key === 'usersRoles') return <UsersRolesTab entityId={selectedEntityId} t={t} lang={lang}/>;
+    if (key === 'users') return <UsersTab entityId={selectedEntityId} t={t} lang={lang}/>;
+    if (key === 'roles') return <RolesTab entityId={selectedEntityId} t={t} lang={lang}/>;
+    if (key === 'privileges') return <PrivilegesTab entityId={selectedEntityId} t={t} lang={lang}/>;
     if (key === 'events') return <EventsTab entity={selectedEntity} lang={lang}/>;
-    if (key === 'alarms') return <AlarmsTab entity={selectedEntity}/>;
-    if (key === 'auditLog') return <AuditLogTab entity={selectedEntity}/>;
+    if (key === 'alarms') return <AlarmsTab entity={selectedEntity} lang={lang}/>;
+    if (key === 'auditLog') return <AuditLogTab entity={selectedEntity} lang={lang}/>;
     if (key === 'tags') return <TagsTab entity={selectedEntity}/>;
     if (key === 'globalSettings') return <GlobalSettingsTab entity={selectedEntity} t={t}/>;
     if (key === 'connection') return <ConnectionTab entity={selectedEntity}/>;
@@ -6229,8 +7171,6 @@ function ConfigurationPage({ t, lang, navigateWithLoader, focusedEntityId, setFo
     return <div className="config-tab-content" style={{color:'var(--text-tertiary)',fontSize:12,padding:20,textAlign:'center'}}>{tabDef.label[lang]}</div>;
   };
 
-  const platform = EntityStore.get('orbiteos');
-
   return (
     <div className="page-enter">
       <div className="config-page">
@@ -6241,9 +7181,9 @@ function ConfigurationPage({ t, lang, navigateWithLoader, focusedEntityId, setFo
               placeholder={t.filterTree} value={treeFilter} onChange={e => setTreeFilter(e.target.value)}
               allowClear style={{borderRadius:6}}/>
           </div>
-          <div className="config-tree-scroll config-nav-list" style={{padding:'4px 0'}}>
+          <div className="config-tree-scroll" style={{padding:'4px 0'}}>
             {platform && <ConfigNavList entity={platform} selectedId={selectedEntityId} onSelect={handleSelect}
-              expandedNodes={expandedNodes} onToggle={handleToggle} filter={treeFilter}/>}
+              expandedNodes={expandedNodes} onToggle={handleToggle} filter={treeFilter} loader={loader}/>}
           </div>
         </div>
 
@@ -6519,7 +7459,7 @@ function OrbitLoaderOverlay({ onDone }) {
 
   return (
     <div style={{
-      position:'absolute', inset:0, zIndex:10,
+      position:'fixed', inset:0, zIndex:300,
       pointerEvents: blockInput ? 'auto' : 'none',
     }}>
       <OrbitLoader stopping={stopping} onDone={handleDone}
@@ -6783,7 +7723,7 @@ function LoginPage({t, setPage, setCurrentApp, lang, setLang, themeId, setThemeI
     }
     draw();
     return () => { cancelAnimationFrame(raf); document.removeEventListener('visibilitychange', onLoginVis); };
-  }, []);
+  }, [themeId]);
 
   // On success, LoginPage calls setPage('loading') — the App component handles the shell + overlay
 
@@ -7415,10 +8355,7 @@ function App() {
 
   const navigateWithLoader = useCallback((targetPage) => {
     if (targetPage === pageRef.current) return;
-    LoaderStore.start({ mode: 'solid' });
     setPage(targetPage);
-    // 1 full pulse cycle (2s) then exit fade (1.5s) = 3.5s total
-    setTimeout(() => LoaderStore.stop(), 2000);
   }, []);
 
   const onLoadingDone = useCallback(() => { /* overlay dissolved */ }, []);
