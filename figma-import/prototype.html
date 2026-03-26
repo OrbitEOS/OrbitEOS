@@ -10,7 +10,14 @@
   <style>
     :root { --sidebar-w: 240px; --sidebar-rail-w: 56px; --header-h: 56px; }
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: 'Inter', -apple-system, sans-serif; overflow: hidden; height: 100vh; }
+    body { font-family: 'Inter', -apple-system, sans-serif; overflow: hidden; height: 100vh;
+      transition: background-color 0.4s ease, color 0.4s ease; }
+    .app-layout, .sidebar, .main-area, .content, .login-layout, .login-card,
+    .config-tree-panel, .config-detail-panel, .config-detail-header, .config-breadcrumb,
+    .stat-card, .flow-hub, .el-table, .el-table th, .el-table td,
+    .metric-card, .prop-card, .ov-hero-status, .ov-map, .ov-activity,
+    .eem-modal, .eem-tabs, .eem-tab, .eem-content, .eem-header, .eem-footer,
+    .header-btn, .crud-btn { transition: background-color 0.3s ease, border-color 0.3s ease, color 0.2s ease, box-shadow 0.3s ease; }
 
     /* Dark Theme (default) */
     [data-theme="dark"] {
@@ -134,7 +141,7 @@
     .header-btn { padding: 6px 12px; border-radius: 6px; border: 1px solid var(--border); background: var(--bg-card);
       font-size: 12px; color: var(--text-secondary); cursor: pointer; transition: all 0.15s ease; }
     .header-btn:hover { border-color: var(--brand); color: var(--brand); }
-    .header-btn.primary { background: var(--brand); color: #fff; border-color: var(--brand); }
+    .header-btn.primary { background: var(--brand); color: var(--bg-primary); border-color: var(--brand); }
     .header-btn.primary:hover { background: var(--brand-hover); }
     .alarm-bell { position: relative; cursor: pointer; padding: 6px; border-radius: 6px; transition: all 0.15s; }
     .alarm-bell:hover { background: var(--bg-card-hover); }
@@ -150,21 +157,21 @@
     .login-error { display: flex; align-items: flex-start; gap: 8px; padding: 10px 12px; border-radius: 8px;
       background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.2); margin-bottom: 12px;
       animation: error-slide-in 0.3s ease; }
-    .login-error-icon { color: #ef4444; flex-shrink: 0; margin-top: 1px; font-size: 14px; }
+    .login-error-icon { color: var(--error); flex-shrink: 0; margin-top: 1px; font-size: 14px; }
     .login-error-text { font-size: 12px; color: #fca5a5; line-height: 1.4; }
     [data-theme="light"] .login-error { background: rgba(239,68,68,0.06); }
     [data-theme="light"] .login-error-text { color: #dc2626; }
     .login-field-error { border-color: rgba(239,68,68,0.5) !important; }
-    .login-field-error:focus, .login-field-error .ant-input:focus { border-color: #ef4444 !important; box-shadow: 0 0 0 2px rgba(239,68,68,0.15) !important; }
+    .login-field-error:focus, .login-field-error .ant-input:focus { border-color: var(--error) !important; box-shadow: 0 0 0 2px var(--error-bg) !important; }
     .login-field-hint { font-size: 11px; color: #f87171; margin-top: 4px; opacity: 0; max-height: 0; overflow: hidden; transition: all 0.2s ease; }
     .login-field-hint.visible { opacity: 1; max-height: 24px; }
-    .login-attempts-warn { font-size: 11px; color: #f59e0b; margin-top: 4px; }
+    .login-attempts-warn { font-size: 11px; color: var(--warning); margin-top: 4px; }
     @keyframes error-slide-in { 0% { opacity: 0; transform: translateY(-6px); } 100% { opacity: 1; transform: translateY(0); } }
     .login-shake { animation: form-shake 0.4s ease; }
     @keyframes form-shake { 0%,100%{transform:translateX(0)} 15%{transform:translateX(-8px)} 30%{transform:translateX(8px)} 45%{transform:translateX(-6px)} 60%{transform:translateX(6px)} 75%{transform:translateX(-3px)} 90%{transform:translateX(3px)} }
 
     /* ---- SUD Login Success Sequence ---- */
-    .login-btn-success { background: #22c55e !important; box-shadow: 0 0 20px rgba(34,197,94,0.4) !important;
+    .login-btn-success { background: var(--success) !important; box-shadow: 0 0 20px var(--success-bg) !important;
       pointer-events: none; transform: scale(1.02); }
     .login-card-exit { animation: card-exit 0.5s ease forwards; }
     @keyframes card-exit {
@@ -420,14 +427,13 @@
 
     /* Login — Keycloak-style centered card */
     .login-layout { position: relative; height: 100vh; width: 100%;
-      background: linear-gradient(135deg, #020617 0%, #0f172a 50%, #134e4a 100%);
+      background: var(--bg-primary);
       display: flex; align-items: center; justify-content: center; overflow: hidden; }
     .login-card { position: relative; z-index: 1; width: 380px; max-width: calc(100% - 48px);
-      background: rgba(15,23,42,0.85); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
-      border: 1px solid rgba(255,255,255,0.08); border-radius: 16px;
-      padding: 36px 32px; box-shadow: 0 24px 80px rgba(0,0,0,0.5); }
-    [data-theme="light"] .login-card { background: rgba(255,255,255,0.92); border-color: rgba(0,0,0,0.08);
-      box-shadow: 0 24px 80px rgba(0,0,0,0.12); }
+      backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
+      border-radius: 16px; padding: 32px; }
+    [data-theme="dark"] .login-card { box-shadow: 0 24px 80px rgba(0,0,0,0.5); }
+    [data-theme="light"] .login-card { box-shadow: 0 8px 40px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.06); }
     .login-particle { position: absolute; border-radius: 50%; background: var(--brand); opacity: 0.15; }
 
     /* Alarm dropdown */
@@ -443,7 +449,7 @@
       display: flex; justify-content: space-between; align-items: center; }
 
     /* Toast */
-    .toast-container { position: fixed; top: 16px; right: 16px; z-index: 1000; display: flex; flex-direction: column; gap: 8px; }
+    .toast-container { position: fixed; top: calc(var(--header-h) + 8px); right: 16px; z-index: 1000; display: flex; flex-direction: column; gap: 8px; }
     .toast { padding: 12px 16px; border-radius: 8px; background: var(--bg-card); border: 1px solid var(--border);
       box-shadow: var(--shadow); display: flex; align-items: center; gap: 10px; min-width: 320px;
       animation: slideIn 0.3s ease; font-size: 13px; color: var(--text-primary); }
@@ -657,11 +663,16 @@
     .config-breadcrumb span { cursor:pointer; }
     .config-breadcrumb span:hover { color:var(--brand); }
     .config-breadcrumb .sep { color:var(--text-tertiary); cursor:default; }
-    .config-entity-header { display:flex; align-items:center; gap:12px; flex:1; }
     .config-entity-icon { width:28px; height:28px; border-radius:6px; background:var(--brand-bg); display:flex;
       align-items:center; justify-content:center; font-size:14px; color:var(--brand); }
     .config-entity-name { font-size:14px; font-weight:600; color:var(--text-primary); line-height:1.2; }
     .config-entity-type { font-size:10px; color:var(--brand); background:var(--brand-bg); padding:1px 8px; border-radius:8px; display:inline-block; }
+    .crud-btn { width:26px; height:26px; border-radius:6px; display:inline-flex; align-items:center; justify-content:center;
+      cursor:pointer; transition:all 0.15s; border:none; outline:none; }
+    .crud-btn-edit { background:var(--bg-secondary); color:var(--brand); border:1px solid var(--brand); }
+    .crud-btn-edit:hover { background:var(--brand-bg); }
+    .crud-btn-delete { background:transparent; color:var(--error); border:1px solid var(--error); opacity:0.6; }
+    .crud-btn-delete:hover { background:var(--error-bg); opacity:1; }
     .config-tag-pills { display:flex; gap:4px; flex-wrap:wrap; padding:0 20px 8px; }
     .config-tag { padding:1px 8px; border-radius:10px; font-size:10px; font-weight:500;
       background:var(--brand-bg); color:var(--brand); cursor:default; }
@@ -724,7 +735,7 @@ const { DashboardOutlined, ThunderboltOutlined, ClusterOutlined, ApiOutlined, Ap
   ExclamationCircleOutlined, SearchOutlined, PlusOutlined, EditOutlined, DeleteOutlined,
   TagOutlined, UserOutlined, AuditOutlined, FileSearchOutlined, ClockCircleOutlined,
   ThunderboltFilled, ExpandOutlined, CompressOutlined, CopyOutlined, ReloadOutlined,
-  SendOutlined, ScheduleOutlined, SafetyOutlined, RightOutlined, MenuOutlined, CloseOutlined } = icons;
+  SendOutlined, ScheduleOutlined, SafetyOutlined, RightOutlined, MenuOutlined, CloseOutlined, LeftOutlined } = icons;
 
 // Icon lookup for nav items
 const NAV_ICONS = {
@@ -1056,15 +1067,16 @@ const AccessStore = (() => {
 const ThemeStore = (() => {
   const _themes = [
     {
-      id: 'classic', name: 'OrbitEOS Classic', description: 'The original teal-on-slate theme. Familiar and trusted.',
+      id: 'classic', name: 'Classic', description: 'Teal on slate. Clean and familiar.',
       mode: 'dark', default: true,
       preview: '#2dd4bf',
+      loaderColor: '#2dd4bf',
       antTokens: { colorPrimary:'#2dd4bf', colorSuccess:'#22c55e', colorWarning:'#f59e0b', colorError:'#ef4444', colorInfo:'#3b82f6', borderRadius:6 },
       cssVars: {
         '--brand':'#2dd4bf','--brand-hover':'#14b8a6','--brand-bg':'rgba(45,212,191,0.1)',
         '--bg-primary':'#020617','--bg-secondary':'#0f172a','--bg-card':'#0f172a','--bg-card-hover':'#1e293b',
         '--bg-sidebar':'#020617','--bg-header':'#0f172a','--bg-input':'#1e293b',
-        '--text-primary':'#f1f5f9','--text-secondary':'#94a3b8','--text-tertiary':'#64748b',
+        '--text-primary':'#f1f5f9','--text-secondary':'#94a3b8','--text-tertiary':'#7586a0',
         '--border':'rgba(255,255,255,0.06)','--border-active':'rgba(255,255,255,0.12)',
         '--success':'#22c55e','--warning':'#f59e0b','--error':'#ef4444','--info':'#3b82f6','--purple':'#8b5cf6',
         '--success-bg':'rgba(34,197,94,0.1)','--warning-bg':'rgba(245,158,11,0.1)','--error-bg':'rgba(239,68,68,0.1)',
@@ -1075,12 +1087,13 @@ const ThemeStore = (() => {
       id: 'obsidian', name: 'Obsidian', description: 'Deep charcoal with warm amber. Premium industrial feel.',
       mode: 'dark',
       preview: '#d97706',
+      loaderColor: '#0284c7',
       antTokens: { colorPrimary:'#d97706', colorSuccess:'#65a30d', colorWarning:'#ea580c', colorError:'#dc2626', colorInfo:'#0284c7', borderRadius:6 },
       cssVars: {
         '--brand':'#d97706','--brand-hover':'#b45309','--brand-bg':'rgba(217,119,6,0.10)',
         '--bg-primary':'#0c0a09','--bg-secondary':'#1c1917','--bg-card':'#1c1917','--bg-card-hover':'#292524',
         '--bg-sidebar':'#0c0a09','--bg-header':'#1c1917','--bg-input':'#292524',
-        '--text-primary':'#fafaf9','--text-secondary':'#a8a29e','--text-tertiary':'#78716c',
+        '--text-primary':'#fafaf9','--text-secondary':'#b5b0ab','--text-tertiary':'#8a8480',
         '--border':'rgba(255,255,255,0.06)','--border-active':'rgba(255,255,255,0.12)',
         '--success':'#65a30d','--warning':'#ea580c','--error':'#dc2626','--info':'#0284c7','--purple':'#a855f7',
         '--success-bg':'rgba(101,163,13,0.10)','--warning-bg':'rgba(234,88,12,0.10)','--error-bg':'rgba(220,38,38,0.10)',
@@ -1091,12 +1104,13 @@ const ThemeStore = (() => {
       id: 'sandstone', name: 'Sandstone', description: 'Warm neutrals with terracotta. Clean architectural light theme.',
       mode: 'light',
       preview: '#c2410c',
+      loaderColor: '#0d9488',
       antTokens: { colorPrimary:'#c2410c', colorSuccess:'#15803d', colorWarning:'#b45309', colorError:'#b91c1c', colorInfo:'#1d4ed8', borderRadius:8 },
       cssVars: {
         '--brand':'#c2410c','--brand-hover':'#9a3412','--brand-bg':'rgba(194,65,12,0.08)',
         '--bg-primary':'#fafaf9','--bg-secondary':'#ffffff','--bg-card':'#ffffff','--bg-card-hover':'#f5f5f4',
         '--bg-sidebar':'#fafaf9','--bg-header':'#ffffff','--bg-input':'#f5f5f4',
-        '--text-primary':'#1c1917','--text-secondary':'#78716c','--text-tertiary':'#a8a29e',
+        '--text-primary':'#1c1917','--text-secondary':'#57534e','--text-tertiary':'#78716c',
         '--border':'#e7e5e4','--border-active':'#d6d3d1',
         '--success':'#15803d','--warning':'#b45309','--error':'#b91c1c','--info':'#1d4ed8','--purple':'#7c3aed',
         '--success-bg':'rgba(21,128,61,0.08)','--warning-bg':'rgba(180,83,9,0.08)','--error-bg':'rgba(185,28,28,0.08)',
@@ -1104,51 +1118,38 @@ const ThemeStore = (() => {
       },
     },
     {
-      id: 'nightfall', name: 'Nightfall', description: 'Deep indigo with soft violet. Elegant and sophisticated.',
-      mode: 'dark',
-      preview: '#8b5cf6',
-      antTokens: { colorPrimary:'#8b5cf6', colorSuccess:'#22c55e', colorWarning:'#f59e0b', colorError:'#ef4444', colorInfo:'#38bdf8', borderRadius:6 },
-      cssVars: {
-        '--brand':'#8b5cf6','--brand-hover':'#7c3aed','--brand-bg':'rgba(139,92,246,0.10)',
-        '--bg-primary':'#030014','--bg-secondary':'#0f0b2e','--bg-card':'#0f0b2e','--bg-card-hover':'#1a1445',
-        '--bg-sidebar':'#030014','--bg-header':'#0f0b2e','--bg-input':'#1a1445',
-        '--text-primary':'#f0eeff','--text-secondary':'#a5a0d4','--text-tertiary':'#6e68a0',
-        '--border':'rgba(139,92,246,0.10)','--border-active':'rgba(139,92,246,0.20)',
-        '--success':'#22c55e','--warning':'#f59e0b','--error':'#ef4444','--info':'#38bdf8','--purple':'#c084fc',
-        '--success-bg':'rgba(34,197,94,0.10)','--warning-bg':'rgba(245,158,11,0.10)','--error-bg':'rgba(239,68,68,0.10)',
-        '--shadow':'0 4px 16px rgba(3,0,20,0.6)',
-      },
-    },
-    {
-      id: 'evergreen', name: 'Evergreen', description: 'Deep forest with sage accents. Nature-inspired sustainability.',
-      mode: 'dark',
-      preview: '#84cc16',
-      antTokens: { colorPrimary:'#84cc16', colorSuccess:'#22c55e', colorWarning:'#eab308', colorError:'#ef4444', colorInfo:'#06b6d4', borderRadius:6 },
-      cssVars: {
-        '--brand':'#84cc16','--brand-hover':'#65a30d','--brand-bg':'rgba(132,204,22,0.10)',
-        '--bg-primary':'#052e16','--bg-secondary':'#0a3d22','--bg-card':'#0a3d22','--bg-card-hover':'#14532d',
-        '--bg-sidebar':'#052e16','--bg-header':'#0a3d22','--bg-input':'#14532d',
-        '--text-primary':'#f0fdf4','--text-secondary':'#86efac','--text-tertiary':'#4ade80',
-        '--border':'rgba(132,204,22,0.08)','--border-active':'rgba(132,204,22,0.16)',
-        '--success':'#22c55e','--warning':'#eab308','--error':'#ef4444','--info':'#06b6d4','--purple':'#a78bfa',
-        '--success-bg':'rgba(34,197,94,0.10)','--warning-bg':'rgba(234,179,8,0.10)','--error-bg':'rgba(239,68,68,0.10)',
-        '--shadow':'0 4px 12px rgba(5,46,22,0.5)',
-      },
-    },
-    {
       id: 'polar', name: 'Polar', description: 'High-contrast slate on white. Maximum readability and accessibility.',
       mode: 'light',
       preview: '#475569',
+      loaderColor: '#4f46e5',
       antTokens: { colorPrimary:'#334155', colorSuccess:'#16a34a', colorWarning:'#ca8a04', colorError:'#dc2626', colorInfo:'#2563eb', borderRadius:4 },
       cssVars: {
         '--brand':'#334155','--brand-hover':'#1e293b','--brand-bg':'rgba(51,65,85,0.08)',
         '--bg-primary':'#ffffff','--bg-secondary':'#f8fafc','--bg-card':'#ffffff','--bg-card-hover':'#f1f5f9',
         '--bg-sidebar':'#f8fafc','--bg-header':'#ffffff','--bg-input':'#f1f5f9',
-        '--text-primary':'#020617','--text-secondary':'#475569','--text-tertiary':'#94a3b8',
+        '--text-primary':'#020617','--text-secondary':'#334155','--text-tertiary':'#64748b',
         '--border':'#cbd5e1','--border-active':'#94a3b8',
         '--success':'#16a34a','--warning':'#ca8a04','--error':'#dc2626','--info':'#2563eb','--purple':'#7c3aed',
         '--success-bg':'rgba(22,163,74,0.06)','--warning-bg':'rgba(202,138,4,0.06)','--error-bg':'rgba(220,38,38,0.06)',
         '--shadow':'0 2px 8px rgba(0,0,0,0.06)',
+      },
+    },
+    {
+      id: 'vercel', name: 'Noir', description: 'Pure black with white. Minimal, stark, no distractions.',
+      mode: 'dark',
+      preview: '#000000',
+      loaderColor: '#0070f3',
+      antTokens: { colorPrimary:'#ffffff', colorTextLightSolid:'#000000', colorSuccess:'#00dc82', colorWarning:'#f5a623', colorError:'#ee0000', colorInfo:'#0070f3', borderRadius:6 },
+      cssVars: {
+        '--brand':'#ffffff','--brand-hover':'#e5e5e5','--brand-bg':'rgba(255,255,255,0.06)',
+        '--bg-primary':'#000000','--bg-secondary':'#0a0a0a','--bg-card':'#0a0a0a','--bg-card-hover':'#171717',
+        '--bg-sidebar':'#000000','--bg-header':'#0a0a0a','--bg-input':'#171717',
+        '--text-primary':'#ededed','--text-secondary':'#a0a0a0','--text-tertiary':'#707070',
+        '--border':'rgba(255,255,255,0.08)','--border-active':'rgba(255,255,255,0.15)',
+        '--success':'#00dc82','--warning':'#f5a623','--error':'#ee0000','--info':'#0070f3','--purple':'#7928ca',
+        '--success-bg':'rgba(0,220,130,0.08)','--warning-bg':'rgba(245,166,35,0.08)','--error-bg':'rgba(238,0,0,0.08)',
+        '--solar':'#f5a623','--wind':'#0070f3','--battery':'#00dc82','--grid-color':'#ee0000','--ev':'#7928ca',
+        '--shadow':'0 4px 14px rgba(0,0,0,0.8)',
       },
     },
   ];
@@ -2629,6 +2630,43 @@ const USERS = [
   {name:'System Bot',email:'system@orbiteos.com',role:'Service Account',account:'—',status:'active',lastLogin:'Continuous'},
 ];
 
+// ─── Live Simulation — periodic jitter on energy flow data in EntityStore ───
+(function startLiveSimulation() {
+  const jitter = (val, pct) => { const d = val * pct; return Math.max(0, +(val + (Math.random() - 0.5) * 2 * d).toFixed(1)); };
+  setInterval(() => {
+    EntityStore.getByType('site').forEach(site => {
+      if (!site.state?.energyFlow) return;
+      const ef = site.state.energyFlow;
+      ef.solarPower = jitter(ef.solarPower, 0.08);
+      ef.windPower = jitter(ef.windPower, 0.12);
+      ef.buildingPower = jitter(ef.buildingPower, 0.06);
+      ef.evPower = jitter(ef.evPower, 0.10);
+      ef.gridPower = jitter(ef.gridPower, 0.10);
+      ef.batteryPower = jitter(ef.batteryPower, 0.08);
+      ef.essSoc = Math.max(0, Math.min(100, Math.round(ef.essSoc + (Math.random() - 0.48) * 0.5)));
+      // Update device power states too
+      EntityStore.getDescendants(site.id, ['device']).forEach(dev => {
+        if (dev.state?.power) {
+          const p = parseFloat(dev.state.power);
+          if (!isNaN(p)) dev.state.power = `${jitter(p, 0.08)} kW`;
+        }
+      });
+      // Update sensor values
+      EntityStore.getDescendants(site.id, ['sensor']).forEach(sen => {
+        if (sen.state?.value != null) {
+          sen.state.value = jitter(sen.state.value, 0.05);
+        }
+      });
+    });
+    // Update platform-level counts
+    const platform = EntityStore.get('orbiteos');
+    if (platform?.state) {
+      platform.state.totalDevices = EntityStore.getByType('device').length;
+      platform.state.totalSites = EntityStore.getByType('site').length;
+    }
+  }, 5000);
+})();
+
 // ─── Seed: AccessStore (scoped user/role assignments) ───
 AccessStore._seed([
   { userId:'user-jan', scopeId:'orbiteos', role:'Platform Admin', permissions:['*'] },
@@ -3427,11 +3465,14 @@ function Sidebar({ page, setPage, navigateWithLoader, t, lang, focusedEntityId, 
       <div style={{height:56,display:'flex',alignItems:'center',padding:'0 14px',gap:10,cursor:'pointer',
         borderBottom:'1px solid var(--border)',flexShrink:0,overflow:'hidden'}}
         onClick={() => { const first = apps[0]; if(first){ setCurrentApp(first.id); navigateWithLoader(first.pages[0].key); } }}>
-        <div style={{width:28,height:28,background:'var(--brand)',borderRadius:6,display:'flex',alignItems:'center',justifyContent:'center',
+        <div style={{width:28,height:28,background:'var(--bg-primary)',borderRadius:6,display:'flex',alignItems:'center',justifyContent:'center',
           flexShrink:0,transition:'transform 0.15s ease'}}
           onMouseEnter={e=>e.currentTarget.style.transform='scale(1.1)'}
           onMouseLeave={e=>e.currentTarget.style.transform='scale(1)'}>
-          <svg viewBox="0 0 16 16" fill="white" width="14" height="14"><path d="M8 2l5 8H3l5-8z"/></svg>
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none">
+            <ellipse cx="12" cy="12" rx="10" ry="7" transform="rotate(-20 12 12)" stroke="var(--brand)" strokeWidth="2.5"/>
+            <circle cx="12" cy="12" r="2.5" fill="var(--brand)"/>
+          </svg>
         </div>
         {expanded && <span style={{fontSize:14,fontWeight:700,color:'var(--text-primary)',whiteSpace:'nowrap',
           opacity: expanded?1:0,transition:'opacity 0.15s ease'}}>OrbitEOS</span>}
@@ -3735,7 +3776,7 @@ function Header({ page, t, lang, setLang, themeId, setThemeId, alarms, alarmCoun
           options={ThemeStore.getAll().map(th => ({
             value: th.id,
             label: React.createElement('span',{style:{display:'flex',alignItems:'center',gap:6}},
-              React.createElement('span',{style:{width:10,height:10,borderRadius:'50%',background:th.preview,display:'inline-block',border:'1px solid rgba(128,128,128,0.3)',flexShrink:0}}),
+              React.createElement('span',{style:{width:10,height:10,borderRadius:'50%',background:th.preview,display:'inline-block',border:'1px solid var(--border)',flexShrink:0}}),
               th.name)
           }))}/>
         <div style={{position:'relative'}}>
@@ -3850,7 +3891,7 @@ const WidgetEnergyFlow = React.memo(function WidgetEnergyFlow({t, lang, currentS
               <div className="flow-icon-box">
                 {consumptionActive && ef.evPower > 0 && <div className="ev-anim-wrap">
                   <svg width="48" height="48" viewBox="0 0 48 48" style={{transform:'rotate(-90deg)'}}>
-                    <circle cx="24" cy="24" r="22" stroke="rgba(167,139,250,0.2)" strokeWidth="2" fill="transparent"/>
+                    <circle cx="24" cy="24" r="22" stroke={`color-mix(in srgb, ${fc().ev} 20%, transparent)`} strokeWidth="2" fill="transparent"/>
                     <circle cx="24" cy="24" r="22" stroke={COLOR_EV} strokeWidth="2" fill="transparent"
                       strokeDasharray="138" className="ev-progress-ring"/>
                   </svg>
@@ -3890,13 +3931,34 @@ const WidgetEnergyFlow = React.memo(function WidgetEnergyFlow({t, lang, currentS
           })()}
         </div>
       </div>
-      {/* Key Metrics summary row */}
-      <div className="stat-grid stat-grid-4" style={{marginTop:12}}>
-        <StatCard label={t.totalGen} value={`${fmt(ef.solarPower + ef.windPower)} kW`} trend={solarActive?'▲ Producing':'— Idle'} color="var(--solar)"/>
-        <StatCard label={t.gridImport} value={`${fmt(ef.gridPower)} kW`} trend={gridExporting?'Exporting':'Importing'} color="var(--grid-color)"/>
-        <StatCard label={t.batterySoC} value={`${essSoc}%`} trend={`${fmt(ef.batteryPower)} kW ${ef.batteryMode.toLowerCase()}`} color="var(--battery)"/>
-        <StatCard label={t.costSaved} value={costSaved.value} trend={`▲ ${costSaved.trend} ${t.vsYesterday}`} color="var(--brand)"/>
-      </div>
+      {/* Business KPI cards */}
+      {(() => {
+        const genKw = ef.solarPower + ef.windPower;
+        const avgPrice = 0.18; // avg €/kWh from tariff data
+        const dailyRevenue = genKw * avgPrice * 8; // ~8 productive hours
+        const gridSaved = gridExporting ? ef.gridPower * avgPrice * 8 : 0;
+        const peakAvoid = ef.buildingPower > 0 ? (ef.buildingPower * 0.12 * 30 / 30) : 0; // monthly peak charge avoided per day
+        return (
+          <div className="stat-grid stat-grid-4" style={{marginTop:12}}>
+            <StatCard label={resolveI18n({en:'Energy Revenue',nl:'Energie Opbrengst'},lang)}
+              value={`€${fmt(dailyRevenue)}`}
+              trend={`${fmt(genKw)} kW × €${avgPrice}/kWh`}
+              color="var(--success)"/>
+            <StatCard label={resolveI18n({en:'Grid Export Value',nl:'Export Waarde'},lang)}
+              value={gridExporting ? `€${fmt(gridSaved)}` : '€0.0'}
+              trend={gridExporting ? `${fmt(ef.gridPower)} kW → grid` : resolveI18n({en:'Importing',nl:'Importerend'},lang)}
+              color="var(--solar)"/>
+            <StatCard label={resolveI18n({en:'Peak Shaving Saved',nl:'Piekvermijding Bespaard'},lang)}
+              value={`€${fmt(peakAvoid)}`}
+              trend={`${essSoc}% SoC · ${fmt(ef.batteryPower)} kW ${ef.batteryMode.toLowerCase()}`}
+              color="var(--battery)"/>
+            <StatCard label={resolveI18n({en:'Daily Savings',nl:'Dagelijkse Besparing'},lang)}
+              value={costSaved.value}
+              trend={`▲ ${costSaved.trend} ${resolveI18n({en:'vs yesterday',nl:'vs gisteren'},lang)}`}
+              color="var(--brand)"/>
+          </div>
+        );
+      })()}
     </div>
   );
 });
@@ -4682,7 +4744,14 @@ function DashboardPage({t, lang, currentSite, focusedEntityId, setFocusedEntityI
 
 // Extracted widget grid as its own component to enable per-widget memoization
 const WidgetGrid = React.memo(function WidgetGrid({visibleWidgets, entityId, t, lang, gridCustomize, gridDrag, visibleToFullIdx, toggleVisibility}) {
-  // Cache widget data — only recompute when entityId changes, not on every parent re-render
+  // Live data tick — simulates real-time refresh every 5s
+  const [dataTick, setDataTick] = useState(0);
+  useEffect(() => {
+    const iv = setInterval(() => setDataTick(t => t + 1), 5000);
+    return () => clearInterval(iv);
+  }, []);
+
+  // Cache widget data — recompute on entity change or live tick
   const widgetDataCache = useMemo(() => {
     const cache = {};
     visibleWidgets.forEach(w => {
@@ -4690,7 +4759,7 @@ const WidgetGrid = React.memo(function WidgetGrid({visibleWidgets, entityId, t, 
       if (manifest) cache[w.id] = manifest.dataProvider(entityId);
     });
     return cache;
-  }, [entityId, visibleWidgets]);
+  }, [entityId, visibleWidgets, dataTick]);
 
   return (
       <div className="widget-grid">
@@ -4810,7 +4879,7 @@ const EnergyAmbientHues = React.memo(function EnergyAmbientHues({ef}) {
   // If no right sources, left blobs are already large enough with blur to reach
   // If NOTHING active (impossible in practice), show a neutral cool wash
   if (blobs.length === 0) blobs.push(
-    {color:'rgb(60,80,110)', x:'50%', y:'50%', size:500, op:0.4, key:'idle'});
+    {color:colors.brand, x:'50%', y:'50%', size:500, op:0.15, key:'idle'});
 
   return <div className="flow-hue">
     {blobs.map(b => <div key={b.key} className="flow-blob" style={{
@@ -4832,7 +4901,7 @@ function getFlowColors() {
     solar: get('--solar'),
     wind: get('--wind'),
     battery: get('--brand'),
-    building: '#f97316',  // orange stays universal for building loads
+    building: get('--solar'),  // building loads use solar/orange energy color
     ev: get('--ev'),
     export: get('--success'),
     import: get('--error'),
@@ -4847,7 +4916,9 @@ document.addEventListener('DOMContentLoaded', () => { _fc = getFlowColors(); });
 // MutationObserver to detect data-theme changes and refresh colors
 new MutationObserver(() => { _fc = null; }).observe(document.body, {attributes: true, attributeFilter: ['data-theme', 'style']});
 
-const TEAL = '#2dd4bf', AMBER = '#f59e0b', TEAL_300 = '#5eead4';
+// Dynamic color aliases — read from theme
+const TEAL = (() => getComputedStyle(document.body).getPropertyValue('--brand').trim() || '#2dd4bf')();
+const AMBER = (() => getComputedStyle(document.body).getPropertyValue('--solar').trim() || '#f59e0b')();
 Object.defineProperty(window, 'COLOR_SOLAR', { get() { return fc().solar; } });
 Object.defineProperty(window, 'COLOR_WIND', { get() { return fc().wind; } });
 Object.defineProperty(window, 'COLOR_BUILDING', { get() { return fc().building; } });
@@ -4857,7 +4928,7 @@ Object.defineProperty(window, 'COLOR_IMPORT', { get() { return fc().import; } })
 
 function SunIcon() {
   return React.createElement('svg', {width:32,height:32,viewBox:'0 0 24 24',fill:'none',stroke:COLOR_SOLAR,strokeWidth:2,strokeLinecap:'round',strokeLinejoin:'round',
-    style:{filter:'drop-shadow(0 0 8px rgba(245,158,11,0.5))'}},
+    style:{filter:`drop-shadow(0 0 8px color-mix(in srgb, ${fc().solar} 50%, transparent))`}},
     React.createElement('circle', {cx:12,cy:12,r:4}),
     React.createElement('path', {d:'M12 2v2'}), React.createElement('path', {d:'M12 20v2'}),
     React.createElement('path', {d:'M4.93 4.93l1.41 1.41'}), React.createElement('path', {d:'M17.66 17.66l1.41 1.41'}),
@@ -4868,7 +4939,7 @@ function SunIcon() {
 const WindMillIcon = React.memo(function WindMillIcon({active}) {
   const c = COLOR_WIND;
   return (
-    <svg width="32" height="32" viewBox="0 0 32 32" style={{filter:'drop-shadow(0 0 6px rgba(34,211,238,0.4))'}}>
+    <svg width="32" height="32" viewBox="0 0 32 32" style={{filter:`drop-shadow(0 0 6px color-mix(in srgb, ${fc().wind} 40%, transparent))`}}>
       <line x1="16" y1="14" x2="14" y2="30" stroke={c} strokeWidth="2" strokeLinecap="round" opacity="0.6"/>
       <line x1="16" y1="14" x2="18" y2="30" stroke={c} strokeWidth="2" strokeLinecap="round" opacity="0.6"/>
       <line x1="10" y1="30" x2="22" y2="30" stroke={c} strokeWidth="2" strokeLinecap="round" opacity="0.5"/>
@@ -4887,14 +4958,14 @@ const WindMillIcon = React.memo(function WindMillIcon({active}) {
 });
 function EFCarIcon() {
   return React.createElement('svg', {width:28,height:28,viewBox:'0 0 24 24',fill:'none',stroke:COLOR_EV,strokeWidth:2,strokeLinecap:'round',strokeLinejoin:'round',
-    style:{filter:'drop-shadow(0 0 6px rgba(167,139,250,0.4))'}},
+    style:{filter:`drop-shadow(0 0 6px color-mix(in srgb, ${fc().ev} 40%, transparent))`}},
     React.createElement('path', {d:"M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-2-2.2-3.3C13 5.6 12 5 11 5H5c-1 0-2 .5-2.8 1.4L0 9.5"}),
     React.createElement('path', {d:"M5 17H3c-.6 0-1-.4-1-1v-3.5"}),
     React.createElement('circle', {cx:7.5,cy:17.5,r:2.5}), React.createElement('circle', {cx:16.5,cy:17.5,r:2.5})
   );
 }
 function ZapSmall() {
-  return React.createElement('svg', {width:16,height:16,viewBox:'0 0 24 24',fill:'rgba(167,139,250,0.2)',stroke:COLOR_EV,strokeWidth:2,strokeLinecap:'round',strokeLinejoin:'round'},
+  return React.createElement('svg', {width:16,height:16,viewBox:'0 0 24 24',fill:`color-mix(in srgb, ${fc().ev} 20%, transparent)`,stroke:COLOR_EV,strokeWidth:2,strokeLinecap:'round',strokeLinejoin:'round'},
     React.createElement('path', {d:"M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"})
   );
 }
@@ -4917,11 +4988,11 @@ function GridPoleIcon({active, exporting}) {
 function BatteryGaugeIcon({soc}) {
   const level = soc != null ? Math.max(0, Math.min(100, soc)) : 0;
   const segs = 4, filled = Math.ceil((level/100)*segs);
-  const color = level <= 20 ? '#ef4444' : level <= 40 ? '#f59e0b' : fc().brand;
+  const color = level <= 20 ? fc().import : level <= 40 ? fc().solar : fc().brand;
   const rects = [];
   for(let i=0;i<segs;i++) {
     rects.push(React.createElement('rect',{key:i,x:3+i*5.5,y:5,width:4,height:10,rx:1,
-      fill:i<filled?color:'rgba(255,255,255,0.08)',opacity:i<filled?0.6+(i/segs)*0.4:1}));
+      fill:i<filled?color:'var(--border)',opacity:i<filled?0.6+(i/segs)*0.4:1}));
   }
   return React.createElement('svg', {width:28,height:20,viewBox:'0 0 28 20',style:{display:'block',margin:'0 auto'}},
     React.createElement('rect', {x:1,y:2,width:23,height:16,rx:3,ry:3,fill:'none',stroke:fc().brand,strokeWidth:1.5,strokeOpacity:0.4}),
@@ -4931,7 +5002,7 @@ function BatteryGaugeIcon({soc}) {
 }
 function BuildingIcon() {
   return React.createElement('svg', {width:28,height:28,viewBox:'0 0 24 24',fill:'none',stroke:COLOR_BUILDING,strokeWidth:2,strokeLinecap:'round',strokeLinejoin:'round',
-    style:{filter:'drop-shadow(0 0 6px rgba(249,115,22,0.4))'}},
+    style:{filter:`drop-shadow(0 0 6px color-mix(in srgb, ${fc().building} 40%, transparent))`}},
     React.createElement('path', {d:'M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z'}),
     React.createElement('path', {d:'M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2'}),
     React.createElement('path', {d:'M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2'}),
@@ -5072,7 +5143,8 @@ function FlowCanvasLayer({ef}) {
       // Draw dashed guide paths
       ctx.save();
       ctx.setLineDash([4, 6]);
-      ctx.strokeStyle = 'rgba(255,255,255,0.10)';
+      const guideColor = getComputedStyle(document.body).getPropertyValue('--border-active').trim() || 'rgba(255,255,255,0.10)';
+      ctx.strokeStyle = guideColor;
       ctx.lineWidth = 1;
       Object.entries(paths).forEach(([key, pts]) => {
         if (key === 'gridIn') return;
@@ -5392,7 +5464,7 @@ function PeakShavingPage({t, lang, currentSite}) {
           <div className="top-bar" style={{background:'var(--brand)'}}/>
           <div className="label">{t.liveDemand}</div>
           <div style={{display:'flex',alignItems:'center',gap:12,marginTop:8}}>
-            <Progress type="dashboard" percent={demandPct} size={100} strokeColor={demandPct>90?'#ef4444':demandPct>75?'#f59e0b':'#22c55e'}
+            <Progress type="dashboard" percent={demandPct} size={100} strokeColor={demandPct>90?'var(--error)':demandPct>75?'var(--warning)':'var(--success)'}
               format={()=><span style={{fontSize:18,fontWeight:700,color:'var(--text-primary)'}}>{ps.liveDemand}<span style={{fontSize:11,color:'var(--text-tertiary)'}}>kW</span></span>}/>
           </div>
           <div style={{fontSize:11,color:'var(--text-tertiary)',marginTop:4}}>of {ps.contractLimit} kW limit</div>
@@ -7653,6 +7725,7 @@ function ConfigurationPage({ t, lang, navigateWithLoader, focusedEntityId, setFo
     return set;
   });
   const [treeFilter, setTreeFilter] = useState('');
+  const [treeCollapsed, setTreeCollapsed] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
   const [, setConfigTick] = useState(0);
   const rerenderConfig = () => setConfigTick(t => t+1);
@@ -7734,18 +7807,33 @@ function ConfigurationPage({ t, lang, navigateWithLoader, focusedEntityId, setFo
   return (
     <div className="page-enter">
       <div className="config-page">
-        {/* Tree Panel */}
-        <div className="config-tree-panel">
-          <div className="config-tree-header">
-            <Input size="small" prefix={<SearchOutlined style={{color:'var(--text-tertiary)'}}/>}
-              placeholder={t.filterTree} value={treeFilter} onChange={e => setTreeFilter(e.target.value)}
-              allowClear style={{borderRadius:6}}/>
+        {/* Tree Panel — collapsible */}
+        {!treeCollapsed ? (
+          <div className="config-tree-panel">
+            <div className="config-tree-header" style={{display:'flex',gap:6,alignItems:'center'}}>
+              <Input size="small" prefix={<SearchOutlined style={{color:'var(--text-tertiary)'}}/>}
+                placeholder={t.filterTree} value={treeFilter} onChange={e => setTreeFilter(e.target.value)}
+                allowClear style={{borderRadius:6,flex:1}}/>
+              <span style={{cursor:'pointer',color:'var(--text-tertiary)',fontSize:12,flexShrink:0,padding:'2px 4px',borderRadius:4}}
+                onClick={() => setTreeCollapsed(true)}>
+                <LeftOutlined/>
+              </span>
+            </div>
+            <div className="config-tree-scroll" style={{padding:'4px 0'}}>
+              {platform && <ConfigNavList entity={platform} selectedId={selectedEntityId} onSelect={handleSelect}
+                expandedNodes={expandedNodes} onToggle={handleToggle} filter={treeFilter} loader={loader}/>}
+            </div>
           </div>
-          <div className="config-tree-scroll" style={{padding:'4px 0'}}>
-            {platform && <ConfigNavList entity={platform} selectedId={selectedEntityId} onSelect={handleSelect}
-              expandedNodes={expandedNodes} onToggle={handleToggle} filter={treeFilter} loader={loader}/>}
+        ) : (
+          <div style={{width:32,flexShrink:0,background:'var(--bg-card)',border:'1px solid var(--border)',borderRadius:8,
+            display:'flex',flexDirection:'column',alignItems:'center',paddingTop:8,cursor:'pointer'}}
+            onClick={() => setTreeCollapsed(false)}>
+            <RightOutlined style={{fontSize:10,color:'var(--text-tertiary)'}}/>
+            <span style={{writingMode:'vertical-rl',fontSize:10,color:'var(--text-tertiary)',marginTop:8,letterSpacing:'0.05em'}}>
+              {resolveI18n({en:'Tree',nl:'Boom'}, lang)}
+            </span>
           </div>
-        </div>
+        )}
 
         {/* Detail Panel */}
         <div className="config-detail-panel">
@@ -7761,23 +7849,33 @@ function ConfigurationPage({ t, lang, navigateWithLoader, focusedEntityId, setFo
                 ))}
               </div>
 
-              {/* Entity Header */}
+              {/* Entity Header — name, type, tags, edit/delete */}
               <div className="config-detail-header">
-                <div className="config-entity-header">
-                  <div className="config-entity-icon"><EntityTypeIcon type={selectedEntity.entityType}/></div>
-                  <div>
-                    <div className="config-entity-name">{selectedEntity.name}</div>
-                    <div className="config-entity-type">{selectedEntity.entityType}</div>
+                <div className="config-entity-icon"><EntityTypeIcon type={selectedEntity.entityType}/></div>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{display:'flex',alignItems:'center',gap:8}}>
+                    <span className="config-entity-name">{selectedEntity.name}</span>
+                    <span className="config-entity-type">{resolveI18n(ENTITY_TYPE_REGISTRY[selectedEntity.entityType]?.label, lang) || selectedEntity.entityType}</span>
+                    {(selectedEntity.properties?.tags || []).map(tag => (
+                      <span key={tag} style={{fontSize:10,padding:'1px 7px',borderRadius:8,background:'var(--bg-secondary)',color:'var(--text-secondary)',border:'1px solid var(--border)'}}>{tag}</span>
+                    ))}
                   </div>
                 </div>
-              </div>
-
-              {/* Tag pills */}
-              {(selectedEntity.properties?.tags || []).length > 0 && (
-                <div className="config-tag-pills">
-                  {(selectedEntity.properties.tags).map(tag => <span key={tag} className="config-tag">{tag}</span>)}
+                <div style={{display:'flex',gap:4,flexShrink:0}}>
+                  <span className="crud-btn crud-btn-edit" onClick={() => openEditModal(selectedEntity)}><EditOutlined style={{fontSize:12}}/></span>
+                  {selectedEntity.entityType !== 'platform' && (
+                    <span className="crud-btn crud-btn-delete" onClick={() => {
+                      const desc = EntityStore.getDescendants(selectedEntityId);
+                      Modal.confirm({
+                        title: `${t.deleteConfirm} ${selectedEntity.name}?`,
+                        content: desc.length > 0 ? `${t.deleteWarning} ${desc.length} ${t.childEntities}.` : undefined,
+                        okText: t.deleteEntity, okType: 'danger',
+                        onOk: () => { const pid = selectedEntity.parentId; EntityStore.remove(selectedEntityId); handleSelect(pid||'orbiteos'); },
+                      });
+                    }}><DeleteOutlined style={{fontSize:12}}/></span>
+                  )}
                 </div>
-              )}
+              </div>
 
               {/* Tabs */}
               <div className="config-detail-body">
@@ -7810,37 +7908,6 @@ function ConfigurationPage({ t, lang, navigateWithLoader, focusedEntityId, setFo
 
 // ─── Login Page ───
 // Time-of-day palette — used by both page background and canvas
-function getTimeOfDayPalette() {
-  const h = new Date().getHours();
-  const m = new Date().getMinutes();
-  const t = h + m / 60;
-  // [hour, glowR,G,B, glowOpacity, particleR,G,B, bgBottomR,G,B]
-  // Teal-green base throughout — subtle shifts in warmth/coolness with time
-  const stops = [
-    [0,  10, 40, 50, 0.15,   20,120,130,  10, 50, 50],   // midnight — dark teal
-    [5,  15, 55, 60, 0.18,   30,140,140,  12, 58, 55],   // pre-dawn — teal lifting
-    [6,  30, 80, 70, 0.20,   60,180,160,  15, 68, 60],   // dawn — warmer teal
-    [9,  25, 90, 80, 0.20,   45,200,180,  16, 72, 68],   // morning — bright teal
-    [12, 30,110, 95, 0.22,   45,212,191,  19, 78, 74],   // noon — brand teal peak
-    [15, 25,100, 88, 0.20,   40,200,178,  17, 74, 70],   // afternoon — teal
-    [17, 20, 85, 78, 0.18,   35,180,165,  15, 68, 65],   // late afternoon — softer teal
-    [19, 18, 60, 65, 0.18,   30,140,145,  13, 58, 58],   // dusk — cooler teal
-    [21, 12, 45, 55, 0.16,   25,120,135,  11, 52, 52],   // evening — muted teal
-    [24, 10, 40, 50, 0.15,   20,120,130,  10, 50, 50],   // midnight wrap
-  ];
-  let lo = stops[0], hi = stops[1];
-  for (let i = 0; i < stops.length - 1; i++) {
-    if (t >= stops[i][0] && t < stops[i+1][0]) { lo = stops[i]; hi = stops[i+1]; break; }
-  }
-  const frac = (t - lo[0]) / (hi[0] - lo[0] || 1);
-  const lerp = (a, b) => Math.round(a + (b - a) * frac);
-  return {
-    r: lerp(lo[1], hi[1]), g: lerp(lo[2], hi[2]), b: lerp(lo[3], hi[3]),
-    o: lo[4] + (hi[4] - lo[4]) * frac,
-    pr: lerp(lo[5], hi[5]), pg: lerp(lo[6], hi[6]), pb: lerp(lo[7], hi[7]),
-    bgR: lerp(lo[8], hi[8]), bgG: lerp(lo[9], hi[9]), bgB: lerp(lo[10], hi[10]),
-  };
-}
 
 /**
  * OrbitLoader — Reusable loading glow control
@@ -7868,7 +7935,14 @@ function OrbitLoader({ stopping = false, color, onDone, size = 'full', className
   const exitStartRef = useRef(null);
   const modeRef = useRef(mode);
 
-  const R = color?.r ?? 45, G = color?.g ?? 212, B = color?.b ?? 191;
+  // Read loader accent color from theme — contrasting color for visual interest
+  const _loaderHex = color ? null : (() => {
+    const theme = ThemeStore.getActive();
+    return theme?.loaderColor || getComputedStyle(document.body).getPropertyValue('--brand').trim() || '#2dd4bf';
+  })();
+  const R = color?.r ?? (_loaderHex ? parseInt(_loaderHex.slice(1,3),16) : 45);
+  const G = color?.g ?? (_loaderHex ? parseInt(_loaderHex.slice(3,5),16) : 212);
+  const B = color?.b ?? (_loaderHex ? parseInt(_loaderHex.slice(5,7),16) : 191);
   const solid = mode === 'solid';
 
   useEffect(() => { stoppingRef.current = stopping; }, [stopping]);
@@ -7886,9 +7960,10 @@ function OrbitLoader({ stopping = false, color, onDone, size = 'full', className
     cvs.style.width = W + 'px'; cvs.style.height = H + 'px';
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-    // Theme-aware background color (solid mode only)
+    // Theme-aware background color (solid mode only) — read from CSS vars
     const isDark = document.body.getAttribute('data-theme') !== 'light';
-    const BG_R = isDark ? 2 : 248, BG_G = isDark ? 6 : 250, BG_B = isDark ? 23 : 252;
+    const _bgHex = getComputedStyle(document.body).getPropertyValue('--bg-primary').trim() || (isDark ? '#020617' : '#f8fafc');
+    const BG_R = parseInt(_bgHex.slice(1,3),16) || (isDark?2:248), BG_G = parseInt(_bgHex.slice(3,5),16) || (isDark?6:250), BG_B = parseInt(_bgHex.slice(5,7),16) || (isDark?23:252);
     const isSolid = modeRef.current === 'solid';
 
     const cx = W / 2, cy = H / 2;
@@ -8032,7 +8107,6 @@ function LoginPage({t, setPage, setCurrentApp, lang, setLang, themeId, setThemeI
   const [attemptsLeft, setAttemptsLeft] = useState(null);
   const [lockCountdown, setLockCountdown] = useState(0);
   const formRef = useRef(null);
-  const timeGlow = useMemo(() => getTimeOfDayPalette(), []);
   const activeTheme = ThemeStore.getById(themeId) || ThemeStore.getAll()[0];
 
   // Extract first name from email on blur (e.g. "jan.de.vries@acme.nl" → "Jan")
@@ -8140,19 +8214,20 @@ function LoginPage({t, setPage, setCurrentApp, lang, setLang, themeId, setThemeI
     setTimeout(() => setShaking(false), 500);
   }, [t]);
 
-  // Page background gradient — uses theme's base colors with time tint
-  const themeBgBase = activeTheme.cssVars['--bg-primary'] || '#020617';
-  const themeBgSec = activeTheme.cssVars['--bg-secondary'] || '#0f172a';
+  // Page background — fully theme-driven with brand glow
   const isDarkTheme = activeTheme.mode === 'dark';
+  const themeBgBase = activeTheme.cssVars['--bg-primary'] || '#020617';
+  const themeBrand = activeTheme.cssVars['--brand'] || '#2dd4bf';
+  const themeAccent = activeTheme.loaderColor || themeBrand;
   const bgGrad = isDarkTheme
-    ? `linear-gradient(135deg, ${themeBgBase} 0%, rgb(${Math.round(2 + timeGlow.bgR*0.3)},${Math.round(6 + timeGlow.bgG*0.3)},${Math.round(23 + timeGlow.bgB*0.3)}) 50%, rgb(${timeGlow.bgR},${timeGlow.bgG},${timeGlow.bgB}) 100%)`
-    : `linear-gradient(135deg, ${themeBgBase} 0%, ${themeBgSec} 100%)`;
+    ? `radial-gradient(ellipse at 50% 50%, color-mix(in srgb, ${themeAccent} 14%, ${themeBgBase}) 0%, ${themeBgBase} 70%)`
+    : `radial-gradient(ellipse 120% 100% at 30% 80%, color-mix(in srgb, ${themeAccent} 18%, ${themeBgBase}) 0%, color-mix(in srgb, ${themeBrand} 6%, ${themeBgBase}) 40%, ${themeBgBase} 100%)`;
   const cardBorder = isDarkTheme
-    ? `rgba(${timeGlow.pr},${timeGlow.pg},${timeGlow.pb},0.12)`
-    : (activeTheme.cssVars['--border'] || '#e2e8f0');
+    ? `color-mix(in srgb, ${themeAccent} 20%, transparent)`
+    : `color-mix(in srgb, ${themeBrand} 15%, ${activeTheme.cssVars['--border']||'#e2e8f0'})`;
   const cardBg = isDarkTheme
-    ? `rgba(${Math.round(15 + timeGlow.bgR * 0.4)},${Math.round(23 + timeGlow.bgG * 0.4)},${Math.round(42 + timeGlow.bgB * 0.4)},0.85)`
-    : (activeTheme.cssVars['--bg-card'] || 'rgba(255,255,255,0.92)');
+    ? `color-mix(in srgb, ${activeTheme.cssVars['--bg-card']||'#0f172a'} 95%, ${themeAccent})`
+    : `color-mix(in srgb, ${activeTheme.cssVars['--bg-card']||'#ffffff'} 97%, ${themeAccent})`;
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -8160,17 +8235,18 @@ function LoginPage({t, setPage, setCurrentApp, lang, setLang, themeId, setThemeI
     const ctx = canvas.getContext('2d');
     const W = canvas.width = canvas.parentElement.clientWidth;
     const H = canvas.height = canvas.parentElement.clientHeight;
-    // Parse theme brand color to RGB for particles
-    const brandHex = activeTheme.preview || '#d97706';
+    // Use loader accent color for particles — always contrasts with background
+    const brandHex = activeTheme.loaderColor || activeTheme.preview || '#2dd4bf';
     const brandR = parseInt(brandHex.slice(1,3),16), brandG = parseInt(brandHex.slice(3,5),16), brandB = parseInt(brandHex.slice(5,7),16);
+    const isLight = activeTheme.mode === 'light';
     // Gentle left→right river: each particle drifts rightward with slight vertical wobble
-    const particles = Array.from({length:90}, () => {
+    const particles = Array.from({length: isLight ? 70 : 90}, () => {
       const driftX = 0.12 + Math.random() * 0.18;
       const driftY = (Math.random() - 0.5) * 0.08;
       return {
-        x: Math.random()*W, y: Math.random()*H, r: 1+Math.random()*2,
+        x: Math.random()*W, y: Math.random()*H, r: isLight ? 1.5+Math.random()*2.5 : 1+Math.random()*2,
         vx: driftX, vy: driftY, baseDriftX: driftX, baseDriftY: driftY,
-        baseO: 0.12+Math.random()*0.3, o: 0, boost: 0,
+        baseO: isLight ? 0.20+Math.random()*0.35 : 0.12+Math.random()*0.3, o: 0, boost: 0,
         origR: 0, color: [brandR,brandG,brandB],
       };
     });
@@ -8197,8 +8273,8 @@ function LoginPage({t, setPage, setCurrentApp, lang, setLang, themeId, setThemeI
       ripples.push({ x: cx, y: cy, radius: 0, maxRadius: 150, opacity: 0.2, speed: 3 });
     });
 
-    // Set particle base color to time-of-day tint
-    particles.forEach(p => { p.color = [timeGlow.pr, timeGlow.pg, timeGlow.pb]; });
+    // Set particle color to theme brand (not hardcoded teal)
+    particles.forEach(p => { p.color = [brandR, brandG, brandB]; });
 
     let raf;
     let loginPaused = document.hidden;
@@ -8212,10 +8288,11 @@ function LoginPage({t, setPage, setCurrentApp, lang, setLang, themeId, setThemeI
       if (loginPaused) { raf = requestAnimationFrame(draw); return; }
       ctx.clearRect(0,0,W,H);
 
-      // Ambient time-of-day glow — single wide wash centered behind the login card
+      // Ambient brand glow — wide radial wash centered on the login card
+      const glowStrength = isLight ? 0.12 : 0.18;
       const g1 = ctx.createRadialGradient(W*0.5, H*0.5, 0, W*0.5, H*0.5, Math.max(W,H)*0.7);
-      g1.addColorStop(0, `rgba(${timeGlow.r},${timeGlow.g},${timeGlow.b},${timeGlow.o})`);
-      g1.addColorStop(0.5, `rgba(${timeGlow.r},${timeGlow.g},${timeGlow.b},${timeGlow.o*0.4})`);
+      g1.addColorStop(0, `rgba(${brandR},${brandG},${brandB},${glowStrength})`);
+      g1.addColorStop(0.4, `rgba(${brandR},${brandG},${brandB},${glowStrength*0.3})`);
       g1.addColorStop(1, 'rgba(0,0,0,0)');
       ctx.fillStyle = g1;
       ctx.fillRect(0, 0, W, H);
@@ -8251,10 +8328,10 @@ function LoginPage({t, setPage, setCurrentApp, lang, setLang, themeId, setThemeI
 
         // Boost fades out quickly
         if (p.boost > 0) { p.boost *= 0.92; if (p.boost < 0.01) p.boost = 0; }
-        // Color fades back to time-of-day tint
-        p.color[0] += (timeGlow.pr - p.color[0]) * 0.06;
-        p.color[1] += (timeGlow.pg - p.color[1]) * 0.06;
-        p.color[2] += (timeGlow.pb - p.color[2]) * 0.06;
+        // Color fades back to brand
+        p.color[0] += (brandR - p.color[0]) * 0.06;
+        p.color[1] += (brandG - p.color[1]) * 0.06;
+        p.color[2] += (brandB - p.color[2]) * 0.06;
         // Render radius grows with boost
         const drawR = p.origR + p.boost * 3;
         const drawO = Math.min(1, p.baseO + p.boost * 0.6);
@@ -8285,28 +8362,31 @@ function LoginPage({t, setPage, setCurrentApp, lang, setLang, themeId, setThemeI
 
       {/* Centered login card */}
       <div className={`login-card ${successPhase >= 2 ? 'login-card-exit' : ''}`} style={{borderColor: cardBorder, background: cardBg}}>
-        {/* Theme + Language selectors — top row */}
-        <div style={{position:'absolute',top:12,right:12,display:'flex',alignItems:'center',gap:4}}>
+        {/* Theme + Language — subtle top-right row */}
+        <div style={{display:'flex',justifyContent:'flex-end',alignItems:'center',gap:6,marginBottom:20}}>
           <Select value={themeId} onChange={v => setThemeId(v)} size="small" variant="borderless"
-            style={{minWidth:110}} popupMatchSelectWidth={false}
+            style={{fontSize:11}} popupMatchSelectWidth={false}
             options={ThemeStore.getAll().map(th => ({
               value: th.id,
-              label: React.createElement('span',{style:{display:'flex',alignItems:'center',gap:6}},
-                React.createElement('span',{style:{width:8,height:8,borderRadius:'50%',background:th.preview,display:'inline-block',border:'1px solid rgba(128,128,128,0.3)',flexShrink:0}}),
+              label: React.createElement('span',{style:{display:'flex',alignItems:'center',gap:5,fontSize:11}},
+                React.createElement('span',{style:{width:7,height:7,borderRadius:'50%',background:th.preview,display:'inline-block',border:'1px solid var(--border)',flexShrink:0}}),
                 th.name)
             }))}/>
+          <span style={{width:1,height:14,background:'var(--border)'}}/>
           <Select value={lang} onChange={v=>setLang(v)} size="small" variant="borderless"
-            style={{width:100}} options={[{value:'en',label:'English'},{value:'nl',label:'Nederlands'}]}/>
+            style={{fontSize:11,width:56}} options={[{value:'en',label:'EN'},{value:'nl',label:'NL'}]}/>
         </div>
 
-        {/* Logo + branding + time-aware greeting */}
-        <div style={{textAlign:'center',marginBottom:28}}>
-          <div style={{width:44,height:44,background:'var(--brand)',borderRadius:10,display:'inline-flex',
-            alignItems:'center',justifyContent:'center',marginBottom:12}}>
-            <svg viewBox="0 0 24 24" fill="white" width="22" height="22"><path d="M12 2l8 14H4l8-14z"/></svg>
+        {/* Logo + greeting */}
+        <div style={{textAlign:'center',marginBottom:24}}>
+          <div style={{width:48,height:48,background:'var(--bg-primary)',borderRadius:12,display:'inline-flex',
+            alignItems:'center',justifyContent:'center',marginBottom:16}}>
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="none">
+              <ellipse cx="12" cy="12" rx="10" ry="7" transform="rotate(-20 12 12)" stroke="var(--brand)" strokeWidth="2"/>
+              <circle cx="12" cy="12" r="3" fill="var(--brand)"/>
+            </svg>
           </div>
-          <div style={{fontSize:20,fontWeight:700,color:'var(--text-primary)',marginBottom:4}}>OrbitEOS</div>
-          {greetName && <div style={{fontSize:14,color:'var(--brand)',fontWeight:500,transition:'all 0.3s ease',opacity:0.9}}>{(() => {
+          {greetName && <div style={{fontSize:15,color:'var(--brand)',fontWeight:500,transition:'all 0.3s ease'}}>{(() => {
             const h = new Date().getHours();
             const greetings = {
               en: h < 5 ? 'Good evening' : h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening',
@@ -8348,7 +8428,7 @@ function LoginPage({t, setPage, setCurrentApp, lang, setLang, themeId, setThemeI
             </div>
           )}
           {lockCountdown > 0 && (
-            <div style={{textAlign:'center',marginBottom:8,fontSize:20,fontWeight:700,color:'#f59e0b',fontVariantNumeric:'tabular-nums'}}>
+            <div style={{textAlign:'center',marginBottom:8,fontSize:20,fontWeight:700,color:'var(--warning)',fontVariantNumeric:'tabular-nums'}}>
               0:{String(lockCountdown).padStart(2,'0')}
             </div>
           )}
@@ -8361,7 +8441,8 @@ function LoginPage({t, setPage, setCurrentApp, lang, setLang, themeId, setThemeI
           <button className={successPhase >= 1 ? 'login-btn-success' : ''}
             style={{width:'100%',padding:'10px',fontSize:14,fontWeight:600,borderRadius:8,border:'none',
             background: lockCountdown > 0 ? 'var(--text-tertiary)' : 'var(--brand)',
-            color:'#fff',cursor: lockCountdown > 0 ? 'not-allowed' : 'pointer',
+            color: activeTheme.antTokens?.colorTextLightSolid || '#fff',
+            cursor: lockCountdown > 0 ? 'not-allowed' : 'pointer',
             transition:'all 0.3s ease',letterSpacing:'0.02em',
             boxShadow: lockCountdown > 0 ? 'none' : `0 2px 8px ${activeTheme.cssVars['--brand-bg'] || 'rgba(217,119,6,0.3)'}`,
             opacity: submitting && !successPhase ? 0.7 : 1}}
@@ -8493,7 +8574,7 @@ function MarketplacePage({t, lang}) {
       <Input.Search placeholder={lang==='nl'?'Zoek apps, integraties...':'Search apps, integrations...'} size="large" style={{marginBottom:16}}/>
       <div style={{display:'flex',gap:8,marginBottom:16,flexWrap:'wrap'}}>
         {['All','Energy','EV Charging','Battery','Solar','Monitoring','AI & ML','Protocol'].map((cat,i) => (
-          <button key={cat} className="header-btn" style={i===0?{background:'var(--brand)',color:'#fff',borderColor:'var(--brand)'}:{}}>{cat}</button>
+          <button key={cat} className="header-btn" style={i===0?{background:'var(--brand)',color:'var(--bg-primary)',borderColor:'var(--brand)'}:{}}>{cat}</button>
         ))}
       </div>
       <div className="marketplace-grid">
