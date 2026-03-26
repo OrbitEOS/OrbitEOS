@@ -5754,9 +5754,21 @@ function FieldRenderer({ field, value, onChange, lang, readOnly }) {
       style:{width:'100%'}, onChange: v => onChange(v) });
   }
   if (type === 'select') {
-    const opts = (field.options||[]).map(o => typeof o === 'string' ? {value:o, label:o} : {value:o.value, label:resolveI18n(o.label,lang)});
+    let opts;
+    if (field.optionsFrom === 'users') {
+      opts = UserStore.getAllUsers().map(u => ({value:u.id, label:`${u.name} (${u.email})`}));
+    } else if (field.optionsFrom === 'roles') {
+      opts = RoleStore.getAll().map(r => ({value:r.name, label:`${r.name} \u2014 ${r.level}`}));
+    } else if (field.optionsFrom === 'apps') {
+      opts = NavigationStore.getVisibleApps().map(a => ({value:a.id, label:typeof a.label === 'object' ? (a.label[lang]||a.label.en) : a.label}));
+    } else if (field.optionsFrom === 'sysPermCategories') {
+      opts = SysPermStore.getCategories().map(c => ({value:c, label:c}));
+    } else {
+      opts = (field.options||[]).map(o => typeof o === 'string' ? {value:o, label:o} : {value:o.value, label:resolveI18n(o.label,lang)});
+    }
     return React.createElement(Select, { size:'small', value:value||undefined, placeholder, style:{width:'100%'},
-      options:opts, onChange: v => onChange(v), allowClear:!field.required });
+      options:opts, onChange: v => onChange(v), allowClear:!field.required,
+      showSearch: !!field.optionsFrom, filterOption: field.optionsFrom ? (input,opt) => (opt?.label||'').toLowerCase().includes(input.toLowerCase()) : undefined });
   }
   if (type === 'switch') {
     return React.createElement(Switch, { size:'small', checked:!!value, onChange: v => onChange(v) });
@@ -5894,6 +5906,44 @@ const ENTITY_EDIT_SCHEMA = {
     site: [
       { key:'properties.compliance.retention', label:{en:'Data Retention',nl:'Dataretentie'}, type:'select', options:['1 yr','3 yr','5 yr','7 yr','10 yr'] },
     ],
+  },
+  // ─── Non-entity CRUD schemas (userAssignment, role, privilege, systemPermission) ───
+  userAssignment: {
+    general: {
+      userAssignment: [
+        { key:'userId', label:{en:'User',nl:'Gebruiker'}, type:'select', required:true, optionsFrom:'users' },
+        { key:'role', label:{en:'Role',nl:'Rol'}, type:'select', required:true, optionsFrom:'roles' },
+      ]
+    }
+  },
+  role: {
+    general: {
+      role: [
+        { key:'name', label:{en:'Role Name',nl:'Rolnaam'}, type:'text', required:true },
+        { key:'level', label:{en:'Scope Level',nl:'Bereikniveau'}, type:'select', required:true,
+          options:['Platform','Account','Sub-account','Site'] },
+        { key:'description', label:{en:'Description',nl:'Beschrijving'}, type:'textarea' },
+      ]
+    }
+  },
+  privilege: {
+    general: {
+      privilege: [
+        { key:'appId', label:{en:'Application',nl:'Applicatie'}, type:'select', required:true, optionsFrom:'apps' },
+        { key:'resource', label:{en:'Resource',nl:'Resource'}, type:'text', required:true },
+        { key:'actions', label:{en:'Actions',nl:'Acties'}, type:'tags', required:true,
+          options:['view','create','edit','delete','manage'] },
+      ]
+    }
+  },
+  systemPermission: {
+    general: {
+      systemPermission: [
+        { key:'category', label:{en:'Category',nl:'Categorie'}, type:'select', required:true, optionsFrom:'sysPermCategories' },
+        { key:'label', label:{en:'Label',nl:'Label'}, type:'text', required:true },
+        { key:'description', label:{en:'Description',nl:'Beschrijving'}, type:'textarea' },
+      ]
+    }
   },
 };
 
@@ -6078,6 +6128,100 @@ function FormPanel({ fields, values, errors, onChange, lang }) {
   );
 }
 
+// ─── Non-entity type helpers ───
+const NON_ENTITY_TYPES = ['userAssignment','role','privilege','systemPermission'];
+const NON_ENTITY_ICONS = {
+  userAssignment: TeamOutlined, role: SafetyCertificateOutlined,
+  privilege: LockOutlined, systemPermission: SettingOutlined,
+};
+const NON_ENTITY_LABELS = {
+  userAssignment: {en:'User Assignment',nl:'Gebruikerstoewijzing'},
+  role: {en:'Role',nl:'Rol'},
+  privilege: {en:'Privilege',nl:'Recht'},
+  systemPermission: {en:'System Permission',nl:'Systeemrecht'},
+};
+
+function getNonEntitySubTabs(entityType) {
+  const schemaGroup = ENTITY_EDIT_SCHEMA[entityType];
+  if (!schemaGroup) return [];
+  return Object.keys(schemaGroup).map(tabKey => ({
+    key: tabKey,
+    label: {en: tabKey.charAt(0).toUpperCase() + tabKey.slice(1), nl: tabKey.charAt(0).toUpperCase() + tabKey.slice(1)},
+    icon: 'SettingOutlined',
+  }));
+}
+
+function getNonEntityFields(entityType, subTabKey) {
+  const schemaGroup = ENTITY_EDIT_SCHEMA[entityType];
+  if (!schemaGroup || !schemaGroup[subTabKey]) return [];
+  const allFields = schemaGroup[subTabKey]._all || [];
+  const typeFields = schemaGroup[subTabKey][entityType] || [];
+  return [...allFields, ...typeFields];
+}
+
+function loadNonEntityRecord(entityType, entityId, parentId) {
+  if (entityType === 'userAssignment' && entityId) {
+    const parts = entityId.split('@');
+    const userId = parts[0], scopeId = parts[1];
+    const rec = AccessStore.getForScope(scopeId).find(a => a.userId === userId);
+    return rec ? {...rec} : { userId:'', role:'' };
+  }
+  if (entityType === 'role' && entityId) {
+    const r = RoleStore.get(entityId);
+    return r ? { name:r.name, level:r.level, description:r.description||'' } : { name:'', level:'Site', description:'' };
+  }
+  if (entityType === 'privilege' && entityId) {
+    const p = PrivilegeStore.get(entityId);
+    return p ? { appId:p.appId, resource:p.resource, actions:[p.action] } : { appId:'', resource:'', actions:[] };
+  }
+  if (entityType === 'systemPermission' && entityId) {
+    const all = SysPermStore.getAll().find(s => s.id === entityId);
+    return all ? { category:all.category, label:all.label, description:all.description||'' } : { category:'', label:'', description:'' };
+  }
+  // Defaults for create mode
+  if (entityType === 'userAssignment') return { userId:'', role:'' };
+  if (entityType === 'role') return { name:'', level:'Site', description:'' };
+  if (entityType === 'privilege') return { appId:'', resource:'', actions:[] };
+  if (entityType === 'systemPermission') return { category:'', label:'', description:'' };
+  return {};
+}
+
+function saveNonEntityRecord(entityType, values, mode, entityId, parentId) {
+  if (entityType === 'userAssignment') {
+    const scopeId = parentId;
+    if (mode === 'edit' && entityId) {
+      const parts = entityId.split('@');
+      AccessStore.remove(parts[0], parts[1]);
+    }
+    AccessStore.add({ userId:values.userId, scopeId, role:values.role, permissions:[] });
+    return values.userId + '@' + scopeId;
+  }
+  if (entityType === 'role') {
+    if (mode === 'edit' && entityId) {
+      const existing = RoleStore.get(entityId);
+      if (existing) { existing.name = values.name; existing.level = values.level; existing.description = values.description||''; }
+      return entityId;
+    }
+    const r = RoleStore.put({ name:values.name, level:values.level, description:values.description||'', privileges:[], systemPerms:[] });
+    return r.id;
+  }
+  if (entityType === 'privilege') {
+    if (mode === 'edit' && entityId) { PrivilegeStore.remove(entityId); }
+    const res = values.resource.trim().toLowerCase().replace(/\s+/g,'-');
+    (values.actions||['view']).forEach(a => {
+      PrivilegeStore.put({ id:`${values.appId}.${res}.${a}`, appId:values.appId, resource:res, action:a });
+    });
+    return `${values.appId}.${res}`;
+  }
+  if (entityType === 'systemPermission') {
+    if (mode === 'edit' && entityId) { SysPermStore.remove(entityId); }
+    const id = entityId || `sys.${values.category.toLowerCase().replace(/\s+/g,'-')}.${values.label.trim().toLowerCase().replace(/\s+/g,'-')}`;
+    SysPermStore.add({ id, category:values.category, label:values.label.trim(), description:values.description||'' });
+    return id;
+  }
+  return null;
+}
+
 // ─── EntityEditModal — unified edit/create modal ───
 function EntityEditModal({ visible, mode, entityType, entityId, parentId, onSave, onCancel, lang }) {
   const [activeTab, setActiveTab] = useState('general');
@@ -6085,9 +6229,13 @@ function EntityEditModal({ visible, mode, entityType, entityId, parentId, onSave
   const [errors, setErrors] = useState({});
   const [dirty, setDirty] = useState(false);
 
+  const isNonEntity = NON_ENTITY_TYPES.includes(entityType);
+
   useEffect(() => {
     if (!visible) return;
-    if (mode === 'edit' && entityId) {
+    if (isNonEntity) {
+      setValues(loadNonEntityRecord(entityType, mode === 'edit' ? entityId : null, parentId));
+    } else if (mode === 'edit' && entityId) {
       const entity = EntityStore.get(entityId);
       if (entity) {
         setValues(JSON.parse(JSON.stringify(entity)));
@@ -6100,7 +6248,11 @@ function EntityEditModal({ visible, mode, entityType, entityId, parentId, onSave
     setActiveTab('general');
   }, [visible, entityId, mode, entityType, parentId]);
 
-  const subTabs = getApplicableSubTabs(entityType);
+  const subTabs = isNonEntity ? getNonEntitySubTabs(entityType) : getApplicableSubTabs(entityType);
+
+  const getFieldsForTab = (tabKey) => {
+    return isNonEntity ? getNonEntityFields(entityType, tabKey) : getSubTabFields(tabKey, entityType);
+  };
 
   const handleChange = (key, val) => {
     setValues(prev => {
@@ -6115,7 +6267,7 @@ function EntityEditModal({ visible, mode, entityType, entityId, parentId, onSave
   const validate = () => {
     const errs = {};
     subTabs.forEach(tab => {
-      getSubTabFields(tab.key, entityType).forEach(field => {
+      getFieldsForTab(tab.key).forEach(field => {
         const val = getNestedValue(values, field.key);
         if (field.required && (val == null || val === '' || (Array.isArray(val) && val.length === 0))) {
           errs[field.key] = resolveI18n({en:'Required',nl:'Verplicht',de:'Erforderlich'}, lang);
@@ -6134,14 +6286,17 @@ function EntityEditModal({ visible, mode, entityType, entityId, parentId, onSave
       setErrors(errs);
       const firstErrKey = Object.keys(errs)[0];
       for (const tab of subTabs) {
-        if (getSubTabFields(tab.key, entityType).some(f => f.key === firstErrKey)) {
+        if (getFieldsForTab(tab.key).some(f => f.key === firstErrKey)) {
           setActiveTab(tab.key);
           break;
         }
       }
       return;
     }
-    if (mode === 'create') {
+    if (isNonEntity) {
+      const resultId = saveNonEntityRecord(entityType, values, mode, entityId, parentId);
+      onSave(resultId);
+    } else if (mode === 'create') {
       const newId = `${entityType}-${Date.now()}`;
       const entity = { ...values, id:newId, entityType, parentId };
       EntityStore.put(entity);
@@ -6168,28 +6323,31 @@ function EntityEditModal({ visible, mode, entityType, entityId, parentId, onSave
 
   if (!visible) return null;
 
-  const currentFields = getSubTabFields(activeTab, entityType);
+  const currentFields = getFieldsForTab(activeTab);
+  const HeaderIcon = isNonEntity ? (NON_ENTITY_ICONS[entityType] || SettingOutlined) : null;
+  const typeLabel = isNonEntity ? resolveI18n(NON_ENTITY_LABELS[entityType] || {en:entityType}, lang) : entityType;
   const title = mode === 'create'
-    ? resolveI18n({en:`Create ${entityType}`,nl:`${entityType} aanmaken`}, lang)
-    : (values.name || '');
+    ? resolveI18n({en:`Create ${typeLabel}`,nl:`${typeLabel} aanmaken`}, lang)
+    : (isNonEntity ? (values.name || values.label || values.userId || typeLabel) : (values.name || ''));
 
   return ReactDOM.createPortal(
     React.createElement('div', {className:'eem-overlay', onClick:handleCancel},
       React.createElement('div', {className:'eem-modal', onClick:e=>e.stopPropagation()},
         // Header
         React.createElement('div', {className:'eem-header'},
-          React.createElement('div', {className:'eem-header-icon'}, React.createElement(EntityTypeIcon, {type:entityType})),
+          React.createElement('div', {className:'eem-header-icon'},
+            isNonEntity ? React.createElement(HeaderIcon, {style:{fontSize:16,color:'var(--brand)'}}) : React.createElement(EntityTypeIcon, {type:entityType})),
           React.createElement('div', {className:'eem-header-title'}, title),
-          React.createElement('span', {className:'eem-header-badge'}, entityType),
+          React.createElement('span', {className:'eem-header-badge'}, typeLabel),
           React.createElement('span', {className:'eem-header-close', onClick:handleCancel}, React.createElement(CloseOutlined))
         ),
         // Body
         React.createElement('div', {className:'eem-body'},
-          // Left tabs
-          React.createElement('div', {className:'eem-tabs'},
+          // Left tabs (hide tab rail for single-tab non-entity types)
+          subTabs.length > 1 && React.createElement('div', {className:'eem-tabs'},
             subTabs.map(tab => {
               const Icon = SUB_TAB_ICONS[tab.icon] || SettingOutlined;
-              const hasError = getSubTabFields(tab.key, entityType).some(f => errors[f.key]);
+              const hasError = getFieldsForTab(tab.key).some(f => errors[f.key]);
               return React.createElement('div', {
                 key:tab.key, className:`eem-tab ${activeTab===tab.key?'active':''}`,
                 onClick:()=>setActiveTab(tab.key)
@@ -6704,8 +6862,12 @@ function EntityListTab({ parentId, childType, t, lang, onNavigate, onAdd }) {
           { key:'edit', icon:React.createElement(EditOutlined,{style:{fontSize:12}}), onClick:row => onNavigate(row.id) },
           { key:'delete', icon:React.createElement(DeleteOutlined,{style:{fontSize:12}}), danger:true, onClick:row => {
             const desc = EntityStore.getDescendants(row.id);
-            Modal.confirm({ title:`Delete ${row.name}?`, content:desc.length > 0 ? `This will also remove ${desc.length} child entities.` : undefined,
-              okText:'Delete', okType:'danger', onOk:() => {} });
+            Modal.confirm({
+              title: resolveI18n({en:`Delete "${row.name}"?`,nl:`"${row.name}" verwijderen?`}, lang),
+              content: desc.length > 0 ? resolveI18n({en:`This will also remove ${desc.length} child entities.`,nl:`Dit verwijdert ook ${desc.length} onderliggende entiteiten.`}, lang) : undefined,
+              okText: resolveI18n({en:'Delete',nl:'Verwijderen'}, lang), okType:'danger',
+              onOk:() => { EntityStore.remove(row.id); }
+            });
           }},
         ]}
         emptyIcon={React.createElement(InboxOutlined)} emptyText={{en:'No items',nl:'Geen items'}}/>
@@ -6734,33 +6896,19 @@ function ActionBadge({ action, active, onClick }) {
   );
 }
 
-// ─── Tab: Users (CRUD) ───
-function UsersTab({ entityId, t, lang }) {
+// ─── Tab: Users (CRUD via EntityEditModal) ───
+function UsersTab({ entityId, t, lang, onOpenModal }) {
   const [, setTick] = useState(0);
   const rerender = () => setTick(t => t+1);
   const scopeUsers = AccessStore.getForScope(entityId);
-  const entity = EntityStore.get(entityId);
-  const [addOpen, setAddOpen] = useState(false);
-  const [editUser, setEditUser] = useState(null);
-  const [addUserId, setAddUserId] = useState('');
-  const [addRole, setAddRole] = useState('');
-  const allUsers = UserStore.getAllUsers();
-  const roles = RoleStore.getAll();
 
-  const handleAdd = () => {
-    if (!addUserId || !addRole) return;
-    AccessStore.add({ userId:addUserId, scopeId:entityId, role:addRole, permissions:[] });
-    setAddOpen(false); setAddUserId(''); setAddRole(''); rerender();
-  };
   const handleRemove = (row) => {
-    Modal.confirm({ title:{en:'Remove user from this scope?',nl:'Gebruiker verwijderen uit deze scope?'}[lang]||'Remove user?', okText:{en:'Remove',nl:'Verwijderen'}[lang], okType:'danger',
-      onOk:() => { AccessStore.remove(row.userId, entityId); rerender(); } });
-  };
-  const handleEditSave = () => {
-    if (!editUser) return;
-    AccessStore.remove(editUser.userId, entityId);
-    AccessStore.add({ userId:editUser.userId, scopeId:entityId, role:editUser.role, permissions:editUser.permissions||[] });
-    setEditUser(null); rerender();
+    const userName = UserStore.getUser(row.userId)?.name || row.userId;
+    Modal.confirm({
+      title: resolveI18n({en:`Remove "${userName}" from this scope?`,nl:`"${userName}" verwijderen uit deze scope?`}, lang),
+      okText: resolveI18n({en:'Remove',nl:'Verwijderen'}, lang), okType:'danger',
+      onOk:() => { AccessStore.remove(row.userId, entityId); rerender(); }
+    });
   };
 
   const userCols = [
@@ -6789,49 +6937,22 @@ function UsersTab({ entityId, t, lang }) {
     <div className="config-tab-content">
       <EntityList columns={userCols} dataSource={scopeUsers} rowKey="userId" lang={lang}
         title={{en:'Users',nl:'Gebruikers'}}
-        addButton={{label:{en:'Assign',nl:'Toewijzen'},onClick:()=>setAddOpen(true)}}
+        addButton={{label:{en:'Assign',nl:'Toewijzen'},onClick:() => onOpenModal && onOpenModal({mode:'create', entityType:'userAssignment', parentId:entityId})}}
         rowActions={[
-          {key:'edit',icon:React.createElement(EditOutlined,{style:{fontSize:12}}),onClick:row=>setEditUser({...row})},
+          {key:'edit',icon:React.createElement(EditOutlined,{style:{fontSize:12}}),onClick:row => onOpenModal && onOpenModal({mode:'edit', entityType:'userAssignment', entityId:row.userId+'@'+entityId, parentId:entityId})},
           {key:'delete',icon:React.createElement(DeleteOutlined,{style:{fontSize:12}}),danger:true,onClick:handleRemove},
         ]}
         emptyIcon={React.createElement(TeamOutlined)} emptyText={{en:'No users at this scope',nl:'Geen gebruikers in deze scope'}}/>
-      {/* Drawers stay the same */}
-      <Drawer title={{en:'Assign User',nl:'Gebruiker Toewijzen'}[lang]} open={addOpen} onClose={()=>setAddOpen(false)} width={360}
-        extra={React.createElement(Button,{type:'primary',size:'small',onClick:handleAdd,disabled:!addUserId||!addRole},{en:'Assign',nl:'Toewijzen'}[lang])}>
-        <div style={{display:'grid',gap:14}}>
-          <div><div style={{fontSize:11,fontWeight:500,color:'var(--text-primary)',marginBottom:4}}>{lang==='nl'?'Gebruiker':'User'}</div>
-            <Select size="small" style={{width:'100%'}} placeholder={lang==='nl'?'Selecteer...':'Select...'} value={addUserId||undefined} onChange={setAddUserId}
-              showSearch filterOption={(input,opt)=>(opt?.label||'').toLowerCase().includes(input.toLowerCase())}
-              options={allUsers.map(u=>({value:u.id,label:`${u.name} (${u.email})`}))}/></div>
-          <div><div style={{fontSize:11,fontWeight:500,color:'var(--text-primary)',marginBottom:4}}>{lang==='nl'?'Rol':'Role'}</div>
-            <Select size="small" style={{width:'100%'}} placeholder={lang==='nl'?'Selecteer...':'Select...'} value={addRole||undefined} onChange={setAddRole}
-              options={roles.map(r=>({value:r.name,label:`${r.name} \u2014 ${r.level}`}))}/></div>
-        </div>
-      </Drawer>
-      <Drawer title={{en:'Edit Assignment',nl:'Toewijzing Bewerken'}[lang]} open={!!editUser} onClose={()=>setEditUser(null)} width={360}
-        extra={React.createElement(Button,{type:'primary',size:'small',onClick:handleEditSave},{en:'Save',nl:'Opslaan'}[lang])}>
-        {editUser && <div style={{display:'grid',gap:14}}>
-          <div><div style={{fontSize:11,fontWeight:500,color:'var(--text-primary)',marginBottom:4}}>{lang==='nl'?'Gebruiker':'User'}</div>
-            <Input size="small" value={UserStore.getUser(editUser.userId)?.name||editUser.userId} disabled/></div>
-          <div><div style={{fontSize:11,fontWeight:500,color:'var(--text-primary)',marginBottom:4}}>{lang==='nl'?'Rol':'Role'}</div>
-            <Select size="small" style={{width:'100%'}} value={editUser.role} onChange={v=>setEditUser({...editUser,role:v})}
-              options={roles.map(r=>({value:r.name,label:`${r.name} \u2014 ${r.level}`}))}/></div>
-        </div>}
-      </Drawer>
     </div>
   );
 }
 
-// ─── Tab: Roles (CRUD with app-scoped privileges) ───
-function RolesTab({ entityId, t, lang }) {
+// ─── Tab: Roles (CRUD with app-scoped privileges, uses EntityEditModal for create) ───
+function RolesTab({ entityId, t, lang, onOpenModal }) {
   const [, setTick] = useState(0);
   const rerender = () => setTick(t => t+1);
-  const entity = EntityStore.get(entityId);
   const scopeUsers = AccessStore.getForScope(entityId);
   const [expanded, setExpanded] = useState(null);
-  const [addOpen, setAddOpen] = useState(false);
-  const [newName, setNewName] = useState('');
-  const [newLevel, setNewLevel] = useState('Site');
   const roles = RoleStore.getAll();
   const apps = NavigationStore.getVisibleApps();
 
@@ -6839,14 +6960,14 @@ function RolesTab({ entityId, t, lang }) {
   scopeUsers.forEach(su => { roleCounts[su.role] = (roleCounts[su.role] || 0) + 1; });
   const roleColors = { 'Platform Admin':'red','Account Admin':'orange','Regional Admin':'gold','Site Admin':'blue','Operator':'cyan','Installer':'green','Viewer':'default','API User':'purple' };
 
-  const handleCreate = () => {
-    if (!newName.trim()) return;
-    RoleStore.put({ name:newName, level:newLevel, description:'', privileges:[], systemPerms:[] });
-    setAddOpen(false); setNewName(''); rerender();
-  };
   const handleDelete = (row) => {
-    Modal.confirm({ title:`${lang==='nl'?'Rol verwijderen':'Delete role'} "${row.name}"?`, okText:lang==='nl'?'Verwijderen':'Delete', okType:'danger',
-      onOk:() => { RoleStore.remove(row.id); rerender(); } });
+    const assignedCount = roleCounts[row.name] || 0;
+    Modal.confirm({
+      title: resolveI18n({en:`Delete role "${row.name}"?`,nl:`Rol "${row.name}" verwijderen?`}, lang),
+      content: assignedCount > 0 ? resolveI18n({en:`${assignedCount} user(s) are currently assigned this role.`,nl:`${assignedCount} gebruiker(s) hebben momenteel deze rol.`}, lang) : undefined,
+      okText: resolveI18n({en:'Delete',nl:'Verwijderen'}, lang), okType:'danger',
+      onOk:() => { RoleStore.remove(row.id); rerender(); }
+    });
   };
   const togglePriv = (role, privId) => {
     const r = RoleStore.get(role.id); if (!r) return;
@@ -6875,7 +6996,7 @@ function RolesTab({ entityId, t, lang }) {
     <div className="config-tab-content">
       <EntityList columns={roleCols} dataSource={roles} lang={lang} columnPicker
         title={{en:'Roles',nl:'Rollen'}}
-        addButton={{label:{en:'New Role',nl:'Nieuwe Rol'},onClick:()=>setAddOpen(true)}}
+        addButton={{label:{en:'New Role',nl:'Nieuwe Rol'},onClick:() => onOpenModal && onOpenModal({mode:'create', entityType:'role'})}}
         rowActions={[
           {key:'delete',icon:React.createElement(DeleteOutlined,{style:{fontSize:12}}),danger:true,onClick:handleDelete},
         ]}
@@ -6885,16 +7006,6 @@ function RolesTab({ entityId, t, lang }) {
           expandedRowRender: (role) => React.createElement(RolePrivilegePanel, { role, apps, lang, togglePriv, toggleSysPerm, scopeUsers }),
         }}
         emptyIcon={React.createElement(SafetyCertificateOutlined)} emptyText={{en:'No roles defined',nl:'Geen rollen gedefinieerd'}}/>
-      <Drawer title={{en:'Create Role',nl:'Rol Aanmaken'}[lang]} open={addOpen} onClose={()=>setAddOpen(false)} width={360}
-        extra={React.createElement(Button,{type:'primary',size:'small',onClick:handleCreate,disabled:!newName.trim()},{en:'Create',nl:'Aanmaken'}[lang])}>
-        <div style={{display:'grid',gap:14}}>
-          <div><div style={{fontSize:11,fontWeight:500,color:'var(--text-primary)',marginBottom:4}}>{lang==='nl'?'Rolnaam':'Role Name'}</div>
-            <Input size="small" value={newName} onChange={e=>setNewName(e.target.value)} placeholder={lang==='nl'?'bijv. Energy Manager':'e.g. Energy Manager'}/></div>
-          <div><div style={{fontSize:11,fontWeight:500,color:'var(--text-primary)',marginBottom:4}}>{lang==='nl'?'Bereikniveau':'Scope Level'}</div>
-            <Select size="small" style={{width:'100%'}} value={newLevel} onChange={setNewLevel}
-              options={['Platform','Account','Sub-account','Site'].map(l=>({value:l,label:l}))}/></div>
-        </div>
-      </Drawer>
     </div>
   );
 }
@@ -7435,11 +7546,25 @@ function ConfigurationPage({ t, lang, navigateWithLoader, focusedEntityId, setFo
   });
   const [treeFilter, setTreeFilter] = useState('');
   const [activeTab, setActiveTab] = useState('overview');
+  const [, setConfigTick] = useState(0);
+  const rerenderConfig = () => setConfigTick(t => t+1);
   const [editModalState, setEditModalState] = useState({ visible:false, mode:'edit', entityType:null, entityId:null, parentId:null });
   const openEditModal = (entity) => setEditModalState({ visible:true, mode:'edit', entityType:entity.entityType, entityId:entity.id, parentId:null });
   const openCreateModal = (childType, parentId) => setEditModalState({ visible:true, mode:'create', entityType:childType, entityId:null, parentId });
   const closeEditModal = () => setEditModalState({ visible:false, mode:'edit', entityType:null, entityId:null, parentId:null });
-  const handleModalSave = (id) => { closeEditModal(); handleSelect(id); };
+  const handleModalSave = (id) => {
+    closeEditModal();
+    // For non-entity types, just re-render the page; for entities, navigate to the new entity
+    if (NON_ENTITY_TYPES.includes(editModalState.entityType)) {
+      rerenderConfig();
+    } else {
+      handleSelect(id);
+    }
+  };
+  // Unified onOpenModal callback for all tabs
+  const onOpenModal = ({ mode, entityType, entityId, parentId }) => {
+    setEditModalState({ visible:true, mode: mode||'create', entityType, entityId: entityId||null, parentId: parentId||null });
+  };
 
   const selectedEntity = EntityStore.get(selectedEntityId);
   const tabs = selectedEntity ? TabRegistry.getTabsForEntity(selectedEntity) : [];
@@ -7493,8 +7618,8 @@ function ConfigurationPage({ t, lang, navigateWithLoader, focusedEntityId, setFo
     const key = tabDef.key;
     if (key === 'overview') return <OverviewMicroFrontend entity={selectedEntity} lang={lang} onEdit={() => openEditModal(selectedEntity)}/>;
     if (tabDef.type === 'children') return <EntityListTab parentId={selectedEntityId} childType={tabDef.childType} t={t} lang={lang} onNavigate={handleSelect} onAdd={handleAdd}/>;
-    if (key === 'users') return <UsersTab entityId={selectedEntityId} t={t} lang={lang}/>;
-    if (key === 'roles') return <RolesTab entityId={selectedEntityId} t={t} lang={lang}/>;
+    if (key === 'users') return <UsersTab entityId={selectedEntityId} t={t} lang={lang} onOpenModal={onOpenModal}/>;
+    if (key === 'roles') return <RolesTab entityId={selectedEntityId} t={t} lang={lang} onOpenModal={onOpenModal}/>;
     if (key === 'privileges') return <PrivilegesTab entityId={selectedEntityId} t={t} lang={lang}/>;
     if (key === 'events') return <EventsTab entity={selectedEntity} lang={lang}/>;
     if (key === 'alarms') return <AlarmsTab entity={selectedEntity} lang={lang}/>;
@@ -7551,12 +7676,34 @@ function ConfigurationPage({ t, lang, navigateWithLoader, focusedEntityId, setFo
                     <div className="config-entity-type">{selectedEntity.entityType}</div>
                   </div>
                 </div>
-                <div className="config-actions">
-                  <button className="header-btn" style={{fontSize:11}} onClick={() => openEditModal(selectedEntity)}>
+                <div className="config-actions" style={{display:'flex',gap:6,alignItems:'center'}}>
+                  {(() => {
+                    const childTypeMap = {
+                      platform: [{key:'account',label:{en:'Account',nl:'Account'}}],
+                      account: [{key:'subAccount',label:{en:'Sub-account',nl:'Sub-account'}}],
+                      subAccount: [{key:'site',label:{en:'Site',nl:'Locatie'}}],
+                      site: [{key:'deviceGroup',label:{en:'Device Group',nl:'Apparaatgroep'}}],
+                      deviceGroup: [{key:'deviceGroup',label:{en:'Sub-group',nl:'Subgroep'}},{key:'device',label:{en:'Device',nl:'Apparaat'}}],
+                      device: [{key:'sensor',label:{en:'Sensor',nl:'Sensor'}},{key:'actuator',label:{en:'Actuator',nl:'Actuator'}}],
+                    };
+                    const childTypes = childTypeMap[selectedEntity.entityType] || [];
+                    if (childTypes.length === 0) return null;
+                    return React.createElement(Dropdown, {
+                      menu: { items: childTypes.map(ct => ({key:ct.key, label:resolveI18n(ct.label, lang)})), onClick: ({key}) => openCreateModal(key, selectedEntityId) },
+                      trigger: ['click']
+                    },
+                      React.createElement(Tooltip, {title: resolveI18n({en:'Add child entity',nl:'Onderliggende entiteit toevoegen'}, lang)},
+                        React.createElement(Button, {type:'primary', size:'small', shape:'circle',
+                          style:{background:'var(--brand)',borderColor:'var(--brand)',color:'white'},
+                          icon: React.createElement(PlusOutlined)})
+                      )
+                    );
+                  })()}
+                  <button className="header-btn" style={{fontSize:11,background:'var(--bg-secondary)',color:'var(--text-primary)',border:'1px solid var(--border)'}} onClick={() => openEditModal(selectedEntity)}>
                     <EditOutlined style={{marginRight:4}}/>{resolveI18n({en:'Edit',nl:'Bewerken'}, lang)}
                   </button>
                   {selectedEntity.entityType !== 'platform' && (
-                    <button className="header-btn" style={{fontSize:11,color:'var(--error)'}} onClick={handleDelete}>
+                    <button className="header-btn" style={{fontSize:11,color:'var(--error)',border:'1px solid color-mix(in srgb, var(--error) 20%, transparent)'}} onClick={handleDelete}>
                       <DeleteOutlined style={{marginRight:4}}/>{t.deleteEntity}
                     </button>
                   )}
