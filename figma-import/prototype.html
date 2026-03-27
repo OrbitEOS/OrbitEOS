@@ -6957,7 +6957,8 @@ function FormPanel({ fields, values, errors, onChange, lang }) {
 }
 
 // ─── Non-entity type helpers ───
-const NON_ENTITY_TYPES = ['userAssignment','role','privilege','systemPermission','user'];
+const NON_ENTITY_TYPES = ['userAssignment','role','privilege','systemPermission'];
+// 'user' removed from NON_ENTITY_TYPES — it has a full template in EntityTemplateStore
 const NON_ENTITY_ICONS = {
   userAssignment: TeamOutlined, role: SafetyCertificateOutlined,
   privilege: LockOutlined, systemPermission: SettingOutlined,
@@ -7074,6 +7075,15 @@ function EntityEditModal({ visible, mode, entityType, entityId, parentId, onSave
     if (!visible) return;
     if (isNonEntity) {
       setValues(loadNonEntityRecord(entityType, mode === 'edit' ? entityId : null, parentId));
+    } else if (entityType === 'user') {
+      // Users live in UserStore, not EntityStore
+      if (mode === 'edit' && entityId) {
+        const user = UserStore.getUser(entityId);
+        if (user) setValues({ name:user.name, entityType:'user', properties:{ email:user.email, phone:user.phone||'', avatar_url:user.avatar||'', user_language:user.lang||'en', user_theme:user.theme||'dark' } });
+        else setValues({ name:'', entityType:'user', properties:{email:'',phone:'',avatar_url:'',user_language:'en',user_theme:'dark'} });
+      } else {
+        setValues({ name:'', entityType:'user', properties:{email:'',phone:'',avatar_url:'',user_language:'en',user_theme:'dark'} });
+      }
     } else if (mode === 'edit' && entityId) {
       const entity = EntityStore.get(entityId);
       if (entity) {
@@ -7142,6 +7152,30 @@ function EntityEditModal({ visible, mode, entityType, entityId, parentId, onSave
     if (isNonEntity) {
       const resultId = saveNonEntityRecord(entityType, values, mode, entityId, parentId);
       onSave(resultId);
+    } else if (entityType === 'user') {
+      // Save to UserStore
+      if (mode === 'create') {
+        const newId = `user-${Date.now()}`;
+        UserStore.register({ id:newId, name:values.name, email:values.properties?.email||'', phone:values.properties?.phone||'',
+          avatar:values.properties?.avatar_url||'', lang:values.properties?.user_language||'en', theme:values.properties?.user_theme||'dark',
+          password:'orbit2026', role:'Viewer', accountId:null, initials:(values.name||'').split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2),
+          permissions:[], lastLogin:'Never', status:'offline' });
+        // Auto-assign to parent scope if provided
+        if (parentId) AccessStore.add({ userId:newId, scopeId:parentId, role:'Viewer', permissions:[] });
+        onSave(newId);
+      } else {
+        const user = UserStore.getUser(entityId);
+        if (user) {
+          user.name = values.name;
+          user.email = values.properties?.email || user.email;
+          user.phone = values.properties?.phone || '';
+          user.avatar = values.properties?.avatar_url || '';
+          user.lang = values.properties?.user_language || 'en';
+          user.theme = values.properties?.user_theme || 'dark';
+          user.initials = (values.name||'').split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
+        }
+        onSave(entityId);
+      }
     } else if (mode === 'create') {
       const newId = `${entityType}-${Date.now()}`;
       const entity = { ...values, id:newId, entityType, parentId };
@@ -7830,7 +7864,7 @@ function UsersTab({ entityId, t, lang, onOpenModal }) {
     <div className="config-tab-content">
       <EntityList columns={userCols} dataSource={scopeUsers} rowKey="userId" lang={lang}
         title={{en:'Users',nl:'Gebruikers'}}
-        addButton={{label:'',onClick:() => onOpenModal && onOpenModal({mode:'create', entityType:'userAssignment', parentId:entityId})}}
+        addButton={{label:'',onClick:() => onOpenModal && onOpenModal({mode:'create', entityType:'user', parentId:entityId})}}
         rowActions={[
           {key:'edit',icon:React.createElement(EditOutlined,{style:{fontSize:12}}),onClick:row => onOpenModal && onOpenModal({mode:'edit', entityType:'user', entityId:row.userId})},
           {key:'delete',icon:React.createElement(DeleteOutlined,{style:{fontSize:12}}),danger:true,onClick:handleRemove},
