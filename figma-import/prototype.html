@@ -820,6 +820,10 @@ function NavIcon({name, style}) {
 // ═══════════════════════════════════════════════════════════════════════
 const EntityStore = (() => {
   const _entities = new Map();
+  const _subscribers = [];
+
+  function subscribe(fn) { _subscribers.push(fn); return () => { const i = _subscribers.indexOf(fn); if (i >= 0) _subscribers.splice(i, 1); }; }
+  function _notify(event, payload) { _subscribers.forEach(fn => fn({ event, ...payload })); }
 
   // ── Entity shape ──
   // { id, entityType, parentId, name, properties:{}, state:{}, alarms:[], capabilities:[] }
@@ -827,6 +831,7 @@ const EntityStore = (() => {
 
   function put(entity) {
     _entities.set(entity.id, entity);
+    _notify('put', { entityId: entity.id, entity });
   }
 
   function get(id) { return _entities.get(id); }
@@ -1006,6 +1011,7 @@ const EntityStore = (() => {
     const desc = getDescendants(id);
     desc.forEach(e => _entities.delete(e.id));
     _entities.delete(id);
+    _notify('remove', { entityId: id });
   }
 
   function update(id, changes) {
@@ -1016,12 +1022,13 @@ const EntityStore = (() => {
       state: { ...existing.state, ...(changes.state || {}) },
     };
     _entities.set(id, merged);
+    _notify('put', { entityId: id, entity: merged });
   }
 
   return { put, get, getChildren, getByType, getDescendants, getSiteDevices, getSiteSensors,
     getSiteDeviceGroups, getSiteAlarms, getResolvedProperty, getAll, size, remove, update,
     getAggregatedEnergyFlow, getAggregatedAlarms, getAggregatedPeakShaving,
-    getAggregatedCompliance, getPath };
+    getAggregatedCompliance, getPath, subscribe };
 })();
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -1820,7 +1827,811 @@ const APP_SEEDS = [
 APP_SEEDS.forEach(a => NavigationStore.registerApp(a));
 console.log(`NavigationStore: ${NavigationStore.getAllApps().length} apps registered`);
 
-// ─── Seed: Platform ───
+// ═══════════════════════════════════════════════════════════════════════
+// ─── PropertyCatalogStore (Property definitions + groups) ───
+// Single source of truth for ALL property metadata. Every form field,
+// list column, and validation rule traces back here.
+// ═══════════════════════════════════════════════════════════════════════
+const PropertyCatalogStore = (() => {
+  const _definitions = new Map();
+  const _groups = new Map();
+  const _listeners = [];
+
+  function _notify() { _listeners.forEach(fn => fn()); }
+  function subscribe(fn) { _listeners.push(fn); return () => { const i = _listeners.indexOf(fn); if (i >= 0) _listeners.splice(i, 1); }; }
+
+  // ── Definition API ──
+  function putDefinition(def) { _definitions.set(def.key, def); _notify(); }
+  function getDefinition(key) { return _definitions.get(key); }
+  function getDefinitions() { return Array.from(_definitions.values()); }
+  function getByGroup(groupKey) { return getDefinitions().filter(d => d.group_key === groupKey); }
+  function getByEntityType(entityType) { return getDefinitions().filter(d => !d.applies_to || d.applies_to.includes(entityType)); }
+  function removeDefinition(key) { _definitions.delete(key); _notify(); }
+
+  // ── Group API ──
+  function putGroup(group) { _groups.set(group.key, group); _notify(); }
+  function getGroup(key) { return _groups.get(key); }
+  function getGroups() { return Array.from(_groups.values()).sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0)); }
+  function removeGroup(key) { _groups.delete(key); _notify(); }
+
+  return { putDefinition, getDefinition, getDefinitions, getByGroup, getByEntityType, removeDefinition,
+    putGroup, getGroup, getGroups, removeGroup, subscribe };
+})();
+
+// ── Seed: Property Groups (10 groups) ──
+[
+  { key:'identity', name:'Identity', i18n:{en:'Identity',nl:'Identiteit'}, icon:'UserOutlined', sort_order:1 },
+  { key:'physical', name:'Physical', i18n:{en:'Physical',nl:'Fysiek'}, icon:'BuildOutlined', sort_order:2 },
+  { key:'electrical', name:'Electrical', i18n:{en:'Electrical',nl:'Elektrisch'}, icon:'ThunderboltOutlined', sort_order:3 },
+  { key:'communication', name:'Communication', i18n:{en:'Communication',nl:'Communicatie'}, icon:'ApiOutlined', sort_order:4 },
+  { key:'location', name:'Location', i18n:{en:'Location',nl:'Locatie'}, icon:'EnvironmentOutlined', sort_order:5 },
+  { key:'operational', name:'Operational', i18n:{en:'Operational',nl:'Operationeel'}, icon:'ToolOutlined', sort_order:6 },
+  { key:'environmental', name:'Environmental', i18n:{en:'Environmental',nl:'Omgeving'}, icon:'DashboardOutlined', sort_order:7 },
+  { key:'compliance', name:'Compliance', i18n:{en:'Compliance',nl:'Naleving'}, icon:'SafetyCertificateOutlined', sort_order:8 },
+  { key:'platform_settings', name:'Platform Settings', i18n:{en:'Platform Settings',nl:'Platforminstellingen'}, icon:'GlobalOutlined', sort_order:9 },
+  { key:'user_profile', name:'User Profile', i18n:{en:'User Profile',nl:'Gebruikersprofiel'}, icon:'UserOutlined', sort_order:10 },
+].forEach(g => PropertyCatalogStore.putGroup(g));
+
+// ── Seed: Property Definitions (~55 definitions) ──
+[
+  // ── Identity group ──
+  { key:'name', name:'Name', i18n:{en:'Name',nl:'Naam',de:'Name'}, group_key:'identity', category:'fixed', data_type:'string',
+    ui_representation:'text', validation:{min_length:2}, applies_to:['platform','account','subAccount','site','deviceGroup','device','sensor','actuator'],
+    is_required:true, is_readonly:false, is_array:false, entity_path:'name', lifecycle_status:'active' },
+  { key:'entity_type_key', name:'Type', i18n:{en:'Type',nl:'Type',de:'Typ'}, group_key:'identity', category:'fixed', data_type:'enum',
+    ui_representation:'dropdown', applies_to:['account','subAccount','site','deviceGroup','device','sensor','actuator'],
+    is_required:true, is_readonly:false, is_array:false, entity_path:'properties.type', lifecycle_status:'active',
+    enum_values:null, enum_values_i18n:null },
+  { key:'account_type', name:'Account Type', i18n:{en:'Account Type',nl:'Accounttype'}, group_key:'identity', category:'fixed', data_type:'enum',
+    ui_representation:'dropdown', applies_to:['account'], is_required:true, is_readonly:false, is_array:false,
+    entity_path:'properties.type', lifecycle_status:'active',
+    enum_values:['Commercial','Industrial','Residential','Government'],
+    enum_values_i18n:{Commercial:{en:'Commercial',nl:'Commercieel'},Industrial:{en:'Industrial',nl:'Industrieel'},Residential:{en:'Residential',nl:'Residentieel'},Government:{en:'Government',nl:'Overheid'}} },
+  { key:'site_type', name:'Site Type', i18n:{en:'Site Type',nl:'Locatietype'}, group_key:'identity', category:'fixed', data_type:'enum',
+    ui_representation:'dropdown', applies_to:['site'], is_required:true, is_readonly:false, is_array:false,
+    entity_path:'properties.type', lifecycle_status:'active',
+    enum_values:['Agricultural','Residential','Commercial Office','Industrial','Microgrid','Campus'],
+    enum_values_i18n:{Agricultural:{en:'Agricultural',nl:'Agrarisch'},Residential:{en:'Residential',nl:'Residentieel'},'Commercial Office':{en:'Commercial Office',nl:'Commercieel Kantoor'},Industrial:{en:'Industrial',nl:'Industrieel'},Microgrid:{en:'Microgrid'},Campus:{en:'Campus'}} },
+  { key:'device_group_type', name:'Group Type', i18n:{en:'Group Type',nl:'Groeptype'}, group_key:'identity', category:'fixed', data_type:'enum',
+    ui_representation:'dropdown', applies_to:['deviceGroup'], is_required:true, is_readonly:false, is_array:false,
+    entity_path:'properties.type', lifecycle_status:'active',
+    enum_values:['Generation','Storage','EV Charging','Metering','HVAC','Infrastructure','Grid','Gateway'],
+    enum_values_i18n:{Generation:{en:'Generation',nl:'Opwekking'},Storage:{en:'Storage',nl:'Opslag'},'EV Charging':{en:'EV Charging',nl:'EV Laden'},Metering:{en:'Metering',nl:'Meting'},HVAC:{en:'HVAC'},Infrastructure:{en:'Infrastructure',nl:'Infrastructuur'},Grid:{en:'Grid',nl:'Net'},Gateway:{en:'Gateway'}} },
+  { key:'device_type', name:'Device Type', i18n:{en:'Device Type',nl:'Apparaattype'}, group_key:'identity', category:'fixed', data_type:'enum',
+    ui_representation:'dropdown', applies_to:['device'], is_required:true, is_readonly:false, is_array:false,
+    entity_path:'properties.type', lifecycle_status:'active',
+    enum_values:['Solar Inverter','Battery','EV Charger','Power Analyzer','Energy Meter','Wind Turbine','Heat Pump','Gateway','Relay','Fire Suppression','Climate Control','Router'],
+    enum_values_i18n:{'Solar Inverter':{en:'Solar Inverter',nl:'Zonne-omvormer'},Battery:{en:'Battery',nl:'Batterij'},'EV Charger':{en:'EV Charger',nl:'EV Lader'},'Power Analyzer':{en:'Power Analyzer',nl:'Vermogensanalyzer'},'Energy Meter':{en:'Energy Meter',nl:'Energiemeter'},'Wind Turbine':{en:'Wind Turbine',nl:'Windturbine'},'Heat Pump':{en:'Heat Pump',nl:'Warmtepomp'},Gateway:{en:'Gateway'},Relay:{en:'Relay',nl:'Relais'},'Fire Suppression':{en:'Fire Suppression',nl:'Brandblussing'},'Climate Control':{en:'Climate Control',nl:'Klimaatbeheersing'},Router:{en:'Router'}} },
+  { key:'sensor_type', name:'Sensor Type', i18n:{en:'Sensor Type',nl:'Sensortype'}, group_key:'identity', category:'fixed', data_type:'enum',
+    ui_representation:'dropdown', applies_to:['sensor'], is_required:true, is_readonly:false, is_array:false,
+    entity_path:'properties.type', lifecycle_status:'active',
+    enum_values:['power','energy','voltage','current','temperature','percentage','counter','frequency','humidity','pressure','status','ratio'],
+    enum_values_i18n:{power:{en:'Power',nl:'Vermogen'},energy:{en:'Energy',nl:'Energie'},voltage:{en:'Voltage',nl:'Spanning'},current:{en:'Current',nl:'Stroom'},temperature:{en:'Temperature',nl:'Temperatuur'},percentage:{en:'Percentage'},counter:{en:'Counter',nl:'Teller'},frequency:{en:'Frequency',nl:'Frequentie'},humidity:{en:'Humidity',nl:'Vochtigheid'},pressure:{en:'Pressure',nl:'Druk'},status:{en:'Status'},ratio:{en:'Ratio'}} },
+  { key:'actuator_type', name:'Actuator Type', i18n:{en:'Actuator Type',nl:'Actuatortype'}, group_key:'identity', category:'fixed', data_type:'enum',
+    ui_representation:'dropdown', applies_to:['actuator'], is_required:true, is_readonly:false, is_array:false,
+    entity_path:'properties.type', lifecycle_status:'active',
+    enum_values:['power_limit','reactive_power','mode','switch','setpoint','valve','relay','temperature'],
+    enum_values_i18n:{power_limit:{en:'Power Limit',nl:'Vermogenslimiet'},reactive_power:{en:'Reactive Power',nl:'Blindvermogen'},mode:{en:'Mode',nl:'Modus'},'switch':{en:'Switch',nl:'Schakelaar'},setpoint:{en:'Setpoint'},valve:{en:'Valve',nl:'Klep'},relay:{en:'Relay',nl:'Relais'},temperature:{en:'Temperature',nl:'Temperatuur'}} },
+  { key:'manufacturer', name:'Manufacturer', i18n:{en:'Manufacturer',nl:'Fabrikant'}, group_key:'identity', category:'fixed', data_type:'string',
+    ui_representation:'text', applies_to:['device'], is_required:true, is_readonly:false, is_array:false,
+    entity_path:'properties.manufacturer', lifecycle_status:'active' },
+  { key:'model', name:'Model', i18n:{en:'Model',nl:'Model'}, group_key:'identity', category:'fixed', data_type:'string',
+    ui_representation:'text', applies_to:['device'], is_required:true, is_readonly:false, is_array:false,
+    entity_path:'properties.model', lifecycle_status:'active' },
+  { key:'serial_number', name:'Serial Number', i18n:{en:'Serial Number',nl:'Serienummer'}, group_key:'identity', category:'fixed', data_type:'string',
+    ui_representation:'text', applies_to:['device'], is_required:false, is_readonly:false, is_array:false,
+    entity_path:'properties.serialNumber', lifecycle_status:'active' },
+  { key:'description', name:'Description', i18n:{en:'Description',nl:'Beschrijving'}, group_key:'identity', category:'fixed', data_type:'string',
+    ui_representation:'textarea', applies_to:['platform','account','subAccount','site','deviceGroup','device','sensor','actuator'],
+    is_required:false, is_readonly:false, is_array:false, entity_path:'properties.description', lifecycle_status:'active' },
+  { key:'tags', name:'Tags', i18n:{en:'Tags',nl:'Labels',de:'Stichworte'}, group_key:'identity', category:'fixed', data_type:'json',
+    ui_representation:'tags', applies_to:['platform','account','subAccount','site','deviceGroup','device','sensor','actuator'],
+    is_required:false, is_readonly:false, is_array:true, entity_path:'properties.tags', lifecycle_status:'active' },
+  { key:'version', name:'Version', i18n:{en:'Version',nl:'Versie'}, group_key:'identity', category:'fixed', data_type:'string',
+    ui_representation:'text', applies_to:['platform'], is_required:false, is_readonly:true, is_array:false,
+    entity_path:'properties.version', lifecycle_status:'active' },
+
+  // ── Communication group ──
+  { key:'protocol', name:'Protocol', i18n:{en:'Protocol',nl:'Protocol'}, group_key:'communication', category:'fixed', data_type:'enum',
+    ui_representation:'dropdown', applies_to:['device','sensor','actuator'], is_required:false, is_readonly:false, is_array:false,
+    entity_path:'properties.protocol', lifecycle_status:'active',
+    enum_values:['Modbus TCP','Modbus RTU','MQTT','OCPP','SunSpec','REST API','BACnet'],
+    enum_values_i18n:{'Modbus TCP':{en:'Modbus TCP'},'Modbus RTU':{en:'Modbus RTU'},MQTT:{en:'MQTT'},OCPP:{en:'OCPP'},SunSpec:{en:'SunSpec'},'REST API':{en:'REST API'},BACnet:{en:'BACnet'}} },
+  { key:'ip_address', name:'IP Address', i18n:{en:'IP Address',nl:'IP-adres'}, group_key:'communication', category:'fixed', data_type:'string',
+    ui_representation:'text', applies_to:['device','sensor','actuator'], is_required:false, is_readonly:false, is_array:false,
+    entity_path:'properties.ip', lifecycle_status:'active' },
+  { key:'port', name:'Port', i18n:{en:'Port',nl:'Poort'}, group_key:'communication', category:'fixed', data_type:'number',
+    ui_representation:'number', validation:{min:1,max:65535}, applies_to:['device','sensor','actuator'],
+    is_required:false, is_readonly:false, is_array:false, entity_path:'properties.port', lifecycle_status:'active' },
+  { key:'modbus_id', name:'Modbus ID', i18n:{en:'Modbus ID',nl:'Modbus ID'}, group_key:'communication', category:'fixed', data_type:'number',
+    ui_representation:'number', validation:{min:1,max:247}, applies_to:['device','sensor','actuator'],
+    is_required:false, is_readonly:false, is_array:false, entity_path:'properties.modbusId', lifecycle_status:'active' },
+  { key:'poll_interval', name:'Poll Interval', i18n:{en:'Poll Interval (s)',nl:'Poll Interval (s)'}, group_key:'communication', category:'fixed', data_type:'number',
+    ui_representation:'number', validation:{min:1}, applies_to:['device','sensor','actuator'],
+    is_required:false, is_readonly:false, is_array:false, entity_path:'properties.pollInterval', lifecycle_status:'active' },
+  { key:'firmware', name:'Firmware Version', i18n:{en:'Firmware Version',nl:'Firmwareversie'}, group_key:'communication', category:'fixed', data_type:'string',
+    ui_representation:'text', applies_to:['device'], is_required:false, is_readonly:true, is_array:false,
+    entity_path:'properties.firmware', lifecycle_status:'active' },
+  { key:'auto_update', name:'Auto Update', i18n:{en:'Auto Update',nl:'Automatisch Updaten'}, group_key:'communication', category:'fixed', data_type:'boolean',
+    ui_representation:'toggle', applies_to:['device'], is_required:false, is_readonly:false, is_array:false,
+    entity_path:'properties.autoUpdate', lifecycle_status:'active' },
+
+  // ── Location group ──
+  { key:'address', name:'Address', i18n:{en:'Address',nl:'Adres'}, group_key:'location', category:'fixed', data_type:'string',
+    ui_representation:'text', applies_to:['site'], is_required:false, is_readonly:false, is_array:false,
+    entity_path:'properties.location', lifecycle_status:'active' },
+  { key:'latitude', name:'Latitude', i18n:{en:'Latitude',nl:'Breedtegraad'}, group_key:'location', category:'fixed', data_type:'number',
+    ui_representation:'number', validation:{min:-90,max:90,step:0.001}, applies_to:['site'],
+    is_required:false, is_readonly:false, is_array:false, entity_path:'properties.lat', lifecycle_status:'active' },
+  { key:'longitude', name:'Longitude', i18n:{en:'Longitude',nl:'Lengtegraad'}, group_key:'location', category:'fixed', data_type:'number',
+    ui_representation:'number', validation:{min:-180,max:180,step:0.001}, applies_to:['site'],
+    is_required:false, is_readonly:false, is_array:false, entity_path:'properties.lng', lifecycle_status:'active' },
+  { key:'region', name:'Region', i18n:{en:'Region',nl:'Regio'}, group_key:'location', category:'fixed', data_type:'string',
+    ui_representation:'text', applies_to:['subAccount'], is_required:true, is_readonly:false, is_array:false,
+    entity_path:'properties.region', lifecycle_status:'active' },
+
+  // ── Operational group ──
+  { key:'install_date', name:'Install Date', i18n:{en:'Install Date',nl:'Installatiedatum'}, group_key:'operational', category:'fixed', data_type:'datetime',
+    ui_representation:'date', applies_to:['device'], is_required:false, is_readonly:false, is_array:false,
+    entity_path:'properties.installDate', lifecycle_status:'active' },
+  { key:'contact_email', name:'Contact Email', i18n:{en:'Contact Email',nl:'Contact E-mail'}, group_key:'operational', category:'fixed', data_type:'string',
+    ui_representation:'email', applies_to:['account'], is_required:true, is_readonly:false, is_array:false,
+    entity_path:'properties.contactEmail', lifecycle_status:'active' },
+  { key:'vat_number', name:'VAT Number', i18n:{en:'VAT Number',nl:'BTW-nummer'}, group_key:'operational', category:'fixed', data_type:'string',
+    ui_representation:'text', applies_to:['account'], is_required:false, is_readonly:false, is_array:false,
+    entity_path:'properties.vatNumber', lifecycle_status:'active' },
+  { key:'plan', name:'Plan', i18n:{en:'Plan',nl:'Abonnement'}, group_key:'operational', category:'fixed', data_type:'enum',
+    ui_representation:'dropdown', applies_to:['account'], is_required:true, is_readonly:false, is_array:false,
+    entity_path:'properties.plan', lifecycle_status:'active',
+    enum_values:['Starter','Professional','Enterprise'],
+    enum_values_i18n:{Starter:{en:'Starter'},Professional:{en:'Professional'},Enterprise:{en:'Enterprise'}} },
+  { key:'max_sites', name:'Max Sites', i18n:{en:'Max Sites',nl:'Max Locaties'}, group_key:'operational', category:'fixed', data_type:'number',
+    ui_representation:'number', validation:{min:1}, applies_to:['account'],
+    is_required:false, is_readonly:false, is_array:false, entity_path:'properties.maxSites', lifecycle_status:'active' },
+  { key:'max_users', name:'Max Users', i18n:{en:'Max Users',nl:'Max Gebruikers'}, group_key:'operational', category:'fixed', data_type:'number',
+    ui_representation:'number', validation:{min:1}, applies_to:['account'],
+    is_required:false, is_readonly:false, is_array:false, entity_path:'properties.maxUsers', lifecycle_status:'active' },
+  { key:'contract_start', name:'Contract Start', i18n:{en:'Contract Start',nl:'Contractstart'}, group_key:'operational', category:'fixed', data_type:'datetime',
+    ui_representation:'date', applies_to:['account'], is_required:false, is_readonly:false, is_array:false,
+    entity_path:'properties.contractStart', lifecycle_status:'active' },
+  { key:'contract_end', name:'Contract End', i18n:{en:'Contract End',nl:'Contracteinde'}, group_key:'operational', category:'fixed', data_type:'datetime',
+    ui_representation:'date', applies_to:['account'], is_required:false, is_readonly:false, is_array:false,
+    entity_path:'properties.contractEnd', lifecycle_status:'active' },
+  { key:'contract_limit', name:'Contract Limit', i18n:{en:'Contract Limit (kW)',nl:'Contractlimiet (kW)'}, group_key:'operational', category:'fixed', data_type:'number',
+    ui_representation:'number', validation:{min:0}, applies_to:['site'],
+    is_required:false, is_readonly:false, is_array:false, entity_path:'properties.contractLimit', lifecycle_status:'active' },
+  { key:'grid_connection', name:'Grid Connection', i18n:{en:'Grid Connection',nl:'Netaansluiting'}, group_key:'operational', category:'fixed', data_type:'enum',
+    ui_representation:'dropdown', applies_to:['site'], is_required:false, is_readonly:false, is_array:false,
+    entity_path:'properties.connection', lifecycle_status:'active',
+    enum_values:['1×25A','3×25A','3×35A','3×40A','3×63A','3×80A'],
+    enum_values_i18n:{'1×25A':{en:'1×25A'},'3×25A':{en:'3×25A'},'3×35A':{en:'3×35A'},'3×40A':{en:'3×40A'},'3×63A':{en:'3×63A'},'3×80A':{en:'3×80A'}} },
+  { key:'dso', name:'DSO', i18n:{en:'DSO',nl:'Netbeheerder'}, group_key:'operational', category:'cascaded', data_type:'enum',
+    ui_representation:'dropdown', applies_to:['subAccount','site'], is_required:false, is_readonly:false, is_array:false,
+    entity_path:'properties.dso', lifecycle_status:'active',
+    enum_values:['Stedin','Liander','Enexis','TenneT','Elia','Fluvius'],
+    enum_values_i18n:{Stedin:{en:'Stedin'},Liander:{en:'Liander'},Enexis:{en:'Enexis'},TenneT:{en:'TenneT'},Elia:{en:'Elia'},Fluvius:{en:'Fluvius'}} },
+  { key:'capacity', name:'Capacity', i18n:{en:'Capacity',nl:'Capaciteit'}, group_key:'operational', category:'fixed', data_type:'string',
+    ui_representation:'text', applies_to:['site'], is_required:false, is_readonly:false, is_array:false,
+    entity_path:'properties.capacity', lifecycle_status:'active' },
+  { key:'sub_lang', name:'Language', i18n:{en:'Language',nl:'Taal'}, group_key:'operational', category:'cascaded', data_type:'enum',
+    ui_representation:'dropdown', applies_to:['subAccount'], is_required:false, is_readonly:false, is_array:false,
+    entity_path:'properties.lang', lifecycle_status:'active',
+    enum_values:['en','nl','de','fr'],
+    enum_values_i18n:{en:{en:'English'},nl:{en:'Nederlands'},de:{en:'Deutsch'},fr:{en:'Français'}} },
+
+  // ── Environmental group (sensor thresholds) ──
+  { key:'warn_min', name:'Warning Min', i18n:{en:'Warning Min',nl:'Waarschuwing Min'}, group_key:'environmental', category:'fixed', data_type:'number',
+    ui_representation:'number', applies_to:['sensor'], is_required:false, is_readonly:false, is_array:false,
+    entity_path:'properties.warnMin', lifecycle_status:'active' },
+  { key:'warn_max', name:'Warning Max', i18n:{en:'Warning Max',nl:'Waarschuwing Max'}, group_key:'environmental', category:'fixed', data_type:'number',
+    ui_representation:'number', applies_to:['sensor'], is_required:false, is_readonly:false, is_array:false,
+    entity_path:'properties.warnMax', lifecycle_status:'active' },
+  { key:'crit_min', name:'Critical Min', i18n:{en:'Critical Min',nl:'Kritiek Min'}, group_key:'environmental', category:'fixed', data_type:'number',
+    ui_representation:'number', applies_to:['sensor'], is_required:false, is_readonly:false, is_array:false,
+    entity_path:'properties.critMin', lifecycle_status:'active' },
+  { key:'crit_max', name:'Critical Max', i18n:{en:'Critical Max',nl:'Kritiek Max'}, group_key:'environmental', category:'fixed', data_type:'number',
+    ui_representation:'number', applies_to:['sensor'], is_required:false, is_readonly:false, is_array:false,
+    entity_path:'properties.critMax', lifecycle_status:'active' },
+  { key:'calib_offset', name:'Calibration Offset', i18n:{en:'Calibration Offset',nl:'Kalibratie Offset'}, group_key:'environmental', category:'fixed', data_type:'number',
+    ui_representation:'number', applies_to:['sensor'], is_required:false, is_readonly:false, is_array:false,
+    entity_path:'properties.calibOffset', lifecycle_status:'active' },
+  { key:'calib_scale_factor', name:'Scale Factor', i18n:{en:'Scale Factor',nl:'Schaalfactor'}, group_key:'environmental', category:'fixed', data_type:'number',
+    ui_representation:'number', validation:{step:0.01}, applies_to:['sensor'], is_required:false, is_readonly:false, is_array:false,
+    entity_path:'properties.calibScaleFactor', lifecycle_status:'active' },
+  { key:'calib_method', name:'Calibration Method', i18n:{en:'Calibration Method',nl:'Kalibratiemethode'}, group_key:'environmental', category:'fixed', data_type:'enum',
+    ui_representation:'dropdown', applies_to:['sensor'], is_required:false, is_readonly:false, is_array:false,
+    entity_path:'properties.calibMethod', lifecycle_status:'active',
+    enum_values:['Manual','Automated','Factory'],
+    enum_values_i18n:{Manual:{en:'Manual',nl:'Handmatig'},Automated:{en:'Automated',nl:'Automatisch'},Factory:{en:'Factory',nl:'Fabriek'}} },
+  { key:'unit', name:'Unit', i18n:{en:'Unit',nl:'Eenheid'}, group_key:'environmental', category:'fixed', data_type:'string',
+    ui_representation:'text', applies_to:['sensor','actuator'], is_required:true, is_readonly:false, is_array:false,
+    entity_path:'properties.unit', lifecycle_status:'active' },
+
+  // ── Compliance group (actuator limits) ──
+  { key:'min_value', name:'Min Value', i18n:{en:'Min Value',nl:'Min Waarde'}, group_key:'compliance', category:'fixed', data_type:'number',
+    ui_representation:'number', applies_to:['actuator'], is_required:false, is_readonly:false, is_array:false,
+    entity_path:'properties.minValue', lifecycle_status:'active' },
+  { key:'max_value', name:'Max Value', i18n:{en:'Max Value',nl:'Max Waarde'}, group_key:'compliance', category:'fixed', data_type:'number',
+    ui_representation:'number', applies_to:['actuator'], is_required:false, is_readonly:false, is_array:false,
+    entity_path:'properties.maxValue', lifecycle_status:'active' },
+  { key:'rate_limit', name:'Rate Limit', i18n:{en:'Rate Limit',nl:'Snelheidslimiet'}, group_key:'compliance', category:'fixed', data_type:'number',
+    ui_representation:'number', validation:{min:0}, applies_to:['actuator'],
+    is_required:false, is_readonly:false, is_array:false, entity_path:'properties.rateLimit', lifecycle_status:'active' },
+  { key:'ramp_rate', name:'Ramp Rate', i18n:{en:'Ramp Rate',nl:'Opvoersnelheid'}, group_key:'compliance', category:'fixed', data_type:'number',
+    ui_representation:'number', validation:{min:0}, applies_to:['actuator'],
+    is_required:false, is_readonly:false, is_array:false, entity_path:'properties.rampRate', lifecycle_status:'active' },
+  { key:'safety_override', name:'Safety Override', i18n:{en:'Safety Override',nl:'Veiligheidsoverride'}, group_key:'compliance', category:'fixed', data_type:'boolean',
+    ui_representation:'toggle', applies_to:['actuator'], is_required:false, is_readonly:false, is_array:false,
+    entity_path:'properties.safetyOverride', lifecycle_status:'active' },
+  { key:'data_retention', name:'Data Retention', i18n:{en:'Data Retention',nl:'Dataretentie'}, group_key:'compliance', category:'fixed', data_type:'enum',
+    ui_representation:'dropdown', applies_to:['site'], is_required:false, is_readonly:false, is_array:false,
+    entity_path:'properties.compliance.retention', lifecycle_status:'active',
+    enum_values:['1 yr','3 yr','5 yr','7 yr','10 yr'],
+    enum_values_i18n:{'1 yr':{en:'1 year',nl:'1 jaar'},'3 yr':{en:'3 years',nl:'3 jaar'},'5 yr':{en:'5 years',nl:'5 jaar'},'7 yr':{en:'7 years',nl:'7 jaar'},'10 yr':{en:'10 years',nl:'10 jaar'}} },
+
+  // ── Platform Settings group ──
+  { key:'default_lang', name:'Default Language', i18n:{en:'Default Language',nl:'Standaardtaal'}, group_key:'platform_settings', category:'fixed', data_type:'enum',
+    ui_representation:'dropdown', applies_to:['platform'], is_required:false, is_readonly:false, is_array:false,
+    entity_path:'properties.defaultLang', lifecycle_status:'active',
+    enum_values:['en','nl','de','fr'],
+    enum_values_i18n:{en:{en:'English'},nl:{en:'Nederlands'},de:{en:'Deutsch'},fr:{en:'Français'}} },
+  { key:'timezone', name:'Timezone', i18n:{en:'Timezone',nl:'Tijdzone'}, group_key:'platform_settings', category:'fixed', data_type:'enum',
+    ui_representation:'dropdown', applies_to:['platform'], is_required:false, is_readonly:false, is_array:false,
+    entity_path:'properties.timezone', lifecycle_status:'active',
+    enum_values:['Europe/Amsterdam','Europe/Brussels','Europe/Berlin','Europe/London','UTC'],
+    enum_values_i18n:{'Europe/Amsterdam':{en:'Europe/Amsterdam'},'Europe/Brussels':{en:'Europe/Brussels'},'Europe/Berlin':{en:'Europe/Berlin'},'Europe/London':{en:'Europe/London'},UTC:{en:'UTC'}} },
+  { key:'currency', name:'Currency', i18n:{en:'Currency',nl:'Valuta'}, group_key:'platform_settings', category:'fixed', data_type:'enum',
+    ui_representation:'dropdown', applies_to:['platform'], is_required:false, is_readonly:false, is_array:false,
+    entity_path:'properties.currency', lifecycle_status:'active',
+    enum_values:['EUR','USD','GBP','CHF'],
+    enum_values_i18n:{EUR:{en:'EUR (€)'},USD:{en:'USD ($)'},GBP:{en:'GBP (£)'},CHF:{en:'CHF'}} },
+  { key:'date_format', name:'Date Format', i18n:{en:'Date Format',nl:'Datumformaat'}, group_key:'platform_settings', category:'fixed', data_type:'enum',
+    ui_representation:'dropdown', applies_to:['platform'], is_required:false, is_readonly:false, is_array:false,
+    entity_path:'properties.dateFormat', lifecycle_status:'active',
+    enum_values:['DD-MM-YYYY','MM-DD-YYYY','YYYY-MM-DD'],
+    enum_values_i18n:{'DD-MM-YYYY':{en:'DD-MM-YYYY'},'MM-DD-YYYY':{en:'MM-DD-YYYY'},'YYYY-MM-DD':{en:'YYYY-MM-DD'}} },
+  { key:'energy_unit', name:'Energy Unit', i18n:{en:'Energy Unit',nl:'Energieeenheid'}, group_key:'platform_settings', category:'fixed', data_type:'enum',
+    ui_representation:'dropdown', applies_to:['platform'], is_required:false, is_readonly:false, is_array:false,
+    entity_path:'properties.energyUnit', lifecycle_status:'active',
+    enum_values:['kWh','MWh','Wh'],
+    enum_values_i18n:{kWh:{en:'kWh'},MWh:{en:'MWh'},Wh:{en:'Wh'}} },
+  { key:'self_cons_target', name:'Self-consumption Target', i18n:{en:'Self-consumption Target (%)',nl:'Zelfverbruiksdoel (%)'}, group_key:'platform_settings', category:'fixed', data_type:'number',
+    ui_representation:'slider', validation:{min:0,max:100}, applies_to:['platform'],
+    is_required:false, is_readonly:false, is_array:false, entity_path:'properties.selfConsTarget', lifecycle_status:'active' },
+  { key:'realtime_enabled', name:'Enable Real-time', i18n:{en:'Enable Real-time',nl:'Realtime Inschakelen'}, group_key:'platform_settings', category:'fixed', data_type:'boolean',
+    ui_representation:'toggle', applies_to:['platform'], is_required:false, is_readonly:false, is_array:false,
+    entity_path:'properties.realtimeEnabled', lifecycle_status:'active' },
+  { key:'auto_ack_alerts', name:'Auto-ack Info Alerts', i18n:{en:'Auto-ack Info Alerts',nl:'Auto-bevestig Info'}, group_key:'platform_settings', category:'fixed', data_type:'boolean',
+    ui_representation:'toggle', applies_to:['platform'], is_required:false, is_readonly:false, is_array:false,
+    entity_path:'properties.autoAckAlerts', lifecycle_status:'active' },
+  { key:'daily_reports', name:'Daily Reports', i18n:{en:'Daily Reports',nl:'Dagelijkse Rapporten'}, group_key:'platform_settings', category:'fixed', data_type:'boolean',
+    ui_representation:'toggle', applies_to:['platform'], is_required:false, is_readonly:false, is_array:false,
+    entity_path:'properties.dailyReports', lifecycle_status:'active' },
+
+  // ── User Profile group ──
+  { key:'email', name:'Email', i18n:{en:'Email',nl:'E-mail'}, group_key:'user_profile', category:'fixed', data_type:'string',
+    ui_representation:'email', applies_to:['user'], is_required:true, is_readonly:false, is_array:false,
+    entity_path:'properties.email', lifecycle_status:'active' },
+  { key:'phone', name:'Phone', i18n:{en:'Phone',nl:'Telefoon'}, group_key:'user_profile', category:'fixed', data_type:'string',
+    ui_representation:'phone', applies_to:['user'], is_required:false, is_readonly:false, is_array:false,
+    entity_path:'properties.phone', lifecycle_status:'active' },
+  { key:'avatar_url', name:'Avatar', i18n:{en:'Avatar',nl:'Avatar'}, group_key:'user_profile', category:'fixed', data_type:'string',
+    ui_representation:'avatar', applies_to:['user'], is_required:false, is_readonly:false, is_array:false,
+    entity_path:'properties.avatarUrl', lifecycle_status:'active' },
+  { key:'user_language', name:'Language', i18n:{en:'Language',nl:'Taal'}, group_key:'user_profile', category:'fixed', data_type:'enum',
+    ui_representation:'dropdown', applies_to:['user'], is_required:false, is_readonly:false, is_array:false,
+    entity_path:'properties.language', lifecycle_status:'active',
+    enum_values:['en','nl','de','fr'],
+    enum_values_i18n:{en:{en:'English'},nl:{en:'Nederlands'},de:{en:'Deutsch'},fr:{en:'Français'}} },
+  { key:'user_theme', name:'Theme', i18n:{en:'Theme',nl:'Thema'}, group_key:'user_profile', category:'fixed', data_type:'enum',
+    ui_representation:'dropdown', applies_to:['user'], is_required:false, is_readonly:false, is_array:false,
+    entity_path:'properties.theme', lifecycle_status:'active',
+    enum_values:['light','dark','system'],
+    enum_values_i18n:{light:{en:'Light',nl:'Licht'},dark:{en:'Dark',nl:'Donker'},system:{en:'System',nl:'Systeem'}} },
+].forEach(d => PropertyCatalogStore.putDefinition(d));
+
+console.log(`PropertyCatalogStore: ${PropertyCatalogStore.getDefinitions().length} definitions, ${PropertyCatalogStore.getGroups().length} groups`);
+
+// ═══════════════════════════════════════════════════════════════════════
+// ─── EntityTemplateStore (Entity templates referencing catalog) ───
+// Defines the UI blueprint for each entity type: properties, form groups,
+// list columns, detail tabs, and overview layout.
+// ═══════════════════════════════════════════════════════════════════════
+const EntityTemplateStore = (() => {
+  const _templates = new Map();
+  const _listeners = [];
+
+  function _notify() { _listeners.forEach(fn => fn()); }
+  function subscribe(fn) { _listeners.push(fn); return () => { const i = _listeners.indexOf(fn); if (i >= 0) _listeners.splice(i, 1); }; }
+
+  function _key(entityType, typeKey) { return `${entityType}:${typeKey || 'default'}`; }
+
+  function putTemplate(tmpl) { _templates.set(_key(tmpl.entity_type, tmpl.type_key), tmpl); _notify(); }
+  function getTemplate(entityType, typeKey) { return _templates.get(_key(entityType, typeKey)) || _templates.get(_key(entityType, 'default')); }
+  function getTemplates() { return Array.from(_templates.values()); }
+  function getByEntityType(entityType) { return getTemplates().filter(t => t.entity_type === entityType); }
+  function removeTemplate(entityType, typeKey) { _templates.delete(_key(entityType, typeKey)); _notify(); }
+
+  function resolveTemplate(entityType, typeKey) {
+    const tmpl = getTemplate(entityType, typeKey);
+    if (!tmpl) return null;
+
+    // Resolve properties
+    const resolvedProperties = (tmpl.properties || []).map(pRef => {
+      const def = PropertyCatalogStore.getDefinition(pRef.property_key);
+      if (!def) return { ...pRef, _missing: true };
+      return { ...def, ...pRef, _resolved: true,
+        is_required: pRef.required !== undefined ? pRef.required : def.is_required,
+        is_readonly: pRef.readonly !== undefined ? pRef.readonly : def.is_readonly,
+        default_value: pRef.default_value !== undefined ? pRef.default_value : def.default_value,
+      };
+    }).filter(p => !p._missing);
+
+    // Resolve form groups
+    const resolvedFormGroups = (tmpl.form_groups || []).map(fg => {
+      const resolvedProps = (fg.property_keys || []).map(pk => {
+        const prop = resolvedProperties.find(p => p.property_key === pk || p.key === pk);
+        return prop || null;
+      }).filter(Boolean);
+      return { ...fg, resolvedProperties: resolvedProps };
+    });
+
+    // Resolve columns
+    const resolvedColumns = (tmpl.columns || []).map(col => {
+      const def = PropertyCatalogStore.getDefinition(col.property_key);
+      return { ...col, resolvedProperty: def || null };
+    });
+
+    return { ...tmpl, resolved: { properties: resolvedProperties, formGroups: resolvedFormGroups, columns: resolvedColumns } };
+  }
+
+  return { putTemplate, getTemplate, getTemplates, getByEntityType, removeTemplate, resolveTemplate, subscribe };
+})();
+
+// ── Seed: Entity Templates (9 entity types) ──
+[
+  // ── Platform template ──
+  { entity_type:'platform', type_key:'default', name:'Platform', icon:'GlobalOutlined',
+    properties: [
+      { property_key:'name', required:true, sort_order:1 },
+      { property_key:'version', sort_order:2 },
+      { property_key:'tags', sort_order:3 },
+      { property_key:'default_lang', sort_order:10 },
+      { property_key:'timezone', sort_order:11 },
+      { property_key:'currency', sort_order:12 },
+      { property_key:'date_format', sort_order:13 },
+      { property_key:'energy_unit', sort_order:14 },
+      { property_key:'self_cons_target', sort_order:15 },
+      { property_key:'realtime_enabled', sort_order:16 },
+      { property_key:'auto_ack_alerts', sort_order:17 },
+      { property_key:'daily_reports', sort_order:18 },
+    ],
+    form_groups: [
+      { key:'general', label:{en:'General',nl:'Algemeen'}, icon:'SettingOutlined', property_keys:['name','tags'] },
+      { key:'platformSettings', label:{en:'Settings',nl:'Instellingen'}, icon:'GlobalOutlined',
+        property_keys:['default_lang','timezone','currency','date_format','energy_unit','self_cons_target','realtime_enabled','auto_ack_alerts','daily_reports'] },
+    ],
+    columns: [
+      { property_key:'name', sortable:true },
+      { property_key:'version' },
+    ],
+    detail_tabs: [
+      { key:'overview', label:{en:'Overview',nl:'Overzicht'}, type:'overview' },
+      { key:'accounts', label:{en:'Accounts',nl:'Accounts'}, type:'children', child_type:'account' },
+      { key:'users', label:{en:'Users',nl:'Gebruikers'}, type:'action', mfe_key:'UsersTab' },
+      { key:'roles', label:{en:'Roles',nl:'Rollen'}, type:'action', mfe_key:'RolesTab' },
+      { key:'privileges', label:{en:'Privileges',nl:'Rechten'}, type:'action', mfe_key:'PrivilegesTab' },
+      { key:'domains', label:{en:'Domains',nl:'Domeinen'}, type:'action', mfe_key:'DomainsTab' },
+      { key:'events', label:{en:'Events',nl:'Gebeurtenissen'}, type:'action', mfe_key:'EventsTab' },
+      { key:'alarms', label:{en:'Alarms',nl:'Alarmen'}, type:'action', mfe_key:'AlarmsTab' },
+      { key:'auditLog', label:{en:'Audit Log',nl:'Auditlog'}, type:'action', mfe_key:'AuditLogTab' },
+      { key:'tags', label:{en:'Tags',nl:'Tags'}, type:'action', mfe_key:'TagsTab' },
+    ],
+    overview: {
+      properties: [
+        { property_key:'version' }, { property_key:'timezone' }, { property_key:'currency' }, { property_key:'energy_unit' },
+      ],
+      kpis: [
+        { key:'state.totalAccounts', label:{en:'Accounts',nl:'Accounts'}, color:'var(--info)', icon:'TeamOutlined' },
+        { key:'state.totalSites', label:{en:'Sites',nl:'Locaties'}, color:'var(--success)', icon:'HomeOutlined' },
+        { key:'state.totalDevices', label:{en:'Devices',nl:'Apparaten'}, color:'var(--brand)', icon:'HddOutlined' },
+        { key:'_activeAlarms', label:{en:'Active Alarms',nl:'Actieve Alarmen'}, color:'var(--error)', icon:'AlertOutlined' },
+        { key:'_onlineRate', label:{en:'Online Rate',nl:'Online Ratio'}, color:'var(--success)', suffix:'%', icon:'CheckCircleFilled' },
+        { key:'state.uptime', label:{en:'Uptime',nl:'Uptime'}, color:'var(--text-secondary)', icon:'ClockCircleOutlined' },
+      ],
+      show_map: false, show_alarms: true,
+    },
+  },
+
+  // ── Account template ──
+  { entity_type:'account', type_key:'default', name:'Account', icon:'BankOutlined',
+    properties: [
+      { property_key:'name', required:true, sort_order:1 },
+      { property_key:'account_type', required:true, sort_order:2 },
+      { property_key:'contact_email', required:true, sort_order:3 },
+      { property_key:'plan', required:true, sort_order:4 },
+      { property_key:'vat_number', sort_order:5 },
+      { property_key:'tags', sort_order:6 },
+      { property_key:'max_sites', sort_order:10 },
+      { property_key:'max_users', sort_order:11 },
+      { property_key:'contract_start', sort_order:12 },
+      { property_key:'contract_end', sort_order:13 },
+    ],
+    form_groups: [
+      { key:'general', label:{en:'General',nl:'Algemeen'}, icon:'SettingOutlined',
+        property_keys:['name','account_type','contact_email','plan','vat_number','tags'] },
+      { key:'contract', label:{en:'Contract',nl:'Contract'}, icon:'EuroCircleOutlined',
+        property_keys:['max_sites','max_users','contract_start','contract_end'] },
+    ],
+    columns: [
+      { property_key:'name', sortable:true },
+      { property_key:'account_type', filterable:true },
+      { property_key:'plan', filterable:true },
+    ],
+    detail_tabs: [
+      { key:'overview', label:{en:'Overview',nl:'Overzicht'}, type:'overview' },
+      { key:'subAccounts', label:{en:'Sub-accounts',nl:'Sub-accounts'}, type:'children', child_type:'subAccount' },
+      { key:'users', label:{en:'Users',nl:'Gebruikers'}, type:'action', mfe_key:'UsersTab' },
+      { key:'roles', label:{en:'Roles',nl:'Rollen'}, type:'action', mfe_key:'RolesTab' },
+      { key:'privileges', label:{en:'Privileges',nl:'Rechten'}, type:'action', mfe_key:'PrivilegesTab' },
+      { key:'billing', label:{en:'Billing',nl:'Facturering'}, type:'action', mfe_key:'BillingTab' },
+      { key:'apiKeys', label:{en:'API Keys',nl:'API Sleutels'}, type:'action', mfe_key:'ApiKeysTab' },
+      { key:'events', label:{en:'Events',nl:'Gebeurtenissen'}, type:'action', mfe_key:'EventsTab' },
+      { key:'alarms', label:{en:'Alarms',nl:'Alarmen'}, type:'action', mfe_key:'AlarmsTab' },
+      { key:'auditLog', label:{en:'Audit Log',nl:'Auditlog'}, type:'action', mfe_key:'AuditLogTab' },
+      { key:'tags', label:{en:'Tags',nl:'Tags'}, type:'action', mfe_key:'TagsTab' },
+    ],
+    overview: {
+      properties: [
+        { property_key:'account_type' }, { property_key:'plan' }, { property_key:'contact_email' },
+        { property_key:'vat_number' }, { property_key:'contract_start' }, { property_key:'contract_end' },
+      ],
+      kpis: [
+        { key:'state.sites', label:{en:'Sites',nl:'Locaties'}, color:'var(--success)', icon:'HomeOutlined' },
+        { key:'state.devices', label:{en:'Devices',nl:'Apparaten'}, color:'var(--brand)', icon:'HddOutlined' },
+        { key:'state.users', label:{en:'Users',nl:'Gebruikers'}, color:'var(--info)', icon:'TeamOutlined' },
+        { key:'_activeAlarms', label:{en:'Active Alarms',nl:'Actieve Alarmen'}, color:'var(--error)', icon:'AlertOutlined' },
+        { key:'_totalEnergy', label:{en:'Energy Generated',nl:'Energie Opgewekt'}, color:'var(--solar)', icon:'ThunderboltOutlined', suffix:'kWh' },
+        { key:'_costSaved', label:{en:'Cost Saved',nl:'Bespaard'}, color:'var(--success)', icon:'EuroCircleOutlined' },
+      ],
+      show_map: false, show_alarms: true,
+    },
+  },
+
+  // ── Sub-account template ──
+  { entity_type:'subAccount', type_key:'default', name:'Sub-account', icon:'TeamOutlined',
+    properties: [
+      { property_key:'name', required:true, sort_order:1 },
+      { property_key:'region', required:true, sort_order:2 },
+      { property_key:'dso', sort_order:3 },
+      { property_key:'sub_lang', sort_order:4 },
+      { property_key:'tags', sort_order:5 },
+    ],
+    form_groups: [
+      { key:'general', label:{en:'General',nl:'Algemeen'}, icon:'SettingOutlined',
+        property_keys:['name','region','dso','sub_lang','tags'] },
+    ],
+    columns: [
+      { property_key:'name', sortable:true },
+      { property_key:'region', filterable:true },
+      { property_key:'dso' },
+    ],
+    detail_tabs: [
+      { key:'overview', label:{en:'Overview',nl:'Overzicht'}, type:'overview' },
+      { key:'sites', label:{en:'Sites',nl:'Locaties'}, type:'children', child_type:'site' },
+      { key:'users', label:{en:'Users',nl:'Gebruikers'}, type:'action', mfe_key:'UsersTab' },
+      { key:'roles', label:{en:'Roles',nl:'Rollen'}, type:'action', mfe_key:'RolesTab' },
+      { key:'privileges', label:{en:'Privileges',nl:'Rechten'}, type:'action', mfe_key:'PrivilegesTab' },
+      { key:'events', label:{en:'Events',nl:'Gebeurtenissen'}, type:'action', mfe_key:'EventsTab' },
+      { key:'alarms', label:{en:'Alarms',nl:'Alarmen'}, type:'action', mfe_key:'AlarmsTab' },
+      { key:'auditLog', label:{en:'Audit Log',nl:'Auditlog'}, type:'action', mfe_key:'AuditLogTab' },
+      { key:'tags', label:{en:'Tags',nl:'Tags'}, type:'action', mfe_key:'TagsTab' },
+    ],
+    overview: {
+      properties: [
+        { property_key:'region' }, { property_key:'dso' }, { property_key:'sub_lang' },
+      ],
+      kpis: [
+        { key:'state.sites', label:{en:'Sites',nl:'Locaties'}, color:'var(--success)', icon:'HomeOutlined' },
+        { key:'state.devices', label:{en:'Devices',nl:'Apparaten'}, color:'var(--brand)', icon:'HddOutlined' },
+        { key:'_activeAlarms', label:{en:'Active Alarms',nl:'Actieve Alarmen'}, color:'var(--error)', icon:'AlertOutlined' },
+        { key:'_totalCapacity', label:{en:'Total Capacity',nl:'Totale Capaciteit'}, color:'var(--solar)', icon:'ThunderboltOutlined' },
+        { key:'_onlineRate', label:{en:'Online Rate',nl:'Online Ratio'}, color:'var(--success)', suffix:'%', icon:'CheckCircleFilled' },
+      ],
+      show_map: false, show_alarms: true,
+    },
+  },
+
+  // ── Site template ──
+  { entity_type:'site', type_key:'default', name:'Site', icon:'HomeOutlined',
+    properties: [
+      { property_key:'name', required:true, sort_order:1 },
+      { property_key:'site_type', required:true, sort_order:2 },
+      { property_key:'capacity', sort_order:3 },
+      { property_key:'dso', sort_order:4 },
+      { property_key:'tags', sort_order:5 },
+      { property_key:'address', sort_order:10 },
+      { property_key:'latitude', sort_order:11 },
+      { property_key:'longitude', sort_order:12 },
+      { property_key:'contract_limit', sort_order:20 },
+      { property_key:'grid_connection', sort_order:21 },
+      { property_key:'data_retention', sort_order:30 },
+    ],
+    form_groups: [
+      { key:'general', label:{en:'General',nl:'Algemeen'}, icon:'SettingOutlined',
+        property_keys:['name','site_type','capacity','dso','tags'] },
+      { key:'location', label:{en:'Location',nl:'Locatie'}, icon:'EnvironmentOutlined',
+        property_keys:['address','latitude','longitude'] },
+      { key:'contract', label:{en:'Contract',nl:'Contract'}, icon:'EuroCircleOutlined',
+        property_keys:['contract_limit','grid_connection'] },
+      { key:'compliance', label:{en:'Compliance',nl:'Naleving'}, icon:'SafetyCertificateOutlined',
+        property_keys:['data_retention'] },
+    ],
+    columns: [
+      { property_key:'name', sortable:true },
+      { property_key:'site_type', filterable:true },
+      { property_key:'capacity', sortable:true },
+    ],
+    detail_tabs: [
+      { key:'overview', label:{en:'Overview',nl:'Overzicht'}, type:'overview' },
+      { key:'deviceGroups', label:{en:'Device Groups',nl:'Apparaatgroepen'}, type:'children', child_type:'deviceGroup' },
+      { key:'allDevices', label:{en:'All Devices',nl:'Alle Apparaten'}, type:'action', mfe_key:'AllDevicesTab' },
+      { key:'users', label:{en:'Users',nl:'Gebruikers'}, type:'action', mfe_key:'UsersTab' },
+      { key:'roles', label:{en:'Roles',nl:'Rollen'}, type:'action', mfe_key:'RolesTab' },
+      { key:'privileges', label:{en:'Privileges',nl:'Rechten'}, type:'action', mfe_key:'PrivilegesTab' },
+      { key:'events', label:{en:'Events',nl:'Gebeurtenissen'}, type:'action', mfe_key:'EventsTab' },
+      { key:'alarms', label:{en:'Alarms',nl:'Alarmen'}, type:'action', mfe_key:'AlarmsTab' },
+      { key:'auditLog', label:{en:'Audit Log',nl:'Auditlog'}, type:'action', mfe_key:'AuditLogTab' },
+      { key:'tags', label:{en:'Tags',nl:'Tags'}, type:'action', mfe_key:'TagsTab' },
+    ],
+    overview: {
+      properties: [
+        { property_key:'site_type' }, { property_key:'capacity' }, { property_key:'dso' },
+        { property_key:'grid_connection' }, { property_key:'contract_limit' }, { property_key:'address' },
+      ],
+      kpis: [
+        { key:'state.selfConsumption', label:{en:'Self-consumption',nl:'Zelfverbruik'}, color:'var(--success)', suffix:'%', pct:true, icon:'PieChartOutlined' },
+        { key:'_solarPower', label:{en:'Solar Production',nl:'Zonne-energie'}, color:'var(--solar)', suffix:'kW', icon:'ThunderboltOutlined' },
+        { key:'_batterySoc', label:{en:'Battery SoC',nl:'Batterij SoC'}, color:'var(--brand)', suffix:'%', pct:true, icon:'DatabaseOutlined' },
+        { key:'_peakDemand', label:{en:'Peak Demand',nl:'Piekvraag'}, color:'var(--warning)', suffix:'%', pct:true, icon:'FundOutlined' },
+        { key:'_gridPower', label:{en:'Grid',nl:'Net'}, color:'var(--error)', suffix:'kW', icon:'SwapOutlined' },
+        { key:'state.devices', label:{en:'Devices',nl:'Apparaten'}, color:'var(--brand)', icon:'HddOutlined' },
+        { key:'_activeAlarms', label:{en:'Active Alarms',nl:'Actieve Alarmen'}, color:'var(--error)', icon:'AlertOutlined' },
+        { key:'_costSaved', label:{en:'Cost Saved',nl:'Bespaard'}, color:'var(--success)', icon:'EuroCircleOutlined' },
+      ],
+      show_map: true, show_alarms: true,
+    },
+  },
+
+  // ── DeviceGroup template ──
+  { entity_type:'deviceGroup', type_key:'default', name:'Device Group', icon:'AppstoreOutlined',
+    properties: [
+      { property_key:'name', required:true, sort_order:1 },
+      { property_key:'device_group_type', required:true, sort_order:2 },
+      { property_key:'tags', sort_order:3 },
+    ],
+    form_groups: [
+      { key:'general', label:{en:'General',nl:'Algemeen'}, icon:'SettingOutlined',
+        property_keys:['name','device_group_type','tags'] },
+    ],
+    columns: [
+      { property_key:'name', sortable:true },
+      { property_key:'device_group_type', filterable:true },
+    ],
+    detail_tabs: [
+      { key:'overview', label:{en:'Overview',nl:'Overzicht'}, type:'overview' },
+      { key:'subGroups', label:{en:'Sub-groups',nl:'Subgroepen'}, type:'children', child_type:'deviceGroup' },
+      { key:'devices', label:{en:'Devices',nl:'Apparaten'}, type:'children', child_type:'device' },
+      { key:'metrics', label:{en:'Metrics',nl:'Metingen'}, type:'action', mfe_key:'MetricsTab' },
+      { key:'events', label:{en:'Events',nl:'Gebeurtenissen'}, type:'action', mfe_key:'EventsTab' },
+      { key:'alarms', label:{en:'Alarms',nl:'Alarmen'}, type:'action', mfe_key:'AlarmsTab' },
+      { key:'auditLog', label:{en:'Audit Log',nl:'Auditlog'}, type:'action', mfe_key:'AuditLogTab' },
+      { key:'tags', label:{en:'Tags',nl:'Tags'}, type:'action', mfe_key:'TagsTab' },
+    ],
+    overview: {
+      properties: [ { property_key:'device_group_type' } ],
+      kpis: [
+        { key:'_totalPower', label:{en:'Total Power',nl:'Totaal Vermogen'}, color:'var(--solar)', suffix:'kW', icon:'ThunderboltOutlined' },
+        { key:'_deviceCount', label:{en:'Devices',nl:'Apparaten'}, color:'var(--brand)', icon:'HddOutlined' },
+        { key:'_onlineCount', label:{en:'Online',nl:'Online'}, color:'var(--success)', icon:'CheckCircleFilled' },
+        { key:'_faultCount', label:{en:'Faults',nl:'Storingen'}, color:'var(--error)', icon:'WarningOutlined' },
+        { key:'_activeAlarms', label:{en:'Active Alarms',nl:'Actieve Alarmen'}, color:'var(--error)', icon:'AlertOutlined' },
+      ],
+      show_map: false, show_alarms: true,
+    },
+  },
+
+  // ── Device template ──
+  { entity_type:'device', type_key:'default', name:'Device', icon:'HddOutlined',
+    properties: [
+      { property_key:'name', required:true, sort_order:1 },
+      { property_key:'device_type', required:true, sort_order:2 },
+      { property_key:'manufacturer', required:true, sort_order:3 },
+      { property_key:'model', required:true, sort_order:4 },
+      { property_key:'serial_number', sort_order:5 },
+      { property_key:'install_date', sort_order:6 },
+      { property_key:'tags', sort_order:7 },
+      { property_key:'protocol', sort_order:10 },
+      { property_key:'ip_address', sort_order:11 },
+      { property_key:'port', sort_order:12 },
+      { property_key:'modbus_id', sort_order:13 },
+      { property_key:'poll_interval', sort_order:14 },
+      { property_key:'firmware', sort_order:20 },
+      { property_key:'auto_update', sort_order:21 },
+    ],
+    form_groups: [
+      { key:'general', label:{en:'General',nl:'Algemeen'}, icon:'SettingOutlined',
+        property_keys:['name','device_type','manufacturer','model','serial_number','install_date','tags'] },
+      { key:'network', label:{en:'Network',nl:'Netwerk'}, icon:'ApiOutlined',
+        property_keys:['protocol','ip_address','port','modbus_id','poll_interval'] },
+      { key:'firmware', label:{en:'Firmware',nl:'Firmware'}, icon:'CloudServerOutlined',
+        property_keys:['firmware','auto_update'] },
+    ],
+    columns: [
+      { property_key:'name', sortable:true },
+      { property_key:'device_type', filterable:true },
+      { property_key:'manufacturer', filterable:true },
+    ],
+    detail_tabs: [
+      { key:'overview', label:{en:'Overview',nl:'Overzicht'}, type:'overview' },
+      { key:'sensors', label:{en:'Sensors',nl:'Sensoren'}, type:'children', child_type:'sensor' },
+      { key:'actuators', label:{en:'Actuators',nl:'Actuatoren'}, type:'children', child_type:'actuator' },
+      { key:'events', label:{en:'Events',nl:'Gebeurtenissen'}, type:'action', mfe_key:'EventsTab' },
+      { key:'alarms', label:{en:'Alarms',nl:'Alarmen'}, type:'action', mfe_key:'AlarmsTab' },
+      { key:'auditLog', label:{en:'Audit Log',nl:'Auditlog'}, type:'action', mfe_key:'AuditLogTab' },
+      { key:'tags', label:{en:'Tags',nl:'Tags'}, type:'action', mfe_key:'TagsTab' },
+    ],
+    overview: {
+      properties: [
+        { property_key:'device_type' }, { property_key:'manufacturer' }, { property_key:'model' },
+        { property_key:'firmware' }, { property_key:'serial_number' }, { property_key:'install_date' },
+      ],
+      kpis: [
+        { key:'state.power', label:{en:'Current Power',nl:'Huidig Vermogen'}, color:'var(--solar)', icon:'ThunderboltOutlined' },
+        { key:'_sensorCount', label:{en:'Sensors',nl:'Sensoren'}, color:'var(--info)', icon:'DashboardOutlined' },
+        { key:'_activeAlarms', label:{en:'Active Alarms',nl:'Actieve Alarmen'}, color:'var(--error)', icon:'AlertOutlined' },
+      ],
+      show_map: false, show_alarms: true,
+    },
+  },
+
+  // ── Sensor template ──
+  { entity_type:'sensor', type_key:'default', name:'Sensor', icon:'RadarChartOutlined',
+    properties: [
+      { property_key:'name', required:true, sort_order:1 },
+      { property_key:'sensor_type', required:true, sort_order:2 },
+      { property_key:'unit', required:true, sort_order:3 },
+      { property_key:'tags', sort_order:4 },
+      { property_key:'protocol', sort_order:10 },
+      { property_key:'ip_address', sort_order:11 },
+      { property_key:'port', sort_order:12 },
+      { property_key:'modbus_id', sort_order:13 },
+      { property_key:'poll_interval', sort_order:14 },
+      { property_key:'warn_min', sort_order:20 },
+      { property_key:'warn_max', sort_order:21 },
+      { property_key:'crit_min', sort_order:22 },
+      { property_key:'crit_max', sort_order:23 },
+      { property_key:'calib_offset', sort_order:24 },
+      { property_key:'calib_scale_factor', sort_order:25 },
+      { property_key:'calib_method', sort_order:26 },
+    ],
+    form_groups: [
+      { key:'general', label:{en:'General',nl:'Algemeen'}, icon:'SettingOutlined',
+        property_keys:['name','sensor_type','unit','tags'] },
+      { key:'network', label:{en:'Network',nl:'Netwerk'}, icon:'ApiOutlined',
+        property_keys:['protocol','ip_address','port','modbus_id','poll_interval'] },
+      { key:'thresholds', label:{en:'Thresholds',nl:'Drempels'}, icon:'ControlOutlined',
+        property_keys:['warn_min','warn_max','crit_min','crit_max','calib_offset','calib_scale_factor','calib_method'] },
+    ],
+    columns: [
+      { property_key:'name', sortable:true },
+      { property_key:'sensor_type', filterable:true },
+      { property_key:'unit' },
+    ],
+    detail_tabs: [
+      { key:'overview', label:{en:'Overview',nl:'Overzicht'}, type:'overview' },
+      { key:'data', label:{en:'Data',nl:'Data'}, type:'action', mfe_key:'SensorDataTab' },
+      { key:'events', label:{en:'Events',nl:'Gebeurtenissen'}, type:'action', mfe_key:'EventsTab' },
+      { key:'alarms', label:{en:'Alarms',nl:'Alarmen'}, type:'action', mfe_key:'AlarmsTab' },
+      { key:'tags', label:{en:'Tags',nl:'Tags'}, type:'action', mfe_key:'TagsTab' },
+    ],
+    overview: {
+      properties: [ { property_key:'sensor_type' }, { property_key:'unit' } ],
+      kpis: [
+        { key:'state.value', label:{en:'Current Value',nl:'Huidige Waarde'}, color:'var(--brand)', suffix:true, icon:'DashboardOutlined' },
+        { key:'_min24h', label:{en:'Min (24h)',nl:'Min (24u)'}, color:'var(--info)', suffix:true, icon:'DashboardOutlined' },
+        { key:'_max24h', label:{en:'Max (24h)',nl:'Max (24u)'}, color:'var(--warning)', suffix:true, icon:'WarningOutlined' },
+        { key:'_activeAlarms', label:{en:'Alarm Status',nl:'Alarmstatus'}, color:'var(--error)', icon:'AlertOutlined' },
+      ],
+      show_map: false, show_alarms: true,
+    },
+  },
+
+  // ── Actuator template ──
+  { entity_type:'actuator', type_key:'default', name:'Actuator', icon:'SlidersOutlined',
+    properties: [
+      { property_key:'name', required:true, sort_order:1 },
+      { property_key:'actuator_type', required:true, sort_order:2 },
+      { property_key:'unit', required:true, sort_order:3 },
+      { property_key:'tags', sort_order:4 },
+      { property_key:'protocol', sort_order:10 },
+      { property_key:'ip_address', sort_order:11 },
+      { property_key:'port', sort_order:12 },
+      { property_key:'modbus_id', sort_order:13 },
+      { property_key:'poll_interval', sort_order:14 },
+      { property_key:'min_value', sort_order:20 },
+      { property_key:'max_value', sort_order:21 },
+      { property_key:'rate_limit', sort_order:22 },
+      { property_key:'ramp_rate', sort_order:23 },
+      { property_key:'safety_override', sort_order:24 },
+    ],
+    form_groups: [
+      { key:'general', label:{en:'General',nl:'Algemeen'}, icon:'SettingOutlined',
+        property_keys:['name','actuator_type','unit','tags'] },
+      { key:'network', label:{en:'Network',nl:'Netwerk'}, icon:'ApiOutlined',
+        property_keys:['protocol','ip_address','port','modbus_id','poll_interval'] },
+      { key:'limits', label:{en:'Limits',nl:'Limieten'}, icon:'SlidersOutlined',
+        property_keys:['min_value','max_value','rate_limit','ramp_rate','safety_override'] },
+    ],
+    columns: [
+      { property_key:'name', sortable:true },
+      { property_key:'actuator_type', filterable:true },
+      { property_key:'unit' },
+    ],
+    detail_tabs: [
+      { key:'overview', label:{en:'Overview',nl:'Overzicht'}, type:'overview' },
+      { key:'commands', label:{en:'Commands',nl:'Commando\'s'}, type:'action', mfe_key:'CommandsTab' },
+      { key:'schedule', label:{en:'Schedule',nl:'Schema'}, type:'action', mfe_key:'ScheduleTab' },
+      { key:'events', label:{en:'Events',nl:'Gebeurtenissen'}, type:'action', mfe_key:'EventsTab' },
+      { key:'alarms', label:{en:'Alarms',nl:'Alarmen'}, type:'action', mfe_key:'AlarmsTab' },
+      { key:'tags', label:{en:'Tags',nl:'Tags'}, type:'action', mfe_key:'TagsTab' },
+    ],
+    overview: {
+      properties: [ { property_key:'actuator_type' }, { property_key:'unit' } ],
+      kpis: [
+        { key:'state.value', label:{en:'Current Value',nl:'Huidige Waarde'}, color:'var(--brand)', icon:'ControlOutlined' },
+        { key:'_mode', label:{en:'Mode',nl:'Modus'}, color:'var(--info)', icon:'ControlOutlined' },
+        { key:'_activeAlarms', label:{en:'Active Alarms',nl:'Actieve Alarmen'}, color:'var(--error)', icon:'AlertOutlined' },
+        { key:'_lastCommand', label:{en:'Last Command',nl:'Laatste Commando'}, color:'var(--text-secondary)', icon:'HistoryOutlined' },
+      ],
+      show_map: false, show_alarms: true,
+    },
+  },
+
+  // ── User template ──
+  { entity_type:'user', type_key:'default', name:'User', icon:'UserOutlined',
+    properties: [
+      { property_key:'name', required:true, sort_order:1 },
+      { property_key:'email', required:true, sort_order:2 },
+      { property_key:'phone', sort_order:3 },
+      { property_key:'avatar_url', sort_order:4 },
+      { property_key:'user_language', sort_order:10 },
+      { property_key:'user_theme', sort_order:11 },
+    ],
+    form_groups: [
+      { key:'general', label:{en:'General',nl:'Algemeen'}, icon:'SettingOutlined',
+        property_keys:['name','email','phone','avatar_url'] },
+      { key:'preferences', label:{en:'Preferences',nl:'Voorkeuren'}, icon:'SettingOutlined',
+        property_keys:['user_language','user_theme'] },
+    ],
+    columns: [
+      { property_key:'name', sortable:true },
+      { property_key:'email' },
+    ],
+    detail_tabs: [
+      { key:'overview', label:{en:'Overview',nl:'Overzicht'}, type:'overview' },
+    ],
+    overview: {
+      properties: [ { property_key:'email' }, { property_key:'phone' } ],
+      kpis: [],
+      show_map: false, show_alarms: false,
+    },
+  },
+].forEach(t => EntityTemplateStore.putTemplate(t));
+
+console.log(`EntityTemplateStore: ${EntityTemplateStore.getTemplates().length} templates`);
+
+// ── Seed: Platform ───
 EntityStore.put({
   id: 'orbiteos', entityType: 'platform', parentId: null, name: 'OrbitEOS',
   properties: { version: 'v2.0.0', defaultLang: 'en', timezone: 'Europe/Amsterdam', currency: 'EUR', dateFormat: 'DD-MM-YYYY',
@@ -5845,6 +6656,17 @@ function useLazyLoader() {
   return LazyEntityLoader;
 }
 
+// ─── useEntitySubscription hook — re-renders when entity changes ───
+function useEntitySubscription(entityId) {
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    if (!entityId) return;
+    return EntityStore.subscribe(({ event, entityId: eid }) => {
+      if (eid === entityId) setTick(t => t + 1);
+    });
+  }, [entityId]);
+}
+
 // ─── Config Nav List (recursive accordion-style, lazy loaded) ───
 function ConfigNavList({ entity, selectedId, onSelect, expandedNodes, onToggle, filter, loader }) {
   const loaded = loader.isLoaded(entity.id);
@@ -6475,10 +7297,22 @@ function EntityEditModal({ visible, mode, entityType, entityId, parentId, onSave
     setActiveTab('general');
   }, [visible, entityId, mode, entityType, parentId]);
 
-  const subTabs = isNonEntity ? getNonEntitySubTabs(entityType) : getApplicableSubTabs(entityType);
+  // Phase 3: Template-driven sub-tabs with fallback to old schemas
+  const resolvedTemplate = !NON_ENTITY_TYPES.includes(entityType) ? EntityTemplateStore.resolveTemplate(entityType) : null;
+
+  const subTabs = isNonEntity
+    ? getNonEntitySubTabs(entityType)
+    : resolvedTemplate?.resolved?.formGroups
+      ? resolvedTemplate.resolved.formGroups.map(fg => ({ key: fg.key, label: fg.label, icon: fg.icon || 'SettingOutlined' }))
+      : getApplicableSubTabs(entityType);  // fallback to old
 
   const getFieldsForTab = (tabKey) => {
-    return isNonEntity ? getNonEntityFields(entityType, tabKey) : getSubTabFields(tabKey, entityType);
+    if (isNonEntity) return getNonEntityFields(entityType, tabKey);
+    if (resolvedTemplate?.resolved?.formGroups) {
+      const group = resolvedTemplate.resolved.formGroups.find(g => g.key === tabKey);
+      return group ? group.resolvedProperties.map(resolvedPropertyToField) : [];
+    }
+    return getSubTabFields(tabKey, entityType);  // fallback to old
   };
 
   const handleChange = (key, val) => {
@@ -7074,6 +7908,115 @@ const ENTITY_COLUMNS = {
       render:(_,r) => { const s=r.state?.status; return s ? React.createElement('span',{className:`status-dot ${s==='online'?'online':s}`},s) : '\u2014'; } },
   ],
 };
+
+// ═══════════════════════════════════════════════════════════════════════
+// ─── Phase 2: Base MFE Components (template-driven rendering) ───
+// ═══════════════════════════════════════════════════════════════════════
+
+// ── mapUiRepToFieldType — converts property ui_representation to form field type ──
+function mapUiRepToFieldType(uiRep) {
+  return { text:'text', number:'number', dropdown:'select', toggle:'switch', date:'date', textarea:'textarea', tags:'tags', slider:'slider', email:'text', phone:'text', avatar:'text', password:'text' }[uiRep] || 'text';
+}
+
+// ── resolvedPropertyToField — converts a resolved property definition into FormPanel field format ──
+function resolvedPropertyToField(prop) {
+  return {
+    key: prop.entity_path || `properties.${prop.key}`,
+    label: prop.i18n || { en: prop.name },
+    type: mapUiRepToFieldType(prop.ui_representation),
+    inputType: prop.ui_representation === 'email' ? 'email' : prop.ui_representation === 'phone' ? 'tel' : undefined,
+    required: prop.is_required,
+    readOnly: prop.is_readonly,
+    min: prop.validation?.min,
+    max: prop.validation?.max,
+    step: prop.validation?.step,
+    minLength: prop.validation?.min_length,
+    options: prop.enum_values ? prop.enum_values.map(v => ({
+      value: v,
+      label: prop.enum_values_i18n?.[v] || { en: v }
+    })) : undefined,
+    full: ['textarea','slider','tags'].includes(prop.ui_representation),
+  };
+}
+
+// ── BaseFormMFE — auto-renders a form group from resolved template ──
+function BaseFormMFE({ entity, lang, formGroupKey, onSave }) {
+  const template = EntityTemplateStore.resolveTemplate(entity.entityType);
+  if (!template) return null;
+  const group = template.resolved.formGroups.find(g => g.key === formGroupKey);
+  if (!group) return null;
+  const fields = group.resolvedProperties.map(resolvedPropertyToField);
+  const [values, setValues] = useState(() => JSON.parse(JSON.stringify(entity)));
+  const [errors, setErrors] = useState({});
+  const handleChange = (key, val) => {
+    setValues(prev => { const n = JSON.parse(JSON.stringify(prev)); setNestedValue(n, key, val); return n; });
+  };
+  return React.createElement('div', {className:'config-tab-content'},
+    React.createElement(FormPanel, { fields, values, errors, onChange:handleChange, lang })
+  );
+}
+
+// ── BaseListMFE — auto-renders entity list from template columns ──
+function BaseListMFE({ parentId, childType, lang, onNavigate, onAdd }) {
+  const children = EntityStore.getChildren(parentId).filter(c => c.entityType === childType);
+  const childTemplate = EntityTemplateStore.resolveTemplate(childType);
+  if (!childTemplate) return null;
+  const columns = childTemplate.resolved.columns.map(col => ({
+    key: col.property_key,
+    label: col.resolvedProperty?.i18n || { en: col.resolvedProperty?.name || col.property_key },
+    sortable: col.sortable,
+    filterable: col.filterable,
+    getValue: (row) => getNestedValue(row, col.resolvedProperty?.entity_path || `properties.${col.property_key}`),
+    render: col.property_key === 'name' ? (_, r) => React.createElement('span', {style:{fontWeight:500}}, r.name) : undefined,
+  }));
+  const typeLabel = childTemplate.name;
+  return React.createElement('div', {className:'config-tab-content'},
+    React.createElement(EntityList, {
+      columns, dataSource: children, lang, columnPicker: columns.length > 4,
+      title: { en: typeLabel },
+      lazyLoad: children.length > 30, pageSize: 30,
+      onRowClick: row => onNavigate?.(row.id),
+      addButton: onAdd ? { label: '', onClick: () => onAdd(childType) } : undefined,
+      rowActions: [
+        { key:'edit', icon: React.createElement(EditOutlined, {style:{fontSize:13}}), onClick: row => onNavigate?.(row.id) },
+        { key:'delete', icon: React.createElement(DeleteOutlined, {style:{fontSize:13}}), danger: true,
+          onClick: row => { const desc = EntityStore.getDescendants(row.id); Modal.confirm({
+            title: `Delete ${row.name}?`, content: desc.length > 0 ? `Will remove ${desc.length} children.` : undefined,
+            okText: 'Delete', okType: 'danger', onOk: () => EntityStore.remove(row.id) }); }},
+      ],
+      emptyIcon: React.createElement(InboxOutlined),
+      emptyText: { en: 'No items', nl: 'Geen items' },
+    })
+  );
+}
+
+// ── BaseOverviewMFE — template-driven overview with fallback to OverviewMicroFrontend ──
+function BaseOverviewMFE({ entity, lang, onEdit }) {
+  const template = EntityTemplateStore.resolveTemplate(entity.entityType);
+  const ovLayout = template?.overview;
+
+  // If no template overview, fall back to existing OverviewMicroFrontend
+  if (!ovLayout) {
+    return React.createElement(OverviewMicroFrontend, { entity, lang, onEdit });
+  }
+
+  // Resolve overview properties from catalog
+  const overviewProps = (ovLayout.properties || []).map(p => {
+    const def = PropertyCatalogStore.getDefinition(p.property_key);
+    if (!def) return null;
+    return {
+      key: def.entity_path || `properties.${def.key}`,
+      label: def.i18n || { en: def.name },
+      icon: null,
+    };
+  }).filter(Boolean);
+
+  // Use the existing OverviewMicroFrontend rendering logic via OVERVIEW_SCHEMA fallback
+  // This ensures identical visual output during transition
+  return React.createElement(OverviewMicroFrontend, { entity, lang, onEdit });
+}
+
+// ═══════════════════════════════════════════════════════════════════════
 
 function EntityListTab({ parentId, childType, t, lang, onNavigate, onAdd }) {
   const children = EntityStore.getChildren(parentId).filter(c => c.entityType === childType);
@@ -7765,6 +8708,38 @@ function AllDevicesTab({ entity, t, lang, onNavigate }) {
   );
 }
 
+// ═══════════════════════════════════════════════════════════════════════
+// ─── MFERegistry (Micro-frontend component registry) ───
+// Maps entity-type + tab-key to custom component overrides.
+// Wildcard '*' matches any entity type for shared tabs.
+// ═══════════════════════════════════════════════════════════════════════
+const MFERegistry = (() => {
+  const _reg = new Map();
+  function register(entityType, tabKey, component) { _reg.set(`${entityType}:${tabKey}`, component); }
+  function get(entityType, tabKey) { return _reg.get(`${entityType}:${tabKey}`) || _reg.get(`*:${tabKey}`) || null; }
+  function has(entityType, tabKey) { return _reg.has(`${entityType}:${tabKey}`) || _reg.has(`*:${tabKey}`); }
+  return { register, get, has };
+})();
+
+// ── Register all existing custom tab components ──
+// Action tabs (shared across entity types)
+MFERegistry.register('*', 'events', EventsTab);
+MFERegistry.register('*', 'alarms', AlarmsTab);
+MFERegistry.register('*', 'auditLog', AuditLogTab);
+MFERegistry.register('*', 'tags', TagsTab);
+// Entity-specific tabs
+MFERegistry.register('*', 'users', UsersTab);
+MFERegistry.register('*', 'roles', RolesTab);
+MFERegistry.register('*', 'privileges', PrivilegesTab);
+MFERegistry.register('device', 'commands', CommandsTab);
+MFERegistry.register('sensor', 'data', SensorDataTab);
+MFERegistry.register('actuator', 'schedule', ScheduleTab);
+MFERegistry.register('deviceGroup', 'metrics', MetricsTab);
+MFERegistry.register('account', 'billing', BillingTab);
+MFERegistry.register('account', 'apiKeys', ApiKeysTab);
+MFERegistry.register('platform', 'domains', DomainsTab);
+MFERegistry.register('site', 'allDevices', AllDevicesTab);
+
 // ─── Configuration Page (Unified) ───
 function ConfigurationPage({ t, lang, navigateWithLoader, focusedEntityId, setFocusedEntityId }) {
   const loader = useLazyLoader();
@@ -7799,7 +8774,22 @@ function ConfigurationPage({ t, lang, navigateWithLoader, focusedEntityId, setFo
   };
 
   const selectedEntity = EntityStore.get(selectedEntityId);
-  const tabs = selectedEntity ? TabRegistry.getTabsForEntity(selectedEntity) : [];
+  // Phase 4: Template-driven tabs with fallback to TabRegistry
+  const _entityTemplate = selectedEntity ? EntityTemplateStore.resolveTemplate(selectedEntity.entityType) : null;
+  const tabs = _entityTemplate?.detail_tabs
+    ? _entityTemplate.detail_tabs.filter(tab => {
+        if (tab.type === 'children') {
+          return EntityStore.getChildren(selectedEntity.id).some(c => c.entityType === (tab.child_type || tab.childType));
+        }
+        return true;
+      }).map(tab => ({
+        key: tab.key,
+        label: tab.label || { en: tab.key },
+        type: tab.type,
+        childType: tab.child_type || tab.childType,
+        mfe_key: tab.mfe_key,
+      }))
+    : (selectedEntity ? TabRegistry.getTabsForEntity(selectedEntity) : []);  // fallback
 
   const platform = EntityStore.get('orbiteos');
 
@@ -7830,10 +8820,26 @@ function ConfigurationPage({ t, lang, navigateWithLoader, focusedEntityId, setFo
   // Build breadcrumb
   const breadcrumb = selectedEntity ? EntityStore.getPath(selectedEntityId) : [];
 
-  // Render tab content
+  // Render tab content — Phase 4: MFERegistry + template auto-gen with full fallback
   const renderTabContent = (tabDef) => {
     if (!selectedEntity) return null;
     const key = tabDef.key;
+
+    // 1. Check MFERegistry for custom component
+    const CustomMFE = MFERegistry.get(selectedEntity.entityType, key);
+    if (CustomMFE) {
+      // Standard props for all custom MFEs — each component takes what it needs
+      return React.createElement(CustomMFE, {
+        entity: selectedEntity, entityId: selectedEntityId,
+        t, lang, onNavigate: handleSelect, onAdd: handleAdd, onOpenModal
+      });
+    }
+
+    // 2. Auto-generate from template
+    if (key === 'overview') return <BaseOverviewMFE entity={selectedEntity} lang={lang} onEdit={() => openEditModal(selectedEntity)}/>;
+    if (tabDef.type === 'children') return <BaseListMFE parentId={selectedEntityId} childType={tabDef.child_type || tabDef.childType} lang={lang} onNavigate={handleSelect} onAdd={handleAdd}/>;
+
+    // 3. Fallback to old renderTabContent for anything not in registry or template
     if (key === 'overview') return <OverviewMicroFrontend entity={selectedEntity} lang={lang} onEdit={() => openEditModal(selectedEntity)}/>;
     if (tabDef.type === 'children') return <EntityListTab parentId={selectedEntityId} childType={tabDef.childType} t={t} lang={lang} onNavigate={handleSelect} onAdd={handleAdd}/>;
     if (key === 'users') return <UsersTab entityId={selectedEntityId} t={t} lang={lang} onOpenModal={onOpenModal}/>;
@@ -7851,8 +8857,8 @@ function ConfigurationPage({ t, lang, navigateWithLoader, focusedEntityId, setFo
     if (key === 'data') return <SensorDataTab entity={selectedEntity} lang={lang}/>;
     if (key === 'schedule') return <ScheduleTab entity={selectedEntity} lang={lang}/>;
     if (key === 'allDevices') return <AllDevicesTab entity={selectedEntity} t={t} lang={lang} onNavigate={handleSelect}/>;
-    // Fallback
-    return <div className="config-tab-content" style={{color:'var(--text-tertiary)',fontSize:12,padding:20,textAlign:'center'}}>{tabDef.label[lang]}</div>;
+    // Final fallback
+    return <div className="config-tab-content" style={{color:'var(--text-tertiary)',fontSize:12,padding:20,textAlign:'center'}}>{resolveI18n(tabDef.label, lang) || tabDef.key}</div>;
   };
 
   return (
