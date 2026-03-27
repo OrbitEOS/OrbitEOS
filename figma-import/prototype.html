@@ -345,6 +345,8 @@
     .ds-group-node.active { color:var(--brand); background:var(--brand-bg); }
     .ds-group-node .ds-group-chevron { font-size:8px; transition:transform 0.15s; flex-shrink:0; width:10px; text-align:center; }
     .ds-group-node .ds-group-chevron.expanded { transform:rotate(90deg); }
+    .ds-drop-target { background:var(--brand-bg); border:1px dashed var(--brand); }
+    .ds-dragging { opacity:0.4; }
     .ds-inherited { opacity:0.5; }
     .ds-inherited-badge { font-size:8px; color:var(--text-tertiary); background:var(--bg-card-hover);
       padding:1px 6px; border-radius:8px; }
@@ -2957,27 +2959,7 @@ EntityTemplateStore.putTemplate({
   }
 });
 
-// ── Group template (lightweight folder template for Developer Studio tree) ──
-EntityTemplateStore.putTemplate({
-  entity_type: 'group', type_key: 'default', name: 'Group',
-  description:{en:'A folder to organize entity types in the Developer Studio tree',nl:'Een map om entiteittypes te organiseren in de Developer Studio boom'},
-  icon: 'FolderOutlined', lifecycle_status: 'active', version: 1,
-  children_types:[],
-  properties: [
-    {property_key:'name', required:true, sort_order:1},
-    {property_key:'description', sort_order:2},
-  ],
-  form_groups: [
-    {key:'general', label:{en:'General',nl:'Algemeen'}, icon:'SettingOutlined',
-     property_keys:['name','description']}
-  ],
-  columns: [{property_key:'name', sortable:true}],
-  detail_tabs: [{key:'overview', label:{en:'Overview'}, type:'overview'}],
-  overview: {
-    properties: [{property_key:'name'},{property_key:'description'}],
-    kpis: [], show_map: false, show_alarms: false,
-  }
-});
+// Groups are UI-only tree organizers — no template needed in EntityTemplateStore
 
 console.log(`EntityTemplateStore: ${EntityTemplateStore.getTemplates().length} templates`);
 
@@ -10160,14 +10142,19 @@ function DeveloperStudioPage({t, lang, tab, dsRoute, updateHash}) {
   const [tmplEditModal, setTmplEditModal] = useState({ visible:false, tmpl:null });
   // Tree collapsed state
   const [dsTreeCollapsed, setDsTreeCollapsed] = useState(false);
-  // Group tree structure: groups with entity types
+  // Group tree structure: groups are label-only buckets (no templates)
   const [dsTreeOrder, setDsTreeOrder] = useState([
-    { type:'group', key:'org', name:{en:'Organization',nl:'Organisatie',de:'Organisation'}, icon:'TeamOutlined', items:['account','subAccount'] },
-    { type:'group', key:'infra', name:{en:'Infrastructure',nl:'Infrastructuur',de:'Infrastruktur'}, icon:'HomeOutlined', items:['site','deviceGroup'] },
-    { type:'group', key:'devices', name:{en:'Devices',nl:'Apparaten',de:'Geraete'}, icon:'HddOutlined', items:['device','sensor','actuator'] },
-    { type:'group', key:'access', name:{en:'Access Control',nl:'Toegangsbeheer',de:'Zugriffskontrolle'}, icon:'LockOutlined', items:['role'] },
+    { key:'org', name:{en:'Organization',nl:'Organisatie',de:'Organisation'}, icon:'TeamOutlined', items:['account','subAccount'] },
+    { key:'infra', name:{en:'Infrastructure',nl:'Infrastructuur',de:'Infrastruktur'}, icon:'HomeOutlined', items:['site','deviceGroup'] },
+    { key:'devices', name:{en:'Devices',nl:'Apparaten',de:'Geraete'}, icon:'HddOutlined', items:['device','sensor','actuator'] },
+    { key:'access', name:{en:'Access Control',nl:'Toegangsbeheer',de:'Zugriffskontrolle'}, icon:'LockOutlined', items:['role'] },
   ]);
   const [expandedGroups, setExpandedGroups] = useState(new Set(['org','infra','devices','access']));
+  // Collapsed subtypes by default — expand per entity type
+  const [expandedTypes, setExpandedTypes] = useState(new Set());
+  // Drag state for visual feedback
+  const [dragOverGroup, setDragOverGroup] = useState(null);
+  const [draggingItem, setDraggingItem] = useState(null);
 
   // Deep-link from URL hash (dsRoute prop)
   useEffect(() => {
@@ -10372,15 +10359,16 @@ function DeveloperStudioPage({t, lang, tab, dsRoute, updateHash}) {
       display:'inline-flex',alignItems:'center',justifyContent:'center',fontSize:10,padding:0,transition:'all 0.12s',opacity:0};
     const treeActionWrapStyle = {display:'flex',gap:2,marginLeft:'auto',alignItems:'center'};
 
-    // Render a single entity type node with subtypes
+    // Render a single entity type node with subtypes (no instance counts — types only)
     function renderEntityNode(entityType, depth) {
       const reg = ENTITY_TYPE_REGISTRY[entityType];
       if (!reg) return null;
       const tmpl = EntityTemplateStore.getTemplate(entityType, 'default');
-      const count = EntityStore.getByType(entityType).length;
       const subtypes = EntityTemplateStore.getTemplates().filter(t => t.extends_key === `${entityType}:default`);
       const isActive = selectedNode.type === 'entity' && selectedNode.entityType === entityType && !selectedNode.typeKey;
       const Icon = window[reg?.icon] || BlockOutlined;
+      const isTypeExpanded = expandedTypes.has(entityType);
+      const isDragging = draggingItem === entityType;
 
       // Filter by search
       if (treeSearch) {
@@ -10395,15 +10383,22 @@ function DeveloperStudioPage({t, lang, tab, dsRoute, updateHash}) {
 
       return React.createElement('div', {key:entityType},
         React.createElement('div', {
-          className:`ds-tree-item ${isActive?'active':''}`,
+          className:`ds-tree-item ${isActive?'active':''} ${isDragging?'ds-dragging':''}`,
           style:{paddingLeft: 12 + depth * 14, position:'relative'},
+          draggable:true,
+          onDragStart:e=>{e.dataTransfer.setData('text/plain',entityType);e.dataTransfer.effectAllowed='move';setDraggingItem(entityType);},
+          onDragEnd:()=>{setDraggingItem(null);},
           onClick:()=>{ dsNavigate({type:'entity', entityType}); setEntityDetailTab('preview'); },
           onMouseEnter:e=>{e.currentTarget.querySelectorAll('.tree-action-btn').forEach(b=>b.style.opacity='1');},
           onMouseLeave:e=>{e.currentTarget.querySelectorAll('.tree-action-btn').forEach(b=>b.style.opacity='0');}
         },
+          subtypes.length > 0 && React.createElement('span', {
+            style:{fontSize:8,cursor:'pointer',width:10,textAlign:'center',flexShrink:0,transform:isTypeExpanded?'rotate(90deg)':'none',transition:'transform 0.15s'},
+            onClick:e=>{e.stopPropagation();setExpandedTypes(prev=>{const next=new Set(prev);if(next.has(entityType))next.delete(entityType);else next.add(entityType);return next;});}
+          }, React.createElement(RightOutlined,{style:{fontSize:8}})),
           React.createElement(Icon, {style:{fontSize:12,color:reg?.color}}),
           resolveI18n(reg?.label,lang) || entityType,
-          count > 0 && React.createElement('span', {className:'ds-count'}, count),
+          subtypes.length > 0 && !isTypeExpanded && React.createElement('span', {className:'ds-count'}, subtypes.length),
           React.createElement('span', {style:treeActionWrapStyle},
             React.createElement('span', {className:'tree-action-btn',title:resolveI18n({en:'Clone',nl:'Klonen'},lang),
               style:{...treeActionBtnStyle,color:'var(--info)'},
@@ -10415,8 +10410,8 @@ function DeveloperStudioPage({t, lang, tab, dsRoute, updateHash}) {
               React.createElement(BranchesOutlined,{style:{fontSize:10}}))
           )
         ),
-        // Subtypes
-        subtypes.map(st => {
+        // Subtypes (only shown when expanded)
+        isTypeExpanded && subtypes.map(st => {
           const stActive = selectedNode.type==='subtype' && selectedNode.entityType===st.entity_type && selectedNode.typeKey===st.type_key;
           return React.createElement('div', {
             key:`${st.entity_type}:${st.type_key}`,
@@ -10458,10 +10453,9 @@ function DeveloperStudioPage({t, lang, tab, dsRoute, updateHash}) {
     const groupedTypes = new Set();
     dsTreeOrder.forEach(g => g.items.forEach(et => groupedTypes.add(et)));
 
-    // Platform is always root
+    // Platform is always root (no instance count — types only)
     const platformReg = ENTITY_TYPE_REGISTRY.platform;
     const platformActive = selectedNode.type === 'entity' && selectedNode.entityType === 'platform' && !selectedNode.typeKey;
-    const platformCount = EntityStore.getByType('platform').length;
 
     const nodes = [];
 
@@ -10477,7 +10471,6 @@ function DeveloperStudioPage({t, lang, tab, dsRoute, updateHash}) {
         },
           React.createElement(GlobalOutlined, {style:{fontSize:12,color:'var(--brand)'}}),
           resolveI18n(platformReg?.label,lang) || 'Platform',
-          platformCount > 0 && React.createElement('span', {className:'ds-count'}, platformCount),
           React.createElement('span', {style:treeActionWrapStyle},
             React.createElement('span', {className:'tree-action-btn',title:resolveI18n({en:'Clone',nl:'Klonen'},lang),
               style:{...treeActionBtnStyle,color:'var(--info)'},
@@ -10508,9 +10501,12 @@ function DeveloperStudioPage({t, lang, tab, dsRoute, updateHash}) {
       nodes.push(
         React.createElement('div', {key:`group-${group.key}`},
           React.createElement('div', {
-            className:`ds-group-node ${isGroupActive?'active':''}`,
+            className:`ds-group-node ${isGroupActive?'active':''} ${dragOverGroup===group.key?'ds-drop-target':''}`,
             style:{paddingLeft:20},
-            onClick:()=>{ dsNavigate({type:'dsGroup', groupKey:group.key}); }
+            onClick:()=>{ dsNavigate({type:'dsGroup', groupKey:group.key}); },
+            onDragOver:e=>{e.preventDefault();e.dataTransfer.dropEffect='move';setDragOverGroup(group.key);},
+            onDragLeave:()=>{setDragOverGroup(null);},
+            onDrop:e=>{e.preventDefault();const et=e.dataTransfer.getData('text/plain');if(et){setDsTreeOrder(prev=>{const next=prev.map(g=>({...g,items:g.items.filter(i=>i!==et)}));const tg=next.find(g=>g.key===group.key);if(tg&&!tg.items.includes(et))tg.items.push(et);return next;});}setDragOverGroup(null);}
           },
             React.createElement('span', {
               className:`ds-group-chevron ${isGroupExpanded?'expanded':''}`,
@@ -10560,7 +10556,7 @@ function DeveloperStudioPage({t, lang, tab, dsRoute, updateHash}) {
         onClick:() => {
           const key = `group_${Date.now()}`;
           setDsTreeOrder(prev => [...prev, {
-            type:'group', key, name:{en:'New Group',nl:'Nieuwe Groep',de:'Neue Gruppe'}, icon:'FolderOutlined', items:[]
+            key, name:{en:'New Group',nl:'Nieuwe Groep',de:'Neue Gruppe'}, icon:'FolderOutlined', items:[]
           }]);
           setExpandedGroups(prev => new Set([...prev, key]));
           dsNavigate({type:'dsGroup', groupKey:key});
