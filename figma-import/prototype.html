@@ -1444,7 +1444,6 @@ function generateAuditLog(entity, lang) {
 // ─── Centralized Registries (single source of truth) ───
 
 // Entity type labels and metadata
-// DEPRECATED: replaced by EntityTemplateStore
 const ENTITY_TYPE_REGISTRY = {
   platform:    { label:{en:'Platform',nl:'Platform',de:'Plattform'}, icon:'GlobalOutlined', color:'var(--brand)' },
   account:     { label:{en:'Account',nl:'Account',de:'Konto'}, icon:'BankOutlined', color:'var(--info)' },
@@ -1488,48 +1487,7 @@ const STATUS_LABELS = {
   available:   { label:{en:'Available',nl:'Beschikbaar'}, color:'var(--info)' },
 };
 
-// Form options registry — all select options in one place
-// DEPRECATED: replaced by PropertyCatalogStore enum_values
-const FORM_OPTIONS = {
-  accountTypes:    [{value:'Commercial',label:{en:'Commercial',nl:'Commercieel'}},{value:'Industrial',label:{en:'Industrial',nl:'Industrieel'}},{value:'Residential',label:{en:'Residential',nl:'Residentieel'}},{value:'Government',label:{en:'Government',nl:'Overheid'}}],
-  plans:           [{value:'Starter',label:{en:'Starter'}},{value:'Professional',label:{en:'Professional'}},{value:'Enterprise',label:{en:'Enterprise'}}],
-  dsos:            [{value:'Stedin',label:{en:'Stedin'}},{value:'Liander',label:{en:'Liander'}},{value:'Enexis',label:{en:'Enexis'}},{value:'TenneT',label:{en:'TenneT'}},{value:'Elia',label:{en:'Elia'}},{value:'Fluvius',label:{en:'Fluvius'}}],
-  languages:       [{value:'en',label:{en:'English'}},{value:'nl',label:{en:'Nederlands'}},{value:'de',label:{en:'Deutsch'}},{value:'fr',label:{en:'Français'}}],
-  siteTypes:       [{value:'Agricultural',label:{en:'Agricultural',nl:'Agrarisch'}},{value:'Residential',label:{en:'Residential',nl:'Residentieel'}},{value:'Commercial Office',label:{en:'Commercial Office',nl:'Commercieel Kantoor'}},{value:'Industrial',label:{en:'Industrial',nl:'Industrieel'}},{value:'Microgrid',label:{en:'Microgrid'}},{value:'Campus',label:{en:'Campus'}}],
-  deviceGroupTypes:[{value:'Generation',label:{en:'Generation',nl:'Opwekking'}},{value:'Storage',label:{en:'Storage',nl:'Opslag'}},{value:'EV Charging',label:{en:'EV Charging',nl:'EV Laden'}},{value:'Metering',label:{en:'Metering',nl:'Meting'}},{value:'HVAC',label:{en:'HVAC'}},{value:'Infrastructure',label:{en:'Infrastructure',nl:'Infrastructuur'}},{value:'Grid',label:{en:'Grid',nl:'Net'}},{value:'Gateway',label:{en:'Gateway'}}],
-  deviceTypes:     [{value:'Solar Inverter',label:{en:'Solar Inverter',nl:'Zonne-omvormer'}},{value:'Battery',label:{en:'Battery',nl:'Batterij'}},{value:'EV Charger',label:{en:'EV Charger',nl:'EV Lader'}},{value:'Power Analyzer',label:{en:'Power Analyzer',nl:'Vermogensanalyzer'}},{value:'Energy Meter',label:{en:'Energy Meter',nl:'Energiemeter'}},{value:'Wind Turbine',label:{en:'Wind Turbine',nl:'Windturbine'}},{value:'Heat Pump',label:{en:'Heat Pump',nl:'Warmtepomp'}},{value:'Gateway',label:{en:'Gateway'}},{value:'Relay',label:{en:'Relay',nl:'Relais'}},{value:'Fire Suppression',label:{en:'Fire Suppression',nl:'Brandblussing'}},{value:'Climate Control',label:{en:'Climate Control',nl:'Klimaatbeheersing'}},{value:'Router',label:{en:'Router'}}],
-  sensorTypes:     [{value:'power',label:{en:'Power',nl:'Vermogen'}},{value:'energy',label:{en:'Energy',nl:'Energie'}},{value:'voltage',label:{en:'Voltage',nl:'Spanning'}},{value:'current',label:{en:'Current',nl:'Stroom'}},{value:'temperature',label:{en:'Temperature',nl:'Temperatuur'}},{value:'percentage',label:{en:'Percentage'}},{value:'counter',label:{en:'Counter',nl:'Teller'}},{value:'frequency',label:{en:'Frequency',nl:'Frequentie'}},{value:'humidity',label:{en:'Humidity',nl:'Vochtigheid'}},{value:'pressure',label:{en:'Pressure',nl:'Druk'}},{value:'status',label:{en:'Status'}},{value:'ratio',label:{en:'Ratio'}}],
-  actuatorTypes:   [{value:'power_limit',label:{en:'Power Limit',nl:'Vermogenslimiet'}},{value:'reactive_power',label:{en:'Reactive Power',nl:'Blindvermogen'}},{value:'mode',label:{en:'Mode',nl:'Modus'}},{value:'switch',label:{en:'Switch',nl:'Schakelaar'}},{value:'setpoint',label:{en:'Setpoint'}},{value:'valve',label:{en:'Valve',nl:'Klep'}},{value:'relay',label:{en:'Relay',nl:'Relais'}},{value:'temperature',label:{en:'Temperature',nl:'Temperatuur'}}],
-  protocols:       [{value:'Modbus TCP',label:{en:'Modbus TCP'}},{value:'Modbus RTU',label:{en:'Modbus RTU'}},{value:'MQTT',label:{en:'MQTT'}},{value:'OCPP',label:{en:'OCPP'}},{value:'SunSpec',label:{en:'SunSpec'}},{value:'REST API',label:{en:'REST API'}},{value:'BACnet',label:{en:'BACnet'}}],
-  gridConnections: [{value:'1×25A',label:{en:'1×25A'}},{value:'3×25A',label:{en:'3×25A'}},{value:'3×35A',label:{en:'3×35A'}},{value:'3×40A',label:{en:'3×40A'}},{value:'3×63A',label:{en:'3×63A'}},{value:'3×80A',label:{en:'3×80A'}}],
-  calibMethods:    [{value:'Manual',label:{en:'Manual',nl:'Handmatig'}},{value:'Automated',label:{en:'Automated',nl:'Automatisch'}},{value:'Factory',label:{en:'Factory',nl:'Fabriek'}}],
-  timezones:       [{value:'Europe/Amsterdam',label:{en:'Europe/Amsterdam'}},{value:'Europe/Brussels',label:{en:'Europe/Brussels'}},{value:'Europe/Berlin',label:{en:'Europe/Berlin'}},{value:'Europe/London',label:{en:'Europe/London'}},{value:'UTC',label:{en:'UTC'}}],
-  currencies:      [{value:'EUR',label:{en:'EUR (€)'}},{value:'USD',label:{en:'USD ($)'}},{value:'GBP',label:{en:'GBP (£)'}},{value:'CHF',label:{en:'CHF'}}],
-  dateFormats:     [{value:'DD-MM-YYYY',label:{en:'DD-MM-YYYY'}},{value:'MM-DD-YYYY',label:{en:'MM-DD-YYYY'}},{value:'YYYY-MM-DD',label:{en:'YYYY-MM-DD'}}],
-  energyUnits:     [{value:'kWh',label:{en:'kWh'}},{value:'MWh',label:{en:'MWh'}},{value:'Wh',label:{en:'Wh'}}],
-  retentionPeriods:[{value:'1 yr',label:{en:'1 year',nl:'1 jaar'}},{value:'3 yr',label:{en:'3 years',nl:'3 jaar'}},{value:'5 yr',label:{en:'5 years',nl:'5 jaar'}},{value:'7 yr',label:{en:'7 years',nl:'7 jaar'}},{value:'10 yr',label:{en:'10 years',nl:'10 jaar'}}],
-  scopeLevels:     [{value:'Platform',label:{en:'Platform'}},{value:'Account',label:{en:'Account'}},{value:'Sub-account',label:{en:'Sub-account',nl:'Sub-account'}},{value:'Site',label:{en:'Site',nl:'Locatie'}}],
-  severities:      [{value:'critical',label:{en:'Critical',nl:'Kritiek'}},{value:'warning',label:{en:'Warning',nl:'Waarschuwing'}},{value:'info',label:{en:'Info'}}],
-};
 
-// DEPRECATED: replaced by template columns
-const COLUMN_REGISTRY = {
-  severity: (lang) => ({ key:'sev', label:{en:'Severity',nl:'Ernst'}, filterable:true,
-    filterOptions:FORM_OPTIONS.severities,
-    render:(_,r) => { const s = SEVERITY_LEVELS[r.sev||r.severity]; return React.createElement('span',{className:`status-dot ${s?.dotClass||'info'}`},resolveI18n(s?.label,lang)||r.sev||r.severity); }
-  }),
-  status: (lang) => ({ key:'status', label:{en:'Status',nl:'Status'}, filterable:true,
-    getValue:r => r.state?.status,
-    render:(_,r) => { const s=r.state?.status; const sl=STATUS_LABELS[s]; return s ? React.createElement('span',{className:`status-dot ${sl?.dotClass||s}`},resolveI18n(sl?.label,lang)||s) : '—'; }
-  }),
-  entityName: (lang) => ({ key:'name', label:{en:'Name',nl:'Naam'}, sortable:true,
-    render:(_,r) => React.createElement('span',{style:{fontWeight:500}},r.name) }),
-  entityType: (lang) => ({ key:'entityType', label:{en:'Type',nl:'Type'}, filterable:true,
-    render:(_,r) => { const reg=ENTITY_TYPE_REGISTRY[r.properties?.type||r.entityType]; return React.createElement('span',{style:{fontSize:11,color:'var(--text-secondary)'}}, resolveI18n(reg?.label,lang)||r.properties?.type||r.entityType); }
-  }),
-  timeAgo: (lang) => ({ key:'time', label:{en:'Time',nl:'Tijd'}, sortable:true,
-    render:(_,r) => React.createElement('span',{style:{color:'var(--text-tertiary)',fontSize:11}},r.time||r.timeAgo||'—') }),
-};
 
 // ─── PrivilegeStore (app-scoped privileges) ───
 const ACTIONS = ['view','create','edit','delete','manage'];
@@ -1670,110 +1628,6 @@ const ROLE_DEFINITIONS = RoleStore.getAll().map(r => ({
     audit: r.systemPerms?.includes('sys.audit.export') ? 'View' : r.privileges.some(p => p.includes('history.view')) ? 'View' : '—',
   }
 }));
-
-// ═══════════════════════════════════════════════════════════════════════
-// DEPRECATED: replaced by template detail_tabs
-// ═══════════════════════════════════════════════════════════════════════
-const TabRegistry = (() => {
-  const _tabs = {
-    platform: [
-      { key:'overview', label:{en:'Overview',nl:'Overzicht'}, icon:'DashboardOutlined', type:'property' },
-      { key:'accounts', label:{en:'Accounts',nl:'Accounts'}, icon:'BankOutlined', type:'children', childType:'account' },
-      { key:'users', label:{en:'Users',nl:'Gebruikers'}, icon:'TeamOutlined', type:'property' },
-      { key:'roles', label:{en:'Roles',nl:'Rollen'}, icon:'SafetyCertificateOutlined', type:'property' },
-      { key:'privileges', label:{en:'Privileges',nl:'Rechten'}, icon:'LockOutlined', type:'property' },
-      { key:'domains', label:{en:'Domains',nl:'Domeinen'}, icon:'CloudOutlined', type:'property' },
-      { key:'events', label:{en:'Events',nl:'Gebeurtenissen'}, icon:'HistoryOutlined', type:'action' },
-      { key:'alarms', label:{en:'Alarms',nl:'Alarmen'}, icon:'AlertOutlined', type:'action' },
-      { key:'auditLog', label:{en:'Audit Log',nl:'Auditlog'}, icon:'AuditOutlined', type:'action' },
-      { key:'tags', label:{en:'Tags',nl:'Tags'}, icon:'TagOutlined', type:'action' },
-    ],
-    account: [
-      { key:'overview', label:{en:'Overview',nl:'Overzicht'}, type:'property' },
-      { key:'subAccounts', label:{en:'Sub-accounts',nl:'Sub-accounts'}, type:'children', childType:'subAccount' },
-      { key:'users', label:{en:'Users',nl:'Gebruikers'}, type:'property' },
-      { key:'roles', label:{en:'Roles',nl:'Rollen'}, type:'property' },
-      { key:'privileges', label:{en:'Privileges',nl:'Rechten'}, type:'property' },
-      { key:'billing', label:{en:'Billing',nl:'Facturering'}, type:'property' },
-      { key:'apiKeys', label:{en:'API Keys',nl:'API Sleutels'}, type:'property' },
-      { key:'events', label:{en:'Events',nl:'Gebeurtenissen'}, type:'action' },
-      { key:'alarms', label:{en:'Alarms',nl:'Alarmen'}, type:'action' },
-      { key:'auditLog', label:{en:'Audit Log',nl:'Auditlog'}, type:'action' },
-      { key:'tags', label:{en:'Tags',nl:'Tags'}, type:'action' },
-    ],
-    subAccount: [
-      { key:'overview', label:{en:'Overview',nl:'Overzicht'}, type:'property' },
-      { key:'sites', label:{en:'Sites',nl:'Locaties'}, type:'children', childType:'site' },
-      { key:'users', label:{en:'Users',nl:'Gebruikers'}, type:'property' },
-      { key:'roles', label:{en:'Roles',nl:'Rollen'}, type:'property' },
-      { key:'privileges', label:{en:'Privileges',nl:'Rechten'}, type:'property' },
-      { key:'events', label:{en:'Events',nl:'Gebeurtenissen'}, type:'action' },
-      { key:'alarms', label:{en:'Alarms',nl:'Alarmen'}, type:'action' },
-      { key:'auditLog', label:{en:'Audit Log',nl:'Auditlog'}, type:'action' },
-      { key:'tags', label:{en:'Tags',nl:'Tags'}, type:'action' },
-    ],
-    site: [
-      { key:'overview', label:{en:'Overview',nl:'Overzicht'}, type:'property' },
-      { key:'deviceGroups', label:{en:'Device Groups',nl:'Apparaatgroepen'}, type:'children', childType:'deviceGroup' },
-      { key:'allDevices', label:{en:'All Devices',nl:'Alle Apparaten'}, type:'property' },
-      { key:'users', label:{en:'Users',nl:'Gebruikers'}, type:'property' },
-      { key:'roles', label:{en:'Roles',nl:'Rollen'}, type:'property' },
-      { key:'privileges', label:{en:'Privileges',nl:'Rechten'}, type:'property' },
-      { key:'events', label:{en:'Events',nl:'Gebeurtenissen'}, type:'action' },
-      { key:'alarms', label:{en:'Alarms',nl:'Alarmen'}, type:'action' },
-      { key:'auditLog', label:{en:'Audit Log',nl:'Auditlog'}, type:'action' },
-      { key:'tags', label:{en:'Tags',nl:'Tags'}, type:'action' },
-    ],
-    deviceGroup: [
-      { key:'overview', label:{en:'Overview',nl:'Overzicht'}, type:'property' },
-      { key:'subGroups', label:{en:'Sub-groups',nl:'Subgroepen'}, type:'children', childType:'deviceGroup' },
-      { key:'devices', label:{en:'Devices',nl:'Apparaten'}, type:'children', childType:'device' },
-      { key:'metrics', label:{en:'Metrics',nl:'Metingen'}, type:'property' },
-      { key:'events', label:{en:'Events',nl:'Gebeurtenissen'}, type:'action' },
-      { key:'alarms', label:{en:'Alarms',nl:'Alarmen'}, type:'action' },
-      { key:'auditLog', label:{en:'Audit Log',nl:'Auditlog'}, type:'action' },
-      { key:'tags', label:{en:'Tags',nl:'Tags'}, type:'action' },
-    ],
-    device: [
-      { key:'overview', label:{en:'Overview',nl:'Overzicht'}, type:'property' },
-      { key:'sensors', label:{en:'Sensors',nl:'Sensoren'}, type:'children', childType:'sensor' },
-      { key:'actuators', label:{en:'Actuators',nl:'Actuatoren'}, type:'children', childType:'actuator' },
-      { key:'events', label:{en:'Events',nl:'Gebeurtenissen'}, type:'action' },
-      { key:'alarms', label:{en:'Alarms',nl:'Alarmen'}, type:'action' },
-      { key:'auditLog', label:{en:'Audit Log',nl:'Auditlog'}, type:'action' },
-      { key:'tags', label:{en:'Tags',nl:'Tags'}, type:'action' },
-    ],
-    sensor: [
-      { key:'overview', label:{en:'Overview',nl:'Overzicht'}, type:'property' },
-      { key:'data', label:{en:'Data',nl:'Data'}, type:'property' },
-      { key:'events', label:{en:'Events',nl:'Gebeurtenissen'}, type:'action' },
-      { key:'alarms', label:{en:'Alarms',nl:'Alarmen'}, type:'action' },
-      { key:'tags', label:{en:'Tags',nl:'Tags'}, type:'action' },
-    ],
-    actuator: [
-      { key:'overview', label:{en:'Overview',nl:'Overzicht'}, type:'property' },
-      { key:'commands', label:{en:'Commands',nl:'Commando\'s'}, type:'property' },
-      { key:'schedule', label:{en:'Schedule',nl:'Schema'}, type:'property' },
-      { key:'events', label:{en:'Events',nl:'Gebeurtenissen'}, type:'action' },
-      { key:'alarms', label:{en:'Alarms',nl:'Alarmen'}, type:'action' },
-      { key:'tags', label:{en:'Tags',nl:'Tags'}, type:'action' },
-    ],
-  };
-
-  function getTabsForEntity(entity) {
-    const typeTabs = _tabs[entity.entityType] || [];
-    return typeTabs.filter(tab => {
-      if (tab.type === 'children') {
-        const children = EntityStore.getChildren(entity.id);
-        return children.some(c => c.entityType === tab.childType);
-      }
-      return true;
-    });
-  }
-
-  function getAll() { return _tabs; }
-  return { getTabsForEntity, getAll };
-})();
 
 // ─── Seed: Users ───
 const USER_SEEDS = [
@@ -6927,8 +6781,6 @@ function FieldRenderer({ field, value, onChange, lang, readOnly }) {
       opts = NavigationStore.getVisibleApps().map(a => ({value:a.id, label:typeof a.label === 'object' ? (a.label[lang]||a.label.en) : a.label}));
     } else if (field.optionsFrom === 'sysPermCategories') {
       opts = SysPermStore.getCategories().map(c => ({value:c, label:c}));
-    } else if (field.optionsFrom && FORM_OPTIONS[field.optionsFrom]) {
-      opts = FORM_OPTIONS[field.optionsFrom].map(o => typeof o === 'string' ? {value:o,label:o} : {value:o.value, label:resolveI18n(o.label,lang)});
     } else {
       opts = (field.options||[]).map(o => typeof o === 'string' ? {value:o, label:o} : {value:o.value, label:resolveI18n(o.label,lang)});
     }
@@ -6959,120 +6811,8 @@ function FieldRenderer({ field, value, onChange, lang, readOnly }) {
   return React.createElement(Input, { size:'small', value:value||'', placeholder, onChange:e=>onChange(e.target.value) });
 }
 
-// DEPRECATED: replaced by EntityTemplateStore.resolveTemplate()
+// ─── Non-entity CRUD schemas (entity-specific schemas removed — now template-driven) ───
 const ENTITY_EDIT_SCHEMA = {
-  general: {
-    _all: [
-      { key:'name', label:{en:'Name',nl:'Naam',de:'Name'}, type:'text', required:true, minLength:2 },
-      { key:'properties.tags', label:{en:'Tags',nl:'Labels',de:'Stichworte'}, type:'tags', full:true },
-    ],
-    account: [
-      { key:'properties.type', label:{en:'Account Type',nl:'Accounttype'}, type:'select', optionsFrom:'accountTypes', required:true },
-      { key:'properties.contactEmail', label:{en:'Contact Email',nl:'Contact E-mail'}, type:'text', inputType:'email', required:true },
-      { key:'properties.plan', label:{en:'Plan',nl:'Abonnement'}, type:'select', optionsFrom:'plans', required:true },
-      { key:'properties.vatNumber', label:{en:'VAT Number',nl:'BTW-nummer'}, type:'text' },
-    ],
-    subAccount: [
-      { key:'properties.region', label:{en:'Region',nl:'Regio'}, type:'text', required:true },
-      { key:'properties.dso', label:{en:'DSO',nl:'Netbeheerder'}, type:'select', optionsFrom:'dsos' },
-      { key:'properties.lang', label:{en:'Language',nl:'Taal'}, type:'select', optionsFrom:'languages' },
-    ],
-    site: [
-      { key:'properties.type', label:{en:'Site Type',nl:'Locatietype'}, type:'select', optionsFrom:'siteTypes', required:true },
-      { key:'properties.capacity', label:{en:'Capacity',nl:'Capaciteit'}, type:'text' },
-      { key:'properties.dso', label:{en:'DSO',nl:'Netbeheerder'}, type:'select', optionsFrom:'dsos' },
-    ],
-    deviceGroup: [
-      { key:'properties.type', label:{en:'Group Type',nl:'Groeptype'}, type:'select', optionsFrom:'deviceGroupTypes', required:true },
-    ],
-    device: [
-      { key:'properties.type', label:{en:'Device Type',nl:'Apparaattype'}, type:'select', optionsFrom:'deviceTypes', required:true },
-      { key:'properties.manufacturer', label:{en:'Manufacturer',nl:'Fabrikant'}, type:'text', required:true },
-      { key:'properties.model', label:{en:'Model',nl:'Model'}, type:'text', required:true },
-      { key:'properties.serialNumber', label:{en:'Serial Number',nl:'Serienummer'}, type:'text' },
-      { key:'properties.installDate', label:{en:'Install Date',nl:'Installatiedatum'}, type:'date' },
-    ],
-    sensor: [
-      { key:'properties.type', label:{en:'Sensor Type',nl:'Sensortype'}, type:'select', optionsFrom:'sensorTypes', required:true },
-      { key:'properties.unit', label:{en:'Unit',nl:'Eenheid'}, type:'text', required:true },
-    ],
-    actuator: [
-      { key:'properties.type', label:{en:'Actuator Type',nl:'Actuatortype'}, type:'select', optionsFrom:'actuatorTypes', required:true },
-      { key:'properties.unit', label:{en:'Unit',nl:'Eenheid'}, type:'text', required:true },
-    ],
-  },
-  location: {
-    site: [
-      { key:'properties.location', label:{en:'Address',nl:'Adres'}, type:'text', full:true },
-      { key:'properties.lat', label:{en:'Latitude',nl:'Breedtegraad'}, type:'number', min:-90, max:90, step:0.001 },
-      { key:'properties.lng', label:{en:'Longitude',nl:'Lengtegraad'}, type:'number', min:-180, max:180, step:0.001 },
-    ],
-  },
-  contract: {
-    account: [
-      { key:'properties.maxSites', label:{en:'Max Sites',nl:'Max Locaties'}, type:'number', min:1 },
-      { key:'properties.maxUsers', label:{en:'Max Users',nl:'Max Gebruikers'}, type:'number', min:1 },
-      { key:'properties.contractStart', label:{en:'Contract Start',nl:'Contractstart'}, type:'date' },
-      { key:'properties.contractEnd', label:{en:'Contract End',nl:'Contracteinde'}, type:'date' },
-    ],
-    site: [
-      { key:'properties.contractLimit', label:{en:'Contract Limit (kW)',nl:'Contractlimiet (kW)'}, type:'number', min:0 },
-      { key:'properties.connection', label:{en:'Grid Connection',nl:'Netaansluiting'}, type:'select', optionsFrom:'gridConnections' },
-    ],
-  },
-  network: {
-    _all: [
-      { key:'properties.protocol', label:{en:'Protocol',nl:'Protocol'}, type:'select', optionsFrom:'protocols' },
-      { key:'properties.ip', label:{en:'IP Address',nl:'IP-adres'}, type:'text' },
-      { key:'properties.port', label:{en:'Port',nl:'Poort'}, type:'number', min:1, max:65535 },
-      { key:'properties.modbusId', label:{en:'Modbus ID',nl:'Modbus ID'}, type:'number', min:1, max:247 },
-      { key:'properties.pollInterval', label:{en:'Poll Interval (s)',nl:'Poll Interval (s)'}, type:'number', min:1 },
-    ],
-  },
-  firmware: {
-    device: [
-      { key:'properties.firmware', label:{en:'Firmware Version',nl:'Firmwareversie'}, type:'text', readOnly:true },
-      { key:'properties.autoUpdate', label:{en:'Auto Update',nl:'Automatisch Updaten'}, type:'switch' },
-    ],
-  },
-  thresholds: {
-    sensor: [
-      { key:'properties.warnMin', label:{en:'Warning Min',nl:'Waarschuwing Min'}, type:'number' },
-      { key:'properties.warnMax', label:{en:'Warning Max',nl:'Waarschuwing Max'}, type:'number' },
-      { key:'properties.critMin', label:{en:'Critical Min',nl:'Kritiek Min'}, type:'number' },
-      { key:'properties.critMax', label:{en:'Critical Max',nl:'Kritiek Max'}, type:'number' },
-      { key:'properties.calibOffset', label:{en:'Calibration Offset',nl:'Kalibratie Offset'}, type:'number' },
-      { key:'properties.calibScaleFactor', label:{en:'Scale Factor',nl:'Schaalfactor'}, type:'number', step:0.01 },
-      { key:'properties.calibMethod', label:{en:'Calibration Method',nl:'Kalibratiemethode'}, type:'select', optionsFrom:'calibMethods' },
-    ],
-  },
-  limits: {
-    actuator: [
-      { key:'properties.minValue', label:{en:'Min Value',nl:'Min Waarde'}, type:'number' },
-      { key:'properties.maxValue', label:{en:'Max Value',nl:'Max Waarde'}, type:'number' },
-      { key:'properties.rateLimit', label:{en:'Rate Limit',nl:'Snelheidslimiet'}, type:'number', min:0 },
-      { key:'properties.rampRate', label:{en:'Ramp Rate',nl:'Opvoersnelheid'}, type:'number', min:0 },
-      { key:'properties.safetyOverride', label:{en:'Safety Override',nl:'Veiligheidsoverride'}, type:'switch' },
-    ],
-  },
-  platformSettings: {
-    platform: [
-      { key:'properties.defaultLang', label:{en:'Default Language',nl:'Standaardtaal'}, type:'select', optionsFrom:'languages' },
-      { key:'properties.timezone', label:{en:'Timezone',nl:'Tijdzone'}, type:'select', optionsFrom:'timezones' },
-      { key:'properties.currency', label:{en:'Currency',nl:'Valuta'}, type:'select', optionsFrom:'currencies' },
-      { key:'properties.dateFormat', label:{en:'Date Format',nl:'Datumformaat'}, type:'select', optionsFrom:'dateFormats' },
-      { key:'properties.energyUnit', label:{en:'Energy Unit',nl:'Energieeenheid'}, type:'select', optionsFrom:'energyUnits' },
-      { key:'properties.selfConsTarget', label:{en:'Self-consumption Target (%)',nl:'Zelfverbruiksdoel (%)'}, type:'slider', min:0, max:100, full:true },
-      { key:'properties.realtimeEnabled', label:{en:'Enable Real-time',nl:'Realtime Inschakelen'}, type:'switch' },
-      { key:'properties.autoAckAlerts', label:{en:'Auto-ack Info Alerts',nl:'Auto-bevestig Info'}, type:'switch' },
-      { key:'properties.dailyReports', label:{en:'Daily Reports',nl:'Dagelijkse Rapporten'}, type:'switch' },
-    ],
-  },
-  compliance: {
-    site: [
-      { key:'properties.compliance.retention', label:{en:'Data Retention',nl:'Dataretentie'}, type:'select', optionsFrom:'retentionPeriods' },
-    ],
-  },
   // ─── Non-entity CRUD schemas (userAssignment, role, privilege, systemPermission) ───
   userAssignment: {
     general: {
@@ -7110,166 +6850,6 @@ const ENTITY_EDIT_SCHEMA = {
         { key:'description', label:{en:'Description',nl:'Beschrijving'}, type:'textarea' },
       ]
     }
-  },
-};
-
-// DEPRECATED: replaced by template form_groups
-const EDIT_SUB_TABS = [
-  { key:'general', label:{en:'General',nl:'Algemeen',de:'Allgemein'}, icon:'SettingOutlined' },
-  { key:'location', label:{en:'Location',nl:'Locatie',de:'Standort'}, icon:'EnvironmentOutlined' },
-  { key:'contract', label:{en:'Contract',nl:'Contract',de:'Vertrag'}, icon:'EuroCircleOutlined' },
-  { key:'network', label:{en:'Network',nl:'Netwerk',de:'Netzwerk'}, icon:'ApiOutlined' },
-  { key:'firmware', label:{en:'Firmware',nl:'Firmware',de:'Firmware'}, icon:'CloudServerOutlined' },
-  { key:'thresholds', label:{en:'Thresholds',nl:'Drempels',de:'Schwellenwerte'}, icon:'ControlOutlined' },
-  { key:'limits', label:{en:'Limits',nl:'Limieten',de:'Grenzen'}, icon:'SlidersOutlined' },
-  { key:'platformSettings', label:{en:'Settings',nl:'Instellingen',de:'Einstellungen'}, icon:'GlobalOutlined' },
-  { key:'compliance', label:{en:'Compliance',nl:'Naleving',de:'Compliance'}, icon:'SafetyCertificateOutlined' },
-];
-
-// DEPRECATED: replaced by template form_groups[].icon
-const SUB_TAB_ICONS = {
-  SettingOutlined, EnvironmentOutlined, EuroCircleOutlined, ApiOutlined, CloudServerOutlined,
-  ControlOutlined, SlidersOutlined, GlobalOutlined, SafetyCertificateOutlined
-};
-
-// Get fields for a specific sub-tab and entity type
-function getSubTabFields(subTabKey, entityType) {
-  const schema = ENTITY_EDIT_SCHEMA[subTabKey];
-  if (!schema) return [];
-  const allFields = schema._all || [];
-  const typeFields = schema[entityType] || [];
-  return [...allFields, ...typeFields];
-}
-
-// Get applicable sub-tabs for an entity type
-function getApplicableSubTabs(entityType) {
-  return EDIT_SUB_TABS.filter(tab => {
-    const fields = getSubTabFields(tab.key, entityType);
-    return fields.length > 0;
-  });
-}
-
-// DEPRECATED: replaced by template overview layout
-const OVERVIEW_SCHEMA = {
-  platform: {
-    properties: [
-      { key:'properties.version', label:{en:'Version',nl:'Versie'}, icon:React.createElement(CodeOutlined,{style:{fontSize:14}}) },
-      { key:'properties.timezone', label:{en:'Timezone',nl:'Tijdzone'}, icon:React.createElement(ClockCircleOutlined,{style:{fontSize:14}}) },
-      { key:'properties.currency', label:{en:'Currency',nl:'Valuta'}, icon:React.createElement(EuroCircleOutlined,{style:{fontSize:14}}) },
-      { key:'properties.energyUnit', label:{en:'Energy Unit',nl:'Energieeenheid'}, icon:React.createElement(ThunderboltOutlined,{style:{fontSize:14}}) },
-    ],
-    kpis: [
-      { key:'state.totalAccounts', label:{en:'Accounts',nl:'Accounts'}, color:'var(--info)', icon:'TeamOutlined' },
-      { key:'state.totalSites', label:{en:'Sites',nl:'Locaties'}, color:'var(--success)', icon:'HomeOutlined' },
-      { key:'state.totalDevices', label:{en:'Devices',nl:'Apparaten'}, color:'var(--brand)', icon:'HddOutlined' },
-      { key:'_activeAlarms', label:{en:'Active Alarms',nl:'Actieve Alarmen'}, color:'var(--error)', icon:'AlertOutlined' },
-      { key:'_onlineRate', label:{en:'Online Rate',nl:'Online Ratio'}, color:'var(--success)', suffix:'%', icon:'CheckCircleFilled' },
-      { key:'state.uptime', label:{en:'Uptime',nl:'Uptime'}, color:'var(--text-secondary)', icon:'ClockCircleOutlined' },
-    ],
-  },
-  account: {
-    properties: [
-      { key:'properties.type', label:{en:'Type',nl:'Type'} },
-      { key:'properties.plan', label:{en:'Plan',nl:'Plan'} },
-      { key:'properties.contactEmail', label:{en:'Contact',nl:'Contact'} },
-      { key:'properties.vatNumber', label:{en:'VAT',nl:'BTW'} },
-      { key:'properties.contractStart', label:{en:'Contract Start',nl:'Contractstart'} },
-      { key:'properties.contractEnd', label:{en:'Contract End',nl:'Contracteinde'} },
-    ],
-    kpis: [
-      { key:'state.sites', label:{en:'Sites',nl:'Locaties'}, color:'var(--success)', icon:'HomeOutlined' },
-      { key:'state.devices', label:{en:'Devices',nl:'Apparaten'}, color:'var(--brand)', icon:'HddOutlined' },
-      { key:'state.users', label:{en:'Users',nl:'Gebruikers'}, color:'var(--info)', icon:'TeamOutlined' },
-      { key:'_activeAlarms', label:{en:'Active Alarms',nl:'Actieve Alarmen'}, color:'var(--error)', icon:'AlertOutlined' },
-      { key:'_totalEnergy', label:{en:'Energy Generated',nl:'Energie Opgewekt'}, color:'var(--solar)', icon:'ThunderboltOutlined', suffix:'kWh' },
-      { key:'_costSaved', label:{en:'Cost Saved',nl:'Bespaard'}, color:'var(--success)', icon:'EuroCircleOutlined' },
-    ],
-  },
-  subAccount: {
-    properties: [
-      { key:'properties.region', label:{en:'Region',nl:'Regio'} },
-      { key:'properties.dso', label:{en:'DSO',nl:'Netbeheerder'} },
-      { key:'properties.lang', label:{en:'Language',nl:'Taal'} },
-    ],
-    kpis: [
-      { key:'state.sites', label:{en:'Sites',nl:'Locaties'}, color:'var(--success)', icon:'HomeOutlined' },
-      { key:'state.devices', label:{en:'Devices',nl:'Apparaten'}, color:'var(--brand)', icon:'HddOutlined' },
-      { key:'_activeAlarms', label:{en:'Active Alarms',nl:'Actieve Alarmen'}, color:'var(--error)', icon:'AlertOutlined' },
-      { key:'_totalCapacity', label:{en:'Total Capacity',nl:'Totale Capaciteit'}, color:'var(--solar)', icon:'ThunderboltOutlined' },
-      { key:'_onlineRate', label:{en:'Online Rate',nl:'Online Ratio'}, color:'var(--success)', suffix:'%', icon:'CheckCircleFilled' },
-    ],
-  },
-  site: {
-    properties: [
-      { key:'properties.type', label:{en:'Type',nl:'Type'} },
-      { key:'properties.capacity', label:{en:'Capacity',nl:'Capaciteit'} },
-      { key:'properties.dso', label:{en:'DSO',nl:'Netbeheerder'} },
-      { key:'properties.connection', label:{en:'Connection',nl:'Aansluiting'} },
-      { key:'properties.contractLimit', label:{en:'Contract Limit',nl:'Contractlimiet'} },
-      { key:'properties.location', label:{en:'Location',nl:'Locatie'} },
-    ],
-    kpis: [
-      { key:'state.selfConsumption', label:{en:'Self-consumption',nl:'Zelfverbruik'}, color:'var(--success)', suffix:'%', pct:true, icon:'PieChartOutlined' },
-      { key:'_solarPower', label:{en:'Solar Production',nl:'Zonne-energie'}, color:'var(--solar)', suffix:'kW', icon:'ThunderboltOutlined' },
-      { key:'_batterySoc', label:{en:'Battery SoC',nl:'Batterij SoC'}, color:'var(--brand)', suffix:'%', pct:true, icon:'DatabaseOutlined' },
-      { key:'_peakDemand', label:{en:'Peak Demand',nl:'Piekvraag'}, color:'var(--warning)', suffix:'%', pct:true, icon:'FundOutlined' },
-      { key:'_gridPower', label:{en:'Grid',nl:'Net'}, color:'var(--error)', suffix:'kW', icon:'SwapOutlined' },
-      { key:'state.devices', label:{en:'Devices',nl:'Apparaten'}, color:'var(--brand)', icon:'HddOutlined' },
-      { key:'_activeAlarms', label:{en:'Active Alarms',nl:'Actieve Alarmen'}, color:'var(--error)', icon:'AlertOutlined' },
-      { key:'_costSaved', label:{en:'Cost Saved',nl:'Bespaard'}, color:'var(--success)', icon:'EuroCircleOutlined' },
-    ],
-    showMap: true,
-  },
-  deviceGroup: {
-    properties: [
-      { key:'properties.type', label:{en:'Type',nl:'Type'} },
-    ],
-    kpis: [
-      { key:'_totalPower', label:{en:'Total Power',nl:'Totaal Vermogen'}, color:'var(--solar)', suffix:'kW', icon:'ThunderboltOutlined' },
-      { key:'_deviceCount', label:{en:'Devices',nl:'Apparaten'}, color:'var(--brand)', icon:'HddOutlined' },
-      { key:'_onlineCount', label:{en:'Online',nl:'Online'}, color:'var(--success)', icon:'CheckCircleFilled' },
-      { key:'_faultCount', label:{en:'Faults',nl:'Storingen'}, color:'var(--error)', icon:'WarningOutlined' },
-      { key:'_activeAlarms', label:{en:'Active Alarms',nl:'Actieve Alarmen'}, color:'var(--error)', icon:'AlertOutlined' },
-    ],
-  },
-  device: {
-    properties: [
-      { key:'properties.type', label:{en:'Type',nl:'Type'} },
-      { key:'properties.manufacturer', label:{en:'Manufacturer',nl:'Fabrikant'} },
-      { key:'properties.model', label:{en:'Model',nl:'Model'} },
-      { key:'properties.firmware', label:{en:'Firmware',nl:'Firmware'} },
-      { key:'properties.serialNumber', label:{en:'Serial',nl:'Serie'} },
-      { key:'properties.installDate', label:{en:'Installed',nl:'Ge\u00efnstalleerd'} },
-    ],
-    kpis: [
-      { key:'state.power', label:{en:'Current Power',nl:'Huidig Vermogen'}, color:'var(--solar)', icon:'ThunderboltOutlined' },
-      { key:'_sensorCount', label:{en:'Sensors',nl:'Sensoren'}, color:'var(--info)', icon:'DashboardOutlined' },
-      { key:'_activeAlarms', label:{en:'Active Alarms',nl:'Actieve Alarmen'}, color:'var(--error)', icon:'AlertOutlined' },
-    ],
-  },
-  sensor: {
-    properties: [
-      { key:'properties.type', label:{en:'Type',nl:'Type'} },
-      { key:'properties.unit', label:{en:'Unit',nl:'Eenheid'} },
-    ],
-    kpis: [
-      { key:'state.value', label:{en:'Current Value',nl:'Huidige Waarde'}, color:'var(--brand)', suffix:true, icon:'DashboardOutlined' },
-      { key:'_min24h', label:{en:'Min (24h)',nl:'Min (24u)'}, color:'var(--info)', suffix:true, icon:'DashboardOutlined' },
-      { key:'_max24h', label:{en:'Max (24h)',nl:'Max (24u)'}, color:'var(--warning)', suffix:true, icon:'WarningOutlined' },
-      { key:'_activeAlarms', label:{en:'Alarm Status',nl:'Alarmstatus'}, color:'var(--error)', icon:'AlertOutlined' },
-    ],
-  },
-  actuator: {
-    properties: [
-      { key:'properties.type', label:{en:'Type',nl:'Type'} },
-      { key:'properties.unit', label:{en:'Unit',nl:'Eenheid'} },
-    ],
-    kpis: [
-      { key:'state.value', label:{en:'Current Value',nl:'Huidige Waarde'}, color:'var(--brand)', icon:'ControlOutlined' },
-      { key:'_mode', label:{en:'Mode',nl:'Modus'}, color:'var(--info)', icon:'ControlOutlined' },
-      { key:'_activeAlarms', label:{en:'Active Alarms',nl:'Actieve Alarmen'}, color:'var(--error)', icon:'AlertOutlined' },
-      { key:'_lastCommand', label:{en:'Last Command',nl:'Laatste Commando'}, color:'var(--text-secondary)', icon:'HistoryOutlined' },
-    ],
   },
 };
 
@@ -7419,17 +6999,12 @@ function EntityEditModal({ visible, mode, entityType, entityId, parentId, onSave
 
   const subTabs = isNonEntity
     ? getNonEntitySubTabs(entityType)
-    : resolvedTemplate?.resolved?.formGroups
-      ? resolvedTemplate.resolved.formGroups.map(fg => ({ key: fg.key, label: fg.label, icon: fg.icon || 'SettingOutlined' }))
-      : getApplicableSubTabs(entityType);  // fallback to old
+    : (resolvedTemplate?.resolved?.formGroups || []).map(fg => ({ key: fg.key, label: fg.label, icon: fg.icon || 'SettingOutlined' }));
 
   const getFieldsForTab = (tabKey) => {
     if (isNonEntity) return getNonEntityFields(entityType, tabKey);
-    if (resolvedTemplate?.resolved?.formGroups) {
-      const group = resolvedTemplate.resolved.formGroups.find(g => g.key === tabKey);
-      return group ? group.resolvedProperties.map(resolvedPropertyToField) : [];
-    }
-    return getSubTabFields(tabKey, entityType);  // fallback to old
+    const group = (resolvedTemplate?.resolved?.formGroups || []).find(g => g.key === tabKey);
+    return group ? group.resolvedProperties.map(resolvedPropertyToField) : [];
   };
 
   const handleChange = (key, val) => {
@@ -7524,7 +7099,7 @@ function EntityEditModal({ visible, mode, entityType, entityId, parentId, onSave
           // Left tabs (hide tab rail for single-tab non-entity types)
           subTabs.length > 1 && React.createElement('div', {className:'eem-tabs'},
             subTabs.map(tab => {
-              const Icon = SUB_TAB_ICONS[tab.icon] || SettingOutlined;
+              const Icon = resolveIcon(tab.icon);
               const hasError = getFieldsForTab(tab.key).some(f => errors[f.key]);
               return React.createElement('div', {
                 key:tab.key, className:`eem-tab ${activeTab===tab.key?'active':''}`,
@@ -7557,10 +7132,19 @@ function EntityEditModal({ visible, mode, entityType, entityId, parentId, onSave
   );
 }
 
-// ─── Overview Micro-Frontend — rich entity overview ───
+// ─── Overview Micro-Frontend — rich entity overview (template-driven) ───
 function OverviewMicroFrontend({ entity, lang, onEdit }) {
-  const schema = OVERVIEW_SCHEMA[entity.entityType];
-  if (!schema) return React.createElement('div', {className:'mfe-wrap'}, 'No overview schema');
+  const template = EntityTemplateStore.resolveTemplate(entity.entityType);
+  const ovLayout = template?.overview;
+  const schema = ovLayout ? {
+    properties: (ovLayout.properties || []).map(p => {
+      const def = PropertyCatalogStore.getDefinition(p.property_key);
+      return def ? { key: def.entity_path || `properties.${def.key}`, label: def.i18n || { en: def.name }, icon: null } : null;
+    }).filter(Boolean),
+    kpis: ovLayout.kpis || [],
+    showMap: ovLayout.showMap,
+  } : null;
+  if (!schema) return React.createElement('div', {className:'mfe-wrap'}, 'No overview template');
   const status = entity.state?.status || 'unknown';
 
   // Compute KPI values — aggregated counts, no child entity lists
@@ -7963,69 +7547,6 @@ function EntityList({ columns, dataSource, rowKey='id', title, lang='en',
   );
 }
 
-// DEPRECATED: replaced by template columns
-const ENTITY_COLUMNS = {
-  account: [
-    { key:'name', label:{en:'Name',nl:'Naam'}, sortable:true, render:(_,r) => React.createElement('span',{style:{fontWeight:500}},r.name) },
-    { key:'type', label:{en:'Type',nl:'Type'}, filterable:true, getValue:r => r.properties?.type },
-    { key:'plan', label:{en:'Plan',nl:'Plan'}, filterable:true, getValue:r => r.properties?.plan },
-    { key:'contact', label:{en:'Contact',nl:'Contact'}, getValue:r => r.properties?.contactEmail, hidden:true },
-    { key:'sites', label:{en:'Sites',nl:'Locaties'}, getValue:r => r.state?.sites, sortable:true },
-    { key:'devices', label:{en:'Devices',nl:'Apparaten'}, getValue:r => r.state?.devices, sortable:true },
-    { key:'status', label:{en:'Status',nl:'Status'}, filterable:true, getValue:r => r.state?.status,
-      render:(_,r) => { const s=r.state?.status; return s ? React.createElement('span',{className:`status-dot ${s==='online'?'online':s==='warning'?'warning':s==='fault'||s==='error'?'error':'info'}`},s) : '\u2014'; } },
-  ],
-  subAccount: [
-    { key:'name', label:{en:'Name',nl:'Naam'}, sortable:true, render:(_,r) => React.createElement('span',{style:{fontWeight:500}},r.name) },
-    { key:'region', label:{en:'Region',nl:'Regio'}, filterable:true, getValue:r => r.properties?.region },
-    { key:'dso', label:{en:'DSO',nl:'DSO'}, getValue:r => r.properties?.dso },
-    { key:'sites', label:{en:'Sites',nl:'Locaties'}, getValue:r => r.state?.sites, sortable:true },
-    { key:'devices', label:{en:'Devices',nl:'Apparaten'}, getValue:r => r.state?.devices, sortable:true },
-    { key:'status', label:{en:'Status',nl:'Status'}, filterable:true, getValue:r => r.state?.status,
-      render:(_,r) => { const s=r.state?.status; return s ? React.createElement('span',{className:`status-dot ${s==='online'?'online':s}`},s) : '\u2014'; } },
-  ],
-  site: [
-    { key:'name', label:{en:'Name',nl:'Naam'}, sortable:true, render:(_,r) => React.createElement('span',{style:{fontWeight:500}},r.name) },
-    { key:'type', label:{en:'Type',nl:'Type'}, filterable:true, getValue:r => r.properties?.type },
-    { key:'capacity', label:{en:'Capacity',nl:'Capaciteit'}, getValue:r => r.properties?.capacity, sortable:true },
-    { key:'city', label:{en:'City',nl:'Stad'}, getValue:r => r.properties?.city, filterable:true },
-    { key:'devices', label:{en:'Devices',nl:'Apparaten'}, getValue:r => r.state?.devices, sortable:true },
-    { key:'status', label:{en:'Status',nl:'Status'}, filterable:true, getValue:r => r.state?.status,
-      render:(_,r) => { const s=r.state?.status; return s ? React.createElement('span',{className:`status-dot ${s==='online'?'online':s}`},s) : '\u2014'; } },
-  ],
-  deviceGroup: [
-    { key:'name', label:{en:'Name',nl:'Naam'}, sortable:true, render:(_,r) => React.createElement('span',{style:{fontWeight:500}},r.name) },
-    { key:'type', label:{en:'Type',nl:'Type'}, filterable:true, getValue:r => r.properties?.type },
-    { key:'devices', label:{en:'Devices',nl:'Apparaten'}, getValue:r => EntityStore.getChildren(r.id).filter(c=>c.entityType==='device').length, sortable:true },
-    { key:'status', label:{en:'Status',nl:'Status'}, filterable:true, getValue:r => r.state?.status,
-      render:(_,r) => { const s=r.state?.status; return s ? React.createElement('span',{className:`status-dot ${s==='online'?'online':s}`},s) : '\u2014'; } },
-  ],
-  device: [
-    { key:'name', label:{en:'Name',nl:'Naam'}, sortable:true, render:(_,r) => React.createElement('span',{style:{fontWeight:500}},r.name) },
-    { key:'type', label:{en:'Type',nl:'Type'}, filterable:true, getValue:r => r.properties?.type },
-    { key:'manufacturer', label:{en:'Manufacturer',nl:'Fabrikant'}, filterable:true, getValue:r => r.properties?.manufacturer },
-    { key:'model', label:{en:'Model',nl:'Model'}, getValue:r => r.properties?.model, hidden:true },
-    { key:'power', label:{en:'Power',nl:'Vermogen'}, getValue:r => r.state?.power, sortable:true },
-    { key:'status', label:{en:'Status',nl:'Status'}, filterable:true, getValue:r => r.state?.status,
-      render:(_,r) => { const s=r.state?.status; return s ? React.createElement('span',{className:`status-dot ${s==='online'?'online':s==='fault'||s==='error'?'error':s}`},s) : '\u2014'; } },
-  ],
-  sensor: [
-    { key:'name', label:{en:'Name',nl:'Naam'}, sortable:true, render:(_,r) => React.createElement('span',{style:{fontWeight:500}},r.name) },
-    { key:'type', label:{en:'Type',nl:'Type'}, filterable:true, getValue:r => r.properties?.type },
-    { key:'unit', label:{en:'Unit',nl:'Eenheid'}, getValue:r => r.properties?.unit },
-    { key:'value', label:{en:'Value',nl:'Waarde'}, getValue:r => r.state?.value != null ? `${r.state.value}` : '\u2014', sortable:true },
-    { key:'status', label:{en:'Status',nl:'Status'}, filterable:true, getValue:r => r.state?.status,
-      render:(_,r) => { const s=r.state?.status; return s ? React.createElement('span',{className:`status-dot ${s==='online'?'online':s}`},s) : '\u2014'; } },
-  ],
-  actuator: [
-    { key:'name', label:{en:'Name',nl:'Naam'}, sortable:true, render:(_,r) => React.createElement('span',{style:{fontWeight:500}},r.name) },
-    { key:'type', label:{en:'Type',nl:'Type'}, filterable:true, getValue:r => r.properties?.type },
-    { key:'state', label:{en:'State',nl:'Stand'}, getValue:r => r.state?.position || r.state?.mode || '\u2014' },
-    { key:'status', label:{en:'Status',nl:'Status'}, filterable:true, getValue:r => r.state?.status,
-      render:(_,r) => { const s=r.state?.status; return s ? React.createElement('span',{className:`status-dot ${s==='online'?'online':s}`},s) : '\u2014'; } },
-  ],
-};
-
 // ═══════════════════════════════════════════════════════════════════════
 // ─── Phase 2: Base MFE Components (template-driven rendering) ───
 // ═══════════════════════════════════════════════════════════════════════
@@ -8107,29 +7628,8 @@ function BaseListMFE({ parentId, childType, lang, onNavigate, onAdd }) {
   );
 }
 
-// ── BaseOverviewMFE — template-driven overview with fallback to OverviewMicroFrontend ──
+// ── BaseOverviewMFE — delegates to template-driven OverviewMicroFrontend ──
 function BaseOverviewMFE({ entity, lang, onEdit }) {
-  const template = EntityTemplateStore.resolveTemplate(entity.entityType);
-  const ovLayout = template?.overview;
-
-  // If no template overview, fall back to existing OverviewMicroFrontend
-  if (!ovLayout) {
-    return React.createElement(OverviewMicroFrontend, { entity, lang, onEdit });
-  }
-
-  // Resolve overview properties from catalog
-  const overviewProps = (ovLayout.properties || []).map(p => {
-    const def = PropertyCatalogStore.getDefinition(p.property_key);
-    if (!def) return null;
-    return {
-      key: def.entity_path || `properties.${def.key}`,
-      label: def.i18n || { en: def.name },
-      icon: null,
-    };
-  }).filter(Boolean);
-
-  // Use the existing OverviewMicroFrontend rendering logic via OVERVIEW_SCHEMA fallback
-  // This ensures identical visual output during transition
   return React.createElement(OverviewMicroFrontend, { entity, lang, onEdit });
 }
 
@@ -8137,10 +7637,20 @@ function BaseOverviewMFE({ entity, lang, onEdit }) {
 
 function EntityListTab({ parentId, childType, t, lang, onNavigate, onAdd }) {
   const children = EntityStore.getChildren(parentId).filter(c => c.entityType === childType);
-  const cols = ENTITY_COLUMNS[childType] || [
-    { key:'name', label:{en:'Name',nl:'Naam'}, sortable:true, render:(_,r) => React.createElement('span',{style:{fontWeight:500}},r.name) },
-    { key:'status', label:{en:'Status',nl:'Status'}, getValue:r => r.state?.status },
-  ];
+  const childTemplate = EntityTemplateStore.resolveTemplate(childType);
+  const cols = childTemplate?.resolved?.columns
+    ? childTemplate.resolved.columns.map(col => ({
+        key: col.property_key,
+        label: col.resolvedProperty?.i18n || { en: col.resolvedProperty?.name || col.property_key },
+        sortable: col.sortable,
+        filterable: col.filterable,
+        getValue: (row) => getNestedValue(row, col.resolvedProperty?.entity_path || `properties.${col.property_key}`),
+        render: col.property_key === 'name' ? (_, r) => React.createElement('span', {style:{fontWeight:500}}, r.name) : undefined,
+      }))
+    : [
+        { key:'name', label:{en:'Name',nl:'Naam'}, sortable:true, render:(_,r) => React.createElement('span',{style:{fontWeight:500}},r.name) },
+        { key:'status', label:{en:'Status',nl:'Status'}, getValue:r => r.state?.status },
+      ];
   const typeLabels = Object.fromEntries(Object.entries(ENTITY_TYPE_REGISTRY).map(([k,v])=>([k,v.label])));
   return (
     <div className="config-tab-content">
@@ -8544,7 +8054,7 @@ function EventsTab({ entity, lang }) {
   const eventCols = [
     { key:'label', label:{en:'Event',nl:'Gebeurtenis'}, sortable:true, render:(_,r) => React.createElement('span',{style:{fontWeight:500}},r.label) },
     { key:'severity', label:{en:'Severity',nl:'Ernst'}, filterable:true,
-      filterOptions:FORM_OPTIONS.severities.map(o => ({value:o.value, label:resolveI18n(o.label,lang)})),
+      filterOptions:Object.entries(SEVERITY_LEVELS).map(([k,v]) => ({value:k, label:resolveI18n(v.label,lang)})),
       render:(_,r) => { const s = SEVERITY_LEVELS[r.severity]; return React.createElement('span',{className:`status-dot ${s?.dotClass||'info'}`},resolveI18n(s?.label,lang)||r.severity); } },
     { key:'timeAgo', label:{en:'Time',nl:'Tijd'}, sortable:true,
       render:(_,r) => React.createElement('span',{style:{color:'var(--text-tertiary)',fontSize:11}},resolveI18n(r.timeAgo,lang)) },
@@ -8563,7 +8073,7 @@ function AlarmsTab({ entity, lang }) {
   const alarms = EntityStore.getAggregatedAlarms(entity.id);
   const alarmCols = [
     { key:'sev', label:{en:'Severity',nl:'Ernst'}, filterable:true,
-      filterOptions:FORM_OPTIONS.severities.map(o => ({value:o.value, label:resolveI18n(o.label,lang)})),
+      filterOptions:Object.entries(SEVERITY_LEVELS).map(([k,v]) => ({value:k, label:resolveI18n(v.label,lang)})),
       render:(_,r) => { const s = SEVERITY_LEVELS[r.sev]; return React.createElement('span',{className:`status-dot ${s?.dotClass||'info'}`},resolveI18n(s?.label,lang)||r.sev); } },
     { key:'msg', label:{en:'Message',nl:'Bericht'}, sortable:true },
     { key:'entityName', label:{en:'Entity',nl:'Entiteit'}, filterable:true, sortable:true,
@@ -9010,7 +8520,7 @@ function ConfigurationPage({ t, lang, navigateWithLoader, focusedEntityId, setFo
   };
 
   const selectedEntity = EntityStore.get(selectedEntityId);
-  // Phase 4: Template-driven tabs with fallback to TabRegistry
+  // Phase 4: Template-driven tabs
   const _entityTemplate = selectedEntity ? EntityTemplateStore.resolveTemplate(selectedEntity.entityType) : null;
   const tabs = _entityTemplate?.detail_tabs
     ? _entityTemplate.detail_tabs.filter(tab => {
@@ -9025,7 +8535,7 @@ function ConfigurationPage({ t, lang, navigateWithLoader, focusedEntityId, setFo
         childType: tab.child_type || tab.childType,
         mfe_key: tab.mfe_key,
       }))
-    : (selectedEntity ? TabRegistry.getTabsForEntity(selectedEntity) : []);  // fallback
+    : [];
 
   const platform = EntityStore.get('orbiteos');
 
