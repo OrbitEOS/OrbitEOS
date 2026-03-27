@@ -787,7 +787,8 @@ const { DashboardOutlined, ThunderboltOutlined, ClusterOutlined, ApiOutlined, Ap
   ExclamationCircleOutlined, SearchOutlined, PlusOutlined, EditOutlined, DeleteOutlined,
   TagOutlined, UserOutlined, AuditOutlined, FileSearchOutlined, ClockCircleOutlined,
   ThunderboltFilled, ExpandOutlined, CompressOutlined, CopyOutlined, ReloadOutlined,
-  SendOutlined, ScheduleOutlined, SafetyOutlined, RightOutlined, MenuOutlined, CloseOutlined, LeftOutlined } = icons;
+  SendOutlined, ScheduleOutlined, SafetyOutlined, RightOutlined, MenuOutlined, CloseOutlined, LeftOutlined,
+  StopOutlined, RollbackOutlined, SortAscendingOutlined } = icons;
 
 // Icon lookup for nav items
 const NAV_ICONS = {
@@ -1151,8 +1152,8 @@ const ThemeStore = (() => {
             '--brand':'#0d9488','--brand-hover':'#0f766e','--brand-bg':'rgba(13,148,136,0.08)',
             '--bg-primary':'#f0fdfa','--bg-secondary':'#ffffff','--bg-card':'#ffffff','--bg-card-hover':'#f0fdfa',
             '--bg-sidebar':'#f0fdfa','--bg-header':'#ffffff','--bg-input':'#f0fdfa',
-            '--text-primary':'#134e4a','--text-secondary':'#5eead4','--text-tertiary':'#99f6e4',
-            '--border':'#ccfbf1','--border-active':'#99f6e4',
+            '--text-primary':'#134e4a','--text-secondary':'#3f6b68','--text-tertiary':'#6b9994',
+            '--border':'#b2dfdb','--border-active':'#80cbc4',
             '--success':'#16a34a','--warning':'#d97706','--error':'#dc2626','--info':'#2563eb','--purple':'#7c3aed',
             '--success-bg':'rgba(22,163,74,0.08)','--warning-bg':'rgba(217,119,6,0.08)','--error-bg':'rgba(220,38,38,0.08)',
             '--shadow':'0 4px 12px rgba(0,0,0,0.06)',
@@ -1453,6 +1454,7 @@ const ENTITY_TYPE_REGISTRY = {
   device:      { label:{en:'Device',nl:'Apparaat',de:'Gerät'}, icon:'HddOutlined', color:'var(--solar)' },
   sensor:      { label:{en:'Sensor',nl:'Sensor',de:'Sensor'}, icon:'RadarChartOutlined', color:'var(--info)' },
   actuator:    { label:{en:'Actuator',nl:'Actuator',de:'Aktor'}, icon:'SlidersOutlined', color:'var(--warning)' },
+  zone:        { label:{en:'Zone',nl:'Zone',de:'Zone'}, icon:'BlockOutlined', color:'var(--info)' },
 };
 
 // Role styling (used by RolesTab, UsersTab)
@@ -2093,6 +2095,23 @@ const PropertyCatalogStore = (() => {
     enum_values_i18n:{light:{en:'Light',nl:'Licht'},dark:{en:'Dark',nl:'Donker'},system:{en:'System',nl:'Systeem'}} },
 ].forEach(d => PropertyCatalogStore.putDefinition(d));
 
+// ── Zone-specific properties ──
+PropertyCatalogStore.putDefinition({
+  key: 'arm_state', name: 'Arm State', i18n: {en:'Arm State',nl:'Alarmstatus'},
+  group_key: 'operational', category: 'state', data_type: 'enum', ui_representation: 'dropdown',
+  enum_values: ['armed_away','armed_home','disarmed'],
+  enum_values_i18n: { armed_away:{en:'Armed Away',nl:'Afwezig Bewapend'}, armed_home:{en:'Armed Home',nl:'Thuis Bewapend'}, disarmed:{en:'Disarmed',nl:'Ontwapend'} },
+  applies_to: ['zone'], is_required: false, is_readonly: false,
+  entity_path: 'properties.armState', lifecycle_status: 'active'
+});
+PropertyCatalogStore.putDefinition({
+  key: 'floor_number', name: 'Floor', i18n: {en:'Floor',nl:'Verdieping'},
+  group_key: 'location', category: 'fixed', data_type: 'number', ui_representation: 'number',
+  validation: {min:-5, max:200},
+  applies_to: ['zone'], is_required: false, is_readonly: false,
+  entity_path: 'properties.floorNumber', lifecycle_status: 'active'
+});
+
 console.log(`PropertyCatalogStore: ${PropertyCatalogStore.getDefinitions().length} definitions, ${PropertyCatalogStore.getGroups().length} groups`);
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -2154,7 +2173,7 @@ const EntityTemplateStore = (() => {
 // ── Seed: Entity Templates (9 entity types) ──
 [
   // ── Platform template ──
-  { entity_type:'platform', type_key:'default', name:'Platform', icon:'GlobalOutlined',
+  { entity_type:'platform', type_key:'default', name:'Platform', icon:'GlobalOutlined', lifecycle_status:'active', version:1,
     properties: [
       { property_key:'name', required:true, sort_order:1 },
       { property_key:'version', sort_order:2 },
@@ -2184,7 +2203,6 @@ const EntityTemplateStore = (() => {
       { key:'users', label:{en:'Users',nl:'Gebruikers'}, type:'action', mfe_key:'UsersTab' },
       { key:'roles', label:{en:'Roles',nl:'Rollen'}, type:'action', mfe_key:'RolesTab' },
       { key:'privileges', label:{en:'Privileges',nl:'Rechten'}, type:'action', mfe_key:'PrivilegesTab' },
-      { key:'propertyCatalog', label:{en:'Property Catalog',nl:'Eigenschappen Catalogus'}, type:'custom', mfe_key:'PropertyCatalogTab' },
       { key:'domains', label:{en:'Domains',nl:'Domeinen'}, type:'action', mfe_key:'DomainsTab' },
       { key:'events', label:{en:'Events',nl:'Gebeurtenissen'}, type:'action', mfe_key:'EventsTab' },
       { key:'alarms', label:{en:'Alarms',nl:'Alarmen'}, type:'action', mfe_key:'AlarmsTab' },
@@ -2208,7 +2226,7 @@ const EntityTemplateStore = (() => {
   },
 
   // ── Account template ──
-  { entity_type:'account', type_key:'default', name:'Account', icon:'BankOutlined',
+  { entity_type:'account', type_key:'default', name:'Account', icon:'BankOutlined', lifecycle_status:'active', version:1,
     properties: [
       { property_key:'name', required:true, sort_order:1 },
       { property_key:'account_type', required:true, sort_order:2 },
@@ -2263,7 +2281,7 @@ const EntityTemplateStore = (() => {
   },
 
   // ── Sub-account template ──
-  { entity_type:'subAccount', type_key:'default', name:'Sub-account', icon:'TeamOutlined',
+  { entity_type:'subAccount', type_key:'default', name:'Sub-account', icon:'TeamOutlined', lifecycle_status:'active', version:1,
     properties: [
       { property_key:'name', required:true, sort_order:1 },
       { property_key:'region', required:true, sort_order:2 },
@@ -2307,7 +2325,7 @@ const EntityTemplateStore = (() => {
   },
 
   // ── Site template ──
-  { entity_type:'site', type_key:'default', name:'Site', icon:'HomeOutlined',
+  { entity_type:'site', type_key:'default', name:'Site', icon:'HomeOutlined', lifecycle_status:'active', version:1,
     properties: [
       { property_key:'name', required:true, sort_order:1 },
       { property_key:'site_type', required:true, sort_order:2 },
@@ -2339,6 +2357,7 @@ const EntityTemplateStore = (() => {
     detail_tabs: [
       { key:'overview', label:{en:'Overview',nl:'Overzicht'}, type:'overview' },
       { key:'deviceGroups', label:{en:'Device Groups',nl:'Apparaatgroepen'}, type:'children', child_type:'deviceGroup' },
+      { key:'zones', label:{en:'Zones',nl:'Zones'}, type:'children', child_type:'zone' },
       { key:'allDevices', label:{en:'All Devices',nl:'Alle Apparaten'}, type:'action', mfe_key:'AllDevicesTab' },
       { key:'users', label:{en:'Users',nl:'Gebruikers'}, type:'action', mfe_key:'UsersTab' },
       { key:'roles', label:{en:'Roles',nl:'Rollen'}, type:'action', mfe_key:'RolesTab' },
@@ -2368,7 +2387,7 @@ const EntityTemplateStore = (() => {
   },
 
   // ── DeviceGroup template ──
-  { entity_type:'deviceGroup', type_key:'default', name:'Device Group', icon:'AppstoreOutlined',
+  { entity_type:'deviceGroup', type_key:'default', name:'Device Group', icon:'AppstoreOutlined', lifecycle_status:'active', version:1,
     properties: [
       { property_key:'name', required:true, sort_order:1 },
       { property_key:'device_group_type', required:true, sort_order:2 },
@@ -2406,7 +2425,7 @@ const EntityTemplateStore = (() => {
   },
 
   // ── Device template ──
-  { entity_type:'device', type_key:'default', name:'Device', icon:'HddOutlined',
+  { entity_type:'device', type_key:'default', name:'Device', icon:'HddOutlined', lifecycle_status:'active', version:1,
     properties: [
       { property_key:'name', required:true, sort_order:1 },
       { property_key:'device_type', required:true, sort_order:2 },
@@ -2460,7 +2479,7 @@ const EntityTemplateStore = (() => {
   },
 
   // ── Sensor template ──
-  { entity_type:'sensor', type_key:'default', name:'Sensor', icon:'RadarChartOutlined',
+  { entity_type:'sensor', type_key:'default', name:'Sensor', icon:'RadarChartOutlined', lifecycle_status:'active', version:1,
     properties: [
       { property_key:'name', required:true, sort_order:1 },
       { property_key:'sensor_type', required:true, sort_order:2 },
@@ -2512,7 +2531,7 @@ const EntityTemplateStore = (() => {
   },
 
   // ── Actuator template ──
-  { entity_type:'actuator', type_key:'default', name:'Actuator', icon:'SlidersOutlined',
+  { entity_type:'actuator', type_key:'default', name:'Actuator', icon:'SlidersOutlined', lifecycle_status:'active', version:1,
     properties: [
       { property_key:'name', required:true, sort_order:1 },
       { property_key:'actuator_type', required:true, sort_order:2 },
@@ -2563,7 +2582,7 @@ const EntityTemplateStore = (() => {
   },
 
   // ── User template ──
-  { entity_type:'user', type_key:'default', name:'User', icon:'UserOutlined',
+  { entity_type:'user', type_key:'default', name:'User', icon:'UserOutlined', lifecycle_status:'active', version:1,
     properties: [
       { property_key:'name', required:true, sort_order:1 },
       { property_key:'email', required:true, sort_order:2 },
@@ -2594,6 +2613,43 @@ const EntityTemplateStore = (() => {
     },
   },
 ].forEach(t => EntityTemplateStore.putTemplate(t));
+
+// ── Zone template (template-driven, no custom MFE) ──
+EntityTemplateStore.putTemplate({
+  entity_type: 'zone', type_key: 'default', name: 'Zone',
+  icon: 'BlockOutlined', lifecycle_status: 'active', version: 1,
+  properties: [
+    {property_key:'name', required:true, sort_order:1},
+    {property_key:'description', sort_order:2},
+    {property_key:'arm_state', sort_order:3},
+    {property_key:'floor_number', sort_order:4},
+    {property_key:'tags', sort_order:5},
+  ],
+  form_groups: [
+    {key:'general', label:{en:'General',nl:'Algemeen'}, icon:'SettingOutlined',
+     property_keys:['name','description','arm_state','floor_number','tags']}
+  ],
+  columns: [
+    {property_key:'name', sortable:true},
+    {property_key:'arm_state', filterable:true},
+    {property_key:'floor_number', sortable:true},
+  ],
+  detail_tabs: [
+    {key:'overview', label:{en:'Overview',nl:'Overzicht'}, type:'overview'},
+    {key:'devices', label:{en:'Devices',nl:'Apparaten'}, type:'children', child_type:'device'},
+    {key:'sensors', label:{en:'Sensors',nl:'Sensoren'}, type:'children', child_type:'sensor'},
+    {key:'events', label:{en:'Events',nl:'Gebeurtenissen'}, type:'action', mfe_key:'EventsTab'},
+    {key:'alarms', label:{en:'Alarms',nl:'Alarmen'}, type:'action', mfe_key:'AlarmsTab'},
+  ],
+  overview: {
+    properties: [{property_key:'arm_state'},{property_key:'floor_number'}],
+    kpis: [
+      {key:'_deviceCount', label:{en:'Devices',nl:'Apparaten'}, color:'var(--brand)', icon:'HddOutlined'},
+      {key:'_activeAlarms', label:{en:'Alarms',nl:'Alarmen'}, color:'var(--error)', icon:'AlertOutlined'},
+    ],
+    show_map: false, show_alarms: true,
+  }
+});
 
 console.log(`EntityTemplateStore: ${EntityTemplateStore.getTemplates().length} templates`);
 
@@ -2761,6 +2817,20 @@ const SITE_SEEDS = [
 
 // Register sites into EntityStore
 SITE_SEEDS.forEach(s => EntityStore.put({ ...s, entityType: 'site', capabilities: s.capabilities || ['energy_management','device_control','compliance'] }));
+
+// ─── Seed: Zone entities ───
+EntityStore.put({
+  id: 'zone-ground-floor', entityType: 'zone', parentId: 'dg-maasland',
+  name: 'Ground Floor',
+  properties: { armState: 'disarmed', floorNumber: 0, tags: ['main','production'] },
+  state: { status: 'online' }, alarms: [], capabilities: []
+});
+EntityStore.put({
+  id: 'zone-server-room', entityType: 'zone', parentId: 'dg-maasland',
+  name: 'Server Room',
+  properties: { armState: 'armed_away', floorNumber: 1, tags: ['critical','secure'] },
+  state: { status: 'online' }, alarms: [{id:'za-1',sev:'warning',msg:'Motion detected in armed zone',time:'5 min ago'}], capabilities: []
+});
 
 // ─── Seed: ACCOUNTS kept as convenience alias for backward compat ───
 const ACCOUNTS = EntityStore.getByType('account').map(a => ({
@@ -4557,7 +4627,7 @@ function EntityScopeSelector({ focusedEntityId, setFocusedEntityId, lang }) {
 }
 
 // ─── Header Component ───
-function Header({ page, t, lang, setLang, themeId, setThemeId, alarms, alarmCount, showAlarms, setShowAlarms, focusedEntityId, setFocusedEntityId, setPage, navigateWithLoader, setCurrentApp, currentApp }) {
+function Header({ page, t, lang, setLang, themeId, setThemeId, themeMode, setThemeMode, alarms, alarmCount, showAlarms, setShowAlarms, focusedEntityId, setFocusedEntityId, setPage, navigateWithLoader, setCurrentApp, currentApp }) {
   const titles = { dashboard:t.dashboard, energyFlow:t.energyFlow, fleet:t.fleet, devices:t.devices,
     alerts:t.alerts, rulesEngine:t.rulesEngine, tariffArbitrage:t.tariffArbitrage, peakShaving:t.peakShaving,
     batteryMgmt:t.batteryMgmt, evCharging:t.evCharging, configuration:t.configuration };
@@ -9404,48 +9474,425 @@ function MarketplacePage({t, lang}) {
 
 // ─── Developer Studio Page ───
 function DeveloperStudioPage({t, lang, tab}) {
-  const templates = MockAPI.getEntityTemplates();
-  const properties = MockAPI.getPropertyDictionary();
+  const [, setTick] = useState(0);
+  const rerender = () => setTick(tk => tk+1);
+  const [expandedTmpl, setExpandedTmpl] = useState(null);
+  const [editingTmpl, setEditingTmpl] = useState(null);
+  const [creatingTmpl, setCreatingTmpl] = useState(false);
+  const [newTmplData, setNewTmplData] = useState({entity_type:'',type_key:'',name:'',description:'',lifecycle_status:'draft'});
+
+  // ── Property Dictionary state ──
+  const [propSearch, setPropSearch] = useState('');
+  const [propFilterGroup, setPropFilterGroup] = useState('');
+  const [propFilterType, setPropFilterType] = useState('');
+  const [propFilterStatus, setPropFilterStatus] = useState('');
+  const [propFilterApplies, setPropFilterApplies] = useState('');
+  const [expandedPropGroup, setExpandedPropGroup] = useState(null);
+
+  // Template data from real stores
+  const allTemplates = EntityTemplateStore.getTemplates();
+  const allDefs = PropertyCatalogStore.getDefinitions();
+  const allGroups = PropertyCatalogStore.getGroups();
+
+  const lifecycleColor = (s) => s==='active'?'green':s==='deprecated'?'orange':s==='archived'?'red':'default';
+  const lifecycleI18n = (s) => resolveI18n({
+    active:{en:'Active',nl:'Actief'}, deprecated:{en:'Deprecated',nl:'Verouderd'},
+    archived:{en:'Archived',nl:'Gearchiveerd'}, draft:{en:'Draft',nl:'Concept'}
+  }[s] || {en:s}, lang) || s;
+
+  // ── Lifecycle transition handler ──
+  const handleLifecycleTransition = (tmpl, newStatus) => {
+    const updated = {...tmpl, lifecycle_status: newStatus, version: (tmpl.version||1) + 1};
+    EntityTemplateStore.putTemplate(updated);
+    rerender();
+  };
+
+  // ── Template creation handler ──
+  const handleCreateTemplate = () => {
+    if (!newTmplData.entity_type || !newTmplData.type_key || !newTmplData.name) return;
+    EntityTemplateStore.putTemplate({
+      entity_type: newTmplData.entity_type,
+      type_key: newTmplData.type_key.toLowerCase().replace(/\s+/g,'_'),
+      name: newTmplData.name,
+      description: newTmplData.description || '',
+      icon: ENTITY_TYPE_REGISTRY[newTmplData.entity_type]?.icon || 'BlockOutlined',
+      lifecycle_status: 'draft',
+      version: 1,
+      properties: [],
+      form_groups: [],
+      columns: [],
+      detail_tabs: [
+        {key:'overview', label:{en:'Overview',nl:'Overzicht'}, type:'overview'},
+      ],
+      overview: { properties:[], kpis:[], show_map:false, show_alarms:false },
+    });
+    setCreatingTmpl(false);
+    setNewTmplData({entity_type:'',type_key:'',name:'',description:'',lifecycle_status:'draft'});
+    rerender();
+  };
+
+  // ── Template delete handler ──
+  const handleDeleteTemplate = (tmpl) => {
+    EntityTemplateStore.removeTemplate(tmpl.entity_type, tmpl.type_key);
+    if (expandedTmpl === `${tmpl.entity_type}:${tmpl.type_key}`) setExpandedTmpl(null);
+    rerender();
+  };
+
+  // ── Filtered properties for Property Dictionary ──
+  const filteredDefs = allDefs.filter(d => {
+    if (propSearch) {
+      const s = propSearch.toLowerCase();
+      if (!(d.key||'').toLowerCase().includes(s) && !(d.name||'').toLowerCase().includes(s) && !(resolveI18n(d.i18n,lang)||'').toLowerCase().includes(s)) return false;
+    }
+    if (propFilterGroup && d.group_key !== propFilterGroup) return false;
+    if (propFilterType && d.data_type !== propFilterType) return false;
+    if (propFilterStatus && d.lifecycle_status !== propFilterStatus) return false;
+    if (propFilterApplies && !(d.applies_to||[]).includes(propFilterApplies)) return false;
+    return true;
+  });
+  const uniqueDataTypes = [...new Set(allDefs.map(d=>d.data_type).filter(Boolean))].sort();
+  const uniqueStatuses = [...new Set(allDefs.map(d=>d.lifecycle_status).filter(Boolean))].sort();
+  const uniqueAppliesTo = [...new Set(allDefs.flatMap(d=>d.applies_to||[]))].sort();
+
   return (
     <div className="page-enter">
+      {/* ════════ TEMPLATES TAB ════════ */}
       {tab==='templates' && (
-        <div className="card" style={{padding:0}}>
-          <div style={{padding:'16px 20px',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-            <div className="card-title">{lang==='nl'?'Entiteit Templates':'Entity Templates'} ({templates.length})</div>
-            <button className="header-btn primary">+ {lang==='nl'?'Nieuw Template':'New Template'}</button>
+        <div>
+          {/* Create template modal */}
+          {creatingTmpl && (
+            <div className="card" style={{marginBottom:16,border:'2px solid var(--brand)'}}>
+              <div style={{padding:'16px 20px'}}>
+                <div className="card-title" style={{marginBottom:12}}>{resolveI18n({en:'New Entity Template',nl:'Nieuw Entiteit Template'},lang)}</div>
+                <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginBottom:12}}>
+                  <div>
+                    <div style={{fontSize:11,fontWeight:500,color:'var(--text-secondary)',marginBottom:4}}>{resolveI18n({en:'Entity Type',nl:'Entiteitstype'},lang)}</div>
+                    <select style={{width:'100%',padding:'6px 8px',borderRadius:6,border:'1px solid var(--border)',background:'var(--bg-input)',color:'var(--text-primary)',fontSize:12}}
+                      value={newTmplData.entity_type} onChange={e=>setNewTmplData({...newTmplData,entity_type:e.target.value})}>
+                      <option value="">{resolveI18n({en:'Select...',nl:'Selecteer...'},lang)}</option>
+                      {Object.entries(ENTITY_TYPE_REGISTRY).map(([k,v])=>(
+                        <option key={k} value={k}>{resolveI18n(v.label,lang)}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <div style={{fontSize:11,fontWeight:500,color:'var(--text-secondary)',marginBottom:4}}>{resolveI18n({en:'Type Key (snake_case)',nl:'Type Sleutel (snake_case)'},lang)}</div>
+                    <input style={{width:'100%',padding:'6px 8px',borderRadius:6,border:'1px solid var(--border)',background:'var(--bg-input)',color:'var(--text-primary)',fontSize:12}}
+                      placeholder="e.g. default" value={newTmplData.type_key} onChange={e=>setNewTmplData({...newTmplData,type_key:e.target.value})}/>
+                  </div>
+                  <div>
+                    <div style={{fontSize:11,fontWeight:500,color:'var(--text-secondary)',marginBottom:4}}>{resolveI18n({en:'Name',nl:'Naam'},lang)}</div>
+                    <input style={{width:'100%',padding:'6px 8px',borderRadius:6,border:'1px solid var(--border)',background:'var(--bg-input)',color:'var(--text-primary)',fontSize:12}}
+                      placeholder={resolveI18n({en:'Template name',nl:'Templatenaam'},lang)} value={newTmplData.name} onChange={e=>setNewTmplData({...newTmplData,name:e.target.value})}/>
+                  </div>
+                  <div>
+                    <div style={{fontSize:11,fontWeight:500,color:'var(--text-secondary)',marginBottom:4}}>{resolveI18n({en:'Description',nl:'Beschrijving'},lang)}</div>
+                    <input style={{width:'100%',padding:'6px 8px',borderRadius:6,border:'1px solid var(--border)',background:'var(--bg-input)',color:'var(--text-primary)',fontSize:12}}
+                      placeholder={resolveI18n({en:'Optional description',nl:'Optionele beschrijving'},lang)} value={newTmplData.description} onChange={e=>setNewTmplData({...newTmplData,description:e.target.value})}/>
+                  </div>
+                </div>
+                <div style={{display:'flex',gap:8,justifyContent:'flex-end'}}>
+                  <button className="header-btn" onClick={()=>setCreatingTmpl(false)}>{resolveI18n({en:'Cancel',nl:'Annuleren'},lang)}</button>
+                  <button className="header-btn primary" onClick={handleCreateTemplate}
+                    disabled={!newTmplData.entity_type||!newTmplData.type_key||!newTmplData.name}>
+                    {resolveI18n({en:'Create Template',nl:'Template Aanmaken'},lang)}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="card" style={{padding:0}}>
+            <div style={{padding:'16px 20px',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+              <div className="card-title">{resolveI18n({en:'Entity Templates',nl:'Entiteit Templates'},lang)} ({allTemplates.length})</div>
+              <button className="header-btn primary" onClick={()=>setCreatingTmpl(true)}>+ {resolveI18n({en:'New Template',nl:'Nieuw Template'},lang)}</button>
+            </div>
+            <table className="data-table">
+              <thead><tr>
+                <th>{resolveI18n({en:'Name',nl:'Naam'},lang)}</th>
+                <th>{resolveI18n({en:'Entity Type',nl:'Entiteitstype'},lang)}</th>
+                <th>{resolveI18n({en:'Type Key',nl:'Type Sleutel'},lang)}</th>
+                <th>{resolveI18n({en:'Properties',nl:'Eigenschappen'},lang)}</th>
+                <th>{resolveI18n({en:'Status',nl:'Status'},lang)}</th>
+                <th>{resolveI18n({en:'Version',nl:'Versie'},lang)}</th>
+                <th>{resolveI18n({en:'Actions',nl:'Acties'},lang)}</th>
+              </tr></thead>
+              <tbody>{allTemplates.map(tmpl=>{
+                const tmplKey = `${tmpl.entity_type}:${tmpl.type_key||'default'}`;
+                const isExpanded = expandedTmpl === tmplKey;
+                const resolved = EntityTemplateStore.resolveTemplate(tmpl.entity_type, tmpl.type_key);
+                const etReg = ENTITY_TYPE_REGISTRY[tmpl.entity_type];
+                return React.createElement(React.Fragment,{key:tmplKey},
+                  <tr style={{cursor:'pointer',background:isExpanded?'var(--brand-bg)':'transparent'}} onClick={()=>setExpandedTmpl(isExpanded?null:tmplKey)}>
+                    <td style={{fontWeight:500}}>
+                      <span style={{marginRight:6,color:etReg?.color||'var(--text-tertiary)'}}>{React.createElement(window[tmpl.icon]||BlockOutlined,{style:{fontSize:14}})}</span>
+                      {tmpl.name}
+                    </td>
+                    <td><span style={{fontSize:11,color:etReg?.color||'var(--text-tertiary)'}}>{resolveI18n(etReg?.label,lang)||tmpl.entity_type}</span></td>
+                    <td style={{fontFamily:'monospace',fontSize:11,color:'var(--text-tertiary)'}}>{tmpl.type_key||'default'}</td>
+                    <td>{(tmpl.properties||[]).length}</td>
+                    <td>{React.createElement(Tag,{color:lifecycleColor(tmpl.lifecycle_status),style:{margin:0,fontSize:10}},lifecycleI18n(tmpl.lifecycle_status||'active'))}</td>
+                    <td style={{color:'var(--text-tertiary)'}}>v{tmpl.version||1}</td>
+                    <td onClick={e=>e.stopPropagation()} style={{display:'flex',gap:4}}>
+                      <button className="header-btn" style={{padding:'2px 8px',fontSize:11}} onClick={()=>setExpandedTmpl(isExpanded?null:tmplKey)}>{React.createElement(EditOutlined,{style:{fontSize:11}})}</button>
+                      <button className="header-btn" style={{padding:'2px 8px',fontSize:11,color:'var(--error)',borderColor:'var(--error)'}} onClick={()=>handleDeleteTemplate(tmpl)}>{React.createElement(DeleteOutlined,{style:{fontSize:11}})}</button>
+                    </td>
+                  </tr>,
+                  isExpanded && <tr key={tmplKey+'-detail'}><td colSpan={7} style={{padding:0,background:'var(--bg-secondary)'}}>
+                    <div style={{padding:16,display:'grid',gap:16}}>
+                      {/* ── General section ── */}
+                      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:12}}>
+                        <div>
+                          <div style={{fontSize:10,fontWeight:600,color:'var(--text-tertiary)',textTransform:'uppercase',marginBottom:4}}>{resolveI18n({en:'Entity Type',nl:'Entiteitstype'},lang)}</div>
+                          <div style={{fontSize:12,color:'var(--text-primary)'}}>{resolveI18n(etReg?.label,lang)||tmpl.entity_type}</div>
+                        </div>
+                        <div>
+                          <div style={{fontSize:10,fontWeight:600,color:'var(--text-tertiary)',textTransform:'uppercase',marginBottom:4}}>{resolveI18n({en:'Description',nl:'Beschrijving'},lang)}</div>
+                          <div style={{fontSize:12,color:'var(--text-secondary)'}}>{tmpl.description || resolveI18n({en:'No description',nl:'Geen beschrijving'},lang)}</div>
+                        </div>
+                        <div>
+                          <div style={{fontSize:10,fontWeight:600,color:'var(--text-tertiary)',textTransform:'uppercase',marginBottom:4}}>{resolveI18n({en:'Icon',nl:'Icoon'},lang)}</div>
+                          <div style={{fontSize:12,color:'var(--text-primary)',display:'flex',alignItems:'center',gap:6}}>
+                            {React.createElement(window[tmpl.icon]||BlockOutlined,{style:{fontSize:16,color:etReg?.color}})}
+                            <span style={{fontFamily:'monospace',fontSize:11,color:'var(--text-tertiary)'}}>{tmpl.icon}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* ── Lifecycle controls ── */}
+                      <div style={{padding:'10px 14px',background:'var(--bg-card)',borderRadius:8,border:'1px solid var(--border)',display:'flex',alignItems:'center',gap:12,flexWrap:'wrap'}}>
+                        <span style={{fontSize:11,fontWeight:600,color:'var(--text-secondary)'}}>{resolveI18n({en:'Lifecycle',nl:'Levenscyclus'},lang)}:</span>
+                        {React.createElement(Tag,{color:lifecycleColor(tmpl.lifecycle_status),style:{fontSize:11,fontWeight:600}},lifecycleI18n(tmpl.lifecycle_status||'active'))}
+                        <span style={{fontSize:11,color:'var(--text-tertiary)'}}>v{tmpl.version||1}</span>
+                        <div style={{flex:1}}/>
+                        {(tmpl.lifecycle_status==='draft'||!tmpl.lifecycle_status) && (
+                          <button className="header-btn" style={{fontSize:11,color:'var(--success)',borderColor:'var(--success)'}}
+                            onClick={()=>handleLifecycleTransition(tmpl,'active')}>
+                            {React.createElement(CheckCircleFilled,{style:{fontSize:10,marginRight:4}})}
+                            {resolveI18n({en:'Activate',nl:'Activeren'},lang)}
+                          </button>
+                        )}
+                        {tmpl.lifecycle_status==='active' && (
+                          <button className="header-btn" style={{fontSize:11,color:'var(--warning)',borderColor:'var(--warning)'}}
+                            onClick={()=>handleLifecycleTransition(tmpl,'deprecated')}>
+                            {React.createElement(WarningOutlined,{style:{fontSize:10,marginRight:4}})}
+                            {resolveI18n({en:'Deprecate',nl:'Verouderen'},lang)}
+                          </button>
+                        )}
+                        {tmpl.lifecycle_status==='deprecated' && (
+                          <button className="header-btn" style={{fontSize:11,color:'var(--error)',borderColor:'var(--error)'}}
+                            onClick={()=>handleLifecycleTransition(tmpl,'archived')}>
+                            {React.createElement(StopOutlined,{style:{fontSize:10,marginRight:4}})}
+                            {resolveI18n({en:'Archive',nl:'Archiveren'},lang)}
+                          </button>
+                        )}
+                        {tmpl.lifecycle_status!=='draft' && tmpl.lifecycle_status && (
+                          <button className="header-btn" style={{fontSize:11,color:'var(--info)',borderColor:'var(--info)'}}
+                            onClick={()=>handleLifecycleTransition(tmpl,'draft')}>
+                            {React.createElement(RollbackOutlined,{style:{fontSize:10,marginRight:4}})}
+                            {resolveI18n({en:'Rollback to Draft',nl:'Terugzetten naar Concept'},lang)}
+                          </button>
+                        )}
+                      </div>
+
+                      {/* ── Properties section ── */}
+                      <div>
+                        <div style={{fontSize:11,fontWeight:600,color:'var(--text-primary)',marginBottom:6}}>{resolveI18n({en:'Properties',nl:'Eigenschappen'},lang)} ({(tmpl.properties||[]).length})</div>
+                        <div style={{display:'flex',flexWrap:'wrap',gap:4}}>
+                          {(resolved?.resolved?.properties||[]).map(p => (
+                            <span key={p.property_key||p.key} style={{padding:'3px 8px',borderRadius:4,fontSize:10,background:'var(--bg-card)',border:'1px solid var(--border)',
+                              display:'flex',alignItems:'center',gap:4}}>
+                              <span style={{fontFamily:'monospace',color:'var(--brand)'}}>{p.property_key||p.key}</span>
+                              <span style={{color:'var(--text-tertiary)'}}>({p.group_key})</span>
+                              {p.is_required && <span style={{color:'var(--error)',fontSize:9}}>*</span>}
+                            </span>
+                          ))}
+                          {(tmpl.properties||[]).length===0 && <span style={{fontSize:11,color:'var(--text-tertiary)',fontStyle:'italic'}}>{resolveI18n({en:'No properties defined',nl:'Geen eigenschappen gedefinieerd'},lang)}</span>}
+                        </div>
+                      </div>
+
+                      {/* ── Form Groups section ── */}
+                      <div>
+                        <div style={{fontSize:11,fontWeight:600,color:'var(--text-primary)',marginBottom:6}}>{resolveI18n({en:'Form Groups',nl:'Formuliergroepen'},lang)} ({(tmpl.form_groups||[]).length})</div>
+                        <div style={{display:'grid',gap:6}}>
+                          {(tmpl.form_groups||[]).map(fg => (
+                            <div key={fg.key} style={{padding:'8px 12px',background:'var(--bg-card)',borderRadius:6,border:'1px solid var(--border)'}}>
+                              <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:4}}>
+                                {fg.icon && React.createElement(window[fg.icon]||SettingOutlined,{style:{fontSize:12,color:'var(--text-tertiary)'}})}
+                                <span style={{fontSize:11,fontWeight:600,color:'var(--text-primary)'}}>{resolveI18n(fg.label,lang)||fg.key}</span>
+                                <span style={{fontSize:10,color:'var(--text-tertiary)',fontFamily:'monospace'}}>{fg.key}</span>
+                              </div>
+                              <div style={{display:'flex',flexWrap:'wrap',gap:3}}>
+                                {(fg.property_keys||[]).map(pk => (
+                                  <span key={pk} style={{padding:'1px 6px',borderRadius:3,fontSize:9,background:'var(--brand-bg)',color:'var(--brand)',fontFamily:'monospace'}}>{pk}</span>
+                                ))}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* ── Columns section ── */}
+                      <div>
+                        <div style={{fontSize:11,fontWeight:600,color:'var(--text-primary)',marginBottom:6}}>{resolveI18n({en:'List Columns',nl:'Lijstkolommen'},lang)} ({(tmpl.columns||[]).length})</div>
+                        <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
+                          {(tmpl.columns||[]).map(col => (
+                            <span key={col.property_key} style={{padding:'3px 8px',borderRadius:4,fontSize:10,background:'var(--bg-card)',border:'1px solid var(--border)',display:'flex',gap:4}}>
+                              <span style={{fontFamily:'monospace',color:'var(--text-primary)'}}>{col.property_key}</span>
+                              {col.sortable && <span style={{color:'var(--info)',fontSize:8}}>{React.createElement(SortAscendingOutlined)}</span>}
+                              {col.filterable && <span style={{color:'var(--warning)',fontSize:8}}>{React.createElement(FilterOutlined)}</span>}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* ── Detail Tabs section ── */}
+                      <div>
+                        <div style={{fontSize:11,fontWeight:600,color:'var(--text-primary)',marginBottom:6}}>{resolveI18n({en:'Detail Tabs',nl:'Detail Tabbladen'},lang)} ({(tmpl.detail_tabs||[]).length})</div>
+                        <div style={{display:'flex',gap:4,flexWrap:'wrap'}}>
+                          {(tmpl.detail_tabs||[]).map(dt => (
+                            <span key={dt.key} style={{padding:'3px 8px',borderRadius:4,fontSize:10,
+                              background:dt.type==='overview'?'var(--brand-bg)':dt.type==='children'?'var(--success-bg)':'var(--bg-card)',
+                              border:'1px solid var(--border)',color:dt.type==='overview'?'var(--brand)':dt.type==='children'?'var(--success)':'var(--text-secondary)'}}>
+                              {resolveI18n(dt.label,lang)||dt.key}
+                              <span style={{marginLeft:4,fontSize:8,color:'var(--text-tertiary)'}}>{dt.type}</span>
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* ── Overview Layout summary ── */}
+                      {tmpl.overview && (
+                        <div>
+                          <div style={{fontSize:11,fontWeight:600,color:'var(--text-primary)',marginBottom:6}}>{resolveI18n({en:'Overview Layout',nl:'Overzicht Layout'},lang)}</div>
+                          <div style={{display:'flex',gap:12,flexWrap:'wrap',fontSize:10,color:'var(--text-tertiary)'}}>
+                            <span>{resolveI18n({en:'Properties',nl:'Eigenschappen'},lang)}: {(tmpl.overview.properties||[]).length}</span>
+                            <span>{resolveI18n({en:'KPIs',nl:'KPIs'},lang)}: {(tmpl.overview.kpis||[]).length}</span>
+                            <span>{resolveI18n({en:'Map',nl:'Kaart'},lang)}: {tmpl.overview.show_map?'Yes':'No'}</span>
+                            <span>{resolveI18n({en:'Alarms',nl:'Alarmen'},lang)}: {tmpl.overview.show_alarms?'Yes':'No'}</span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </td></tr>
+                );
+              })}</tbody>
+            </table>
           </div>
-          <table className="data-table">
-            <thead><tr><th>Template</th><th>Category</th><th>Properties</th><th>Sensors</th><th>Actuators</th><th>Version</th></tr></thead>
-            <tbody>{templates.map(tmpl=>(
-              <tr key={tmpl.key}>
-                <td style={{fontWeight:500}}>{tmpl.name}</td>
-                <td><span className="status-dot info" style={{fontSize:10}}>{tmpl.category}</span></td>
-                <td>{tmpl.properties}</td><td>{tmpl.sensors}</td><td>{tmpl.actuators}</td>
-                <td style={{color:'var(--text-tertiary)'}}>{tmpl.version}</td>
-              </tr>
-            ))}</tbody>
-          </table>
         </div>
       )}
+
+      {/* ════════ PROPERTIES TAB (Enhanced Property Dictionary) ════════ */}
       {tab==='properties' && (
-        <div className="card" style={{padding:0}}>
-          <div style={{padding:'16px 20px'}}><div className="card-title">{lang==='nl'?'Eigenschap Woordenboek':'Property Dictionary'} ({properties.length})</div></div>
-          <table className="data-table">
-            <thead><tr><th>Key</th><th>Name</th><th>Type</th><th>Unit</th><th>Category</th><th>Used in Templates</th></tr></thead>
-            <tbody>{properties.map(p=>(
-              <tr key={p.key}>
-                <td style={{fontFamily:'monospace',fontSize:12}}>{p.key}</td>
-                <td style={{fontWeight:500}}>{p.name}</td><td>{p.type}</td><td>{p.unit}</td>
-                <td><span className="status-dot info" style={{fontSize:10}}>{p.category}</span></td>
-                <td>{p.templates}</td>
-              </tr>
-            ))}</tbody>
-          </table>
+        <div>
+          <div className="card" style={{padding:'12px 20px',marginBottom:12}}>
+            <div style={{display:'flex',gap:8,alignItems:'center',flexWrap:'wrap'}}>
+              <input style={{flex:'1 1 200px',padding:'6px 10px',borderRadius:6,border:'1px solid var(--border)',background:'var(--bg-input)',color:'var(--text-primary)',fontSize:12}}
+                placeholder={resolveI18n({en:'Search properties...',nl:'Zoek eigenschappen...'},lang)}
+                value={propSearch} onChange={e=>setPropSearch(e.target.value)}/>
+              <select style={{padding:'6px 8px',borderRadius:6,border:'1px solid var(--border)',background:'var(--bg-input)',color:'var(--text-primary)',fontSize:11}}
+                value={propFilterGroup} onChange={e=>setPropFilterGroup(e.target.value)}>
+                <option value="">{resolveI18n({en:'All Groups',nl:'Alle Groepen'},lang)}</option>
+                {allGroups.map(g=><option key={g.key} value={g.key}>{resolveI18n(g.i18n,lang)||g.name}</option>)}
+              </select>
+              <select style={{padding:'6px 8px',borderRadius:6,border:'1px solid var(--border)',background:'var(--bg-input)',color:'var(--text-primary)',fontSize:11}}
+                value={propFilterType} onChange={e=>setPropFilterType(e.target.value)}>
+                <option value="">{resolveI18n({en:'All Types',nl:'Alle Types'},lang)}</option>
+                {uniqueDataTypes.map(dt=><option key={dt} value={dt}>{dt}</option>)}
+              </select>
+              <select style={{padding:'6px 8px',borderRadius:6,border:'1px solid var(--border)',background:'var(--bg-input)',color:'var(--text-primary)',fontSize:11}}
+                value={propFilterStatus} onChange={e=>setPropFilterStatus(e.target.value)}>
+                <option value="">{resolveI18n({en:'All Statuses',nl:'Alle Statussen'},lang)}</option>
+                {uniqueStatuses.map(s=><option key={s} value={s}>{lifecycleI18n(s)}</option>)}
+              </select>
+              <select style={{padding:'6px 8px',borderRadius:6,border:'1px solid var(--border)',background:'var(--bg-input)',color:'var(--text-primary)',fontSize:11}}
+                value={propFilterApplies} onChange={e=>setPropFilterApplies(e.target.value)}>
+                <option value="">{resolveI18n({en:'All Entity Types',nl:'Alle Entiteitstypen'},lang)}</option>
+                {uniqueAppliesTo.map(et=><option key={et} value={et}>{resolveI18n(ENTITY_TYPE_REGISTRY[et]?.label,lang)||et}</option>)}
+              </select>
+              <span style={{fontSize:11,color:'var(--text-tertiary)'}}>{filteredDefs.length}/{allDefs.length}</span>
+            </div>
+          </div>
+
+          <div className="card" style={{padding:0}}>
+            <div style={{padding:'16px 20px',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+              <div className="card-title">{resolveI18n({en:'Property Dictionary',nl:'Eigenschap Woordenboek'},lang)} ({filteredDefs.length})</div>
+            </div>
+
+            {/* Grouped view if no search/filter active, flat table otherwise */}
+            {!propSearch && !propFilterGroup && !propFilterType && !propFilterStatus && !propFilterApplies ? (
+              <div style={{padding:'0 4px 8px'}}>
+                {allGroups.map(grp => {
+                  const grpDefs = PropertyCatalogStore.getByGroup(grp.key);
+                  const isOpen = expandedPropGroup === grp.key;
+                  return (
+                    <div key={grp.key} style={{background:'var(--bg-secondary)',borderRadius:8,border:'1px solid var(--border)',overflow:'hidden',marginBottom:4}}>
+                      <div style={{display:'flex',alignItems:'center',gap:8,padding:'8px 12px',cursor:'pointer'}} onClick={()=>setExpandedPropGroup(isOpen?null:grp.key)}>
+                        {grp.icon && React.createElement(window[grp.icon]||SettingOutlined,{style:{fontSize:12,color:'var(--text-tertiary)'}})}
+                        <span style={{fontSize:12,fontWeight:600,color:'var(--text-primary)'}}>{resolveI18n(grp.i18n,lang)||grp.name}</span>
+                        <span style={{fontSize:10,color:'var(--text-tertiary)',flex:1}}>{grpDefs.length} {resolveI18n({en:'properties',nl:'eigenschappen'},lang)}</span>
+                        {React.createElement(RightOutlined,{style:{fontSize:8,color:'var(--text-tertiary)',transform:isOpen?'rotate(90deg)':'none',transition:'transform 0.15s'}})}
+                      </div>
+                      {isOpen && (
+                        <div style={{borderTop:'1px solid var(--border)'}}>
+                          <table className="data-table" style={{marginBottom:0}}>
+                            <thead><tr>
+                              <th>{resolveI18n({en:'Key',nl:'Sleutel'},lang)}</th>
+                              <th>{resolveI18n({en:'Name',nl:'Naam'},lang)}</th>
+                              <th>{resolveI18n({en:'Type',nl:'Type'},lang)}</th>
+                              <th>{resolveI18n({en:'Applies To',nl:'Toepasselijk Op'},lang)}</th>
+                              <th>{resolveI18n({en:'Status',nl:'Status'},lang)}</th>
+                            </tr></thead>
+                            <tbody>{grpDefs.map(d=>(
+                              <tr key={d.key}>
+                                <td style={{fontFamily:'monospace',fontSize:11,color:'var(--brand)'}}>{d.key}</td>
+                                <td style={{fontWeight:500,fontSize:12}}>{resolveI18n(d.i18n,lang)||d.name}</td>
+                                <td style={{fontSize:11,color:'var(--text-tertiary)'}}>{d.data_type}</td>
+                                <td><div style={{display:'flex',gap:2,flexWrap:'wrap'}}>{(d.applies_to||[]).map(et=>(
+                                  <span key={et} style={{padding:'1px 5px',borderRadius:3,fontSize:9,background:'var(--bg-card)',border:'1px solid var(--border)',color:ENTITY_TYPE_REGISTRY[et]?.color||'var(--text-tertiary)'}}>{et}</span>
+                                ))}</div></td>
+                                <td>{React.createElement(Tag,{color:lifecycleColor(d.lifecycle_status),style:{margin:0,fontSize:9}},d.lifecycle_status)}</td>
+                              </tr>
+                            ))}</tbody>
+                          </table>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <table className="data-table">
+                <thead><tr>
+                  <th>{resolveI18n({en:'Key',nl:'Sleutel'},lang)}</th>
+                  <th>{resolveI18n({en:'Name',nl:'Naam'},lang)}</th>
+                  <th>{resolveI18n({en:'Group',nl:'Groep'},lang)}</th>
+                  <th>{resolveI18n({en:'Type',nl:'Type'},lang)}</th>
+                  <th>{resolveI18n({en:'Applies To',nl:'Toepasselijk Op'},lang)}</th>
+                  <th>{resolveI18n({en:'Status',nl:'Status'},lang)}</th>
+                </tr></thead>
+                <tbody>{filteredDefs.map(d=>(
+                  <tr key={d.key}>
+                    <td style={{fontFamily:'monospace',fontSize:11,color:'var(--brand)'}}>{d.key}</td>
+                    <td style={{fontWeight:500,fontSize:12}}>{resolveI18n(d.i18n,lang)||d.name}</td>
+                    <td style={{fontSize:11,color:'var(--text-tertiary)'}}>{resolveI18n(PropertyCatalogStore.getGroup(d.group_key)?.i18n,lang)||d.group_key}</td>
+                    <td style={{fontSize:11,color:'var(--text-tertiary)'}}>{d.data_type}</td>
+                    <td><div style={{display:'flex',gap:2,flexWrap:'wrap'}}>{(d.applies_to||[]).map(et=>(
+                      <span key={et} style={{padding:'1px 5px',borderRadius:3,fontSize:9,background:'var(--bg-card)',border:'1px solid var(--border)',color:ENTITY_TYPE_REGISTRY[et]?.color||'var(--text-tertiary)'}}>{et}</span>
+                    ))}</div></td>
+                    <td>{React.createElement(Tag,{color:lifecycleColor(d.lifecycle_status),style:{margin:0,fontSize:9}},d.lifecycle_status)}</td>
+                  </tr>
+                ))}</tbody>
+              </table>
+            )}
+          </div>
         </div>
       )}
+
+      {/* ════════ DOMAINS TAB ════════ */}
       {tab==='domains' && (
         <div className="card" style={{padding:0}}>
-          <div style={{padding:'16px 20px'}}><div className="card-title">{lang==='nl'?'Domein Plugins':'Domain Plugins'}</div></div>
+          <div style={{padding:'16px 20px'}}><div className="card-title">{resolveI18n({en:'Domain Plugins',nl:'Domein Plugins'},lang)}</div></div>
           <table className="data-table">
             <thead><tr><th>Domain</th><th>Version</th><th>Templates</th><th>Events</th><th>Actions</th><th>{t.status}</th></tr></thead>
             <tbody>
@@ -9457,6 +9904,8 @@ function DeveloperStudioPage({t, lang, tab}) {
           </table>
         </div>
       )}
+
+      {/* ════════ STUB TABS ════════ */}
       {(tab==='apikeys'||tab==='flows'||tab==='mcp') && (
         <div className="card" style={{textAlign:'center',padding:40}}>
           <div style={{fontSize:40,marginBottom:12}}>{React.createElement(tab==='apikeys'?KeyOutlined:tab==='flows'?BranchesOutlined:ToolOutlined)}</div>
@@ -9464,9 +9913,9 @@ function DeveloperStudioPage({t, lang, tab}) {
             {tab==='apikeys'?'API Key Management':tab==='flows'?'Flow Templates Library':'MCP Tool Registry'}
           </div>
           <div style={{fontSize:12,color:'var(--text-tertiary)',marginTop:4}}>
-            {tab==='apikeys'?`2 active keys · ${lang==='nl'?'Beheer API-toegang':'Manage API access'}`:
-             tab==='flows'?`12 templates · ${lang==='nl'?'Herbruikbare automatiseringspatronen':'Reusable automation patterns'}`:
-             `34 tools · ${lang==='nl'?'Model Context Protocol tools':'Model Context Protocol tools'}`}
+            {tab==='apikeys'?`2 active keys · ${resolveI18n({en:'Manage API access',nl:'Beheer API-toegang'},lang)}`:
+             tab==='flows'?`12 templates · ${resolveI18n({en:'Reusable automation patterns',nl:'Herbruikbare automatiseringspatronen'},lang)}`:
+             `34 tools · ${resolveI18n({en:'Model Context Protocol tools',nl:'Model Context Protocol tools'},lang)}`}
           </div>
         </div>
       )}
@@ -9856,7 +10305,7 @@ function App() {
           currentApp={currentApp} setCurrentApp={setCurrentApp}/>
         <div className="main-area" style={{position:'relative'}}>
           <Header page={page} t={t} lang={lang} setLang={setLang} themeId={themeId}
-            setThemeId={setThemeId} alarms={alarms} alarmCount={alarmCount}
+            setThemeId={setThemeId} themeMode={themeMode} setThemeMode={setThemeMode} alarms={alarms} alarmCount={alarmCount}
             showAlarms={showAlarms} setShowAlarms={setShowAlarms}
             focusedEntityId={focusedEntityId} setFocusedEntityId={setFocusedEntityId}
             setPage={setPage} navigateWithLoader={navigateWithLoader} setCurrentApp={setCurrentApp} currentApp={currentApp}/>
