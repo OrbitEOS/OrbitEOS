@@ -6,6 +6,7 @@
   <title>OrbitEOS — Interactive Prototype</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=DM+Sans:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet"/>
   <link href="https://unpkg.com/antd@5.22.6/dist/reset.css" rel="stylesheet"/>
   <style>
     :root { --sidebar-w: 240px; --sidebar-rail-w: 56px; --header-h: 56px; }
@@ -1126,100 +1127,206 @@ const ThemeStore = (() => {
   const _themes = [
     {
       id: 'classic', name: 'Teal', description: 'Teal on slate. Clean and familiar.',
-      mode: 'dark', default: true,
+      defaultMode: 'dark', default: true,
       preview: '#2dd4bf',
       loaderColor: '#2dd4bf',
-      antTokens: { colorPrimary:'#2dd4bf', colorSuccess:'#22c55e', colorWarning:'#f59e0b', colorError:'#ef4444', colorInfo:'#3b82f6', borderRadius:6 },
-      cssVars: {
-        '--brand':'#2dd4bf','--brand-hover':'#14b8a6','--brand-bg':'rgba(45,212,191,0.1)',
-        '--bg-primary':'#020617','--bg-secondary':'#0f172a','--bg-card':'#0f172a','--bg-card-hover':'#1e293b',
-        '--bg-sidebar':'#020617','--bg-header':'#0f172a','--bg-input':'#1e293b',
-        '--text-primary':'#f1f5f9','--text-secondary':'#94a3b8','--text-tertiary':'#7586a0',
-        '--border':'rgba(255,255,255,0.06)','--border-active':'rgba(255,255,255,0.12)',
-        '--success':'#22c55e','--warning':'#f59e0b','--error':'#ef4444','--info':'#3b82f6','--purple':'#8b5cf6',
-        '--success-bg':'rgba(34,197,94,0.1)','--warning-bg':'rgba(245,158,11,0.1)','--error-bg':'rgba(239,68,68,0.1)',
-        '--shadow':'0 4px 12px rgba(0,0,0,0.4)',
+      font: "'Inter', -apple-system, sans-serif",
+      variants: {
+        dark: {
+          antTokens: { colorPrimary:'#2dd4bf', colorSuccess:'#22c55e', colorWarning:'#f59e0b', colorError:'#ef4444', colorInfo:'#3b82f6', borderRadius:6 },
+          cssVars: {
+            '--brand':'#2dd4bf','--brand-hover':'#14b8a6','--brand-bg':'rgba(45,212,191,0.1)',
+            '--bg-primary':'#020617','--bg-secondary':'#0f172a','--bg-card':'#0f172a','--bg-card-hover':'#1e293b',
+            '--bg-sidebar':'#020617','--bg-header':'#0f172a','--bg-input':'#1e293b',
+            '--text-primary':'#f1f5f9','--text-secondary':'#94a3b8','--text-tertiary':'#7586a0',
+            '--border':'rgba(255,255,255,0.06)','--border-active':'rgba(255,255,255,0.12)',
+            '--success':'#22c55e','--warning':'#f59e0b','--error':'#ef4444','--info':'#3b82f6','--purple':'#8b5cf6',
+            '--success-bg':'rgba(34,197,94,0.1)','--warning-bg':'rgba(245,158,11,0.1)','--error-bg':'rgba(239,68,68,0.1)',
+            '--shadow':'0 4px 12px rgba(0,0,0,0.4)',
+          },
+        },
+        light: {
+          antTokens: { colorPrimary:'#0d9488', colorSuccess:'#16a34a', colorWarning:'#d97706', colorError:'#dc2626', colorInfo:'#2563eb', borderRadius:6 },
+          cssVars: {
+            '--brand':'#0d9488','--brand-hover':'#0f766e','--brand-bg':'rgba(13,148,136,0.08)',
+            '--bg-primary':'#f0fdfa','--bg-secondary':'#ffffff','--bg-card':'#ffffff','--bg-card-hover':'#f0fdfa',
+            '--bg-sidebar':'#f0fdfa','--bg-header':'#ffffff','--bg-input':'#f0fdfa',
+            '--text-primary':'#134e4a','--text-secondary':'#5eead4','--text-tertiary':'#99f6e4',
+            '--border':'#ccfbf1','--border-active':'#99f6e4',
+            '--success':'#16a34a','--warning':'#d97706','--error':'#dc2626','--info':'#2563eb','--purple':'#7c3aed',
+            '--success-bg':'rgba(22,163,74,0.08)','--warning-bg':'rgba(217,119,6,0.08)','--error-bg':'rgba(220,38,38,0.08)',
+            '--shadow':'0 4px 12px rgba(0,0,0,0.06)',
+          },
+        },
       },
     },
     {
       id: 'obsidian', name: 'Char', description: 'Charcoal with warm amber.',
-      mode: 'dark',
+      defaultMode: 'dark',
       preview: '#d97706',
       loaderColor: '#d97706',
-      antTokens: { colorPrimary:'#d97706', colorSuccess:'#65a30d', colorWarning:'#ea580c', colorError:'#dc2626', colorInfo:'#0284c7', borderRadius:6 },
-      cssVars: {
-        '--brand':'#d97706','--brand-hover':'#b45309','--brand-bg':'rgba(217,119,6,0.10)',
-        '--bg-primary':'#0c0a09','--bg-secondary':'#1c1917','--bg-card':'#1c1917','--bg-card-hover':'#292524',
-        '--bg-sidebar':'#0c0a09','--bg-header':'#1c1917','--bg-input':'#292524',
-        '--text-primary':'#fafaf9','--text-secondary':'#b5b0ab','--text-tertiary':'#8a8480',
-        '--border':'rgba(255,255,255,0.06)','--border-active':'rgba(255,255,255,0.12)',
-        '--success':'#65a30d','--warning':'#ea580c','--error':'#dc2626','--info':'#0284c7','--purple':'#a855f7',
-        '--success-bg':'rgba(101,163,13,0.10)','--warning-bg':'rgba(234,88,12,0.10)','--error-bg':'rgba(220,38,38,0.10)',
-        '--shadow':'0 4px 12px rgba(0,0,0,0.5)',
+      font: "'JetBrains Mono', 'Fira Code', monospace",
+      variants: {
+        dark: {
+          antTokens: { colorPrimary:'#d97706', colorSuccess:'#65a30d', colorWarning:'#ea580c', colorError:'#dc2626', colorInfo:'#0284c7', borderRadius:6 },
+          cssVars: {
+            '--brand':'#d97706','--brand-hover':'#b45309','--brand-bg':'rgba(217,119,6,0.10)',
+            '--bg-primary':'#0c0a09','--bg-secondary':'#1c1917','--bg-card':'#1c1917','--bg-card-hover':'#292524',
+            '--bg-sidebar':'#0c0a09','--bg-header':'#1c1917','--bg-input':'#292524',
+            '--text-primary':'#fafaf9','--text-secondary':'#b5b0ab','--text-tertiary':'#8a8480',
+            '--border':'rgba(255,255,255,0.06)','--border-active':'rgba(255,255,255,0.12)',
+            '--success':'#65a30d','--warning':'#ea580c','--error':'#dc2626','--info':'#0284c7','--purple':'#a855f7',
+            '--success-bg':'rgba(101,163,13,0.10)','--warning-bg':'rgba(234,88,12,0.10)','--error-bg':'rgba(220,38,38,0.10)',
+            '--shadow':'0 4px 12px rgba(0,0,0,0.5)',
+          },
+        },
+        light: {
+          antTokens: { colorPrimary:'#b45309', colorSuccess:'#4d7c0f', colorWarning:'#c2410c', colorError:'#b91c1c', colorInfo:'#0369a1', borderRadius:6 },
+          cssVars: {
+            '--brand':'#b45309','--brand-hover':'#92400e','--brand-bg':'rgba(180,83,9,0.08)',
+            '--bg-primary':'#fffbeb','--bg-secondary':'#ffffff','--bg-card':'#ffffff','--bg-card-hover':'#fef3c7',
+            '--bg-sidebar':'#fffbeb','--bg-header':'#ffffff','--bg-input':'#fef3c7',
+            '--text-primary':'#451a03','--text-secondary':'#78716c','--text-tertiary':'#a8a29e',
+            '--border':'#fde68a','--border-active':'#fcd34d',
+            '--success':'#4d7c0f','--warning':'#c2410c','--error':'#b91c1c','--info':'#0369a1','--purple':'#7c3aed',
+            '--success-bg':'rgba(77,124,15,0.08)','--warning-bg':'rgba(194,65,12,0.08)','--error-bg':'rgba(185,28,28,0.08)',
+            '--shadow':'0 4px 12px rgba(28,25,23,0.06)',
+          },
+        },
       },
     },
     {
       id: 'sandstone', name: 'Sand', description: 'Warm terracotta on cream.',
-      mode: 'light',
+      defaultMode: 'light',
       preview: '#c2410c',
       loaderColor: '#ea580c',
-      antTokens: { colorPrimary:'#c2410c', colorSuccess:'#15803d', colorWarning:'#b45309', colorError:'#b91c1c', colorInfo:'#1d4ed8', borderRadius:8 },
-      cssVars: {
-        '--brand':'#c2410c','--brand-hover':'#9a3412','--brand-bg':'rgba(194,65,12,0.08)',
-        '--bg-primary':'#fafaf9','--bg-secondary':'#ffffff','--bg-card':'#ffffff','--bg-card-hover':'#f5f5f4',
-        '--bg-sidebar':'#fafaf9','--bg-header':'#ffffff','--bg-input':'#f5f5f4',
-        '--text-primary':'#1c1917','--text-secondary':'#57534e','--text-tertiary':'#78716c',
-        '--border':'#e7e5e4','--border-active':'#d6d3d1',
-        '--success':'#15803d','--warning':'#b45309','--error':'#b91c1c','--info':'#1d4ed8','--purple':'#7c3aed',
-        '--success-bg':'rgba(21,128,61,0.08)','--warning-bg':'rgba(180,83,9,0.08)','--error-bg':'rgba(185,28,28,0.08)',
-        '--shadow':'0 4px 12px rgba(28,25,23,0.08)',
+      font: "'DM Sans', -apple-system, sans-serif",
+      variants: {
+        light: {
+          antTokens: { colorPrimary:'#c2410c', colorSuccess:'#15803d', colorWarning:'#b45309', colorError:'#b91c1c', colorInfo:'#1d4ed8', borderRadius:8 },
+          cssVars: {
+            '--brand':'#c2410c','--brand-hover':'#9a3412','--brand-bg':'rgba(194,65,12,0.08)',
+            '--bg-primary':'#fafaf9','--bg-secondary':'#ffffff','--bg-card':'#ffffff','--bg-card-hover':'#f5f5f4',
+            '--bg-sidebar':'#fafaf9','--bg-header':'#ffffff','--bg-input':'#f5f5f4',
+            '--text-primary':'#1c1917','--text-secondary':'#57534e','--text-tertiary':'#78716c',
+            '--border':'#e7e5e4','--border-active':'#d6d3d1',
+            '--success':'#15803d','--warning':'#b45309','--error':'#b91c1c','--info':'#1d4ed8','--purple':'#7c3aed',
+            '--success-bg':'rgba(21,128,61,0.08)','--warning-bg':'rgba(180,83,9,0.08)','--error-bg':'rgba(185,28,28,0.08)',
+            '--shadow':'0 4px 12px rgba(28,25,23,0.08)',
+          },
+        },
+        dark: {
+          antTokens: { colorPrimary:'#ea580c', colorSuccess:'#22c55e', colorWarning:'#f59e0b', colorError:'#ef4444', colorInfo:'#3b82f6', borderRadius:8 },
+          cssVars: {
+            '--brand':'#ea580c','--brand-hover':'#c2410c','--brand-bg':'rgba(234,88,12,0.10)',
+            '--bg-primary':'#1c1917','--bg-secondary':'#292524','--bg-card':'#292524','--bg-card-hover':'#44403c',
+            '--bg-sidebar':'#1c1917','--bg-header':'#292524','--bg-input':'#44403c',
+            '--text-primary':'#fafaf9','--text-secondary':'#d6d3d1','--text-tertiary':'#a8a29e',
+            '--border':'rgba(255,255,255,0.08)','--border-active':'rgba(255,255,255,0.14)',
+            '--success':'#22c55e','--warning':'#f59e0b','--error':'#ef4444','--info':'#3b82f6','--purple':'#a855f7',
+            '--success-bg':'rgba(34,197,94,0.10)','--warning-bg':'rgba(245,158,11,0.10)','--error-bg':'rgba(239,68,68,0.10)',
+            '--shadow':'0 4px 12px rgba(0,0,0,0.5)',
+          },
+        },
       },
     },
     {
       id: 'polar', name: 'Snow', description: 'Slate on white. High contrast.',
-      mode: 'light',
+      defaultMode: 'light',
       preview: '#475569',
       loaderColor: '#6b7280',
-      antTokens: { colorPrimary:'#334155', colorSuccess:'#16a34a', colorWarning:'#ca8a04', colorError:'#dc2626', colorInfo:'#2563eb', borderRadius:4 },
-      cssVars: {
-        '--brand':'#334155','--brand-hover':'#1e293b','--brand-bg':'rgba(51,65,85,0.08)',
-        '--bg-primary':'#ffffff','--bg-secondary':'#f8fafc','--bg-card':'#ffffff','--bg-card-hover':'#f1f5f9',
-        '--bg-sidebar':'#f8fafc','--bg-header':'#ffffff','--bg-input':'#f1f5f9',
-        '--text-primary':'#020617','--text-secondary':'#334155','--text-tertiary':'#64748b',
-        '--border':'#cbd5e1','--border-active':'#94a3b8',
-        '--success':'#16a34a','--warning':'#ca8a04','--error':'#dc2626','--info':'#2563eb','--purple':'#7c3aed',
-        '--success-bg':'rgba(22,163,74,0.06)','--warning-bg':'rgba(202,138,4,0.06)','--error-bg':'rgba(220,38,38,0.06)',
-        '--shadow':'0 2px 8px rgba(0,0,0,0.06)',
+      font: "'IBM Plex Sans', -apple-system, sans-serif",
+      variants: {
+        light: {
+          antTokens: { colorPrimary:'#334155', colorSuccess:'#16a34a', colorWarning:'#ca8a04', colorError:'#dc2626', colorInfo:'#2563eb', borderRadius:4 },
+          cssVars: {
+            '--brand':'#334155','--brand-hover':'#1e293b','--brand-bg':'rgba(51,65,85,0.08)',
+            '--bg-primary':'#ffffff','--bg-secondary':'#f8fafc','--bg-card':'#ffffff','--bg-card-hover':'#f1f5f9',
+            '--bg-sidebar':'#f8fafc','--bg-header':'#ffffff','--bg-input':'#f1f5f9',
+            '--text-primary':'#020617','--text-secondary':'#334155','--text-tertiary':'#64748b',
+            '--border':'#cbd5e1','--border-active':'#94a3b8',
+            '--success':'#16a34a','--warning':'#ca8a04','--error':'#dc2626','--info':'#2563eb','--purple':'#7c3aed',
+            '--success-bg':'rgba(22,163,74,0.06)','--warning-bg':'rgba(202,138,4,0.06)','--error-bg':'rgba(220,38,38,0.06)',
+            '--shadow':'0 2px 8px rgba(0,0,0,0.06)',
+          },
+        },
+        dark: {
+          antTokens: { colorPrimary:'#94a3b8', colorSuccess:'#22c55e', colorWarning:'#f59e0b', colorError:'#ef4444', colorInfo:'#60a5fa', borderRadius:4 },
+          cssVars: {
+            '--brand':'#94a3b8','--brand-hover':'#cbd5e1','--brand-bg':'rgba(148,163,184,0.10)',
+            '--bg-primary':'#0f172a','--bg-secondary':'#1e293b','--bg-card':'#1e293b','--bg-card-hover':'#334155',
+            '--bg-sidebar':'#0f172a','--bg-header':'#1e293b','--bg-input':'#334155',
+            '--text-primary':'#f1f5f9','--text-secondary':'#94a3b8','--text-tertiary':'#64748b',
+            '--border':'rgba(255,255,255,0.08)','--border-active':'rgba(255,255,255,0.14)',
+            '--success':'#22c55e','--warning':'#f59e0b','--error':'#ef4444','--info':'#60a5fa','--purple':'#a78bfa',
+            '--success-bg':'rgba(34,197,94,0.10)','--warning-bg':'rgba(245,158,11,0.10)','--error-bg':'rgba(239,68,68,0.10)',
+            '--shadow':'0 4px 12px rgba(0,0,0,0.4)',
+          },
+        },
       },
     },
     {
       id: 'vercel', name: 'Noir', description: 'Pure black. Minimal and stark.',
-      mode: 'dark',
+      defaultMode: 'dark',
       preview: '#000000',
       loaderColor: '#0070f3',
-      antTokens: { colorPrimary:'#ffffff', colorTextLightSolid:'#000000', colorSuccess:'#00dc82', colorWarning:'#f5a623', colorError:'#ee0000', colorInfo:'#0070f3', borderRadius:6 },
-      cssVars: {
-        '--brand':'#ffffff','--brand-hover':'#e5e5e5','--brand-bg':'rgba(255,255,255,0.06)',
-        '--bg-primary':'#000000','--bg-secondary':'#0a0a0a','--bg-card':'#0a0a0a','--bg-card-hover':'#171717',
-        '--bg-sidebar':'#000000','--bg-header':'#0a0a0a','--bg-input':'#171717',
-        '--text-primary':'#ededed','--text-secondary':'#a0a0a0','--text-tertiary':'#707070',
-        '--border':'rgba(255,255,255,0.08)','--border-active':'rgba(255,255,255,0.15)',
-        '--success':'#00dc82','--warning':'#f5a623','--error':'#ee0000','--info':'#0070f3','--purple':'#7928ca',
-        '--success-bg':'rgba(0,220,130,0.08)','--warning-bg':'rgba(245,166,35,0.08)','--error-bg':'rgba(238,0,0,0.08)',
-        '--solar':'#f5a623','--wind':'#0070f3','--battery':'#00dc82','--grid-color':'#ee0000','--ev':'#7928ca',
-        '--shadow':'0 4px 14px rgba(0,0,0,0.8)',
+      font: "'Space Grotesk', -apple-system, sans-serif",
+      variants: {
+        dark: {
+          antTokens: { colorPrimary:'#ffffff', colorTextLightSolid:'#000000', colorSuccess:'#00dc82', colorWarning:'#f5a623', colorError:'#ee0000', colorInfo:'#0070f3', borderRadius:6 },
+          cssVars: {
+            '--brand':'#ffffff','--brand-hover':'#e5e5e5','--brand-bg':'rgba(255,255,255,0.06)',
+            '--bg-primary':'#000000','--bg-secondary':'#0a0a0a','--bg-card':'#0a0a0a','--bg-card-hover':'#171717',
+            '--bg-sidebar':'#000000','--bg-header':'#0a0a0a','--bg-input':'#171717',
+            '--text-primary':'#ededed','--text-secondary':'#a0a0a0','--text-tertiary':'#707070',
+            '--border':'rgba(255,255,255,0.08)','--border-active':'rgba(255,255,255,0.15)',
+            '--success':'#00dc82','--warning':'#f5a623','--error':'#ee0000','--info':'#0070f3','--purple':'#7928ca',
+            '--success-bg':'rgba(0,220,130,0.08)','--warning-bg':'rgba(245,166,35,0.08)','--error-bg':'rgba(238,0,0,0.08)',
+            '--solar':'#f5a623','--wind':'#0070f3','--battery':'#00dc82','--grid-color':'#ee0000','--ev':'#7928ca',
+            '--shadow':'0 4px 14px rgba(0,0,0,0.8)',
+          },
+        },
+        light: {
+          antTokens: { colorPrimary:'#171717', colorTextLightSolid:'#ffffff', colorSuccess:'#16a34a', colorWarning:'#d97706', colorError:'#dc2626', colorInfo:'#2563eb', borderRadius:6 },
+          cssVars: {
+            '--brand':'#171717','--brand-hover':'#404040','--brand-bg':'rgba(23,23,23,0.06)',
+            '--bg-primary':'#ffffff','--bg-secondary':'#fafafa','--bg-card':'#ffffff','--bg-card-hover':'#f5f5f5',
+            '--bg-sidebar':'#fafafa','--bg-header':'#ffffff','--bg-input':'#f5f5f5',
+            '--text-primary':'#171717','--text-secondary':'#525252','--text-tertiary':'#a3a3a3',
+            '--border':'#e5e5e5','--border-active':'#d4d4d4',
+            '--success':'#16a34a','--warning':'#d97706','--error':'#dc2626','--info':'#2563eb','--purple':'#7c3aed',
+            '--success-bg':'rgba(22,163,74,0.06)','--warning-bg':'rgba(217,119,6,0.06)','--error-bg':'rgba(220,38,38,0.06)',
+            '--solar':'#d97706','--wind':'#2563eb','--battery':'#16a34a','--grid-color':'#dc2626','--ev':'#7c3aed',
+            '--shadow':'0 2px 8px rgba(0,0,0,0.06)',
+          },
+        },
       },
     },
   ];
 
   let _activeId = localStorage.getItem('orbiteos-theme-id') || 'classic';
+  let _activeMode = localStorage.getItem('orbiteos-theme-mode') || null;
 
   function getAll() { return _themes; }
-  function getActive() { return _themes.find(t => t.id === _activeId) || _themes[0]; }
+  function getActive() {
+    const theme = _themes.find(t => t.id === _activeId) || _themes[0];
+    const mode = _activeMode || theme.defaultMode;
+    const variant = theme.variants[mode];
+    return { ...theme, mode, antTokens: variant.antTokens, cssVars: variant.cssVars };
+  }
   function setActive(id) { _activeId = id; localStorage.setItem('orbiteos-theme-id', id); }
-  function getById(id) { return _themes.find(t => t.id === id); }
+  function getById(id) {
+    const theme = _themes.find(t => t.id === id);
+    if (!theme) return undefined;
+    const mode = _activeMode || theme.defaultMode;
+    const variant = theme.variants[mode];
+    return { ...theme, mode, antTokens: variant.antTokens, cssVars: variant.cssVars };
+  }
+  function setMode(mode) { _activeMode = mode; localStorage.setItem('orbiteos-theme-mode', mode); }
+  function getMode() { return _activeMode || (_themes.find(t => t.id === _activeId) || _themes[0]).defaultMode; }
+  function toggleMode() { setMode(getMode() === 'dark' ? 'light' : 'dark'); }
 
-  return { getAll, getActive, setActive, getById };
+  return { getAll, getActive, setActive, getById, setMode, getMode, toggleMode };
 })();
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -4646,6 +4753,11 @@ function Header({ page, t, lang, setLang, themeId, setThemeId, alarms, alarmCoun
               React.createElement('span',{style:{width:10,height:10,borderRadius:'50%',background:th.preview,display:'inline-block',border:'1px solid var(--border)',flexShrink:0}}),
               th.name)
           }))}/>
+        <span style={{cursor:'pointer',fontSize:14,color:'var(--text-secondary)',padding:'0 4px',display:'flex',alignItems:'center'}}
+          onClick={() => { ThemeStore.toggleMode(); setThemeMode(ThemeStore.getMode()); }}
+          title={ThemeStore.getMode() === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}>
+          {ThemeStore.getMode() === 'dark' ? React.createElement(SunOutlined) : React.createElement(MoonOutlined)}
+        </span>
         <div style={{position:'relative'}}>
           <div className={`alarm-bell ${bellRing?'ringing':''}`} onClick={()=>setShowAlarms(!showAlarms)}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -9275,7 +9387,7 @@ function OrbitLoaderOverlay({ onDone }) {
   );
 }
 
-function LoginPage({t, setPage, setCurrentApp, lang, setLang, themeId, setThemeId}) {
+function LoginPage({t, setPage, setCurrentApp, lang, setLang, themeId, setThemeId, themeMode, setThemeMode}) {
   const canvasRef = useRef(null);
   const [emailVal, setEmailVal] = useState('jan@orbiteos.com');
   const [passwordVal, setPasswordVal] = useState('orbit2026');
@@ -9288,7 +9400,7 @@ function LoginPage({t, setPage, setCurrentApp, lang, setLang, themeId, setThemeI
   const [attemptsLeft, setAttemptsLeft] = useState(null);
   const [lockCountdown, setLockCountdown] = useState(0);
   const formRef = useRef(null);
-  const activeTheme = ThemeStore.getById(themeId) || ThemeStore.getAll()[0];
+  const activeTheme = ThemeStore.getById(themeId) || ThemeStore.getActive();
 
   // Extract first name from email on blur (e.g. "jan.de.vries@acme.nl" → "Jan")
   const onEmailBlur = useCallback(() => {
@@ -9677,6 +9789,11 @@ function LoginPage({t, setPage, setCurrentApp, lang, setLang, themeId, setThemeI
                 React.createElement('span',{style:{width:6,height:6,borderRadius:'50%',background:th.preview,display:'inline-block',border:'1px solid var(--border)',flexShrink:0}}),
                 th.name)
             }))}/>
+          <span style={{cursor:'pointer',fontSize:12,color:'var(--text-tertiary)',padding:'0 2px',display:'flex',alignItems:'center'}}
+            onClick={() => { ThemeStore.toggleMode(); setThemeMode(ThemeStore.getMode()); }}
+            title={ThemeStore.getMode() === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}>
+            {ThemeStore.getMode() === 'dark' ? React.createElement(SunOutlined) : React.createElement(MoonOutlined)}
+          </span>
           <span style={{width:1,height:10,background:'var(--border)'}}/>
           <Select value={lang} onChange={v=>setLang(v)} size="small" variant="borderless"
             style={{fontSize:10,minWidth:50}} popupMatchSelectWidth={false} options={[{value:'en',label:'en'},{value:'nl',label:'nl'}]}/>
@@ -10111,7 +10228,8 @@ function App() {
   const [page, setPage] = useState('login');
   const [lang, setLang] = useState(localStorage.getItem('orbiteos-lang') || 'en');
   const [themeId, setThemeId] = useState(ThemeStore.getActive().id);
-  const activeTheme = ThemeStore.getById(themeId) || ThemeStore.getAll()[0];
+  const [themeMode, setThemeMode] = useState(ThemeStore.getMode());
+  const activeTheme = ThemeStore.getById(themeId) || ThemeStore.getActive();
   const [alarms, setAlarms] = useState([]);
   const [alarmCount, setAlarmCount] = useState(0);
   const [showAlarms, setShowAlarms] = useState(false);
@@ -10126,14 +10244,16 @@ function App() {
   useEffect(() => { localStorage.setItem('orbiteos-lang', lang); }, [lang]);
   useEffect(() => {
     ThemeStore.setActive(themeId);
-    const theme = ThemeStore.getById(themeId);
+    const theme = ThemeStore.getActive();
     if (!theme) return;
     document.body.setAttribute('data-theme', theme.mode);
-    // Apply CSS variable overrides from the active theme
+    // Apply CSS variable overrides from the active theme variant
     Object.entries(theme.cssVars || {}).forEach(([key, value]) => {
       document.body.style.setProperty(key, value);
     });
-  }, [themeId]);
+    // Apply per-theme font
+    document.body.style.fontFamily = theme.font;
+  }, [themeId, themeMode]);
 
   // Alarm generator
   useEffect(() => {
@@ -10172,14 +10292,14 @@ function App() {
     algorithm: activeTheme.mode === 'dark' ? antTheme.darkAlgorithm : antTheme.defaultAlgorithm,
     token: {
       ...activeTheme.antTokens,
-      fontFamily: "'Inter', -apple-system, sans-serif",
+      fontFamily: activeTheme.font,
     },
-  }), [themeId]);
+  }), [themeId, themeMode]);
 
   if (page === 'login') {
     return (
       <ConfigProvider theme={antThemeConfig}>
-        <LoginPage t={t} setPage={setPage} setCurrentApp={setCurrentApp} lang={lang} setLang={setLang} themeId={themeId} setThemeId={setThemeId}/>
+        <LoginPage t={t} setPage={setPage} setCurrentApp={setCurrentApp} lang={lang} setLang={setLang} themeId={themeId} setThemeId={setThemeId} themeMode={themeMode} setThemeMode={setThemeMode}/>
       </ConfigProvider>
     );
   }
