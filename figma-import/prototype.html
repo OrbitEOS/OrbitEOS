@@ -309,6 +309,35 @@
     .code-viewer-body .json-boolean { color:var(--success); }
     .code-viewer-body .json-null { color:var(--text-tertiary); }
 
+    /* ─── Developer Studio 3-Panel Workspace ─── */
+    .ds-workspace { display:flex; height:calc(100vh - var(--header-h) - 32px); gap:0; }
+    .ds-tree { width:260px; min-width:260px; background:var(--bg-card); border:1px solid var(--border);
+      border-radius:8px; display:flex; flex-direction:column; overflow:hidden; }
+    .ds-tree-header { padding:8px 12px; border-bottom:1px solid var(--border); }
+    .ds-tree-scroll { flex:1; overflow-y:auto; padding:4px 0; }
+    .ds-center { flex:1; margin:0 8px; background:var(--bg-card); border:1px solid var(--border);
+      border-radius:8px; display:flex; flex-direction:column; overflow:hidden; }
+    .ds-center-header { padding:8px 16px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:8px; }
+    .ds-center-body { flex:1; overflow-y:auto; padding:0; }
+    .ds-code { width:300px; min-width:200px; background:var(--bg-card); border:1px solid var(--border);
+      border-radius:8px; display:flex; flex-direction:column; overflow:hidden; }
+    .ds-code-header { padding:6px 12px; border-bottom:1px solid var(--border); font-size:11px; font-weight:600;
+      color:var(--text-secondary); display:flex; align-items:center; justify-content:space-between; }
+    .ds-code-body { flex:1; overflow-y:auto; }
+    .ds-tree-section { padding:2px 8px; font-size:9px; font-weight:600; color:var(--text-tertiary);
+      text-transform:uppercase; letter-spacing:0.05em; margin-top:8px; }
+    .ds-tree-item { padding:4px 8px 4px 12px; cursor:pointer; font-size:12px; color:var(--text-secondary);
+      display:flex; align-items:center; gap:6px; border-radius:4px; margin:1px 4px; transition:all 0.1s; }
+    .ds-tree-item:hover { background:var(--bg-card-hover); color:var(--text-primary); }
+    .ds-tree-item.active { color:var(--brand); background:var(--brand-bg); }
+    .ds-tree-item .ds-count { font-size:9px; color:var(--text-tertiary); background:var(--bg-secondary);
+      padding:0 5px; border-radius:8px; margin-left:auto; }
+    .ds-tree-item .ds-badge { font-size:8px; padding:1px 5px; border-radius:6px; margin-left:auto; }
+    .ds-tree-sub { padding-left:16px; }
+    .ds-inherited { opacity:0.5; }
+    .ds-inherited-badge { font-size:8px; color:var(--text-tertiary); background:var(--bg-card-hover);
+      padding:1px 6px; border-radius:8px; }
+
     .stat-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px;
       padding: 16px 20px; transition: all 0.2s ease; position: relative; overflow: hidden; }
     .stat-card:hover { border-color: var(--border-active); transform: translateY(-1px); box-shadow: var(--shadow); }
@@ -10077,25 +10106,20 @@ function DeveloperStudioPage({t, lang, tab}) {
   const [editingTmpl, setEditingTmpl] = useState(null);
   const [creatingTmpl, setCreatingTmpl] = useState(false);
   const [newTmplData, setNewTmplData] = useState({entity_type:'',type_key:'',name:'',description:'',lifecycle_status:'draft'});
-  const [activeSection, setActiveSection] = useState(tab || 'overview');
   const [propPickerSearch, setPropPickerSearch] = useState('');
   const [propModalFromPicker, setPropModalFromPicker] = useState(null);
   const [previewType, setPreviewType] = useState(null);
   const [previewTab, setPreviewTab] = useState('overview');
+  // Phase 3: 3-panel workspace state
+  const [selectedNode, setSelectedNode] = useState({ type:'overview' });
+  const [treeSearch, setTreeSearch] = useState('');
+  const [codeCollapsed, setCodeCollapsed] = useState(false);
+  const [entityDetailTab, setEntityDetailTab] = useState('general');
 
   // Template data from real stores
   const allTemplates = EntityTemplateStore.getTemplates();
   const allDefs = PropertyCatalogStore.getDefinitions();
   const allGroups = PropertyCatalogStore.getGroups();
-
-  const sections = [
-    { key:'overview', label:{en:'Overview',nl:'Overzicht'}, icon:DashboardOutlined, count:null },
-    { key:'properties', label:{en:'Properties',nl:'Eigenschappen'}, icon:BookOutlined, count:allDefs.length },
-    { key:'templates', label:{en:'Entity Templates',nl:'Entiteit Templates'}, icon:BlockOutlined, count:allTemplates.length },
-    { key:'preview', label:{en:'Preview Lab',nl:'Preview Lab'}, icon:EyeOutlined, count:null },
-  ];
-
-  const currentSection = sections.find(s => s.key === activeSection) || sections[0];
 
   const lifecycleColor = (s) => s==='active'?'green':s==='deprecated'?'orange':s==='archived'?'red':'default';
   const lifecycleI18n = (s) => resolveI18n({
@@ -10195,372 +10219,539 @@ function DeveloperStudioPage({t, lang, tab}) {
     return entity;
   }
 
-  // ── Render section content ──
-  const renderSectionContent = () => {
-    // ════════ TEMPLATES ════════
-    if (activeSection === 'templates') return (
-      <div>
-        {/* Create template modal */}
-        {creatingTmpl && (
-          <div className="card" style={{marginBottom:16,border:'2px solid var(--brand)'}}>
-            <div style={{padding:'16px 20px'}}>
-              <div className="card-title" style={{marginBottom:12}}>{resolveI18n({en:'New Entity Template',nl:'Nieuw Entiteit Template'},lang)}</div>
-              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginBottom:12}}>
-                <div>
-                  <div style={{fontSize:11,fontWeight:500,color:'var(--text-secondary)',marginBottom:4}}>{resolveI18n({en:'Entity Type',nl:'Entiteitstype'},lang)}</div>
-                  <select style={{width:'100%',padding:'6px 8px',borderRadius:6,border:'1px solid var(--border)',background:'var(--bg-input)',color:'var(--text-primary)',fontSize:12}}
-                    value={newTmplData.entity_type} onChange={e=>setNewTmplData({...newTmplData,entity_type:e.target.value})}>
-                    <option value="">{resolveI18n({en:'Select...',nl:'Selecteer...'},lang)}</option>
-                    {Object.entries(ENTITY_TYPE_REGISTRY).map(([k,v])=>(
-                      <option key={k} value={k}>{resolveI18n(v.label,lang)}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <div style={{fontSize:11,fontWeight:500,color:'var(--text-secondary)',marginBottom:4}}>{resolveI18n({en:'Type Key (snake_case)',nl:'Type Sleutel (snake_case)'},lang)}</div>
-                  <input style={{width:'100%',padding:'6px 8px',borderRadius:6,border:'1px solid var(--border)',background:'var(--bg-input)',color:'var(--text-primary)',fontSize:12}}
-                    placeholder="e.g. default" value={newTmplData.type_key} onChange={e=>setNewTmplData({...newTmplData,type_key:e.target.value})}/>
-                </div>
-                <div>
-                  <div style={{fontSize:11,fontWeight:500,color:'var(--text-secondary)',marginBottom:4}}>{resolveI18n({en:'Name',nl:'Naam'},lang)}</div>
-                  <input style={{width:'100%',padding:'6px 8px',borderRadius:6,border:'1px solid var(--border)',background:'var(--bg-input)',color:'var(--text-primary)',fontSize:12}}
-                    placeholder={resolveI18n({en:'Template name',nl:'Templatenaam'},lang)} value={newTmplData.name} onChange={e=>setNewTmplData({...newTmplData,name:e.target.value})}/>
-                </div>
-                <div>
-                  <div style={{fontSize:11,fontWeight:500,color:'var(--text-secondary)',marginBottom:4}}>{resolveI18n({en:'Description',nl:'Beschrijving'},lang)}</div>
-                  <input style={{width:'100%',padding:'6px 8px',borderRadius:6,border:'1px solid var(--border)',background:'var(--bg-input)',color:'var(--text-primary)',fontSize:12}}
-                    placeholder={resolveI18n({en:'Optional description',nl:'Optionele beschrijving'},lang)} value={newTmplData.description} onChange={e=>setNewTmplData({...newTmplData,description:e.target.value})}/>
-                </div>
-              </div>
-              <div style={{display:'flex',gap:8,justifyContent:'flex-end'}}>
-                <button className="header-btn" onClick={()=>setCreatingTmpl(false)}>{resolveI18n({en:'Cancel',nl:'Annuleren'},lang)}</button>
-                <button className="header-btn primary" onClick={handleCreateTemplate}
-                  disabled={!newTmplData.entity_type||!newTmplData.type_key||!newTmplData.name}>
-                  {resolveI18n({en:'Create Template',nl:'Template Aanmaken'},lang)}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+  // ══════════════════════════════════════════════════════════
+  // Phase 3: Tree Renderers
+  // ══════════════════════════════════════════════════════════
 
-        {/* Property create modal triggered from autocomplete picker */}
-        {propModalFromPicker && React.createElement(PropertyEditModal, {
+  function renderEntityTree() {
+    const hierarchy = [
+      { entityType:'platform', indent:0 },
+      { entityType:'account', indent:1 },
+      { entityType:'subAccount', indent:2 },
+      { entityType:'site', indent:3 },
+      { entityType:'deviceGroup', indent:4 },
+      { entityType:'device', indent:5 },
+      { entityType:'sensor', indent:6 },
+      { entityType:'actuator', indent:6 },
+    ];
+
+    return hierarchy.filter(h => {
+      if (!treeSearch) return true;
+      const q = treeSearch.toLowerCase();
+      const reg = ENTITY_TYPE_REGISTRY[h.entityType];
+      return h.entityType.toLowerCase().includes(q) || (resolveI18n(reg?.label,lang)||'').toLowerCase().includes(q);
+    }).map(h => {
+      const reg = ENTITY_TYPE_REGISTRY[h.entityType];
+      const tmpl = EntityTemplateStore.getTemplate(h.entityType, 'default');
+      const count = EntityStore.getByType(h.entityType).length;
+      const subtypes = EntityTemplateStore.getTemplates().filter(t => t.extends_key === `${h.entityType}:default`);
+      const isActive = selectedNode.type === 'entity' && selectedNode.entityType === h.entityType && !selectedNode.typeKey;
+      const Icon = window[reg?.icon] || BlockOutlined;
+
+      return React.createElement('div', {key:h.entityType},
+        React.createElement('div', {
+          className:`ds-tree-item ${isActive?'active':''}`,
+          style:{paddingLeft: 12 + h.indent * 14},
+          onClick:()=>{ setSelectedNode({type:'entity', entityType:h.entityType}); setEntityDetailTab('general'); }
+        },
+          React.createElement(Icon, {style:{fontSize:12,color:reg?.color}}),
+          resolveI18n(reg?.label,lang) || h.entityType,
+          React.createElement('span', {className:'ds-count'}, count)
+        ),
+        subtypes.map(st => {
+          const stActive = selectedNode.type==='subtype' && selectedNode.entityType===st.entity_type && selectedNode.typeKey===st.type_key;
+          return React.createElement('div', {
+            key:`${st.entity_type}:${st.type_key}`,
+            className:`ds-tree-item ${stActive?'active':''}`,
+            style:{paddingLeft: 12 + (h.indent+1) * 14, fontSize:11},
+            onClick:()=>{ setSelectedNode({type:'subtype', entityType:st.entity_type, typeKey:st.type_key}); setEntityDetailTab('general'); }
+          },
+            React.createElement(window[st.icon]||BlockOutlined, {style:{fontSize:11}}),
+            st.name,
+            React.createElement('span', {className:'ds-badge', style:{background:st.lifecycle_status==='active'?'var(--success-bg)':'var(--bg-secondary)',
+              color:st.lifecycle_status==='active'?'var(--success)':'var(--text-tertiary)'}}, st.lifecycle_status==='active'?'\u25cf':'\u25cb')
+          );
+        })
+      );
+    });
+  }
+
+  function renderFormBlocks() {
+    const usedGroups = new Set();
+    allTemplates.forEach(t => (t.form_groups||[]).forEach(fg => { if (fg.from_group) usedGroups.add(fg.from_group); }));
+    if (!treeSearch && usedGroups.size === 0) return React.createElement('div',{className:'ds-tree-item',style:{fontSize:11,color:'var(--text-tertiary)',fontStyle:'italic'}},resolveI18n({en:'No form blocks',nl:'Geen formulierblokken'},lang));
+
+    return PropertyCatalogStore.getGroups().filter(g => usedGroups.has(g.key)).filter(g => {
+      if (!treeSearch) return true;
+      const q = treeSearch.toLowerCase();
+      return g.key.toLowerCase().includes(q) || (resolveI18n(g.i18n,lang)||g.name||'').toLowerCase().includes(q);
+    }).map(g => {
+      const count = PropertyCatalogStore.getByGroup(g.key).length;
+      const isActive = selectedNode.type==='block' && selectedNode.groupKey===g.key;
+      return React.createElement('div', {key:g.key, className:`ds-tree-item ${isActive?'active':''}`,
+        onClick:()=>setSelectedNode({type:'block', groupKey:g.key})},
+        React.createElement(BuildOutlined, {style:{fontSize:11}}),
+        resolveI18n(g.i18n,lang)||g.name,
+        React.createElement('span', {className:'ds-count'}, count)
+      );
+    });
+  }
+
+  function renderPropertyGroups() {
+    return PropertyCatalogStore.getGroups().filter(g => {
+      if (!treeSearch) return true;
+      const q = treeSearch.toLowerCase();
+      return g.key.toLowerCase().includes(q) || (resolveI18n(g.i18n,lang)||g.name||'').toLowerCase().includes(q);
+    }).map(g => {
+      const count = PropertyCatalogStore.getByGroup(g.key).length;
+      const isActive = selectedNode.type==='propGroup' && selectedNode.groupKey===g.key;
+      return React.createElement('div', {key:g.key, className:`ds-tree-item ${isActive?'active':''}`,
+        onClick:()=>setSelectedNode({type:'propGroup', groupKey:g.key})},
+        React.createElement(window[g.icon]||TagOutlined, {style:{fontSize:11}}),
+        resolveI18n(g.i18n,lang)||g.name,
+        React.createElement('span', {className:'ds-count'}, count)
+      );
+    });
+  }
+
+  // ══════════════════════════════════════════════════════════
+  // Phase 4: Center Panel Content
+  // ══════════════════════════════════════════════════════════
+
+  function renderCenterHeader() {
+    if (selectedNode.type === 'overview') return React.createElement('span',{style:{fontWeight:600,fontSize:13}},resolveI18n({en:'Developer Studio Overview',nl:'Developer Studio Overzicht'},lang));
+    if (selectedNode.type === 'entity') {
+      const reg = ENTITY_TYPE_REGISTRY[selectedNode.entityType];
+      const Icon = window[reg?.icon]||BlockOutlined;
+      return React.createElement(React.Fragment,null,
+        React.createElement(Icon,{style:{fontSize:14,color:reg?.color}}),
+        React.createElement('span',{style:{fontWeight:600,fontSize:13}},resolveI18n(reg?.label,lang)),
+        React.createElement('span',{style:{fontSize:10,color:'var(--text-tertiary)'}},'('+resolveI18n({en:'base template',nl:'basistemplate'},lang)+')')
+      );
+    }
+    if (selectedNode.type === 'subtype') {
+      const tmpl = EntityTemplateStore.getTemplate(selectedNode.entityType, selectedNode.typeKey);
+      const Icon = window[tmpl?.icon]||BlockOutlined;
+      return React.createElement(React.Fragment,null,
+        React.createElement(Icon,{style:{fontSize:14}}),
+        React.createElement('span',{style:{fontWeight:600,fontSize:13}},tmpl?.name||selectedNode.typeKey),
+        React.createElement(Tag,{color:lifecycleColor(tmpl?.lifecycle_status),style:{margin:0,fontSize:9}},lifecycleI18n(tmpl?.lifecycle_status||'draft'))
+      );
+    }
+    if (selectedNode.type === 'block') {
+      const g = PropertyCatalogStore.getGroup(selectedNode.groupKey);
+      return React.createElement(React.Fragment,null,
+        React.createElement(BuildOutlined,{style:{fontSize:14}}),
+        React.createElement('span',{style:{fontWeight:600,fontSize:13}},resolveI18n(g?.i18n,lang)||g?.name||selectedNode.groupKey),
+        React.createElement('span',{style:{fontSize:10,color:'var(--text-tertiary)'}},'('+resolveI18n({en:'form block',nl:'formulierblok'},lang)+')')
+      );
+    }
+    if (selectedNode.type === 'propGroup') {
+      const g = PropertyCatalogStore.getGroup(selectedNode.groupKey);
+      return React.createElement(React.Fragment,null,
+        React.createElement(window[g?.icon]||TagOutlined,{style:{fontSize:14}}),
+        React.createElement('span',{style:{fontWeight:600,fontSize:13}},resolveI18n(g?.i18n,lang)||g?.name||selectedNode.groupKey),
+        React.createElement('span',{style:{fontSize:10,color:'var(--text-tertiary)'}},'('+resolveI18n({en:'property group',nl:'eigenschap groep'},lang)+')')
+      );
+    }
+    return null;
+  }
+
+  function renderCenterContent() {
+    if (selectedNode.type === 'overview') return renderOverviewDashboard();
+    if (selectedNode.type === 'entity') return renderEntityDetail(selectedNode.entityType, 'default');
+    if (selectedNode.type === 'subtype') return renderEntityDetail(selectedNode.entityType, selectedNode.typeKey);
+    if (selectedNode.type === 'block') return renderBlockDetail(selectedNode.groupKey);
+    if (selectedNode.type === 'propGroup') return renderPropertyGroupDetail(selectedNode.groupKey);
+    return null;
+  }
+
+  // ── Entity Detail with 9 tabs (Phase 4c) ──
+  function renderEntityDetail(entityType, typeKey) {
+    const tmpl = EntityTemplateStore.getTemplate(entityType, typeKey);
+    const resolved = EntityTemplateStore.resolveTemplate(entityType, typeKey);
+    if (!tmpl) return React.createElement('div',{style:{padding:20,color:'var(--text-tertiary)'}},resolveI18n({en:'No template found',nl:'Geen template gevonden'},lang));
+
+    const isSubtype = !!tmpl.extends_key;
+    const etReg = ENTITY_TYPE_REGISTRY[entityType];
+    const tabs = [
+      {key:'general', label:resolveI18n({en:'General',nl:'Algemeen'},lang)},
+      {key:'properties', label:`${resolveI18n({en:'Properties',nl:'Eigenschappen'},lang)} (${(resolved?.properties||[]).length})`},
+      {key:'formGroups', label:`${resolveI18n({en:'Form Groups',nl:'Formuliergroepen'},lang)} (${(resolved?.form_groups||[]).length})`},
+      {key:'columns', label:`${resolveI18n({en:'Columns',nl:'Kolommen'},lang)} (${(resolved?.columns||[]).length})`},
+      {key:'tabs', label:`${resolveI18n({en:'Tabs',nl:'Tabs'},lang)} (${(resolved?.detail_tabs||[]).length})`},
+      {key:'overview', label:resolveI18n({en:'Overview Layout',nl:'Overzicht Layout'},lang)},
+      {key:'relations', label:resolveI18n({en:'Relationships',nl:'Relaties'},lang)},
+      !isSubtype && {key:'subtypes', label:`${resolveI18n({en:'Subtypes',nl:'Subtypes'},lang)} (${EntityTemplateStore.getTemplates().filter(t=>t.extends_key===`${entityType}:default`).length})`},
+      {key:'instances', label:`${resolveI18n({en:'Instances',nl:'Instanties'},lang)} (${EntityStore.getByType(entityType).length})`},
+    ].filter(Boolean);
+
+    return React.createElement(Tabs, {
+      activeKey:entityDetailTab, onChange:setEntityDetailTab,
+      style:{padding:'0 16px'}, size:'small',
+      items: tabs.map(tab => ({
+        key:tab.key, label:tab.label,
+        children: renderEntityTabContent(entityType, typeKey, tab.key, tmpl, resolved)
+      }))
+    });
+  }
+
+  // ── Entity tab content renderer (Phase 4d) ──
+  function renderEntityTabContent(entityType, typeKey, tabKey, tmpl, resolved) {
+    const etReg = ENTITY_TYPE_REGISTRY[entityType];
+
+    // ── General tab ──
+    if (tabKey === 'general') {
+      return React.createElement('div', {style:{display:'grid',gap:16,padding:'12px 0'}},
+        // Info row
+        React.createElement('div', {style:{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:12}},
+          React.createElement('div', null,
+            React.createElement('div', {style:{fontSize:10,fontWeight:600,color:'var(--text-tertiary)',textTransform:'uppercase',marginBottom:4}},resolveI18n({en:'Entity Type',nl:'Entiteitstype'},lang)),
+            React.createElement('div', {style:{fontSize:12,color:'var(--text-primary)'}},resolveI18n(etReg?.label,lang)||entityType)
+          ),
+          React.createElement('div', null,
+            React.createElement('div', {style:{fontSize:10,fontWeight:600,color:'var(--text-tertiary)',textTransform:'uppercase',marginBottom:4}},resolveI18n({en:'Description',nl:'Beschrijving'},lang)),
+            React.createElement('div', {style:{fontSize:12,color:'var(--text-secondary)'}},tmpl.description ? (typeof tmpl.description === 'object' ? resolveI18n(tmpl.description,lang) : tmpl.description) : resolveI18n({en:'No description',nl:'Geen beschrijving'},lang))
+          ),
+          React.createElement('div', null,
+            React.createElement('div', {style:{fontSize:10,fontWeight:600,color:'var(--text-tertiary)',textTransform:'uppercase',marginBottom:4}},resolveI18n({en:'Icon',nl:'Icoon'},lang)),
+            React.createElement('div', {style:{fontSize:12,color:'var(--text-primary)',display:'flex',alignItems:'center',gap:6}},
+              React.createElement(window[tmpl.icon]||BlockOutlined,{style:{fontSize:16,color:etReg?.color}}),
+              React.createElement('span', {style:{fontFamily:'monospace',fontSize:11,color:'var(--text-tertiary)'}},tmpl.icon)
+            )
+          )
+        ),
+        // Lifecycle controls
+        React.createElement('div', {style:{padding:'10px 14px',background:'var(--bg-secondary)',borderRadius:8,border:'1px solid var(--border)',display:'flex',alignItems:'center',gap:12,flexWrap:'wrap'}},
+          React.createElement('span', {style:{fontSize:11,fontWeight:600,color:'var(--text-secondary)'}},resolveI18n({en:'Lifecycle',nl:'Levenscyclus'},lang),':'),
+          React.createElement(Tag,{color:lifecycleColor(tmpl.lifecycle_status),style:{fontSize:11,fontWeight:600}},lifecycleI18n(tmpl.lifecycle_status||'active')),
+          React.createElement('span', {style:{fontSize:11,color:'var(--text-tertiary)'}},'v'+(tmpl.version||1)),
+          React.createElement('div', {style:{flex:1}}),
+          (tmpl.lifecycle_status==='draft'||!tmpl.lifecycle_status) && React.createElement('button', {className:'header-btn',style:{fontSize:11,color:'var(--success)',borderColor:'var(--success)'},
+            onClick:()=>handleLifecycleTransition(tmpl,'active')},
+            React.createElement(CheckCircleFilled,{style:{fontSize:10,marginRight:4}}),resolveI18n({en:'Activate',nl:'Activeren'},lang)
+          ),
+          tmpl.lifecycle_status==='active' && React.createElement('button', {className:'header-btn',style:{fontSize:11,color:'var(--warning)',borderColor:'var(--warning)'},
+            onClick:()=>handleLifecycleTransition(tmpl,'deprecated')},
+            React.createElement(WarningOutlined,{style:{fontSize:10,marginRight:4}}),resolveI18n({en:'Deprecate',nl:'Verouderen'},lang)
+          ),
+          tmpl.lifecycle_status==='deprecated' && React.createElement('button', {className:'header-btn',style:{fontSize:11,color:'var(--error)',borderColor:'var(--error)'},
+            onClick:()=>handleLifecycleTransition(tmpl,'archived')},
+            React.createElement(StopOutlined,{style:{fontSize:10,marginRight:4}}),resolveI18n({en:'Archive',nl:'Archiveren'},lang)
+          ),
+          tmpl.lifecycle_status && tmpl.lifecycle_status!=='draft' && React.createElement('button', {className:'header-btn',style:{fontSize:11,color:'var(--info)',borderColor:'var(--info)'},
+            onClick:()=>handleLifecycleTransition(tmpl,'draft')},
+            React.createElement(RollbackOutlined,{style:{fontSize:10,marginRight:4}}),resolveI18n({en:'Rollback to Draft',nl:'Terugzetten naar Concept'},lang)
+          )
+        ),
+        // Version History
+        (() => {
+          const versions = EntityTemplateStore.getVersions(tmpl.entity_type, tmpl.type_key);
+          const displayVersions = versions.slice().reverse().slice(0, 5);
+          return React.createElement('div', {style:{padding:'10px 14px',background:'var(--bg-secondary)',borderRadius:8,border:'1px solid var(--border)'}},
+            React.createElement('div', {style:{fontSize:11,fontWeight:600,color:'var(--text-secondary)',marginBottom:versions.length>0?8:0,display:'flex',alignItems:'center',gap:6}},
+              React.createElement(HistoryOutlined, {style:{fontSize:12}}),
+              resolveI18n({en:'Version History',nl:'Versiegeschiedenis'},lang),
+              React.createElement('span', {style:{fontSize:10,color:'var(--text-tertiary)',fontWeight:400}}, '('+versions.length+')')
+            ),
+            versions.length === 0
+              ? React.createElement('div', {style:{fontSize:11,color:'var(--text-tertiary)',fontStyle:'italic'}},resolveI18n({en:'No previous versions',nl:'Geen eerdere versies'},lang))
+              : React.createElement('div', {style:{display:'grid',gap:4}},
+                  displayVersions.map((ver, idx) => {
+                    const realIdx = versions.length - 1 - idx;
+                    return React.createElement('div', {key:idx, style:{display:'flex',alignItems:'center',gap:8,padding:'4px 8px',
+                      borderRadius:4,background:'var(--bg-card)',border:'1px solid var(--border)',fontSize:11}},
+                      React.createElement('span', {style:{fontWeight:600,color:'var(--brand)',minWidth:28}}, 'v'+(ver.version||1)),
+                      React.createElement('span', {style:{color:'var(--text-tertiary)',fontSize:10,flex:1}},
+                        ver._savedAt ? new Date(ver._savedAt).toLocaleString() : '\u2014'),
+                      React.createElement('button', {className:'header-btn',
+                        style:{padding:'1px 8px',fontSize:10,color:'var(--info)',borderColor:'var(--info)'},
+                        onClick:() => { EntityTemplateStore.rollback(tmpl.entity_type, tmpl.type_key, realIdx); rerender(); }},
+                        React.createElement(RollbackOutlined, {style:{fontSize:9,marginRight:3}}),
+                        resolveI18n({en:'Rollback',nl:'Terugzetten'},lang)
+                      )
+                    );
+                  })
+                )
+          );
+        })()
+      );
+    }
+
+    // ── Properties tab ──
+    if (tabKey === 'properties') {
+      return React.createElement('div', {style:{padding:'12px 0'}},
+        React.createElement('div', {style:{display:'flex',flexWrap:'wrap',gap:4,marginBottom:8}},
+          (resolved?.resolved?.properties||[]).map(p => {
+            const isInherited = p.inherited;
+            return React.createElement('span', {key:p.property_key||p.key, className:isInherited?'ds-inherited':'',
+              style:{padding:'3px 8px',borderRadius:4,fontSize:10,background:'var(--bg-secondary)',border:'1px solid var(--border)',
+              display:'flex',alignItems:'center',gap:4}},
+              React.createElement('span', {style:{fontFamily:'monospace',color:'var(--brand)'}}, p.property_key||p.key),
+              React.createElement('span', {style:{color:'var(--text-tertiary)'}}, '('+p.group_key+')'),
+              p.is_required && React.createElement('span', {style:{color:'var(--error)',fontSize:9}}, '*'),
+              isInherited && React.createElement('span', {className:'ds-inherited-badge'}, resolveI18n({en:'inherited',nl:'overgenomen'},lang)),
+              !isInherited && React.createElement('span', {style:{cursor:'pointer',color:'var(--text-tertiary)',fontSize:9,marginLeft:2,lineHeight:1},
+                onClick:()=>{removePropertyFromTemplate(tmpl,p.property_key||p.key)},
+                title:resolveI18n({en:'Remove property',nl:'Eigenschap verwijderen'},lang)}, '\u00d7')
+            );
+          }),
+          (resolved?.properties||[]).length===0 && React.createElement('span', {style:{fontSize:11,color:'var(--text-tertiary)',fontStyle:'italic'}},resolveI18n({en:'No properties defined',nl:'Geen eigenschappen gedefinieerd'},lang))
+        ),
+        React.createElement(Select, {
+          size:'small', style:{width:280},
+          showSearch:true, filterOption:(input,option) => (option?.label||'').toLowerCase().includes(input.toLowerCase()),
+          placeholder:resolveI18n({en:'Add property...',nl:'Eigenschap toevoegen...'},lang),
+          value:undefined,
+          onChange:(val) => {
+            if (val === '__create_new__') { setPropModalFromPicker(tmpl); }
+            else { addPropertyToTemplate(tmpl, val); }
+          },
+          options:[
+            ...allDefs
+              .filter(d => !(tmpl.properties||[]).some(p => p.property_key === d.key))
+              .map(d => ({value:d.key, label:`${d.key} \u2014 ${resolveI18n(d.i18n,lang)||d.name} (${d.group_key})`})),
+            {value:'__divider__', label:'\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500', disabled:true},
+            {value:'__create_new__', label:resolveI18n({en:'+ Create new property',nl:'+ Nieuwe eigenschap'},lang)},
+          ],
+        }),
+        propModalFromPicker && React.createElement(PropertyEditModal, {
           mode:'create', def:null, lang,
           onSave:(def) => { PropertyCatalogStore.putDefinition(def); addPropertyToTemplate(propModalFromPicker, def.key); setPropModalFromPicker(null); rerender(); },
           onCancel:() => setPropModalFromPicker(null),
-        })}
+        })
+      );
+    }
 
-        <div className="card" style={{padding:0}}>
-          <div style={{padding:'16px 20px',display:'flex',justifyContent:'space-between',alignItems:'center',gap:8}}>
-            <div className="card-title">{resolveI18n({en:'Entity Templates',nl:'Entiteit Templates'},lang)} ({allTemplates.length})</div>
-            <div style={{display:'flex',gap:6,alignItems:'center'}}>
-              {React.createElement(ImportExportButtons, {lang, onExport:handleTemplateExport, onImport:handleTemplateImport})}
-              <button className="header-btn primary" onClick={()=>setCreatingTmpl(true)}>+ {resolveI18n({en:'New Template',nl:'Nieuw Template'},lang)}</button>
-            </div>
-          </div>
-          <table className="data-table">
-            <thead><tr>
-              <th>{resolveI18n({en:'Name',nl:'Naam'},lang)}</th>
-              <th>{resolveI18n({en:'Entity Type',nl:'Entiteitstype'},lang)}</th>
-              <th>{resolveI18n({en:'Type Key',nl:'Type Sleutel'},lang)}</th>
-              <th>{resolveI18n({en:'Properties',nl:'Eigenschappen'},lang)}</th>
-              <th>{resolveI18n({en:'Status',nl:'Status'},lang)}</th>
-              <th>{resolveI18n({en:'Version',nl:'Versie'},lang)}</th>
-              <th>{resolveI18n({en:'Actions',nl:'Acties'},lang)}</th>
-            </tr></thead>
-            <tbody>{allTemplates.map(tmpl=>{
-              const tmplKey = `${tmpl.entity_type}:${tmpl.type_key||'default'}`;
-              const isExpanded = expandedTmpl === tmplKey;
-              const resolved = EntityTemplateStore.resolveTemplate(tmpl.entity_type, tmpl.type_key);
-              const etReg = ENTITY_TYPE_REGISTRY[tmpl.entity_type];
-              return React.createElement(React.Fragment,{key:tmplKey},
-                <tr style={{cursor:'pointer',background:isExpanded?'var(--brand-bg)':'transparent'}} onClick={()=>setExpandedTmpl(isExpanded?null:tmplKey)}>
-                  <td style={{fontWeight:500}}>
-                    <span style={{marginRight:6,color:etReg?.color||'var(--text-tertiary)'}}>{React.createElement(window[tmpl.icon]||BlockOutlined,{style:{fontSize:14}})}</span>
-                    {tmpl.name}
-                  </td>
-                  <td><span style={{fontSize:11,color:etReg?.color||'var(--text-tertiary)'}}>{resolveI18n(etReg?.label,lang)||tmpl.entity_type}</span></td>
-                  <td style={{fontFamily:'monospace',fontSize:11,color:'var(--text-tertiary)'}}>{tmpl.type_key||'default'}</td>
-                  <td>{(tmpl.properties||[]).length}</td>
-                  <td>{React.createElement(Tag,{color:lifecycleColor(tmpl.lifecycle_status),style:{margin:0,fontSize:10}},lifecycleI18n(tmpl.lifecycle_status||'active'))}</td>
-                  <td style={{color:'var(--text-tertiary)'}}>v{tmpl.version||1}</td>
-                  <td onClick={e=>e.stopPropagation()} style={{display:'flex',gap:4}}>
-                    <button className="header-btn" style={{padding:'2px 8px',fontSize:11}} onClick={()=>setExpandedTmpl(isExpanded?null:tmplKey)}>{React.createElement(EditOutlined,{style:{fontSize:11}})}</button>
-                    <button className="header-btn" style={{padding:'2px 8px',fontSize:11,color:'var(--error)',borderColor:'var(--error)'}} onClick={()=>handleDeleteTemplate(tmpl)}>{React.createElement(DeleteOutlined,{style:{fontSize:11}})}</button>
-                  </td>
-                </tr>,
-                isExpanded && <tr key={tmplKey+'-detail'}><td colSpan={7} style={{padding:0,background:'var(--bg-secondary)'}}>
-                  <div style={{padding:16,display:'grid',gap:16}}>
-                    {/* ── General section ── */}
-                    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:12}}>
-                      <div>
-                        <div style={{fontSize:10,fontWeight:600,color:'var(--text-tertiary)',textTransform:'uppercase',marginBottom:4}}>{resolveI18n({en:'Entity Type',nl:'Entiteitstype'},lang)}</div>
-                        <div style={{fontSize:12,color:'var(--text-primary)'}}>{resolveI18n(etReg?.label,lang)||tmpl.entity_type}</div>
-                      </div>
-                      <div>
-                        <div style={{fontSize:10,fontWeight:600,color:'var(--text-tertiary)',textTransform:'uppercase',marginBottom:4}}>{resolveI18n({en:'Description',nl:'Beschrijving'},lang)}</div>
-                        <div style={{fontSize:12,color:'var(--text-secondary)'}}>{tmpl.description ? (typeof tmpl.description === 'object' ? resolveI18n(tmpl.description,lang) : tmpl.description) : resolveI18n({en:'No description',nl:'Geen beschrijving'},lang)}</div>
-                      </div>
-                      <div>
-                        <div style={{fontSize:10,fontWeight:600,color:'var(--text-tertiary)',textTransform:'uppercase',marginBottom:4}}>{resolveI18n({en:'Icon',nl:'Icoon'},lang)}</div>
-                        <div style={{fontSize:12,color:'var(--text-primary)',display:'flex',alignItems:'center',gap:6}}>
-                          {React.createElement(window[tmpl.icon]||BlockOutlined,{style:{fontSize:16,color:etReg?.color}})}
-                          <span style={{fontFamily:'monospace',fontSize:11,color:'var(--text-tertiary)'}}>{tmpl.icon}</span>
-                        </div>
-                      </div>
-                    </div>
+    // ── Form Groups tab ──
+    if (tabKey === 'formGroups') {
+      return React.createElement('div', {style:{padding:'12px 0',display:'grid',gap:6}},
+        (resolved?.form_groups||[]).map(fg => {
+          const isInherited = fg.inherited;
+          return React.createElement('div', {key:fg.key, className:isInherited?'ds-inherited':'',
+            style:{padding:'8px 12px',background:'var(--bg-secondary)',borderRadius:6,border:'1px solid var(--border)'}},
+            React.createElement('div', {style:{display:'flex',alignItems:'center',gap:6,marginBottom:4}},
+              fg.icon && React.createElement(window[fg.icon]||SettingOutlined,{style:{fontSize:12,color:'var(--text-tertiary)'}}),
+              React.createElement('span', {style:{fontSize:11,fontWeight:600,color:'var(--text-primary)'}}, resolveI18n(fg.label,lang)||fg.key),
+              React.createElement('span', {style:{fontSize:10,color:'var(--text-tertiary)',fontFamily:'monospace'}}, fg.key),
+              fg.from_group && React.createElement('span', {style:{fontSize:8,padding:'1px 5px',borderRadius:6,background:'var(--brand-bg)',color:'var(--brand)'}}, 'from:'+fg.from_group),
+              isInherited && React.createElement('span', {className:'ds-inherited-badge'}, resolveI18n({en:'inherited',nl:'overgenomen'},lang))
+            ),
+            React.createElement('div', {style:{display:'flex',flexWrap:'wrap',gap:3}},
+              (fg.resolvedProperties||fg.property_keys||[]).map(pk => {
+                const key = typeof pk === 'object' ? (pk.property_key||pk.key) : pk;
+                return React.createElement('span', {key, style:{padding:'1px 6px',borderRadius:3,fontSize:9,background:'var(--brand-bg)',color:'var(--brand)',fontFamily:'monospace'}}, key);
+              })
+            )
+          );
+        }),
+        (resolved?.form_groups||[]).length===0 && React.createElement('div',{style:{fontSize:11,color:'var(--text-tertiary)',fontStyle:'italic',padding:8}},resolveI18n({en:'No form groups defined',nl:'Geen formuliergroepen gedefinieerd'},lang))
+      );
+    }
 
-                    {/* ── Lifecycle controls ── */}
-                    <div style={{padding:'10px 14px',background:'var(--bg-card)',borderRadius:8,border:'1px solid var(--border)',display:'flex',alignItems:'center',gap:12,flexWrap:'wrap'}}>
-                      <span style={{fontSize:11,fontWeight:600,color:'var(--text-secondary)'}}>{resolveI18n({en:'Lifecycle',nl:'Levenscyclus'},lang)}:</span>
-                      {React.createElement(Tag,{color:lifecycleColor(tmpl.lifecycle_status),style:{fontSize:11,fontWeight:600}},lifecycleI18n(tmpl.lifecycle_status||'active'))}
-                      <span style={{fontSize:11,color:'var(--text-tertiary)'}}>v{tmpl.version||1}</span>
-                      <div style={{flex:1}}/>
-                      {(tmpl.lifecycle_status==='draft'||!tmpl.lifecycle_status) && (
-                        <button className="header-btn" style={{fontSize:11,color:'var(--success)',borderColor:'var(--success)'}}
-                          onClick={()=>handleLifecycleTransition(tmpl,'active')}>
-                          {React.createElement(CheckCircleFilled,{style:{fontSize:10,marginRight:4}})}
-                          {resolveI18n({en:'Activate',nl:'Activeren'},lang)}
-                        </button>
-                      )}
-                      {tmpl.lifecycle_status==='active' && (
-                        <button className="header-btn" style={{fontSize:11,color:'var(--warning)',borderColor:'var(--warning)'}}
-                          onClick={()=>handleLifecycleTransition(tmpl,'deprecated')}>
-                          {React.createElement(WarningOutlined,{style:{fontSize:10,marginRight:4}})}
-                          {resolveI18n({en:'Deprecate',nl:'Verouderen'},lang)}
-                        </button>
-                      )}
-                      {tmpl.lifecycle_status==='deprecated' && (
-                        <button className="header-btn" style={{fontSize:11,color:'var(--error)',borderColor:'var(--error)'}}
-                          onClick={()=>handleLifecycleTransition(tmpl,'archived')}>
-                          {React.createElement(StopOutlined,{style:{fontSize:10,marginRight:4}})}
-                          {resolveI18n({en:'Archive',nl:'Archiveren'},lang)}
-                        </button>
-                      )}
-                      {tmpl.lifecycle_status!=='draft' && tmpl.lifecycle_status && (
-                        <button className="header-btn" style={{fontSize:11,color:'var(--info)',borderColor:'var(--info)'}}
-                          onClick={()=>handleLifecycleTransition(tmpl,'draft')}>
-                          {React.createElement(RollbackOutlined,{style:{fontSize:10,marginRight:4}})}
-                          {resolveI18n({en:'Rollback to Draft',nl:'Terugzetten naar Concept'},lang)}
-                        </button>
-                      )}
-                    </div>
+    // ── Columns tab ──
+    if (tabKey === 'columns') {
+      return React.createElement('div', {style:{padding:'12px 0'}},
+        React.createElement('div', {style:{display:'flex',gap:6,flexWrap:'wrap'}},
+          (resolved?.columns||[]).map(col => (
+            React.createElement('span', {key:col.property_key, style:{padding:'3px 8px',borderRadius:4,fontSize:10,background:'var(--bg-secondary)',border:'1px solid var(--border)',display:'flex',gap:4}},
+              React.createElement('span', {style:{fontFamily:'monospace',color:'var(--text-primary)'}}, col.property_key),
+              col.sortable && React.createElement('span', {style:{color:'var(--info)',fontSize:8}}, React.createElement(SortAscendingOutlined)),
+              col.filterable && React.createElement('span', {style:{color:'var(--warning)',fontSize:8}}, React.createElement(FilterOutlined))
+            )
+          )),
+          (resolved?.columns||[]).length===0 && React.createElement('span',{style:{fontSize:11,color:'var(--text-tertiary)',fontStyle:'italic'}},resolveI18n({en:'No columns defined',nl:'Geen kolommen gedefinieerd'},lang))
+        )
+      );
+    }
 
-                    {/* ── Properties section with autocomplete picker ── */}
-                    <div>
-                      <div style={{fontSize:11,fontWeight:600,color:'var(--text-primary)',marginBottom:6}}>{resolveI18n({en:'Properties',nl:'Eigenschappen'},lang)} ({(tmpl.properties||[]).length})</div>
-                      <div style={{display:'flex',flexWrap:'wrap',gap:4,marginBottom:8}}>
-                        {(resolved?.resolved?.properties||[]).map(p => (
-                          <span key={p.property_key||p.key} style={{padding:'3px 8px',borderRadius:4,fontSize:10,background:'var(--bg-card)',border:'1px solid var(--border)',
-                            display:'flex',alignItems:'center',gap:4}}>
-                            <span style={{fontFamily:'monospace',color:'var(--brand)'}}>{p.property_key||p.key}</span>
-                            <span style={{color:'var(--text-tertiary)'}}>({p.group_key})</span>
-                            {p.is_required && <span style={{color:'var(--error)',fontSize:9}}>*</span>}
-                            <span style={{cursor:'pointer',color:'var(--text-tertiary)',fontSize:9,marginLeft:2,lineHeight:1}}
-                              onClick={(e)=>{e.stopPropagation();removePropertyFromTemplate(tmpl,p.property_key||p.key)}}
-                              title={resolveI18n({en:'Remove property',nl:'Eigenschap verwijderen'},lang)}>&times;</span>
-                          </span>
-                        ))}
-                        {(tmpl.properties||[]).length===0 && <span style={{fontSize:11,color:'var(--text-tertiary)',fontStyle:'italic'}}>{resolveI18n({en:'No properties defined',nl:'Geen eigenschappen gedefinieerd'},lang)}</span>}
-                      </div>
-                      {/* Autocomplete property picker */}
-                      {React.createElement(Select, {
-                        size:'small', style:{width:280},
-                        showSearch:true, filterOption:(input,option) => (option?.label||'').toLowerCase().includes(input.toLowerCase()),
-                        placeholder:resolveI18n({en:'Add property...',nl:'Eigenschap toevoegen...'},lang),
-                        value:undefined,
-                        onChange:(val) => {
-                          if (val === '__create_new__') { setPropModalFromPicker(tmpl); }
-                          else { addPropertyToTemplate(tmpl, val); }
-                        },
-                        options:[
-                          ...allDefs
-                            .filter(d => !(tmpl.properties||[]).some(p => p.property_key === d.key))
-                            .map(d => ({value:d.key, label:`${d.key} — ${resolveI18n(d.i18n,lang)||d.name} (${d.group_key})`})),
-                          {value:'__divider__', label:'───────────', disabled:true},
-                          {value:'__create_new__', label:resolveI18n({en:'+ Create new property',nl:'+ Nieuwe eigenschap'},lang)},
-                        ],
-                      })}
-                    </div>
+    // ── Tabs tab ──
+    if (tabKey === 'tabs') {
+      return React.createElement('div', {style:{padding:'12px 0'}},
+        React.createElement('div', {style:{display:'flex',gap:4,flexWrap:'wrap',marginBottom:12}},
+          (resolved?.detail_tabs||[]).map(dt => (
+            React.createElement('span', {key:dt.key, style:{padding:'4px 10px',borderRadius:4,fontSize:11,cursor:'default',
+              background:dt.type==='overview'?'var(--brand-bg)':dt.type==='children'?'var(--success-bg)':'var(--bg-secondary)',
+              border:'1px solid var(--border)',color:dt.type==='overview'?'var(--brand)':dt.type==='children'?'var(--success)':'var(--text-secondary)'}},
+              resolveI18n(dt.label,lang)||dt.key,
+              React.createElement('span', {style:{marginLeft:4,fontSize:8,color:'var(--text-tertiary)'}}, dt.type)
+            )
+          ))
+        ),
+        (resolved?.detail_tabs||[]).length===0 && React.createElement('div',{style:{fontSize:11,color:'var(--text-tertiary)',fontStyle:'italic'}},resolveI18n({en:'No tabs defined',nl:'Geen tabs gedefinieerd'},lang))
+      );
+    }
 
-                    {/* ── Form Groups section ── */}
-                    <div>
-                      <div style={{fontSize:11,fontWeight:600,color:'var(--text-primary)',marginBottom:6}}>{resolveI18n({en:'Form Groups',nl:'Formuliergroepen'},lang)} ({(tmpl.form_groups||[]).length})</div>
-                      <div style={{display:'grid',gap:6}}>
-                        {(tmpl.form_groups||[]).map(fg => (
-                          <div key={fg.key} style={{padding:'8px 12px',background:'var(--bg-card)',borderRadius:6,border:'1px solid var(--border)'}}>
-                            <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:4}}>
-                              {fg.icon && React.createElement(window[fg.icon]||SettingOutlined,{style:{fontSize:12,color:'var(--text-tertiary)'}})}
-                              <span style={{fontSize:11,fontWeight:600,color:'var(--text-primary)'}}>{resolveI18n(fg.label,lang)||fg.key}</span>
-                              <span style={{fontSize:10,color:'var(--text-tertiary)',fontFamily:'monospace'}}>{fg.key}</span>
-                            </div>
-                            <div style={{display:'flex',flexWrap:'wrap',gap:3}}>
-                              {(fg.property_keys||[]).map(pk => (
-                                <span key={pk} style={{padding:'1px 6px',borderRadius:3,fontSize:9,background:'var(--brand-bg)',color:'var(--brand)',fontFamily:'monospace'}}>{pk}</span>
-                              ))}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
+    // ── Overview Layout tab ──
+    if (tabKey === 'overview') {
+      const ov = tmpl.overview;
+      if (!ov) return React.createElement('div',{style:{fontSize:11,color:'var(--text-tertiary)',fontStyle:'italic',padding:12}},resolveI18n({en:'No overview layout defined',nl:'Geen overzicht layout gedefinieerd'},lang));
+      const dummyEnt = generateDummyEntity(entityType, resolved);
+      return React.createElement('div', {style:{padding:'12px 0',display:'grid',gap:12}},
+        React.createElement('div', {style:{display:'flex',gap:12,flexWrap:'wrap',fontSize:10,color:'var(--text-tertiary)',padding:'6px 12px',background:'var(--bg-secondary)',borderRadius:6,border:'1px solid var(--border)'}},
+          React.createElement('span',null,resolveI18n({en:'Properties',nl:'Eigenschappen'},lang),': ',(ov.properties||[]).length),
+          React.createElement('span',null,resolveI18n({en:'KPIs',nl:'KPIs'},lang),': ',(ov.kpis||[]).length),
+          React.createElement('span',null,resolveI18n({en:'Map',nl:'Kaart'},lang),': ',ov.show_map?'Yes':'No'),
+          React.createElement('span',null,resolveI18n({en:'Alarms',nl:'Alarmen'},lang),': ',ov.show_alarms?'Yes':'No')
+        ),
+        dummyEnt && React.createElement(BaseOverviewMFE, { entity: dummyEnt, lang })
+      );
+    }
 
-                    {/* ── Columns section ── */}
-                    <div>
-                      <div style={{fontSize:11,fontWeight:600,color:'var(--text-primary)',marginBottom:6}}>{resolveI18n({en:'List Columns',nl:'Lijstkolommen'},lang)} ({(tmpl.columns||[]).length})</div>
-                      <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
-                        {(tmpl.columns||[]).map(col => (
-                          <span key={col.property_key} style={{padding:'3px 8px',borderRadius:4,fontSize:10,background:'var(--bg-card)',border:'1px solid var(--border)',display:'flex',gap:4}}>
-                            <span style={{fontFamily:'monospace',color:'var(--text-primary)'}}>{col.property_key}</span>
-                            {col.sortable && <span style={{color:'var(--info)',fontSize:8}}>{React.createElement(SortAscendingOutlined)}</span>}
-                            {col.filterable && <span style={{color:'var(--warning)',fontSize:8}}>{React.createElement(FilterOutlined)}</span>}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
+    // ── Relationships tab ──
+    if (tabKey === 'relations') {
+      const childTypes = tmpl.children_types || [];
+      const availableTypes = Object.keys(ENTITY_TYPE_REGISTRY).filter(et => !childTypes.some(ct => ct.entity_type === et));
+      return React.createElement('div', {style:{padding:'12px 0'}},
+        React.createElement('div', {style:{display:'flex',flexWrap:'wrap',gap:4,marginBottom:8}},
+          childTypes.length === 0
+            ? React.createElement('span', {style:{fontSize:11,color:'var(--text-tertiary)',fontStyle:'italic'}},
+                resolveI18n({en:'No child types allowed (leaf entity)',nl:'Geen kindtypen toegestaan (bladentiteit)'},lang))
+            : childTypes.map(ct => {
+                const ctReg = ENTITY_TYPE_REGISTRY[ct.entity_type];
+                const CtIcon = window[ctReg?.icon] || BlockOutlined;
+                return React.createElement('span', {key:ct.entity_type, style:{padding:'3px 8px',borderRadius:4,fontSize:10,
+                  background:'var(--bg-secondary)',border:'1px solid var(--border)',display:'flex',alignItems:'center',gap:4}},
+                  React.createElement(CtIcon, {style:{fontSize:11,color:ctReg?.color||'var(--text-tertiary)'}}),
+                  React.createElement('span', {style:{color:'var(--text-primary)'}}, resolveI18n(ctReg?.label,lang)||ct.entity_type),
+                  React.createElement('span', {style:{cursor:'pointer',color:'var(--text-tertiary)',fontSize:9,marginLeft:2,lineHeight:1},
+                    title:resolveI18n({en:'Remove relationship',nl:'Relatie verwijderen'},lang),
+                    onClick:() => {
+                      const updated = {...tmpl, children_types: (tmpl.children_types||[]).filter(c => c.entity_type !== ct.entity_type)};
+                      EntityTemplateStore.putTemplate(updated);
+                      rerender();
+                    }}, '\u00d7')
+                );
+              })
+        ),
+        availableTypes.length > 0 && React.createElement(Select, {
+          size:'small', style:{width:220},
+          showSearch:true, filterOption:(input,option) => (option?.label||'').toLowerCase().includes(input.toLowerCase()),
+          placeholder:resolveI18n({en:'Add child type...',nl:'Kindtype toevoegen...'},lang),
+          value:undefined,
+          onChange:(val) => {
+            const updated = {...tmpl, children_types: [...(tmpl.children_types||[]), {entity_type:val}]};
+            EntityTemplateStore.putTemplate(updated);
+            rerender();
+          },
+          options:availableTypes.map(et => {
+            const etR = ENTITY_TYPE_REGISTRY[et];
+            return {value:et, label:resolveI18n(etR?.label,lang)||et};
+          }),
+        })
+      );
+    }
 
-                    {/* ── Detail Tabs section ── */}
-                    <div>
-                      <div style={{fontSize:11,fontWeight:600,color:'var(--text-primary)',marginBottom:6}}>{resolveI18n({en:'Detail Tabs',nl:'Detail Tabbladen'},lang)} ({(tmpl.detail_tabs||[]).length})</div>
-                      <div style={{display:'flex',gap:4,flexWrap:'wrap'}}>
-                        {(tmpl.detail_tabs||[]).map(dt => (
-                          <span key={dt.key} style={{padding:'3px 8px',borderRadius:4,fontSize:10,
-                            background:dt.type==='overview'?'var(--brand-bg)':dt.type==='children'?'var(--success-bg)':'var(--bg-card)',
-                            border:'1px solid var(--border)',color:dt.type==='overview'?'var(--brand)':dt.type==='children'?'var(--success)':'var(--text-secondary)'}}>
-                            {resolveI18n(dt.label,lang)||dt.key}
-                            <span style={{marginLeft:4,fontSize:8,color:'var(--text-tertiary)'}}>{dt.type}</span>
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* ── Overview Layout summary ── */}
-                    {tmpl.overview && (
-                      <div>
-                        <div style={{fontSize:11,fontWeight:600,color:'var(--text-primary)',marginBottom:6}}>{resolveI18n({en:'Overview Layout',nl:'Overzicht Layout'},lang)}</div>
-                        <div style={{display:'flex',gap:12,flexWrap:'wrap',fontSize:10,color:'var(--text-tertiary)'}}>
-                          <span>{resolveI18n({en:'Properties',nl:'Eigenschappen'},lang)}: {(tmpl.overview.properties||[]).length}</span>
-                          <span>{resolveI18n({en:'KPIs',nl:'KPIs'},lang)}: {(tmpl.overview.kpis||[]).length}</span>
-                          <span>{resolveI18n({en:'Map',nl:'Kaart'},lang)}: {tmpl.overview.show_map?'Yes':'No'}</span>
-                          <span>{resolveI18n({en:'Alarms',nl:'Alarmen'},lang)}: {tmpl.overview.show_alarms?'Yes':'No'}</span>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* ── Relationships section ── */}
-                    {(() => {
-                      const childTypes = tmpl.children_types || [];
-                      const availableTypes = Object.keys(ENTITY_TYPE_REGISTRY).filter(et => !childTypes.some(ct => ct.entity_type === et));
-                      return React.createElement('div', null,
-                        React.createElement('div', {style:{fontSize:11,fontWeight:600,color:'var(--text-primary)',marginBottom:6}},
-                          resolveI18n({en:'Relationships',nl:'Relaties'},lang), ' (', childTypes.length, ')'
-                        ),
-                        React.createElement('div', {style:{display:'flex',flexWrap:'wrap',gap:4,marginBottom:8}},
-                          childTypes.length === 0
-                            ? React.createElement('span', {style:{fontSize:11,color:'var(--text-tertiary)',fontStyle:'italic'}},
-                                resolveI18n({en:'No child types allowed (leaf entity)',nl:'Geen kindtypen toegestaan (bladentiteit)'},lang))
-                            : childTypes.map(ct => {
-                                const ctReg = ENTITY_TYPE_REGISTRY[ct.entity_type];
-                                const CtIcon = window[ctReg?.icon] || BlockOutlined;
-                                return React.createElement('span', {key:ct.entity_type, style:{padding:'3px 8px',borderRadius:4,fontSize:10,
-                                  background:'var(--bg-card)',border:'1px solid var(--border)',display:'flex',alignItems:'center',gap:4}},
-                                  React.createElement(CtIcon, {style:{fontSize:11,color:ctReg?.color||'var(--text-tertiary)'}}),
-                                  React.createElement('span', {style:{color:'var(--text-primary)'}}, resolveI18n(ctReg?.label,lang)||ct.entity_type),
-                                  React.createElement('span', {style:{cursor:'pointer',color:'var(--text-tertiary)',fontSize:9,marginLeft:2,lineHeight:1},
-                                    title:resolveI18n({en:'Remove relationship',nl:'Relatie verwijderen'},lang),
-                                    onClick:(e) => {
-                                      e.stopPropagation();
-                                      const updated = {...tmpl, children_types: (tmpl.children_types||[]).filter(c => c.entity_type !== ct.entity_type)};
-                                      EntityTemplateStore.putTemplate(updated);
-                                      rerender();
-                                    }}, '\u00d7')
-                                );
-                              })
-                        ),
-                        availableTypes.length > 0 && React.createElement(Select, {
-                          size:'small', style:{width:220},
-                          showSearch:true, filterOption:(input,option) => (option?.label||'').toLowerCase().includes(input.toLowerCase()),
-                          placeholder:resolveI18n({en:'Add child type...',nl:'Kindtype toevoegen...'},lang),
-                          value:undefined,
-                          onChange:(val) => {
-                            const updated = {...tmpl, children_types: [...(tmpl.children_types||[]), {entity_type:val}]};
-                            EntityTemplateStore.putTemplate(updated);
-                            rerender();
-                          },
-                          options:availableTypes.map(et => {
-                            const etR = ENTITY_TYPE_REGISTRY[et];
-                            return {value:et, label:resolveI18n(etR?.label,lang)||et};
-                          }),
-                        })
-                      );
-                    })()}
-
-                    {/* ── Version History section ── */}
-                    {(() => {
-                      const versions = EntityTemplateStore.getVersions(tmpl.entity_type, tmpl.type_key);
-                      const [showAllVersions, setShowAllVers] = [false, (v) => {}]; // static — use state from parent
-                      const displayVersions = versions.slice().reverse();
-                      const visibleVersions = displayVersions.slice(0, 5);
-                      const hasMore = displayVersions.length > 5;
-                      return React.createElement('div', {style:{padding:'10px 14px',background:'var(--bg-card)',borderRadius:8,border:'1px solid var(--border)'}},
-                        React.createElement('div', {style:{fontSize:11,fontWeight:600,color:'var(--text-secondary)',marginBottom:versions.length > 0 ? 8 : 0,display:'flex',alignItems:'center',gap:6}},
-                          React.createElement(HistoryOutlined, {style:{fontSize:12}}),
-                          resolveI18n({en:'Version History',nl:'Versiegeschiedenis'},lang),
-                          React.createElement('span', {style:{fontSize:10,color:'var(--text-tertiary)',fontWeight:400}}, '(' + versions.length + ')')
-                        ),
-                        versions.length === 0
-                          ? React.createElement('div', {style:{fontSize:11,color:'var(--text-tertiary)',fontStyle:'italic'}},
-                              resolveI18n({en:'No previous versions',nl:'Geen eerdere versies'},lang))
-                          : React.createElement('div', {style:{display:'grid',gap:4}},
-                              visibleVersions.map((ver, idx) => {
-                                const realIdx = versions.length - 1 - idx;
-                                return React.createElement('div', {key:idx, style:{display:'flex',alignItems:'center',gap:8,padding:'4px 8px',
-                                  borderRadius:4,background:'var(--bg-secondary)',border:'1px solid var(--border)',fontSize:11}},
-                                  React.createElement('span', {style:{fontWeight:600,color:'var(--brand)',minWidth:28}}, 'v' + (ver.version||1)),
-                                  React.createElement('span', {style:{color:'var(--text-tertiary)',fontSize:10,flex:1}},
-                                    ver._savedAt ? new Date(ver._savedAt).toLocaleString() : '—'),
-                                  React.createElement('button', {className:'header-btn',
-                                    style:{padding:'1px 8px',fontSize:10,color:'var(--info)',borderColor:'var(--info)'},
-                                    onClick:(e) => {
-                                      e.stopPropagation();
-                                      EntityTemplateStore.rollback(tmpl.entity_type, tmpl.type_key, realIdx);
-                                      rerender();
-                                    }},
-                                    React.createElement(RollbackOutlined, {style:{fontSize:9,marginRight:3}}),
-                                    resolveI18n({en:'Rollback',nl:'Terugzetten'},lang)
-                                  )
-                                );
-                              }),
-                              hasMore && React.createElement('div', {style:{fontSize:10,color:'var(--brand)',cursor:'pointer',padding:'2px 8px'},
-                                onClick:(e) => { e.stopPropagation(); }},
-                                resolveI18n({en:`Show all ${displayVersions.length} versions`,nl:`Toon alle ${displayVersions.length} versies`},lang)
-                              )
-                            )
-                      );
-                    })()}
-
-                    {/* ── JSON Source (live-updating) ── */}
-                    {React.createElement(CodeViewer, {
-                      value: resolved || tmpl,
-                      title: {en:'JSON Source',nl:'JSON Bron'},
-                      collapsible: true,
-                      lang,
-                    })}
-                  </div>
-                </td></tr>
+    // ── Subtypes tab ──
+    if (tabKey === 'subtypes') {
+      const subtypes = EntityTemplateStore.getTemplates().filter(t => t.extends_key === `${entityType}:default`);
+      return React.createElement('div', {style:{padding:'12px 0',display:'grid',gap:8}},
+        subtypes.length === 0
+          ? React.createElement('div',{style:{fontSize:11,color:'var(--text-tertiary)',fontStyle:'italic'}},resolveI18n({en:'No subtypes defined',nl:'Geen subtypes gedefinieerd'},lang))
+          : subtypes.map(st => {
+              const stRes = EntityTemplateStore.resolveTemplate(st.entity_type, st.type_key);
+              return React.createElement('div', {key:`${st.entity_type}:${st.type_key}`,
+                style:{padding:'10px 14px',background:'var(--bg-secondary)',borderRadius:8,border:'1px solid var(--border)',display:'flex',alignItems:'center',gap:8,cursor:'pointer'},
+                onClick:()=>{ setSelectedNode({type:'subtype', entityType:st.entity_type, typeKey:st.type_key}); setEntityDetailTab('general'); }
+              },
+                React.createElement(window[st.icon]||BlockOutlined,{style:{fontSize:14}}),
+                React.createElement('span', {style:{fontWeight:600,fontSize:12,color:'var(--text-primary)'}}, st.name),
+                React.createElement('span', {style:{fontSize:10,fontFamily:'monospace',color:'var(--text-tertiary)'}}, st.type_key),
+                React.createElement(Tag,{color:lifecycleColor(st.lifecycle_status),style:{margin:0,fontSize:9}},lifecycleI18n(st.lifecycle_status||'draft')),
+                React.createElement('span', {style:{fontSize:10,color:'var(--text-tertiary)',marginLeft:'auto'}}, '+'+(st.properties||[]).length+' '+resolveI18n({en:'props',nl:'eig.'},lang))
               );
-            })}</tbody>
-          </table>
-        </div>
-      </div>
-    );
+            }),
+        React.createElement('button', {className:'header-btn primary', style:{justifySelf:'start',marginTop:4},
+          onClick:()=>setCreatingTmpl(true)}, '+ '+resolveI18n({en:'New Subtype',nl:'Nieuw Subtype'},lang))
+      );
+    }
 
-    // ════════ PROPERTIES ════════
-    if (activeSection === 'properties') return (
-      <PropertyCatalogTab entity={null} lang={lang} onOpenModal={null}/>
-    );
+    // ── Instances tab ──
+    if (tabKey === 'instances') {
+      const instances = EntityStore.getByType(entityType);
+      const instanceCols = [
+        { key:'name', label:{en:'Name',nl:'Naam'}, sortable:true, render:(_,r) => React.createElement('span',{style:{fontWeight:500}},r.name) },
+        { key:'status', label:{en:'Status',nl:'Status'}, getValue:r => r.state?.status },
+        { key:'id', label:{en:'ID',nl:'ID'}, render:(_,r) => React.createElement('span',{style:{fontFamily:'monospace',fontSize:10,color:'var(--text-tertiary)'}},r.id) },
+      ];
+      return React.createElement('div', {style:{padding:'12px 0'}},
+        React.createElement(EntityList, {
+          columns: instanceCols,
+          dataSource: instances,
+          rowKey: 'id',
+          lang,
+          title: resolveI18n(etReg?.label,lang)||entityType,
+          searchable: true,
+          emptyIcon: React.createElement(InboxOutlined),
+          emptyText: {en:'No instances',nl:'Geen instanties'},
+        })
+      );
+    }
 
-    // ════════ OVERVIEW ════════
-    if (activeSection === 'overview') {
+    return null;
+  }
+
+  // ── Block Detail (Phase 4: form block content) ──
+  function renderBlockDetail(groupKey) {
+    const group = PropertyCatalogStore.getGroup(groupKey);
+    const props = PropertyCatalogStore.getByGroup(groupKey);
+    const usageCount = allTemplates.filter(t => (t.form_groups||[]).some(fg => fg.from_group === groupKey)).length;
+    return React.createElement('div', {style:{padding:16,display:'grid',gap:12}},
+      React.createElement('div', {style:{display:'flex',gap:12,flexWrap:'wrap',fontSize:11,color:'var(--text-tertiary)'}},
+        React.createElement('span',null,resolveI18n({en:'Properties',nl:'Eigenschappen'},lang),': ',props.length),
+        React.createElement('span',null,resolveI18n({en:'Used by',nl:'Gebruikt door'},lang),': ',usageCount,' ',resolveI18n({en:'templates',nl:'templates'},lang))
+      ),
+      React.createElement('div', {style:{display:'grid',gap:4}},
+        props.map(p => React.createElement('div', {key:p.key, style:{padding:'6px 10px',background:'var(--bg-secondary)',borderRadius:6,border:'1px solid var(--border)',
+          display:'flex',alignItems:'center',gap:8,fontSize:11}},
+          React.createElement('span', {style:{fontFamily:'monospace',color:'var(--brand)',fontWeight:600,minWidth:120}}, p.key),
+          React.createElement('span', {style:{color:'var(--text-primary)'}}, resolveI18n(p.i18n,lang)||p.name),
+          React.createElement('span', {style:{color:'var(--text-tertiary)',fontSize:10}}, p.data_type),
+          p.is_required && React.createElement('span', {style:{color:'var(--error)',fontSize:9}}, '*')
+        ))
+      )
+    );
+  }
+
+  // ── Property Group Detail ──
+  function renderPropertyGroupDetail(groupKey) {
+    const groupProps = PropertyCatalogStore.getByGroup(groupKey);
+    const group = PropertyCatalogStore.getGroup(groupKey);
+    return React.createElement('div', {style:{padding:16,display:'grid',gap:8}},
+      React.createElement('div', {style:{fontSize:11,color:'var(--text-tertiary)',marginBottom:4}},
+        resolveI18n({en:'Group',nl:'Groep'},lang),': ',resolveI18n(group?.i18n,lang)||group?.name||groupKey,' \u2014 ',groupProps.length,' ',resolveI18n({en:'properties',nl:'eigenschappen'},lang)
+      ),
+      groupProps.map(p => React.createElement('div', {key:p.key, style:{padding:'8px 12px',background:'var(--bg-secondary)',borderRadius:6,border:'1px solid var(--border)',
+        display:'flex',alignItems:'center',gap:10,fontSize:11}},
+        React.createElement('span', {style:{fontFamily:'monospace',color:'var(--brand)',fontWeight:600,minWidth:140}}, p.key),
+        React.createElement('span', {style:{color:'var(--text-primary)',flex:1}}, resolveI18n(p.i18n,lang)||p.name),
+        React.createElement('span', {style:{color:'var(--text-tertiary)',fontSize:10,background:'var(--bg-card)',padding:'1px 6px',borderRadius:4}}, p.data_type),
+        p.is_required && React.createElement('span', {style:{color:'var(--error)',fontSize:9,fontWeight:600}}, resolveI18n({en:'required',nl:'verplicht'},lang)),
+        p.is_readonly && React.createElement('span', {style:{color:'var(--text-tertiary)',fontSize:9}}, resolveI18n({en:'readonly',nl:'alleen-lezen'},lang))
+      )),
+      groupProps.length === 0 && React.createElement('div',{style:{fontSize:11,color:'var(--text-tertiary)',fontStyle:'italic'}},resolveI18n({en:'No properties in this group',nl:'Geen eigenschappen in deze groep'},lang))
+    );
+  }
+
+  // ── Code Panel (Phase 4e) ──
+  function renderCodePanel() {
+    if (selectedNode.type === 'entity' || selectedNode.type === 'subtype') {
+      const resolved = EntityTemplateStore.resolveTemplate(selectedNode.entityType, selectedNode.typeKey);
+      return React.createElement(CodeViewer, { value:resolved, title:{en:'Resolved Template',nl:'Opgelost Template'}, lang, collapsible:false });
+    }
+    if (selectedNode.type === 'block') {
+      const props = PropertyCatalogStore.getByGroup(selectedNode.groupKey);
+      return React.createElement(CodeViewer, { value:props, title:{en:'Block Properties',nl:'Blok Eigenschappen'}, lang, collapsible:false });
+    }
+    if (selectedNode.type === 'propGroup') {
+      const props = PropertyCatalogStore.getByGroup(selectedNode.groupKey);
+      return React.createElement(CodeViewer, { value:props, title:{en:'Property Group',nl:'Eigenschap Groep'}, lang, collapsible:false });
+    }
+    return null;
+  }
+
+  // ── Overview Dashboard (existing, reused) ──
+  function renderOverviewDashboard() {
       const activeTmplCount = allTemplates.filter(t => t.lifecycle_status === 'active').length;
       const totalEntities = EntityStore.size();
 
@@ -10612,7 +10803,7 @@ function DeveloperStudioPage({t, lang, tab}) {
       };
 
       return (
-        <div style={{display:'grid',gap:16}}>
+        <div style={{display:'grid',gap:16,padding:16}}>
           {/* Stat cards row */}
           <div className="stat-grid stat-grid-4">
             {React.createElement(StatCard,{label:resolveI18n({en:'Total Properties',nl:'Totaal Eigenschappen'},lang),value:allDefs.length,color:'var(--brand)'})}
@@ -10689,205 +10880,114 @@ function DeveloperStudioPage({t, lang, tab}) {
           </div>
         </div>
       );
-    }
+  }
 
-    // ════════ PREVIEW LAB ════════
-    if (activeSection === 'preview') {
-      const previewTemplate = previewType ? EntityTemplateStore.resolveTemplate(previewType) : null;
-      const dummyEntity = previewType && previewTemplate ? generateDummyEntity(previewType, previewTemplate) : null;
-      const dummyEntities = dummyEntity ? [
-        dummyEntity,
-        generateDummyEntity(previewType, previewTemplate),
-        generateDummyEntity(previewType, previewTemplate),
-      ] : [];
-      // Give distinct names to the 3 dummy entities
-      if (dummyEntities.length === 3) {
-        dummyEntities[0].name = `Sample ${previewType} A`;
-        dummyEntities[1].name = `Sample ${previewType} B`;
-        dummyEntities[1].state = { status: 'warning' };
-        dummyEntities[2].name = `Sample ${previewType} C`;
-        dummyEntities[2].state = { status: 'offline' };
-      }
-
-      // Build form fields from template form_groups
-      const previewFormFields = previewTemplate?.resolved?.formGroups
-        ? previewTemplate.resolved.formGroups.flatMap(fg => (fg.resolvedProperties || []).map(resolvedPropertyToField))
-        : previewTemplate?.resolved?.properties
-          ? previewTemplate.resolved.properties.map(resolvedPropertyToField)
-          : [];
-
-      // Build list columns from template
-      const previewListCols = previewTemplate?.resolved?.columns
-        ? previewTemplate.resolved.columns.map(col => ({
-            key: col.property_key,
-            label: col.resolvedProperty?.i18n || { en: col.resolvedProperty?.name || col.property_key },
-            sortable: col.sortable,
-            filterable: col.filterable,
-            getValue: (row) => getNestedValue(row, col.resolvedProperty?.entity_path || `properties.${col.property_key}`),
-            render: col.property_key === 'name' ? (_, r) => React.createElement('span', {style:{fontWeight:500}}, r.name) : undefined,
-          }))
-        : [
-            { key:'name', label:{en:'Name',nl:'Naam'}, sortable:true, render:(_,r) => React.createElement('span',{style:{fontWeight:500}},r.name) },
-            { key:'status', label:{en:'Status',nl:'Status'}, getValue:r => r.state?.status },
-          ];
-
-      return (
-        <div style={{display:'grid',gap:16}}>
-          {/* Template Selector */}
-          <div className="card" style={{padding:'12px 20px'}}>
-            <div style={{display:'flex',alignItems:'center',gap:12,flexWrap:'wrap'}}>
-              <span style={{fontSize:12,fontWeight:600,color:'var(--text-primary)'}}>{resolveI18n({en:'Template',nl:'Template'},lang)}:</span>
-              {React.createElement(Select, {
-                size:'small', style:{width:280},
-                showSearch:true,
-                filterOption:(input,option) => (option?.label||'').toLowerCase().includes(input.toLowerCase()),
-                placeholder:resolveI18n({en:'Select entity type...',nl:'Selecteer entiteitstype...'},lang),
-                value:previewType || undefined,
-                onChange:(val) => { setPreviewType(val); setPreviewTab('overview'); },
-                options:allTemplates.map(t => {
-                  const reg = ENTITY_TYPE_REGISTRY[t.entity_type];
-                  return {value:t.entity_type, label:`${resolveI18n(reg?.label,lang)||t.entity_type} — ${t.name}`};
-                }),
-              })}
-              {previewType && previewTemplate && (
-                <React.Fragment>
-                  {React.createElement(Tag,{color:previewTemplate.lifecycle_status==='active'?'green':previewTemplate.lifecycle_status==='deprecated'?'orange':'default',
-                    style:{margin:0,fontSize:10}},previewTemplate.lifecycle_status||'draft')}
-                  <span style={{fontSize:10,color:'var(--text-tertiary)'}}>v{previewTemplate.version||1} &middot; {(previewTemplate.properties||[]).length} {resolveI18n({en:'props',nl:'eig.'},lang)}</span>
-                </React.Fragment>
-              )}
-            </div>
-          </div>
-
-          {!previewType && (
-            <div className="card" style={{textAlign:'center',padding:40}}>
-              <div style={{fontSize:40,marginBottom:12,color:'var(--brand)'}}>{React.createElement(EyeOutlined)}</div>
-              <div style={{fontSize:14,fontWeight:600,color:'var(--text-primary)'}}>{resolveI18n({en:'Preview Lab',nl:'Preview Lab'},lang)}</div>
-              <div style={{fontSize:12,color:'var(--text-tertiary)',marginTop:4}}>
-                {resolveI18n({en:'Select a template above to preview how it renders as overview, form, and list.',
-                  nl:'Selecteer een template hierboven om een preview te zien van overzicht, formulier en lijst.'},lang)}
-              </div>
-            </div>
-          )}
-
-          {previewType && previewTemplate && dummyEntity && (
-            <div style={{display:'grid',gridTemplateColumns:'1fr 340px',gap:16}}>
-              {/* Preview Area */}
-              <div className="card" style={{padding:0,overflow:'hidden'}}>
-                {/* Tabs */}
-                <div style={{display:'flex',borderBottom:'1px solid var(--border)',background:'var(--bg-secondary)'}}>
-                  {[
-                    {key:'overview',label:{en:'Overview',nl:'Overzicht'},icon:DashboardOutlined},
-                    {key:'form',label:{en:'Form',nl:'Formulier'},icon:EditOutlined},
-                    {key:'list',label:{en:'List',nl:'Lijst'},icon:UnorderedListOutlined},
-                  ].map(tab => (
-                    <div key={tab.key} onClick={()=>setPreviewTab(tab.key)}
-                      style={{padding:'8px 16px',fontSize:12,fontWeight:previewTab===tab.key?600:400,cursor:'pointer',
-                        color:previewTab===tab.key?'var(--brand)':'var(--text-secondary)',
-                        borderBottom:previewTab===tab.key?'2px solid var(--brand)':'2px solid transparent',
-                        display:'flex',alignItems:'center',gap:5,transition:'all 0.15s'}}>
-                      {React.createElement(tab.icon,{style:{fontSize:12}})}
-                      {resolveI18n(tab.label,lang)}
-                    </div>
-                  ))}
-                </div>
-
-                {/* Tab content */}
-                <div style={{padding:0,minHeight:300,maxHeight:500,overflowY:'auto'}}>
-                  {previewTab === 'overview' && React.createElement(BaseOverviewMFE, { entity: dummyEntity, lang })}
-
-                  {previewTab === 'form' && (
-                    <div style={{padding:16}}>
-                      {previewFormFields.length > 0
-                        ? React.createElement(FormPanel, {
-                            fields: previewFormFields,
-                            values: dummyEntity,
-                            errors: {},
-                            onChange: () => {},
-                            lang,
-                          })
-                        : <div style={{textAlign:'center',color:'var(--text-tertiary)',padding:32,fontSize:12}}>
-                            {resolveI18n({en:'No form groups defined in this template.',nl:'Geen formuliergroepen gedefinieerd in dit template.'},lang)}
-                          </div>
-                      }
-                    </div>
-                  )}
-
-                  {previewTab === 'list' && (
-                    <div style={{padding:12}}>
-                      {React.createElement(EntityList, {
-                        columns: previewListCols,
-                        dataSource: dummyEntities,
-                        rowKey: 'id',
-                        lang,
-                        title: {en:previewTemplate.name || previewType, nl:previewTemplate.name || previewType},
-                        searchable: false,
-                        emptyIcon: React.createElement(InboxOutlined),
-                        emptyText: {en:'No items',nl:'Geen items'},
-                      })}
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Code Panel */}
-              <div style={{display:'flex',flexDirection:'column',gap:12}}>
-                {React.createElement(CodeViewer, {
-                  value: previewTemplate,
-                  title: {en:'Resolved Template',nl:'Opgelost Template'},
-                  collapsible: true,
-                  lang,
-                })}
-                {React.createElement(CodeViewer, {
-                  value: dummyEntity,
-                  title: {en:'Dummy Entity',nl:'Dummy Entiteit'},
-                  collapsible: true,
-                  lang,
-                })}
-              </div>
-            </div>
-          )}
-        </div>
-      );
-    }
-
-    return null;
+  // ── Template create modal (preserved from original) ──
+  const renderCreateTemplateModal = () => {
+    if (!creatingTmpl) return null;
+    return React.createElement('div', {className:'card',style:{margin:'12px 16px',border:'2px solid var(--brand)'}},
+      React.createElement('div', {style:{padding:'16px 20px'}},
+        React.createElement('div', {className:'card-title',style:{marginBottom:12}},resolveI18n({en:'New Entity Template',nl:'Nieuw Entiteit Template'},lang)),
+        React.createElement('div', {style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginBottom:12}},
+          React.createElement('div', null,
+            React.createElement('div', {style:{fontSize:11,fontWeight:500,color:'var(--text-secondary)',marginBottom:4}},resolveI18n({en:'Entity Type',nl:'Entiteitstype'},lang)),
+            React.createElement('select', {style:{width:'100%',padding:'6px 8px',borderRadius:6,border:'1px solid var(--border)',background:'var(--bg-input)',color:'var(--text-primary)',fontSize:12},
+              value:newTmplData.entity_type, onChange:e=>setNewTmplData({...newTmplData,entity_type:e.target.value})},
+              React.createElement('option', {value:''},resolveI18n({en:'Select...',nl:'Selecteer...'},lang)),
+              Object.entries(ENTITY_TYPE_REGISTRY).map(([k,v])=>React.createElement('option',{key:k,value:k},resolveI18n(v.label,lang)))
+            )
+          ),
+          React.createElement('div', null,
+            React.createElement('div', {style:{fontSize:11,fontWeight:500,color:'var(--text-secondary)',marginBottom:4}},resolveI18n({en:'Type Key (snake_case)',nl:'Type Sleutel (snake_case)'},lang)),
+            React.createElement('input', {style:{width:'100%',padding:'6px 8px',borderRadius:6,border:'1px solid var(--border)',background:'var(--bg-input)',color:'var(--text-primary)',fontSize:12},
+              placeholder:'e.g. default', value:newTmplData.type_key, onChange:e=>setNewTmplData({...newTmplData,type_key:e.target.value})})
+          ),
+          React.createElement('div', null,
+            React.createElement('div', {style:{fontSize:11,fontWeight:500,color:'var(--text-secondary)',marginBottom:4}},resolveI18n({en:'Name',nl:'Naam'},lang)),
+            React.createElement('input', {style:{width:'100%',padding:'6px 8px',borderRadius:6,border:'1px solid var(--border)',background:'var(--bg-input)',color:'var(--text-primary)',fontSize:12},
+              placeholder:resolveI18n({en:'Template name',nl:'Templatenaam'},lang), value:newTmplData.name, onChange:e=>setNewTmplData({...newTmplData,name:e.target.value})})
+          ),
+          React.createElement('div', null,
+            React.createElement('div', {style:{fontSize:11,fontWeight:500,color:'var(--text-secondary)',marginBottom:4}},resolveI18n({en:'Description',nl:'Beschrijving'},lang)),
+            React.createElement('input', {style:{width:'100%',padding:'6px 8px',borderRadius:6,border:'1px solid var(--border)',background:'var(--bg-input)',color:'var(--text-primary)',fontSize:12},
+              placeholder:resolveI18n({en:'Optional description',nl:'Optionele beschrijving'},lang), value:newTmplData.description, onChange:e=>setNewTmplData({...newTmplData,description:e.target.value})})
+          )
+        ),
+        React.createElement('div', {style:{display:'flex',gap:8,justifyContent:'flex-end'}},
+          React.createElement('button', {className:'header-btn',onClick:()=>setCreatingTmpl(false)},resolveI18n({en:'Cancel',nl:'Annuleren'},lang)),
+          React.createElement('button', {className:'header-btn primary',onClick:handleCreateTemplate,
+            disabled:!newTmplData.entity_type||!newTmplData.type_key||!newTmplData.name},
+            resolveI18n({en:'Create Template',nl:'Template Aanmaken'},lang))
+        )
+      )
+    );
   };
 
+  // ══════════════════════════════════════════════════════════
+  // 3-Panel Workspace Layout
+  // ══════════════════════════════════════════════════════════
   return (
-    <div className="config-page">
-      {/* Left nav */}
-      <div className="config-tree-panel">
-        <div className="config-tree-header">
-          <div style={{fontSize:13,fontWeight:600,color:'var(--text-primary)',padding:'4px 0'}}>
-            {resolveI18n({en:'Developer Studio',nl:'Developer Studio'},lang)}
+    <div className="ds-workspace">
+      {/* LEFT: Tree */}
+      <div className="ds-tree">
+        <div className="ds-tree-header">
+          {React.createElement(Input, {size:'small', prefix:React.createElement(SearchOutlined), placeholder:resolveI18n({en:'Search...',nl:'Zoeken...'},lang),
+            value:treeSearch, onChange:e=>setTreeSearch(e.target.value), allowClear:true, style:{borderRadius:6}})}
+        </div>
+        <div className="ds-tree-scroll">
+          {/* Overview node */}
+          <div className={`ds-tree-item ${selectedNode.type==='overview'?'active':''}`}
+            onClick={()=>setSelectedNode({type:'overview'})}>
+            {React.createElement(DashboardOutlined,{style:{fontSize:12}})} {resolveI18n({en:'Overview',nl:'Overzicht'},lang)}
+          </div>
+
+          {/* Entity hierarchy section */}
+          <div className="ds-tree-section">{resolveI18n({en:'Entity Types',nl:'Entiteit Types'},lang)}</div>
+          {renderEntityTree()}
+
+          {/* Form Blocks section */}
+          <div className="ds-tree-section">{resolveI18n({en:'Form Blocks',nl:'Formulierblokken'},lang)}</div>
+          {renderFormBlocks()}
+
+          {/* Property Catalog section */}
+          <div className="ds-tree-section">{resolveI18n({en:'Properties',nl:'Eigenschappen'},lang)}</div>
+          {renderPropertyGroups()}
+        </div>
+      </div>
+
+      {/* CENTER: Content */}
+      <div className="ds-center">
+        <div className="ds-center-header">
+          {renderCenterHeader()}
+        </div>
+        <div className="ds-center-body">
+          {renderCreateTemplateModal()}
+          {renderCenterContent()}
+        </div>
+      </div>
+
+      {/* RIGHT: Code */}
+      {!codeCollapsed && (
+        <div className="ds-code">
+          <div className="ds-code-header">
+            <span>JSON</span>
+            {React.createElement(CloseOutlined, {style:{fontSize:10,cursor:'pointer',color:'var(--text-tertiary)'}, onClick:()=>setCodeCollapsed(true)})}
+          </div>
+          <div className="ds-code-body">
+            {renderCodePanel()}
           </div>
         </div>
-        <div className="config-tree-scroll" style={{padding:'4px 0'}}>
-          {sections.map(sec => (
-            <div key={sec.key} className={`config-nav-item ${activeSection===sec.key?'active':''}`}
-              onClick={() => setActiveSection(sec.key)}>
-              <span className="nav-icon">{React.createElement(sec.icon,{style:{fontSize:14}})}</span>
-              <span className="nav-name">{resolveI18n(sec.label, lang)}</span>
-              {sec.count != null && <span className="nav-count">{sec.count}</span>}
-            </div>
-          ))}
+      )}
+      {codeCollapsed && (
+        <div style={{width:24,flexShrink:0,background:'var(--bg-card)',border:'1px solid var(--border)',borderRadius:8,
+          display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',writingMode:'vertical-rl',
+          fontSize:10,color:'var(--text-tertiary)',letterSpacing:'0.05em'}} onClick={()=>setCodeCollapsed(false)}>
+          JSON
         </div>
-      </div>
-      {/* Right content */}
-      <div className="config-detail-panel">
-        <div className="config-detail-header">
-          <div className="config-entity-icon">{React.createElement(currentSection.icon,{style:{fontSize:16}})}</div>
-          <div className="config-entity-name">{resolveI18n(currentSection.label, lang)}</div>
-        </div>
-        <div className="config-detail-body">
-          {renderSectionContent()}
-        </div>
-      </div>
+      )}
     </div>
   );
 }
-
 // ─── Grid Congestion Page ───
 function GridCongestionPage({t, lang, currentSite}) {
   const gc = MockAPI.getGridCongestionState(currentSite);
