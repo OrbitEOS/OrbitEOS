@@ -297,6 +297,18 @@
     .eem-form-error { font-size:10px; color:var(--error); }
     .eem-form-help { font-size:10px; color:var(--text-tertiary); }
 
+    .code-viewer { background:var(--bg-secondary); border:1px solid var(--border); border-radius:8px; overflow:hidden; }
+    .code-viewer-header { display:flex; align-items:center; justify-content:space-between; padding:6px 12px;
+      border-bottom:1px solid var(--border); font-size:11px; font-weight:600; color:var(--text-secondary); }
+    .code-viewer-body { padding:12px; overflow:auto; max-height:400px; }
+    .code-viewer-body pre { margin:0; font-family:'JetBrains Mono','Fira Code',monospace; font-size:11px; line-height:1.5;
+      color:var(--text-primary); white-space:pre-wrap; word-break:break-word; }
+    .code-viewer-body .json-key { color:var(--text-secondary); }
+    .code-viewer-body .json-string { color:var(--brand); }
+    .code-viewer-body .json-number { color:var(--solar); }
+    .code-viewer-body .json-boolean { color:var(--success); }
+    .code-viewer-body .json-null { color:var(--text-tertiary); }
+
     .stat-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px;
       padding: 16px 20px; transition: all 0.2s ease; position: relative; overflow: hidden; }
     .stat-card:hover { border-color: var(--border-active); transform: translateY(-1px); box-shadow: var(--shadow); }
@@ -7453,6 +7465,62 @@ function OverviewMicroFrontend({ entity, lang, onEdit }) {
   );
 }
 
+// ─── CodeViewer — JSON syntax highlighting viewer ───
+function CodeViewer({ value, title, collapsible, lang }) {
+  const [collapsed, setCollapsed] = useState(false);
+
+  const highlight = (json) => {
+    if (typeof json !== 'string') json = JSON.stringify(json, null, 2);
+    return json.replace(/("(?:[^"\\]|\\.)*")\s*:/g, '<span class="json-key">$1</span>:')
+      .replace(/:\s*("(?:[^"\\]|\\.)*")/g, ': <span class="json-string">$1</span>')
+      .replace(/:\s*(\d+\.?\d*)/g, ': <span class="json-number">$1</span>')
+      .replace(/:\s*(true|false)/g, ': <span class="json-boolean">$1</span>')
+      .replace(/:\s*(null)/g, ': <span class="json-null">$1</span>');
+  };
+
+  const handleCopy = () => {
+    const text = typeof value === 'string' ? value : JSON.stringify(value, null, 2);
+    navigator.clipboard?.writeText(text);
+  };
+
+  return React.createElement('div', {className:'code-viewer'},
+    React.createElement('div', {className:'code-viewer-header'},
+      React.createElement('span', {style:{display:'flex',alignItems:'center',gap:6,cursor:collapsible?'pointer':'default'},
+        onClick:collapsible?()=>setCollapsed(!collapsed):undefined},
+        collapsible && React.createElement(RightOutlined, {style:{fontSize:8,transform:collapsed?'none':'rotate(90deg)',transition:'transform 0.15s'}}),
+        resolveI18n(title, lang) || 'JSON'),
+      React.createElement('span', {style:{cursor:'pointer',color:'var(--text-tertiary)',fontSize:10},onClick:handleCopy},
+        React.createElement(CopyOutlined, {style:{fontSize:11,marginRight:3}}), 'Copy')
+    ),
+    !collapsed && React.createElement('div', {className:'code-viewer-body'},
+      React.createElement('pre', {dangerouslySetInnerHTML:{__html: highlight(value)}})
+    )
+  );
+}
+
+// ─── ImportExportButtons — Reusable import/export file helper ───
+function ImportExportButtons({ onImport, onExport, lang }) {
+  const fileRef = useRef(null);
+  const handleFileSelect = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try { const data = JSON.parse(ev.target.result); onImport(data); }
+      catch(err) { console.error('Import parse error:', err); }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  };
+  return React.createElement('div', {style:{display:'flex',gap:4}},
+    React.createElement('input', {type:'file',ref:fileRef,accept:'.json',style:{display:'none'},onChange:handleFileSelect}),
+    onImport && React.createElement('button', {className:'header-btn',style:{fontSize:10,padding:'2px 8px'},
+      onClick:()=>fileRef.current?.click()}, resolveI18n({en:'Import',nl:'Importeren'},lang)),
+    onExport && React.createElement('button', {className:'header-btn',style:{fontSize:10,padding:'2px 8px'},
+      onClick:onExport}, resolveI18n({en:'Export',nl:'Exporteren'},lang))
+  );
+}
+
 // ─── EntityList — Shared reusable list component ───
 function EntityList({ columns, dataSource, rowKey='id', title, lang='en',
   searchable=true, searchPlaceholder, searchFields, columnPicker=false,
@@ -8539,72 +8607,274 @@ function AllDevicesTab({ entity, t, lang, onNavigate }) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════
-// ─── PropertyCatalogTab (Platform → Property Catalog) ───
+// ─── PropertyCatalogTab (Developer Studio → Properties flat table) ───
 // ═══════════════════════════════════════════════════════════════════════
 function PropertyCatalogTab({ entity, lang, onOpenModal }) {
   const [, setTick] = useState(0);
   const rerender = () => setTick(t => t+1);
-  const groups = PropertyCatalogStore.getGroups();
   const allDefs = PropertyCatalogStore.getDefinitions();
-  const [expandedGroup, setExpandedGroup] = useState(null);
+  const groups = PropertyCatalogStore.getGroups();
+  const [editProp, setEditProp] = useState(null);
+
+  const usageCount = (propKey) => {
+    return EntityTemplateStore.getTemplates().filter(t =>
+      (t.properties||[]).some(p => p.property_key === propKey)
+    ).length;
+  };
 
   const propCols = [
-    { key:'key', label:{en:'Key',nl:'Sleutel'}, sortable:true, render:(_,r) => React.createElement('span',{style:{fontFamily:'monospace',fontSize:11,color:'var(--brand)'}},r.key) },
-    { key:'name', label:{en:'Name',nl:'Naam'}, sortable:true, render:(_,r) => React.createElement('span',{style:{fontWeight:500}},resolveI18n(r.i18n,lang)||r.name) },
+    { key:'key', label:{en:'Key',nl:'Sleutel'}, sortable:true,
+      render:(_,r) => React.createElement('span',{style:{fontFamily:'monospace',fontSize:11,color:'var(--brand)'}},r.key) },
+    { key:'name', label:{en:'Name',nl:'Naam'}, sortable:true,
+      render:(_,r) => React.createElement('span',{style:{fontWeight:500}},resolveI18n(r.i18n,lang)||r.name) },
+    { key:'group_key', label:{en:'Group',nl:'Groep'}, filterable:true,
+      filterOptions: groups.map(g => ({value:g.key, label:resolveI18n(g.i18n,lang)||g.name})),
+      render:(_,r) => React.createElement('span',{style:{fontSize:11,color:'var(--text-secondary)'}},r.group_key) },
+    { key:'category', label:{en:'Category',nl:'Categorie'}, filterable:true,
+      filterOptions: [{value:'fixed',label:'Fixed'},{value:'cascaded',label:'Cascaded'},{value:'state',label:'State'},{value:'computed',label:'Computed'}] },
     { key:'data_type', label:{en:'Type',nl:'Type'}, filterable:true },
-    { key:'ui_representation', label:{en:'UI',nl:'UI'}, filterable:true },
-    { key:'applies_to', label:{en:'Applies To',nl:'Toepasselijk Op'}, render:(_,r) => React.createElement('span',{style:{fontSize:10,color:'var(--text-tertiary)'}}, (r.applies_to||[]).join(', ')) },
+    { key:'ui_representation', label:{en:'UI',nl:'UI'}, filterable:true, hidden:true },
+    { key:'applies_to', label:{en:'Applies To',nl:'Toepasselijk'},
+      render:(_,r) => React.createElement('span',{style:{fontSize:10,color:'var(--text-tertiary)'}},
+        (r.applies_to||[]).slice(0,3).join(', ')+(r.applies_to?.length>3?'...':'')) },
+    { key:'is_required', label:{en:'Req',nl:'Verp'},
+      render:(_,r) => r.is_required ? React.createElement(CheckCircleFilled,{style:{fontSize:11,color:'var(--success)'}}) : React.createElement('span',{style:{color:'var(--text-tertiary)'}},'—') },
+    { key:'usage', label:{en:'Used',nl:'Gebruikt'}, sortable:true,
+      getValue:r => usageCount(r.key),
+      render:(_,r) => { const c = usageCount(r.key); return c > 0 ? React.createElement('span',{style:{fontSize:10,color:'var(--brand)'}},`${c} tmpl`) : React.createElement('span',{style:{color:'var(--text-tertiary)'}},'—'); } },
     { key:'lifecycle_status', label:{en:'Status',nl:'Status'}, filterable:true,
-      render:(_,r) => React.createElement(Tag,{color:r.lifecycle_status==='active'?'green':r.lifecycle_status==='deprecated'?'orange':'default',style:{margin:0,fontSize:10}},r.lifecycle_status) },
+      filterOptions: [{value:'active',label:'Active'},{value:'deprecated',label:'Deprecated'},{value:'draft',label:'Draft'}],
+      render:(_,r) => React.createElement(Tag,{color:r.lifecycle_status==='active'?'green':r.lifecycle_status==='deprecated'?'orange':'default',style:{margin:0,fontSize:9}},r.lifecycle_status) },
   ];
 
-  return React.createElement('div',{className:'config-tab-content'},
-    React.createElement('div',{style:{fontSize:13,fontWeight:600,color:'var(--text-primary)',marginBottom:4}},
-      resolveI18n({en:'Property Catalog',nl:'Eigenschappen Catalogus'},lang)),
-    React.createElement('div',{style:{fontSize:11,color:'var(--text-tertiary)',marginBottom:12}},
-      resolveI18n({en:`${allDefs.length} properties in ${groups.length} groups`,nl:`${allDefs.length} eigenschappen in ${groups.length} groepen`},lang)),
+  const handleExport = () => {
+    const blob = new Blob([JSON.stringify(allDefs, null, 2)], {type:'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = 'property-definitions.json'; a.click();
+    URL.revokeObjectURL(url);
+  };
 
-    React.createElement('div',{style:{display:'grid',gap:6}},
-      groups.map(grp => {
-        const grpDefs = PropertyCatalogStore.getByGroup(grp.key);
-        const isOpen = expandedGroup === grp.key;
-        return React.createElement('div',{key:grp.key,style:{background:'var(--bg-secondary)',borderRadius:8,border:'1px solid var(--border)',overflow:'hidden'}},
-          React.createElement('div',{style:{display:'flex',alignItems:'center',gap:8,padding:'8px 12px',cursor:'pointer'},onClick:()=>setExpandedGroup(isOpen?null:grp.key)},
-            React.createElement('span',{style:{fontSize:12,fontWeight:600,color:'var(--text-primary)'}},resolveI18n(grp.i18n,lang)||grp.name),
-            React.createElement('span',{style:{fontSize:10,color:'var(--text-tertiary)',flex:1}},`${grpDefs.length} ${resolveI18n({en:'properties',nl:'eigenschappen'},lang)}`),
-            React.createElement(RightOutlined,{style:{fontSize:8,color:'var(--text-tertiary)',transform:isOpen?'rotate(90deg)':'none',transition:'transform 0.15s'}})
+  const handleImport = (data) => {
+    const arr = Array.isArray(data) ? data : [data];
+    arr.forEach(d => { if (d.key && d.name) PropertyCatalogStore.putDefinition(d); });
+    rerender();
+  };
+
+  return React.createElement('div', {className:'config-tab-content'},
+    React.createElement(EntityList, {
+      columns: propCols, dataSource: allDefs, rowKey:'key', lang, searchable:true, columnPicker:true,
+      title: {en:`Properties (${allDefs.length})`,nl:`Eigenschappen (${allDefs.length})`},
+      lazyLoad: allDefs.length > 50, pageSize: 50,
+      headerExtra: React.createElement(ImportExportButtons, {lang, onExport:handleExport, onImport:handleImport}),
+      addButton: {label:'', onClick:() => setEditProp({mode:'create', def:null})},
+      rowActions: [
+        {key:'edit', icon:React.createElement(EditOutlined,{style:{fontSize:12}}), onClick:row => setEditProp({mode:'edit', def:row})},
+        {key:'delete', icon:React.createElement(DeleteOutlined,{style:{fontSize:12}}), danger:true, onClick:row => {
+          const usage = usageCount(row.key);
+          if (usage > 0) { Modal.confirm({title:`"${row.key}" is used by ${usage} templates. Delete anyway?`,okType:'danger',okText:'Delete',
+            onOk:()=>{PropertyCatalogStore.removeDefinition(row.key);rerender();}}); }
+          else { PropertyCatalogStore.removeDefinition(row.key); rerender(); }
+        }},
+      ],
+    }),
+    editProp && React.createElement(PropertyEditModal, {
+      mode: editProp.mode, def: editProp.def, lang,
+      onSave: (def) => { PropertyCatalogStore.putDefinition(def); setEditProp(null); rerender(); },
+      onCancel: () => setEditProp(null),
+    })
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// ─── PropertyEditModal (Property definition editor) ───
+// ═══════════════════════════════════════════════════════════════════════
+function PropertyEditModal({ mode, def, lang, onSave, onCancel }) {
+  const [activeTab, setActiveTab] = useState('general');
+  const [values, setValues] = useState(() => {
+    if (mode === 'edit' && def) return JSON.parse(JSON.stringify(def));
+    return { key:'', name:'', i18n:{en:''}, description:'', group_key:'identity', category:'fixed',
+      data_type:'string', ui_representation:'text', unit:'', validation:{},
+      enum_values:[], enum_values_i18n:{}, default_value:null,
+      applies_to:[], is_required:false, is_readonly:false, is_array:false,
+      entity_path:'', lifecycle_status:'draft' };
+  });
+  const [errors, setErrors] = useState({});
+
+  const groups = PropertyCatalogStore.getGroups();
+  const entityTypes = Object.keys(ENTITY_TYPE_REGISTRY);
+
+  const handleChange = (key, val) => {
+    setValues(prev => {
+      const n = {...prev};
+      if (key.includes('.')) { setNestedValue(n, key, val); }
+      else { n[key] = val; }
+      if (key === 'key') n.entity_path = `properties.${val}`;
+      if (key === 'name') n.i18n = {...(n.i18n||{}), en: val};
+      return n;
+    });
+  };
+
+  const validate = () => {
+    const errs = {};
+    if (!values.key?.trim()) errs.key = 'Required';
+    if (!values.name?.trim()) errs.name = 'Required';
+    if (!values.group_key) errs.group_key = 'Required';
+    if ((values.applies_to||[]).length === 0) errs.applies_to = 'Select at least one';
+    if (values.data_type === 'enum' && (!values.enum_values || values.enum_values.length === 0)) errs.enum_values = 'Enum values required';
+    return errs;
+  };
+
+  const handleSave = () => {
+    const errs = validate();
+    if (Object.keys(errs).length > 0) { setErrors(errs); return; }
+    values.key = values.key.trim().toLowerCase().replace(/\s+/g,'_');
+    if (!values.entity_path) values.entity_path = `properties.${values.key}`;
+    onSave(values);
+  };
+
+  const tabs = [
+    { key:'general', label:{en:'General',nl:'Algemeen'}, icon:'SettingOutlined' },
+    { key:'typeui', label:{en:'Type & UI',nl:'Type & UI'}, icon:'AppstoreOutlined' },
+    { key:'constraints', label:{en:'Constraints',nl:'Beperkingen'}, icon:'ControlOutlined' },
+    { key:'scope', label:{en:'Scope',nl:'Bereik'}, icon:'ApartmentOutlined' },
+    { key:'json', label:{en:'JSON',nl:'JSON'}, icon:'CodeOutlined' },
+  ];
+
+  const renderTabContent = () => {
+    if (activeTab === 'general') return React.createElement('div',{className:'eem-form-grid'},
+      React.createElement('div',{className:'eem-form-field'},
+        React.createElement('div',{className:'eem-form-label'},'Key *'),
+        React.createElement(Input,{size:'small',value:values.key||'',onChange:e=>handleChange('key',e.target.value),
+          disabled:mode==='edit',placeholder:'property_key',style:{fontFamily:'monospace'}}),
+        errors.key && React.createElement('div',{className:'eem-form-error'},errors.key)),
+      React.createElement('div',{className:'eem-form-field'},
+        React.createElement('div',{className:'eem-form-label'},'Name *'),
+        React.createElement(Input,{size:'small',value:values.name||'',onChange:e=>handleChange('name',e.target.value),placeholder:'Display name'}),
+        errors.name && React.createElement('div',{className:'eem-form-error'},errors.name)),
+      React.createElement('div',{className:'eem-form-field full'},
+        React.createElement('div',{className:'eem-form-label'},'Description'),
+        React.createElement(Input.TextArea,{size:'small',rows:2,value:values.description||'',onChange:e=>handleChange('description',e.target.value)})),
+      React.createElement('div',{className:'eem-form-field'},
+        React.createElement('div',{className:'eem-form-label'},'Group *'),
+        React.createElement(Select,{size:'small',style:{width:'100%'},value:values.group_key,onChange:v=>handleChange('group_key',v),
+          options:groups.map(g=>({value:g.key,label:resolveI18n(g.i18n,lang)||g.name}))}),
+        errors.group_key && React.createElement('div',{className:'eem-form-error'},errors.group_key)),
+      React.createElement('div',{className:'eem-form-field'},
+        React.createElement('div',{className:'eem-form-label'},'Category'),
+        React.createElement(Select,{size:'small',style:{width:'100%'},value:values.category,onChange:v=>handleChange('category',v),
+          options:['fixed','cascaded','state','computed'].map(v=>({value:v,label:v}))})),
+      React.createElement('div',{className:'eem-form-field'},
+        React.createElement('div',{className:'eem-form-label'},'Lifecycle'),
+        React.createElement(Select,{size:'small',style:{width:'100%'},value:values.lifecycle_status,onChange:v=>handleChange('lifecycle_status',v),
+          options:['draft','active','deprecated','archived'].map(v=>({value:v,label:v}))})),
+    );
+
+    if (activeTab === 'typeui') return React.createElement('div',{className:'eem-form-grid'},
+      React.createElement('div',{className:'eem-form-field'},
+        React.createElement('div',{className:'eem-form-label'},'Data Type'),
+        React.createElement(Select,{size:'small',style:{width:'100%'},value:values.data_type,onChange:v=>handleChange('data_type',v),
+          options:['string','number','boolean','enum','json','datetime','geo_point'].map(v=>({value:v,label:v}))})),
+      React.createElement('div',{className:'eem-form-field'},
+        React.createElement('div',{className:'eem-form-label'},'UI Representation'),
+        React.createElement(Select,{size:'small',style:{width:'100%'},value:values.ui_representation,onChange:v=>handleChange('ui_representation',v),
+          options:['text','number','dropdown','toggle','date','textarea','tags','slider','email','phone'].map(v=>({value:v,label:v}))})),
+      React.createElement('div',{className:'eem-form-field'},
+        React.createElement('div',{className:'eem-form-label'},'Unit'),
+        React.createElement(Input,{size:'small',value:values.unit||'',onChange:e=>handleChange('unit',e.target.value),placeholder:'kW, \u00b0C, %...'})),
+      React.createElement('div',{className:'eem-form-field'},
+        React.createElement('div',{className:'eem-form-label'},'Default Value'),
+        React.createElement(Input,{size:'small',value:values.default_value!=null?String(values.default_value):'',onChange:e=>handleChange('default_value',e.target.value)})),
+      React.createElement('div',{className:'eem-form-field'},
+        React.createElement('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center'}},
+          React.createElement('span',{className:'eem-form-label'},'Required'),
+          React.createElement(Switch,{size:'small',checked:values.is_required,onChange:v=>handleChange('is_required',v)}))),
+      React.createElement('div',{className:'eem-form-field'},
+        React.createElement('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center'}},
+          React.createElement('span',{className:'eem-form-label'},'Read Only'),
+          React.createElement(Switch,{size:'small',checked:values.is_readonly,onChange:v=>handleChange('is_readonly',v)}))),
+      React.createElement('div',{className:'eem-form-field'},
+        React.createElement('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center'}},
+          React.createElement('span',{className:'eem-form-label'},'Is Array'),
+          React.createElement(Switch,{size:'small',checked:values.is_array,onChange:v=>handleChange('is_array',v)}))),
+    );
+
+    if (activeTab === 'constraints') return React.createElement('div',{className:'eem-form-grid'},
+      (values.data_type==='number'||values.data_type==='string') && React.createElement('div',{className:'eem-form-field'},
+        React.createElement('div',{className:'eem-form-label'},values.data_type==='number'?'Min Value':'Min Length'),
+        React.createElement(InputNumber,{size:'small',style:{width:'100%'},value:values.validation?.min??values.validation?.min_length,
+          onChange:v=>handleChange(values.data_type==='number'?'validation.min':'validation.min_length',v)})),
+      (values.data_type==='number'||values.data_type==='string') && React.createElement('div',{className:'eem-form-field'},
+        React.createElement('div',{className:'eem-form-label'},values.data_type==='number'?'Max Value':'Max Length'),
+        React.createElement(InputNumber,{size:'small',style:{width:'100%'},value:values.validation?.max??values.validation?.max_length,
+          onChange:v=>handleChange(values.data_type==='number'?'validation.max':'validation.max_length',v)})),
+      values.data_type==='number' && React.createElement('div',{className:'eem-form-field'},
+        React.createElement('div',{className:'eem-form-label'},'Step'),
+        React.createElement(InputNumber,{size:'small',style:{width:'100%'},value:values.validation?.step,onChange:v=>handleChange('validation.step',v)})),
+      values.data_type==='string' && React.createElement('div',{className:'eem-form-field full'},
+        React.createElement('div',{className:'eem-form-label'},'Pattern (regex)'),
+        React.createElement(Input,{size:'small',value:values.validation?.pattern||'',onChange:e=>handleChange('validation.pattern',e.target.value),
+          placeholder:'^[a-z_]+$',style:{fontFamily:'monospace'}})),
+      values.data_type==='enum' && React.createElement('div',{className:'eem-form-field full'},
+        React.createElement('div',{className:'eem-form-label'},'Enum Values *'),
+        React.createElement(Select,{mode:'tags',size:'small',style:{width:'100%'},value:values.enum_values||[],
+          onChange:v=>handleChange('enum_values',v),placeholder:'Type and press Enter...'}),
+        errors.enum_values && React.createElement('div',{className:'eem-form-error'},errors.enum_values)),
+      (!values.data_type||!['number','string','enum'].includes(values.data_type)) &&
+        React.createElement('div',{style:{color:'var(--text-tertiary)',fontSize:12,padding:16,textAlign:'center'}},
+          resolveI18n({en:'No constraints applicable for this data type',nl:'Geen beperkingen van toepassing'},lang)),
+    );
+
+    if (activeTab === 'scope') return React.createElement('div',{className:'eem-form-grid'},
+      React.createElement('div',{className:'eem-form-field full'},
+        React.createElement('div',{className:'eem-form-label'},'Applies To *'),
+        React.createElement(Select,{mode:'multiple',size:'small',style:{width:'100%'},value:values.applies_to||[],
+          onChange:v=>handleChange('applies_to',v),
+          options:entityTypes.map(et=>({value:et,label:resolveI18n(ENTITY_TYPE_REGISTRY[et]?.label,lang)||et}))}),
+        errors.applies_to && React.createElement('div',{className:'eem-form-error'},errors.applies_to)),
+      React.createElement('div',{className:'eem-form-field full'},
+        React.createElement('div',{className:'eem-form-label'},'Entity Path'),
+        React.createElement(Input,{size:'small',value:values.entity_path||'',onChange:e=>handleChange('entity_path',e.target.value),
+          placeholder:'properties.field_name',style:{fontFamily:'monospace'}})),
+    );
+
+    if (activeTab === 'json') return React.createElement(CodeViewer, {
+      value: values, title:{en:'Property Definition',nl:'Eigenschapsdefinitie'}, lang
+    });
+
+    return null;
+  };
+
+  return ReactDOM.createPortal(
+    React.createElement('div',{className:'eem-overlay',onClick:onCancel},
+      React.createElement('div',{className:'eem-modal',onClick:e=>e.stopPropagation()},
+        React.createElement('div',{className:'eem-header'},
+          React.createElement('div',{className:'eem-header-icon'},React.createElement(BookOutlined)),
+          React.createElement('div',{className:'eem-header-title'},
+            mode==='create' ? resolveI18n({en:'New Property',nl:'Nieuwe Eigenschap'},lang) : values.key),
+          React.createElement('span',{className:'eem-header-badge'},'property'),
+          React.createElement('span',{className:'eem-header-close',onClick:onCancel},React.createElement(CloseOutlined))
+        ),
+        React.createElement('div',{className:'eem-body'},
+          React.createElement('div',{className:'eem-tabs'},
+            tabs.map(tab => React.createElement('div',{key:tab.key,className:`eem-tab ${activeTab===tab.key?'active':''}`,
+              onClick:()=>setActiveTab(tab.key)},
+              React.createElement('span',{className:'eem-tab-icon'},React.createElement(window[tab.icon]||SettingOutlined,{style:{fontSize:13}})),
+              resolveI18n(tab.label,lang)
+            ))
           ),
-          isOpen && React.createElement('div',{style:{padding:'0 4px 4px',borderTop:'1px solid var(--border)'}},
-            React.createElement(EntityList,{
-              columns:propCols, dataSource:grpDefs, rowKey:'key', lang, searchable:true,
-              rowActions:[
-                {key:'delete',icon:React.createElement(DeleteOutlined,{style:{fontSize:12}}),danger:true,
-                  onClick:row => { PropertyCatalogStore.removeDefinition(row.key); rerender(); }},
-              ],
-              inlineAdd:{
-                label:{en:'Add property',nl:'Eigenschap toevoegen'},
-                fields:[
-                  {key:'key',placeholder:{en:'property_key',nl:'eigenschap_sleutel'},autoFocus:true},
-                  {key:'name',placeholder:{en:'Display name',nl:'Weergavenaam'}},
-                ],
-                onSave:(vals) => {
-                  if (!vals.key?.trim() || !vals.name?.trim()) return;
-                  PropertyCatalogStore.putDefinition({
-                    key:vals.key.trim().toLowerCase().replace(/\s+/g,'_'),
-                    name:vals.name.trim(),
-                    i18n:{en:vals.name.trim()},
-                    group_key:grp.key, category:'fixed', data_type:'string', ui_representation:'text',
-                    applies_to:[], is_required:false, is_readonly:false, lifecycle_status:'active',
-                    entity_path:`properties.${vals.key.trim().toLowerCase().replace(/\s+/g,'_')}`,
-                  });
-                  rerender();
-                }
-              }
-            })
+          React.createElement('div',{className:'eem-content'}, renderTabContent())
+        ),
+        React.createElement('div',{className:'eem-footer'},
+          React.createElement('span'),
+          React.createElement('div',{style:{display:'flex',gap:8}},
+            React.createElement(Button,{size:'small',onClick:onCancel},resolveI18n({en:'Cancel',nl:'Annuleren'},lang)),
+            React.createElement(Button,{size:'small',type:'primary',onClick:handleSave},
+              resolveI18n(mode==='create'?{en:'Create',nl:'Aanmaken'}:{en:'Save',nl:'Opslaan'},lang))
           )
-        );
-      })
-    )
+        )
+      )
+    ),
+    document.body
   );
 }
 
@@ -9620,7 +9890,7 @@ function DeveloperStudioPage({t, lang, tab}) {
   const [editingTmpl, setEditingTmpl] = useState(null);
   const [creatingTmpl, setCreatingTmpl] = useState(false);
   const [newTmplData, setNewTmplData] = useState({entity_type:'',type_key:'',name:'',description:'',lifecycle_status:'draft'});
-  const [activeSection, setActiveSection] = useState(tab || 'templates');
+  const [activeSection, setActiveSection] = useState(tab || 'overview');
 
   // Template data from real stores
   const allTemplates = EntityTemplateStore.getTemplates();
@@ -9628,12 +9898,10 @@ function DeveloperStudioPage({t, lang, tab}) {
   const allGroups = PropertyCatalogStore.getGroups();
 
   const sections = [
+    { key:'overview', label:{en:'Overview',nl:'Overzicht'}, icon:DashboardOutlined, count:null },
+    { key:'properties', label:{en:'Properties',nl:'Eigenschappen'}, icon:BookOutlined, count:allDefs.length },
     { key:'templates', label:{en:'Entity Templates',nl:'Entiteit Templates'}, icon:BlockOutlined, count:allTemplates.length },
-    { key:'properties', label:{en:'Property Dictionary',nl:'Eigenschappen Woordenboek'}, icon:BookOutlined, count:allDefs.length },
-    { key:'domains', label:{en:'Domain Plugins',nl:'Domein Plugins'}, icon:GatewayOutlined },
-    { key:'flows', label:{en:'Flow Templates',nl:'Flow Templates'}, icon:BranchesOutlined },
-    { key:'mcp', label:{en:'MCP Tools',nl:'MCP Tools'}, icon:ToolOutlined },
-    { key:'apiKeys', label:{en:'API Keys',nl:'API Sleutels'}, icon:KeyOutlined },
+    { key:'preview', label:{en:'Preview Lab',nl:'Preview Lab'}, icon:EyeOutlined, count:null },
   ];
 
   const currentSection = sections.find(s => s.key === activeSection) || sections[0];
@@ -9915,34 +10183,34 @@ function DeveloperStudioPage({t, lang, tab}) {
       <PropertyCatalogTab entity={null} lang={lang} onOpenModal={null}/>
     );
 
-    // ════════ DOMAINS ════════
-    if (activeSection === 'domains') return (
-      <div className="card" style={{padding:0}}>
-        <div style={{padding:'16px 20px'}}><div className="card-title">{resolveI18n({en:'Domain Plugins',nl:'Domein Plugins'},lang)}</div></div>
-        <table className="data-table">
-          <thead><tr><th>Domain</th><th>Version</th><th>Templates</th><th>Events</th><th>Actions</th><th>{t.status}</th></tr></thead>
-          <tbody>
-            {MockAPI.getDomainPlugins().map((d,i) => (
-              <tr key={i}><td style={{fontWeight:500}}>{d.name}</td><td>{d.version}</td><td>{d.templates}</td><td>{d.events}</td><td>{d.actions}</td>
-                <td><span className={`status-dot ${d.statusClass}`}>{d.status}</span></td></tr>
-            ))}
-          </tbody>
-        </table>
+    // ════════ OVERVIEW ════════
+    if (activeSection === 'overview') return (
+      <div style={{display:'grid',gap:16}}>
+        <div className="stat-grid stat-grid-3">
+          {React.createElement(StatCard,{label:resolveI18n({en:'Properties',nl:'Eigenschappen'},lang),value:allDefs.length,color:'var(--brand)'})}
+          {React.createElement(StatCard,{label:resolveI18n({en:'Entity Templates',nl:'Entiteit Templates'},lang),value:allTemplates.length,color:'var(--info)'})}
+          {React.createElement(StatCard,{label:resolveI18n({en:'Property Groups',nl:'Eigenschappengroepen'},lang),value:allGroups.length,color:'var(--purple)'})}
+        </div>
+        <div className="card" style={{textAlign:'center',padding:32}}>
+          <div style={{fontSize:32,marginBottom:8,color:'var(--brand)'}}>{React.createElement(DashboardOutlined)}</div>
+          <div style={{fontSize:14,fontWeight:600,color:'var(--text-primary)'}}>{resolveI18n({en:'Developer Studio',nl:'Developer Studio'},lang)}</div>
+          <div style={{fontSize:12,color:'var(--text-tertiary)',marginTop:4,maxWidth:400,margin:'4px auto 0'}}>
+            {resolveI18n({en:'Define properties, configure entity templates, and preview how entities render in the platform.',
+              nl:'Definieer eigenschappen, configureer entiteittemplates en bekijk een preview van hoe entiteiten worden weergegeven.'},lang)}
+          </div>
+        </div>
       </div>
     );
 
-    // ════════ STUB SECTIONS (flows, mcp, apiKeys) ════════
-    const stubMap = {
-      flows: { icon: BranchesOutlined, title: 'Flow Templates Library', detail: `12 templates · ${resolveI18n({en:'Reusable automation patterns',nl:'Herbruikbare automatiseringspatronen'},lang)}` },
-      mcp: { icon: ToolOutlined, title: 'MCP Tool Registry', detail: `34 tools · ${resolveI18n({en:'Model Context Protocol tools',nl:'Model Context Protocol tools'},lang)}` },
-      apiKeys: { icon: KeyOutlined, title: 'API Key Management', detail: `2 active keys · ${resolveI18n({en:'Manage API access',nl:'Beheer API-toegang'},lang)}` },
-    };
-    const stub = stubMap[activeSection];
-    if (stub) return (
+    // ════════ PREVIEW LAB ════════
+    if (activeSection === 'preview') return (
       <div className="card" style={{textAlign:'center',padding:40}}>
-        <div style={{fontSize:40,marginBottom:12}}>{React.createElement(stub.icon)}</div>
-        <div style={{fontSize:14,color:'var(--text-primary)'}}>{stub.title}</div>
-        <div style={{fontSize:12,color:'var(--text-tertiary)',marginTop:4}}>{stub.detail}</div>
+        <div style={{fontSize:40,marginBottom:12,color:'var(--brand)'}}>{React.createElement(EyeOutlined)}</div>
+        <div style={{fontSize:14,fontWeight:600,color:'var(--text-primary)'}}>{resolveI18n({en:'Preview Lab',nl:'Preview Lab'},lang)}</div>
+        <div style={{fontSize:12,color:'var(--text-tertiary)',marginTop:4}}>
+          {resolveI18n({en:'Select a template to preview how it renders as a detail page, list view, and form.',
+            nl:'Selecteer een template om te bekijken hoe het wordt weergegeven als detailpagina, lijstweergave en formulier.'},lang)}
+        </div>
       </div>
     );
 
