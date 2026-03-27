@@ -2196,6 +2196,7 @@ console.log(`PropertyCatalogStore: ${PropertyCatalogStore.getDefinitions().lengt
 // ═══════════════════════════════════════════════════════════════════════
 const EntityTemplateStore = (() => {
   const _templates = new Map();
+  const _versions = new Map(); // key → array of old versions
   const _listeners = [];
 
   function _notify() { _listeners.forEach(fn => fn()); }
@@ -2203,11 +2204,34 @@ const EntityTemplateStore = (() => {
 
   function _key(entityType, typeKey) { return `${entityType}:${typeKey || 'default'}`; }
 
-  function putTemplate(tmpl) { _templates.set(_key(tmpl.entity_type, tmpl.type_key), tmpl); _notify(); }
+  function putTemplate(tmpl) {
+    const key = _key(tmpl.entity_type, tmpl.type_key);
+    const existing = _templates.get(key);
+    if (existing) {
+      // Auto-version: save old version to history
+      if (!_versions.has(key)) _versions.set(key, []);
+      _versions.get(key).push({...existing, _savedAt: new Date().toISOString()});
+      tmpl.version = (existing.version || 1) + 1;
+    }
+    _templates.set(key, tmpl);
+    _notify();
+  }
   function getTemplate(entityType, typeKey) { return _templates.get(_key(entityType, typeKey)) || _templates.get(_key(entityType, 'default')); }
   function getTemplates() { return Array.from(_templates.values()); }
   function getByEntityType(entityType) { return getTemplates().filter(t => t.entity_type === entityType); }
   function removeTemplate(entityType, typeKey) { _templates.delete(_key(entityType, typeKey)); _notify(); }
+
+  function getVersions(entityType, typeKey) {
+    return _versions.get(_key(entityType, typeKey || 'default')) || [];
+  }
+
+  function rollback(entityType, typeKey, versionIndex) {
+    const key = _key(entityType, typeKey || 'default');
+    const versions = _versions.get(key);
+    if (!versions || !versions[versionIndex]) return;
+    const old = versions[versionIndex];
+    putTemplate({...old, version: (_templates.get(key)?.version || 1) + 1});
+  }
 
   function resolveTemplate(entityType, typeKey) {
     const tmpl = getTemplate(entityType, typeKey);
@@ -2242,7 +2266,7 @@ const EntityTemplateStore = (() => {
     return { ...tmpl, resolved: { properties: resolvedProperties, formGroups: resolvedFormGroups, columns: resolvedColumns } };
   }
 
-  return { putTemplate, getTemplate, getTemplates, getByEntityType, removeTemplate, resolveTemplate, subscribe };
+  return { putTemplate, getTemplate, getTemplates, getByEntityType, removeTemplate, resolveTemplate, subscribe, getVersions, rollback };
 })();
 
 // ── Seed: Entity Templates (9 entity types) ──
@@ -2251,6 +2275,7 @@ const EntityTemplateStore = (() => {
   { entity_type:'platform', type_key:'default', name:'Platform',
     description:{en:'The root platform entity managing all accounts, sites, and system settings',nl:'Het rootplatform dat alle accounts, locaties en systeeminstellingen beheert'},
     icon:'GlobalOutlined', lifecycle_status:'active', version:1,
+    children_types:[{entity_type:'account'},{entity_type:'role'},{entity_type:'user'}],
     properties: [
       { property_key:'name', required:true, sort_order:1 },
       { property_key:'version', sort_order:2 },
@@ -2306,6 +2331,7 @@ const EntityTemplateStore = (() => {
   { entity_type:'account', type_key:'default', name:'Account',
     description:{en:'An organization or company managing energy assets across multiple sites',nl:'Een organisatie die energie-assets beheert over meerdere locaties'},
     icon:'BankOutlined', lifecycle_status:'active', version:1,
+    children_types:[{entity_type:'subAccount'}],
     properties: [
       { property_key:'name', required:true, sort_order:1 },
       { property_key:'account_type', required:true, sort_order:2 },
@@ -2363,6 +2389,7 @@ const EntityTemplateStore = (() => {
   { entity_type:'subAccount', type_key:'default', name:'Sub-account',
     description:{en:'A regional division within an account, grouping sites by geography or business unit',nl:'Een regionale afdeling binnen een account'},
     icon:'TeamOutlined', lifecycle_status:'active', version:1,
+    children_types:[{entity_type:'site'}],
     properties: [
       { property_key:'name', required:true, sort_order:1 },
       { property_key:'region', required:true, sort_order:2 },
@@ -2409,6 +2436,7 @@ const EntityTemplateStore = (() => {
   { entity_type:'site', type_key:'default', name:'Site',
     description:{en:'A physical location with energy devices — a building, farm, or industrial facility',nl:'Een fysieke locatie met energieapparaten — een gebouw, boerderij of industriele faciliteit'},
     icon:'HomeOutlined', lifecycle_status:'active', version:1,
+    children_types:[{entity_type:'deviceGroup'}],
     properties: [
       { property_key:'name', required:true, sort_order:1 },
       { property_key:'site_type', required:true, sort_order:2 },
@@ -2473,6 +2501,7 @@ const EntityTemplateStore = (() => {
   { entity_type:'deviceGroup', type_key:'default', name:'Device Group',
     description:{en:'A logical grouping of devices — solar array, battery storage, EV charging station',nl:'Een logische groep apparaten — zonnepanelen, batterijopslag, EV-laadstation'},
     icon:'AppstoreOutlined', lifecycle_status:'active', version:1,
+    children_types:[{entity_type:'deviceGroup'},{entity_type:'device'}],
     properties: [
       { property_key:'name', required:true, sort_order:1 },
       { property_key:'device_group_type', required:true, sort_order:2 },
@@ -2514,6 +2543,7 @@ const EntityTemplateStore = (() => {
   { entity_type:'device', type_key:'default', name:'Device',
     description:{en:'A physical energy device — inverter, battery, charger, meter, or gateway',nl:'Een fysiek energieapparaat — omvormer, batterij, lader, meter of gateway'},
     icon:'HddOutlined', lifecycle_status:'active', version:1,
+    children_types:[{entity_type:'sensor'},{entity_type:'actuator'}],
     properties: [
       { property_key:'name', required:true, sort_order:1 },
       { property_key:'device_type', required:true, sort_order:2 },
@@ -2571,6 +2601,7 @@ const EntityTemplateStore = (() => {
   { entity_type:'sensor', type_key:'default', name:'Sensor',
     description:{en:'A measurement point on a device — power, voltage, temperature, energy',nl:'Een meetpunt op een apparaat — vermogen, spanning, temperatuur, energie'},
     icon:'RadarChartOutlined', lifecycle_status:'active', version:1,
+    children_types:[],
     properties: [
       { property_key:'name', required:true, sort_order:1 },
       { property_key:'sensor_type', required:true, sort_order:2 },
@@ -2625,6 +2656,7 @@ const EntityTemplateStore = (() => {
   { entity_type:'actuator', type_key:'default', name:'Actuator',
     description:{en:'A control point on a device — power limit, mode switch, relay',nl:'Een besturingspunt op een apparaat — vermogenslimiet, modusschakelaar, relais'},
     icon:'SlidersOutlined', lifecycle_status:'active', version:1,
+    children_types:[],
     properties: [
       { property_key:'name', required:true, sort_order:1 },
       { property_key:'actuator_type', required:true, sort_order:2 },
@@ -2678,6 +2710,7 @@ const EntityTemplateStore = (() => {
   { entity_type:'user', type_key:'default', name:'User',
     description:{en:'A person who accesses the platform with specific roles and permissions',nl:'Een persoon die het platform gebruikt met specifieke rollen en rechten'},
     icon:'UserOutlined', lifecycle_status:'active', version:1,
+    children_types:[],
     properties: [
       { property_key:'name', required:true, sort_order:1 },
       { property_key:'email', required:true, sort_order:2 },
@@ -2714,6 +2747,7 @@ EntityTemplateStore.putTemplate({
   entity_type: 'role', type_key: 'default', name: 'Role',
   description:{en:'An access control role defining what a user can do at each scope level',nl:'Een toegangsrol die bepaalt wat een gebruiker kan doen op elk bereikniveau'},
   icon: 'SafetyCertificateOutlined', lifecycle_status: 'active', version: 1,
+  children_types:[],
   properties: [
     {property_key:'name', required:true, sort_order:1},
     {property_key:'description', sort_order:2},
@@ -9143,6 +9177,7 @@ function ConfigurationPage({ t, lang, navigateWithLoader, focusedEntityId, setFo
                       <span key={tag} style={{fontSize:10,padding:'1px 7px',borderRadius:8,background:'var(--bg-secondary)',color:'var(--text-secondary)',border:'1px solid var(--border)'}}>{tag}</span>
                     ))}
                   </div>
+                  {(() => { const _td = _entityTemplate?.description; const _tdStr = _td ? (typeof _td === 'object' ? resolveI18n(_td,lang) : _td) : null; return _tdStr ? React.createElement('div', {style:{fontSize:10,color:'var(--text-tertiary)',marginTop:2}}, _tdStr) : null; })()}
                 </div>
                 <div style={{display:'flex',gap:4,flexShrink:0}}>
                   <span className="crud-btn crud-btn-edit" onClick={() => openEditModal(selectedEntity)}><EditOutlined style={{fontSize:12}}/></span>
@@ -9937,6 +9972,7 @@ function DeveloperStudioPage({t, lang, tab}) {
       properties: [],
       form_groups: [],
       columns: [],
+      children_types: [],
       detail_tabs: [
         {key:'overview', label:{en:'Overview',nl:'Overzicht'}, type:'overview'},
       ],
@@ -10257,6 +10293,98 @@ function DeveloperStudioPage({t, lang, tab}) {
                         </div>
                       </div>
                     )}
+
+                    {/* ── Relationships section ── */}
+                    {(() => {
+                      const childTypes = tmpl.children_types || [];
+                      const availableTypes = Object.keys(ENTITY_TYPE_REGISTRY).filter(et => !childTypes.some(ct => ct.entity_type === et));
+                      return React.createElement('div', null,
+                        React.createElement('div', {style:{fontSize:11,fontWeight:600,color:'var(--text-primary)',marginBottom:6}},
+                          resolveI18n({en:'Relationships',nl:'Relaties'},lang), ' (', childTypes.length, ')'
+                        ),
+                        React.createElement('div', {style:{display:'flex',flexWrap:'wrap',gap:4,marginBottom:8}},
+                          childTypes.length === 0
+                            ? React.createElement('span', {style:{fontSize:11,color:'var(--text-tertiary)',fontStyle:'italic'}},
+                                resolveI18n({en:'No child types allowed (leaf entity)',nl:'Geen kindtypen toegestaan (bladentiteit)'},lang))
+                            : childTypes.map(ct => {
+                                const ctReg = ENTITY_TYPE_REGISTRY[ct.entity_type];
+                                const CtIcon = window[ctReg?.icon] || BlockOutlined;
+                                return React.createElement('span', {key:ct.entity_type, style:{padding:'3px 8px',borderRadius:4,fontSize:10,
+                                  background:'var(--bg-card)',border:'1px solid var(--border)',display:'flex',alignItems:'center',gap:4}},
+                                  React.createElement(CtIcon, {style:{fontSize:11,color:ctReg?.color||'var(--text-tertiary)'}}),
+                                  React.createElement('span', {style:{color:'var(--text-primary)'}}, resolveI18n(ctReg?.label,lang)||ct.entity_type),
+                                  React.createElement('span', {style:{cursor:'pointer',color:'var(--text-tertiary)',fontSize:9,marginLeft:2,lineHeight:1},
+                                    title:resolveI18n({en:'Remove relationship',nl:'Relatie verwijderen'},lang),
+                                    onClick:(e) => {
+                                      e.stopPropagation();
+                                      const updated = {...tmpl, children_types: (tmpl.children_types||[]).filter(c => c.entity_type !== ct.entity_type)};
+                                      EntityTemplateStore.putTemplate(updated);
+                                      rerender();
+                                    }}, '\u00d7')
+                                );
+                              })
+                        ),
+                        availableTypes.length > 0 && React.createElement(Select, {
+                          size:'small', style:{width:220},
+                          showSearch:true, filterOption:(input,option) => (option?.label||'').toLowerCase().includes(input.toLowerCase()),
+                          placeholder:resolveI18n({en:'Add child type...',nl:'Kindtype toevoegen...'},lang),
+                          value:undefined,
+                          onChange:(val) => {
+                            const updated = {...tmpl, children_types: [...(tmpl.children_types||[]), {entity_type:val}]};
+                            EntityTemplateStore.putTemplate(updated);
+                            rerender();
+                          },
+                          options:availableTypes.map(et => {
+                            const etR = ENTITY_TYPE_REGISTRY[et];
+                            return {value:et, label:resolveI18n(etR?.label,lang)||et};
+                          }),
+                        })
+                      );
+                    })()}
+
+                    {/* ── Version History section ── */}
+                    {(() => {
+                      const versions = EntityTemplateStore.getVersions(tmpl.entity_type, tmpl.type_key);
+                      const [showAllVersions, setShowAllVers] = [false, (v) => {}]; // static — use state from parent
+                      const displayVersions = versions.slice().reverse();
+                      const visibleVersions = displayVersions.slice(0, 5);
+                      const hasMore = displayVersions.length > 5;
+                      return React.createElement('div', {style:{padding:'10px 14px',background:'var(--bg-card)',borderRadius:8,border:'1px solid var(--border)'}},
+                        React.createElement('div', {style:{fontSize:11,fontWeight:600,color:'var(--text-secondary)',marginBottom:versions.length > 0 ? 8 : 0,display:'flex',alignItems:'center',gap:6}},
+                          React.createElement(HistoryOutlined, {style:{fontSize:12}}),
+                          resolveI18n({en:'Version History',nl:'Versiegeschiedenis'},lang),
+                          React.createElement('span', {style:{fontSize:10,color:'var(--text-tertiary)',fontWeight:400}}, '(' + versions.length + ')')
+                        ),
+                        versions.length === 0
+                          ? React.createElement('div', {style:{fontSize:11,color:'var(--text-tertiary)',fontStyle:'italic'}},
+                              resolveI18n({en:'No previous versions',nl:'Geen eerdere versies'},lang))
+                          : React.createElement('div', {style:{display:'grid',gap:4}},
+                              visibleVersions.map((ver, idx) => {
+                                const realIdx = versions.length - 1 - idx;
+                                return React.createElement('div', {key:idx, style:{display:'flex',alignItems:'center',gap:8,padding:'4px 8px',
+                                  borderRadius:4,background:'var(--bg-secondary)',border:'1px solid var(--border)',fontSize:11}},
+                                  React.createElement('span', {style:{fontWeight:600,color:'var(--brand)',minWidth:28}}, 'v' + (ver.version||1)),
+                                  React.createElement('span', {style:{color:'var(--text-tertiary)',fontSize:10,flex:1}},
+                                    ver._savedAt ? new Date(ver._savedAt).toLocaleString() : '—'),
+                                  React.createElement('button', {className:'header-btn',
+                                    style:{padding:'1px 8px',fontSize:10,color:'var(--info)',borderColor:'var(--info)'},
+                                    onClick:(e) => {
+                                      e.stopPropagation();
+                                      EntityTemplateStore.rollback(tmpl.entity_type, tmpl.type_key, realIdx);
+                                      rerender();
+                                    }},
+                                    React.createElement(RollbackOutlined, {style:{fontSize:9,marginRight:3}}),
+                                    resolveI18n({en:'Rollback',nl:'Terugzetten'},lang)
+                                  )
+                                );
+                              }),
+                              hasMore && React.createElement('div', {style:{fontSize:10,color:'var(--brand)',cursor:'pointer',padding:'2px 8px'},
+                                onClick:(e) => { e.stopPropagation(); }},
+                                resolveI18n({en:`Show all ${displayVersions.length} versions`,nl:`Toon alle ${displayVersions.length} versies`},lang)
+                              )
+                            )
+                      );
+                    })()}
 
                     {/* ── JSON Source (live-updating) ── */}
                     {React.createElement(CodeViewer, {
