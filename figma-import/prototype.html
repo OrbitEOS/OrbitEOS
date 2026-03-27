@@ -1337,6 +1337,7 @@ function generateAuditLog(entity, lang) {
 // ─── Centralized Registries (single source of truth) ───
 
 // Entity type labels and metadata
+// DEPRECATED: replaced by EntityTemplateStore
 const ENTITY_TYPE_REGISTRY = {
   platform:    { label:{en:'Platform',nl:'Platform',de:'Plattform'}, icon:'GlobalOutlined', color:'var(--brand)' },
   account:     { label:{en:'Account',nl:'Account',de:'Konto'}, icon:'BankOutlined', color:'var(--info)' },
@@ -1381,6 +1382,7 @@ const STATUS_LABELS = {
 };
 
 // Form options registry — all select options in one place
+// DEPRECATED: replaced by PropertyCatalogStore enum_values
 const FORM_OPTIONS = {
   accountTypes:    [{value:'Commercial',label:{en:'Commercial',nl:'Commercieel'}},{value:'Industrial',label:{en:'Industrial',nl:'Industrieel'}},{value:'Residential',label:{en:'Residential',nl:'Residentieel'}},{value:'Government',label:{en:'Government',nl:'Overheid'}}],
   plans:           [{value:'Starter',label:{en:'Starter'}},{value:'Professional',label:{en:'Professional'}},{value:'Enterprise',label:{en:'Enterprise'}}],
@@ -1403,7 +1405,7 @@ const FORM_OPTIONS = {
   severities:      [{value:'critical',label:{en:'Critical',nl:'Kritiek'}},{value:'warning',label:{en:'Warning',nl:'Waarschuwing'}},{value:'info',label:{en:'Info'}}],
 };
 
-// Column definitions registry — reusable across tabs
+// DEPRECATED: replaced by template columns
 const COLUMN_REGISTRY = {
   severity: (lang) => ({ key:'sev', label:{en:'Severity',nl:'Ernst'}, filterable:true,
     filterOptions:FORM_OPTIONS.severities,
@@ -1563,7 +1565,7 @@ const ROLE_DEFINITIONS = RoleStore.getAll().map(r => ({
 }));
 
 // ═══════════════════════════════════════════════════════════════════════
-// ─── TabRegistry (entity type → ordered tab definitions) ───
+// DEPRECATED: replaced by template detail_tabs
 // ═══════════════════════════════════════════════════════════════════════
 const TabRegistry = (() => {
   const _tabs = {
@@ -2221,6 +2223,7 @@ const EntityTemplateStore = (() => {
       { key:'users', label:{en:'Users',nl:'Gebruikers'}, type:'action', mfe_key:'UsersTab' },
       { key:'roles', label:{en:'Roles',nl:'Rollen'}, type:'action', mfe_key:'RolesTab' },
       { key:'privileges', label:{en:'Privileges',nl:'Rechten'}, type:'action', mfe_key:'PrivilegesTab' },
+      { key:'propertyCatalog', label:{en:'Property Catalog',nl:'Eigenschappen Catalogus'}, type:'custom', mfe_key:'PropertyCatalogTab' },
       { key:'domains', label:{en:'Domains',nl:'Domeinen'}, type:'action', mfe_key:'DomainsTab' },
       { key:'events', label:{en:'Events',nl:'Gebeurtenissen'}, type:'action', mfe_key:'EventsTab' },
       { key:'alarms', label:{en:'Alarms',nl:'Alarmen'}, type:'action', mfe_key:'AlarmsTab' },
@@ -2620,6 +2623,8 @@ const EntityTemplateStore = (() => {
     ],
     detail_tabs: [
       { key:'overview', label:{en:'Overview',nl:'Overzicht'}, type:'overview' },
+      { key:'security', label:{en:'Security',nl:'Beveiliging'}, type:'custom', mfe_key:'UserSecurityMFE' },
+      { key:'permissions', label:{en:'Permissions',nl:'Rechten'}, type:'custom', mfe_key:'UserPermissionsMFE' },
     ],
     overview: {
       properties: [ { property_key:'email' }, { property_key:'phone' } ],
@@ -6842,7 +6847,7 @@ function FieldRenderer({ field, value, onChange, lang, readOnly }) {
   return React.createElement(Input, { size:'small', value:value||'', placeholder, onChange:e=>onChange(e.target.value) });
 }
 
-// ─── Entity Edit Schema (declarative field definitions) ───
+// DEPRECATED: replaced by EntityTemplateStore.resolveTemplate()
 const ENTITY_EDIT_SCHEMA = {
   general: {
     _all: [
@@ -6996,7 +7001,7 @@ const ENTITY_EDIT_SCHEMA = {
   },
 };
 
-// Sub-tab definitions
+// DEPRECATED: replaced by template form_groups
 const EDIT_SUB_TABS = [
   { key:'general', label:{en:'General',nl:'Algemeen',de:'Allgemein'}, icon:'SettingOutlined' },
   { key:'location', label:{en:'Location',nl:'Locatie',de:'Standort'}, icon:'EnvironmentOutlined' },
@@ -7009,7 +7014,7 @@ const EDIT_SUB_TABS = [
   { key:'compliance', label:{en:'Compliance',nl:'Naleving',de:'Compliance'}, icon:'SafetyCertificateOutlined' },
 ];
 
-// Icon lookup for sub-tabs
+// DEPRECATED: replaced by template form_groups[].icon
 const SUB_TAB_ICONS = {
   SettingOutlined, EnvironmentOutlined, EuroCircleOutlined, ApiOutlined, CloudServerOutlined,
   ControlOutlined, SlidersOutlined, GlobalOutlined, SafetyCertificateOutlined
@@ -7032,7 +7037,7 @@ function getApplicableSubTabs(entityType) {
   });
 }
 
-// Overview schema
+// DEPRECATED: replaced by template overview layout
 const OVERVIEW_SCHEMA = {
   platform: {
     properties: [
@@ -7846,7 +7851,7 @@ function EntityList({ columns, dataSource, rowKey='id', title, lang='en',
   );
 }
 
-// ─── Column definitions per entity type (data-driven, i18n-aware) ───
+// DEPRECATED: replaced by template columns
 const ENTITY_COLUMNS = {
   account: [
     { key:'name', label:{en:'Name',nl:'Naam'}, sortable:true, render:(_,r) => React.createElement('span',{style:{fontWeight:500}},r.name) },
@@ -8709,6 +8714,122 @@ function AllDevicesTab({ entity, t, lang, onNavigate }) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════
+// ─── PropertyCatalogTab (Platform → Property Catalog) ───
+// ═══════════════════════════════════════════════════════════════════════
+function PropertyCatalogTab({ entity, lang, onOpenModal }) {
+  const [, setTick] = useState(0);
+  const rerender = () => setTick(t => t+1);
+  const groups = PropertyCatalogStore.getGroups();
+  const allDefs = PropertyCatalogStore.getDefinitions();
+  const [expandedGroup, setExpandedGroup] = useState(null);
+
+  const propCols = [
+    { key:'key', label:{en:'Key',nl:'Sleutel'}, sortable:true, render:(_,r) => React.createElement('span',{style:{fontFamily:'monospace',fontSize:11,color:'var(--brand)'}},r.key) },
+    { key:'name', label:{en:'Name',nl:'Naam'}, sortable:true, render:(_,r) => React.createElement('span',{style:{fontWeight:500}},resolveI18n(r.i18n,lang)||r.name) },
+    { key:'data_type', label:{en:'Type',nl:'Type'}, filterable:true },
+    { key:'ui_representation', label:{en:'UI',nl:'UI'}, filterable:true },
+    { key:'applies_to', label:{en:'Applies To',nl:'Toepasselijk Op'}, render:(_,r) => React.createElement('span',{style:{fontSize:10,color:'var(--text-tertiary)'}}, (r.applies_to||[]).join(', ')) },
+    { key:'lifecycle_status', label:{en:'Status',nl:'Status'}, filterable:true,
+      render:(_,r) => React.createElement(Tag,{color:r.lifecycle_status==='active'?'green':r.lifecycle_status==='deprecated'?'orange':'default',style:{margin:0,fontSize:10}},r.lifecycle_status) },
+  ];
+
+  return React.createElement('div',{className:'config-tab-content'},
+    React.createElement('div',{style:{fontSize:13,fontWeight:600,color:'var(--text-primary)',marginBottom:4}},
+      resolveI18n({en:'Property Catalog',nl:'Eigenschappen Catalogus'},lang)),
+    React.createElement('div',{style:{fontSize:11,color:'var(--text-tertiary)',marginBottom:12}},
+      resolveI18n({en:`${allDefs.length} properties in ${groups.length} groups`,nl:`${allDefs.length} eigenschappen in ${groups.length} groepen`},lang)),
+
+    React.createElement('div',{style:{display:'grid',gap:6}},
+      groups.map(grp => {
+        const grpDefs = PropertyCatalogStore.getByGroup(grp.key);
+        const isOpen = expandedGroup === grp.key;
+        return React.createElement('div',{key:grp.key,style:{background:'var(--bg-secondary)',borderRadius:8,border:'1px solid var(--border)',overflow:'hidden'}},
+          React.createElement('div',{style:{display:'flex',alignItems:'center',gap:8,padding:'8px 12px',cursor:'pointer'},onClick:()=>setExpandedGroup(isOpen?null:grp.key)},
+            React.createElement('span',{style:{fontSize:12,fontWeight:600,color:'var(--text-primary)'}},resolveI18n(grp.i18n,lang)||grp.name),
+            React.createElement('span',{style:{fontSize:10,color:'var(--text-tertiary)',flex:1}},`${grpDefs.length} ${resolveI18n({en:'properties',nl:'eigenschappen'},lang)}`),
+            React.createElement(RightOutlined,{style:{fontSize:8,color:'var(--text-tertiary)',transform:isOpen?'rotate(90deg)':'none',transition:'transform 0.15s'}})
+          ),
+          isOpen && React.createElement('div',{style:{padding:'0 4px 4px',borderTop:'1px solid var(--border)'}},
+            React.createElement(EntityList,{
+              columns:propCols, dataSource:grpDefs, rowKey:'key', lang, searchable:true,
+              rowActions:[
+                {key:'delete',icon:React.createElement(DeleteOutlined,{style:{fontSize:12}}),danger:true,
+                  onClick:row => { PropertyCatalogStore.removeDefinition(row.key); rerender(); }},
+              ],
+              inlineAdd:{
+                label:{en:'Add property',nl:'Eigenschap toevoegen'},
+                fields:[
+                  {key:'key',placeholder:{en:'property_key',nl:'eigenschap_sleutel'},autoFocus:true},
+                  {key:'name',placeholder:{en:'Display name',nl:'Weergavenaam'}},
+                ],
+                onSave:(vals) => {
+                  if (!vals.key?.trim() || !vals.name?.trim()) return;
+                  PropertyCatalogStore.putDefinition({
+                    key:vals.key.trim().toLowerCase().replace(/\s+/g,'_'),
+                    name:vals.name.trim(),
+                    i18n:{en:vals.name.trim()},
+                    group_key:grp.key, category:'fixed', data_type:'string', ui_representation:'text',
+                    applies_to:[], is_required:false, is_readonly:false, lifecycle_status:'active',
+                    entity_path:`properties.${vals.key.trim().toLowerCase().replace(/\s+/g,'_')}`,
+                  });
+                  rerender();
+                }
+              }
+            })
+          )
+        );
+      })
+    )
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// ─── UserSecurityMFE (User → Security tab) ───
+// ═══════════════════════════════════════════════════════════════════════
+function UserSecurityMFE({ entity, lang }) {
+  return React.createElement('div',{className:'config-tab-content'},
+    React.createElement('div',{className:'mfe-section-title'},resolveI18n({en:'Security',nl:'Beveiliging'},lang)),
+    React.createElement('div',{style:{display:'grid',gap:12,maxWidth:400}},
+      React.createElement('div',null,
+        React.createElement('div',{style:{fontSize:11,fontWeight:500,color:'var(--text-primary)',marginBottom:4}},resolveI18n({en:'Change Password',nl:'Wachtwoord Wijzigen'},lang)),
+        React.createElement(Input.Password,{size:'small',placeholder:'\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022'})),
+      React.createElement('div',null,
+        React.createElement('div',{style:{fontSize:11,fontWeight:500,color:'var(--text-primary)',marginBottom:4}},resolveI18n({en:'Confirm Password',nl:'Bevestig Wachtwoord'},lang)),
+        React.createElement(Input.Password,{size:'small',placeholder:'\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022'})),
+      React.createElement('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'8px 0',borderTop:'1px solid var(--border)'}},
+        React.createElement('div',null,
+          React.createElement('div',{style:{fontSize:12,fontWeight:500,color:'var(--text-primary)'}},resolveI18n({en:'Two-Factor Authentication',nl:'Tweefactorauthenticatie'},lang)),
+          React.createElement('div',{style:{fontSize:10,color:'var(--text-tertiary)'}},resolveI18n({en:'Add an extra layer of security',nl:'Voeg een extra beveiligingslaag toe'},lang))),
+        React.createElement(Switch,{size:'small'})),
+      React.createElement('div',{style:{display:'flex',gap:8,justifyContent:'flex-end'}},
+        React.createElement(Button,{size:'small',type:'primary'},resolveI18n({en:'Save',nl:'Opslaan'},lang)))
+    )
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// ─── UserPermissionsMFE (User → Permissions tab) ───
+// ═══════════════════════════════════════════════════════════════════════
+function UserPermissionsMFE({ entity, entityId, lang }) {
+  const userId = entityId || entity?.id;
+  const assignments = AccessStore.getForUser(userId);
+  const permCols = [
+    { key:'scope', label:{en:'Scope',nl:'Bereik'}, sortable:true,
+      render:(_,r) => { const e = EntityStore.get(r.scopeId); return React.createElement('span',{style:{fontWeight:500}},e?.name||r.scopeId); } },
+    { key:'role', label:{en:'Role',nl:'Rol'}, filterable:true,
+      render:(_,r) => React.createElement(Tag,{color:ROLE_STYLING[r.role]?.color||'default',style:{margin:0,fontSize:10}},r.role) },
+    { key:'permissions', label:{en:'Permissions',nl:'Rechten'},
+      render:(_,r) => React.createElement('span',{style:{fontSize:10,color:'var(--text-tertiary)'}}, (r.permissions||[]).slice(0,3).join(', ')+(r.permissions?.length>3?'...':'')) },
+  ];
+  return React.createElement('div',{className:'config-tab-content'},
+    React.createElement(EntityList,{ columns:permCols, dataSource:assignments, rowKey:(r)=>`${r.userId}@${r.scopeId}`, lang,
+      title:{en:'Role Assignments',nl:'Roltoewijzingen'},
+      emptyText:{en:'No assignments',nl:'Geen toewijzingen'},
+      emptyIcon:React.createElement(TeamOutlined) })
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════
 // ─── MFERegistry (Micro-frontend component registry) ───
 // Maps entity-type + tab-key to custom component overrides.
 // Wildcard '*' matches any entity type for shared tabs.
@@ -8738,6 +8859,9 @@ MFERegistry.register('deviceGroup', 'metrics', MetricsTab);
 MFERegistry.register('account', 'billing', BillingTab);
 MFERegistry.register('account', 'apiKeys', ApiKeysTab);
 MFERegistry.register('platform', 'domains', DomainsTab);
+MFERegistry.register('platform', 'propertyCatalog', PropertyCatalogTab);
+MFERegistry.register('user', 'security', UserSecurityMFE);
+MFERegistry.register('user', 'permissions', UserPermissionsMFE);
 MFERegistry.register('site', 'allDevices', AllDevicesTab);
 
 // ─── Configuration Page (Unified) ───
