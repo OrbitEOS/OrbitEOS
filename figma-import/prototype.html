@@ -9891,6 +9891,10 @@ function DeveloperStudioPage({t, lang, tab}) {
   const [creatingTmpl, setCreatingTmpl] = useState(false);
   const [newTmplData, setNewTmplData] = useState({entity_type:'',type_key:'',name:'',description:'',lifecycle_status:'draft'});
   const [activeSection, setActiveSection] = useState(tab || 'overview');
+  const [propPickerSearch, setPropPickerSearch] = useState('');
+  const [propModalFromPicker, setPropModalFromPicker] = useState(null);
+  const [previewType, setPreviewType] = useState(null);
+  const [previewTab, setPreviewTab] = useState('overview');
 
   // Template data from real stores
   const allTemplates = EntityTemplateStore.getTemplates();
@@ -9950,6 +9954,59 @@ function DeveloperStudioPage({t, lang, tab}) {
     rerender();
   };
 
+  // ── Add property to template ──
+  const addPropertyToTemplate = (tmpl, propertyKey) => {
+    const existing = (tmpl.properties || []).map(p => p.property_key);
+    if (existing.includes(propertyKey)) return;
+    const updated = { ...tmpl, properties: [...(tmpl.properties || []), { property_key: propertyKey }] };
+    EntityTemplateStore.putTemplate(updated);
+    rerender();
+  };
+
+  // ── Remove property from template ──
+  const removePropertyFromTemplate = (tmpl, propertyKey) => {
+    const updated = { ...tmpl, properties: (tmpl.properties || []).filter(p => p.property_key !== propertyKey) };
+    EntityTemplateStore.putTemplate(updated);
+    rerender();
+  };
+
+  // ── Template export ──
+  const handleTemplateExport = () => {
+    const blob = new Blob([JSON.stringify(allTemplates, null, 2)], {type:'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = 'entity-templates.json'; a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  // ── Template import ──
+  const handleTemplateImport = (data) => {
+    const arr = Array.isArray(data) ? data : [data];
+    arr.forEach(t => { if (t.entity_type && t.name) EntityTemplateStore.putTemplate(t); });
+    rerender();
+  };
+
+  // ── Generate dummy entity from template ──
+  function generateDummyEntity(entityType, template) {
+    const entity = createEntity({ entityType, name: `Sample ${entityType}`, id: `preview-${entityType}-${Date.now()}` });
+    const resolved = EntityTemplateStore.resolveTemplate(entityType);
+    if (!resolved) return entity;
+    (resolved.resolved?.properties || []).forEach(prop => {
+      let val;
+      switch(prop.data_type) {
+        case 'string': val = prop.enum_values ? prop.enum_values[0] : `Sample ${prop.name}`; break;
+        case 'number': val = prop.validation?.min != null ? prop.validation.min + 1 : 42; break;
+        case 'boolean': val = true; break;
+        case 'enum': val = prop.enum_values?.[0] || ''; break;
+        case 'datetime': val = '2025-01-15'; break;
+        case 'json': val = []; break;
+        default: val = '';
+      }
+      setNestedValue(entity, prop.entity_path || `properties.${prop.key}`, val);
+    });
+    entity.state = { status: 'online' };
+    return entity;
+  }
+
   // ── Render section content ──
   const renderSectionContent = () => {
     // ════════ TEMPLATES ════════
@@ -9998,10 +10055,20 @@ function DeveloperStudioPage({t, lang, tab}) {
           </div>
         )}
 
+        {/* Property create modal triggered from autocomplete picker */}
+        {propModalFromPicker && React.createElement(PropertyEditModal, {
+          mode:'create', def:null, lang,
+          onSave:(def) => { PropertyCatalogStore.putDefinition(def); addPropertyToTemplate(propModalFromPicker, def.key); setPropModalFromPicker(null); rerender(); },
+          onCancel:() => setPropModalFromPicker(null),
+        })}
+
         <div className="card" style={{padding:0}}>
-          <div style={{padding:'16px 20px',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+          <div style={{padding:'16px 20px',display:'flex',justifyContent:'space-between',alignItems:'center',gap:8}}>
             <div className="card-title">{resolveI18n({en:'Entity Templates',nl:'Entiteit Templates'},lang)} ({allTemplates.length})</div>
-            <button className="header-btn primary" onClick={()=>setCreatingTmpl(true)}>+ {resolveI18n({en:'New Template',nl:'Nieuw Template'},lang)}</button>
+            <div style={{display:'flex',gap:6,alignItems:'center'}}>
+              {React.createElement(ImportExportButtons, {lang, onExport:handleTemplateExport, onImport:handleTemplateImport})}
+              <button className="header-btn primary" onClick={()=>setCreatingTmpl(true)}>+ {resolveI18n({en:'New Template',nl:'Nieuw Template'},lang)}</button>
+            </div>
           </div>
           <table className="data-table">
             <thead><tr>
@@ -10091,20 +10158,41 @@ function DeveloperStudioPage({t, lang, tab}) {
                       )}
                     </div>
 
-                    {/* ── Properties section ── */}
+                    {/* ── Properties section with autocomplete picker ── */}
                     <div>
                       <div style={{fontSize:11,fontWeight:600,color:'var(--text-primary)',marginBottom:6}}>{resolveI18n({en:'Properties',nl:'Eigenschappen'},lang)} ({(tmpl.properties||[]).length})</div>
-                      <div style={{display:'flex',flexWrap:'wrap',gap:4}}>
+                      <div style={{display:'flex',flexWrap:'wrap',gap:4,marginBottom:8}}>
                         {(resolved?.resolved?.properties||[]).map(p => (
                           <span key={p.property_key||p.key} style={{padding:'3px 8px',borderRadius:4,fontSize:10,background:'var(--bg-card)',border:'1px solid var(--border)',
                             display:'flex',alignItems:'center',gap:4}}>
                             <span style={{fontFamily:'monospace',color:'var(--brand)'}}>{p.property_key||p.key}</span>
                             <span style={{color:'var(--text-tertiary)'}}>({p.group_key})</span>
                             {p.is_required && <span style={{color:'var(--error)',fontSize:9}}>*</span>}
+                            <span style={{cursor:'pointer',color:'var(--text-tertiary)',fontSize:9,marginLeft:2,lineHeight:1}}
+                              onClick={(e)=>{e.stopPropagation();removePropertyFromTemplate(tmpl,p.property_key||p.key)}}
+                              title={resolveI18n({en:'Remove property',nl:'Eigenschap verwijderen'},lang)}>&times;</span>
                           </span>
                         ))}
                         {(tmpl.properties||[]).length===0 && <span style={{fontSize:11,color:'var(--text-tertiary)',fontStyle:'italic'}}>{resolveI18n({en:'No properties defined',nl:'Geen eigenschappen gedefinieerd'},lang)}</span>}
                       </div>
+                      {/* Autocomplete property picker */}
+                      {React.createElement(Select, {
+                        size:'small', style:{width:280},
+                        showSearch:true, filterOption:(input,option) => (option?.label||'').toLowerCase().includes(input.toLowerCase()),
+                        placeholder:resolveI18n({en:'Add property...',nl:'Eigenschap toevoegen...'},lang),
+                        value:undefined,
+                        onChange:(val) => {
+                          if (val === '__create_new__') { setPropModalFromPicker(tmpl); }
+                          else { addPropertyToTemplate(tmpl, val); }
+                        },
+                        options:[
+                          ...allDefs
+                            .filter(d => !(tmpl.properties||[]).some(p => p.property_key === d.key))
+                            .map(d => ({value:d.key, label:`${d.key} — ${resolveI18n(d.i18n,lang)||d.name} (${d.group_key})`})),
+                          {value:'__divider__', label:'───────────', disabled:true},
+                          {value:'__create_new__', label:resolveI18n({en:'+ Create new property',nl:'+ Nieuwe eigenschap'},lang)},
+                        ],
+                      })}
                     </div>
 
                     {/* ── Form Groups section ── */}
@@ -10169,6 +10257,14 @@ function DeveloperStudioPage({t, lang, tab}) {
                         </div>
                       </div>
                     )}
+
+                    {/* ── JSON Source (live-updating) ── */}
+                    {React.createElement(CodeViewer, {
+                      value: resolved || tmpl,
+                      title: {en:'JSON Source',nl:'JSON Bron'},
+                      collapsible: true,
+                      lang,
+                    })}
                   </div>
                 </td></tr>
               );
@@ -10184,35 +10280,296 @@ function DeveloperStudioPage({t, lang, tab}) {
     );
 
     // ════════ OVERVIEW ════════
-    if (activeSection === 'overview') return (
-      <div style={{display:'grid',gap:16}}>
-        <div className="stat-grid stat-grid-3">
-          {React.createElement(StatCard,{label:resolveI18n({en:'Properties',nl:'Eigenschappen'},lang),value:allDefs.length,color:'var(--brand)'})}
-          {React.createElement(StatCard,{label:resolveI18n({en:'Entity Templates',nl:'Entiteit Templates'},lang),value:allTemplates.length,color:'var(--info)'})}
-          {React.createElement(StatCard,{label:resolveI18n({en:'Property Groups',nl:'Eigenschappengroepen'},lang),value:allGroups.length,color:'var(--purple)'})}
-        </div>
-        <div className="card" style={{textAlign:'center',padding:32}}>
-          <div style={{fontSize:32,marginBottom:8,color:'var(--brand)'}}>{React.createElement(DashboardOutlined)}</div>
-          <div style={{fontSize:14,fontWeight:600,color:'var(--text-primary)'}}>{resolveI18n({en:'Developer Studio',nl:'Developer Studio'},lang)}</div>
-          <div style={{fontSize:12,color:'var(--text-tertiary)',marginTop:4,maxWidth:400,margin:'4px auto 0'}}>
-            {resolveI18n({en:'Define properties, configure entity templates, and preview how entities render in the platform.',
-              nl:'Definieer eigenschappen, configureer entiteittemplates en bekijk een preview van hoe entiteiten worden weergegeven.'},lang)}
+    if (activeSection === 'overview') {
+      const activeTmplCount = allTemplates.filter(t => t.lifecycle_status === 'active').length;
+      const totalEntities = EntityStore.size();
+
+      // Hierarchy tree data
+      const hierarchyNodes = [
+        { type:'platform', indent:0, children:[
+          { type:'account', indent:1, children:[
+            { type:'subAccount', indent:2, children:[
+              { type:'site', indent:3, children:[
+                { type:'deviceGroup', indent:4, children:[
+                  { type:'device', indent:5, children:[
+                    { type:'sensor', indent:6, children:[] },
+                    { type:'actuator', indent:6, children:[] },
+                  ]},
+                ]},
+              ]},
+            ]},
+          ]},
+        ]},
+      ];
+
+      const renderHierarchyNode = (node, isLast, depth) => {
+        const reg = ENTITY_TYPE_REGISTRY[node.type];
+        const count = EntityStore.getByType(node.type).length;
+        const tmpl = EntityTemplateStore.getTemplate(node.type);
+        const IconComp = window[reg?.icon] || BlockOutlined;
+        const prefix = depth === 0 ? '' : isLast ? '\u2514\u2500\u2500 ' : '\u251c\u2500\u2500 ';
+        return React.createElement(React.Fragment, {key:node.type},
+          React.createElement('div', {style:{display:'flex',alignItems:'center',gap:8,padding:'5px 8px',paddingLeft:depth*20+8,
+            borderRadius:4,transition:'background 0.1s'}},
+            React.createElement('span',{style:{fontFamily:'monospace',fontSize:10,color:'var(--text-tertiary)',width:28,flexShrink:0,textAlign:'right'}},prefix),
+            React.createElement(IconComp,{style:{fontSize:13,color:reg?.color||'var(--text-tertiary)',flexShrink:0}}),
+            React.createElement('span',{style:{fontSize:12,fontWeight:500,color:'var(--text-primary)'}},resolveI18n(reg?.label,lang)||node.type),
+            React.createElement('span',{style:{fontSize:10,color:'var(--text-tertiary)',background:'var(--bg-card)',padding:'1px 6px',borderRadius:8,fontWeight:500}},count),
+            tmpl && React.createElement(Tag,{color:tmpl.lifecycle_status==='active'?'green':tmpl.lifecycle_status==='deprecated'?'orange':'default',
+              style:{margin:0,fontSize:8,lineHeight:'14px',padding:'0 4px'}},tmpl.lifecycle_status||'draft')
+          ),
+          (node.children||[]).map((child,i) => renderHierarchyNode(child, i === node.children.length - 1, depth + 1))
+        );
+      };
+
+      // Property usage matrix
+      const entityTypesForMatrix = Object.keys(ENTITY_TYPE_REGISTRY).filter(et => et !== 'role');
+      const groupsForMatrix = allGroups.filter(g => {
+        return allDefs.some(d => d.group_key === g.key);
+      });
+      const getGroupEntityCount = (groupKey, entityType) => {
+        return allDefs.filter(d => d.group_key === groupKey && (!d.applies_to || d.applies_to.length === 0 || d.applies_to.includes(entityType))).length;
+      };
+
+      return (
+        <div style={{display:'grid',gap:16}}>
+          {/* Stat cards row */}
+          <div className="stat-grid stat-grid-4">
+            {React.createElement(StatCard,{label:resolveI18n({en:'Total Properties',nl:'Totaal Eigenschappen'},lang),value:allDefs.length,color:'var(--brand)'})}
+            {React.createElement(StatCard,{label:resolveI18n({en:'Total Templates',nl:'Totaal Templates'},lang),value:allTemplates.length,color:'var(--info)'})}
+            {React.createElement(StatCard,{label:resolveI18n({en:'Active Templates',nl:'Actieve Templates'},lang),value:activeTmplCount,color:'var(--success)'})}
+            {React.createElement(StatCard,{label:resolveI18n({en:'Entity Instances',nl:'Entiteit Instanties'},lang),value:totalEntities,color:'var(--purple)'})}
+          </div>
+
+          {/* Entity Hierarchy Diagram */}
+          <div className="card">
+            <div className="card-title">{resolveI18n({en:'Entity Hierarchy',nl:'Entiteit Hi\u00ebrarchie'},lang)}</div>
+            <div className="card-subtitle">{resolveI18n({en:'Platform entity model with instance counts and template status',nl:'Platformentiteitsmodel met instantieaantallen en templatestatus'},lang)}</div>
+            <div style={{background:'var(--bg-secondary)',borderRadius:8,border:'1px solid var(--border)',padding:12,maxHeight:320,overflowY:'auto'}}>
+              {hierarchyNodes.map((node,i) => renderHierarchyNode(node, i === hierarchyNodes.length - 1, 0))}
+              {/* Additional top-level entries: User and Role */}
+              {(() => {
+                const userReg = {label:{en:'User',nl:'Gebruiker'},icon:'UserOutlined',color:'var(--info)'};
+                const roleReg = ENTITY_TYPE_REGISTRY.role;
+                const userCount = (UserStore.getUsers ? UserStore.getUsers() : []).length;
+                const roleCount = (RoleStore && RoleStore.getAll ? RoleStore.getAll() : []).length;
+                return React.createElement(React.Fragment, null,
+                  React.createElement('div',{style:{display:'flex',alignItems:'center',gap:8,padding:'5px 8px',borderRadius:4}},
+                    React.createElement('span',{style:{fontFamily:'monospace',fontSize:10,color:'var(--text-tertiary)',width:28,flexShrink:0,textAlign:'right'}},'\u251c\u2500\u2500 '),
+                    React.createElement(UserOutlined,{style:{fontSize:13,color:'var(--info)',flexShrink:0}}),
+                    React.createElement('span',{style:{fontSize:12,fontWeight:500,color:'var(--text-primary)'}},resolveI18n(userReg.label,lang)),
+                    React.createElement('span',{style:{fontSize:10,color:'var(--text-tertiary)',background:'var(--bg-card)',padding:'1px 6px',borderRadius:8,fontWeight:500}},userCount)
+                  ),
+                  React.createElement('div',{style:{display:'flex',alignItems:'center',gap:8,padding:'5px 8px',borderRadius:4}},
+                    React.createElement('span',{style:{fontFamily:'monospace',fontSize:10,color:'var(--text-tertiary)',width:28,flexShrink:0,textAlign:'right'}},'\u2514\u2500\u2500 '),
+                    React.createElement(SafetyCertificateOutlined,{style:{fontSize:13,color:roleReg?.color||'var(--warning)',flexShrink:0}}),
+                    React.createElement('span',{style:{fontSize:12,fontWeight:500,color:'var(--text-primary)'}},resolveI18n(roleReg?.label,lang)||'Role'),
+                    React.createElement('span',{style:{fontSize:10,color:'var(--text-tertiary)',background:'var(--bg-card)',padding:'1px 6px',borderRadius:8,fontWeight:500}},roleCount)
+                  )
+                );
+              })()}
+            </div>
+          </div>
+
+          {/* Property Usage Matrix */}
+          <div className="card" style={{padding:0}}>
+            <div style={{padding:'16px 20px'}}>
+              <div className="card-title">{resolveI18n({en:'Property Usage Matrix',nl:'Eigenschap Gebruik Matrix'},lang)}</div>
+              <div className="card-subtitle">{resolveI18n({en:'Property groups used by each entity type',nl:'Eigenschappengroepen gebruikt per entiteitstype'},lang)}</div>
+            </div>
+            <div style={{overflowX:'auto'}}>
+              <table className="data-table" style={{fontSize:11}}>
+                <thead><tr>
+                  <th style={{minWidth:120}}>{resolveI18n({en:'Group',nl:'Groep'},lang)}</th>
+                  {entityTypesForMatrix.map(et => {
+                    const reg = ENTITY_TYPE_REGISTRY[et];
+                    return <th key={et} style={{textAlign:'center',minWidth:60}}>
+                      <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:2}}>
+                        {React.createElement(window[reg?.icon]||BlockOutlined,{style:{fontSize:11,color:reg?.color}})}
+                        <span style={{fontSize:9}}>{resolveI18n(reg?.label,lang)||et}</span>
+                      </div>
+                    </th>;
+                  })}
+                </tr></thead>
+                <tbody>{groupsForMatrix.map(g => (
+                  <tr key={g.key}>
+                    <td style={{fontWeight:500}}>{resolveI18n(g.i18n,lang)||g.name}</td>
+                    {entityTypesForMatrix.map(et => {
+                      const c = getGroupEntityCount(g.key, et);
+                      return <td key={et} style={{textAlign:'center'}}>
+                        {c > 0
+                          ? <span style={{fontSize:10,fontWeight:600,color:'var(--brand)',background:'var(--brand-bg)',padding:'2px 6px',borderRadius:8}}>{c}</span>
+                          : <span style={{color:'var(--text-tertiary)',fontSize:10}}>{'\u2014'}</span>}
+                      </td>;
+                    })}
+                  </tr>
+                ))}</tbody>
+              </table>
+            </div>
           </div>
         </div>
-      </div>
-    );
+      );
+    }
 
     // ════════ PREVIEW LAB ════════
-    if (activeSection === 'preview') return (
-      <div className="card" style={{textAlign:'center',padding:40}}>
-        <div style={{fontSize:40,marginBottom:12,color:'var(--brand)'}}>{React.createElement(EyeOutlined)}</div>
-        <div style={{fontSize:14,fontWeight:600,color:'var(--text-primary)'}}>{resolveI18n({en:'Preview Lab',nl:'Preview Lab'},lang)}</div>
-        <div style={{fontSize:12,color:'var(--text-tertiary)',marginTop:4}}>
-          {resolveI18n({en:'Select a template to preview how it renders as a detail page, list view, and form.',
-            nl:'Selecteer een template om te bekijken hoe het wordt weergegeven als detailpagina, lijstweergave en formulier.'},lang)}
+    if (activeSection === 'preview') {
+      const previewTemplate = previewType ? EntityTemplateStore.resolveTemplate(previewType) : null;
+      const dummyEntity = previewType && previewTemplate ? generateDummyEntity(previewType, previewTemplate) : null;
+      const dummyEntities = dummyEntity ? [
+        dummyEntity,
+        generateDummyEntity(previewType, previewTemplate),
+        generateDummyEntity(previewType, previewTemplate),
+      ] : [];
+      // Give distinct names to the 3 dummy entities
+      if (dummyEntities.length === 3) {
+        dummyEntities[0].name = `Sample ${previewType} A`;
+        dummyEntities[1].name = `Sample ${previewType} B`;
+        dummyEntities[1].state = { status: 'warning' };
+        dummyEntities[2].name = `Sample ${previewType} C`;
+        dummyEntities[2].state = { status: 'offline' };
+      }
+
+      // Build form fields from template form_groups
+      const previewFormFields = previewTemplate?.resolved?.formGroups
+        ? previewTemplate.resolved.formGroups.flatMap(fg => (fg.resolvedProperties || []).map(resolvedPropertyToField))
+        : previewTemplate?.resolved?.properties
+          ? previewTemplate.resolved.properties.map(resolvedPropertyToField)
+          : [];
+
+      // Build list columns from template
+      const previewListCols = previewTemplate?.resolved?.columns
+        ? previewTemplate.resolved.columns.map(col => ({
+            key: col.property_key,
+            label: col.resolvedProperty?.i18n || { en: col.resolvedProperty?.name || col.property_key },
+            sortable: col.sortable,
+            filterable: col.filterable,
+            getValue: (row) => getNestedValue(row, col.resolvedProperty?.entity_path || `properties.${col.property_key}`),
+            render: col.property_key === 'name' ? (_, r) => React.createElement('span', {style:{fontWeight:500}}, r.name) : undefined,
+          }))
+        : [
+            { key:'name', label:{en:'Name',nl:'Naam'}, sortable:true, render:(_,r) => React.createElement('span',{style:{fontWeight:500}},r.name) },
+            { key:'status', label:{en:'Status',nl:'Status'}, getValue:r => r.state?.status },
+          ];
+
+      return (
+        <div style={{display:'grid',gap:16}}>
+          {/* Template Selector */}
+          <div className="card" style={{padding:'12px 20px'}}>
+            <div style={{display:'flex',alignItems:'center',gap:12,flexWrap:'wrap'}}>
+              <span style={{fontSize:12,fontWeight:600,color:'var(--text-primary)'}}>{resolveI18n({en:'Template',nl:'Template'},lang)}:</span>
+              {React.createElement(Select, {
+                size:'small', style:{width:280},
+                showSearch:true,
+                filterOption:(input,option) => (option?.label||'').toLowerCase().includes(input.toLowerCase()),
+                placeholder:resolveI18n({en:'Select entity type...',nl:'Selecteer entiteitstype...'},lang),
+                value:previewType || undefined,
+                onChange:(val) => { setPreviewType(val); setPreviewTab('overview'); },
+                options:allTemplates.map(t => {
+                  const reg = ENTITY_TYPE_REGISTRY[t.entity_type];
+                  return {value:t.entity_type, label:`${resolveI18n(reg?.label,lang)||t.entity_type} — ${t.name}`};
+                }),
+              })}
+              {previewType && previewTemplate && (
+                <React.Fragment>
+                  {React.createElement(Tag,{color:previewTemplate.lifecycle_status==='active'?'green':previewTemplate.lifecycle_status==='deprecated'?'orange':'default',
+                    style:{margin:0,fontSize:10}},previewTemplate.lifecycle_status||'draft')}
+                  <span style={{fontSize:10,color:'var(--text-tertiary)'}}>v{previewTemplate.version||1} &middot; {(previewTemplate.properties||[]).length} {resolveI18n({en:'props',nl:'eig.'},lang)}</span>
+                </React.Fragment>
+              )}
+            </div>
+          </div>
+
+          {!previewType && (
+            <div className="card" style={{textAlign:'center',padding:40}}>
+              <div style={{fontSize:40,marginBottom:12,color:'var(--brand)'}}>{React.createElement(EyeOutlined)}</div>
+              <div style={{fontSize:14,fontWeight:600,color:'var(--text-primary)'}}>{resolveI18n({en:'Preview Lab',nl:'Preview Lab'},lang)}</div>
+              <div style={{fontSize:12,color:'var(--text-tertiary)',marginTop:4}}>
+                {resolveI18n({en:'Select a template above to preview how it renders as overview, form, and list.',
+                  nl:'Selecteer een template hierboven om een preview te zien van overzicht, formulier en lijst.'},lang)}
+              </div>
+            </div>
+          )}
+
+          {previewType && previewTemplate && dummyEntity && (
+            <div style={{display:'grid',gridTemplateColumns:'1fr 340px',gap:16}}>
+              {/* Preview Area */}
+              <div className="card" style={{padding:0,overflow:'hidden'}}>
+                {/* Tabs */}
+                <div style={{display:'flex',borderBottom:'1px solid var(--border)',background:'var(--bg-secondary)'}}>
+                  {[
+                    {key:'overview',label:{en:'Overview',nl:'Overzicht'},icon:DashboardOutlined},
+                    {key:'form',label:{en:'Form',nl:'Formulier'},icon:EditOutlined},
+                    {key:'list',label:{en:'List',nl:'Lijst'},icon:UnorderedListOutlined},
+                  ].map(tab => (
+                    <div key={tab.key} onClick={()=>setPreviewTab(tab.key)}
+                      style={{padding:'8px 16px',fontSize:12,fontWeight:previewTab===tab.key?600:400,cursor:'pointer',
+                        color:previewTab===tab.key?'var(--brand)':'var(--text-secondary)',
+                        borderBottom:previewTab===tab.key?'2px solid var(--brand)':'2px solid transparent',
+                        display:'flex',alignItems:'center',gap:5,transition:'all 0.15s'}}>
+                      {React.createElement(tab.icon,{style:{fontSize:12}})}
+                      {resolveI18n(tab.label,lang)}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Tab content */}
+                <div style={{padding:0,minHeight:300,maxHeight:500,overflowY:'auto'}}>
+                  {previewTab === 'overview' && React.createElement(BaseOverviewMFE, { entity: dummyEntity, lang })}
+
+                  {previewTab === 'form' && (
+                    <div style={{padding:16}}>
+                      {previewFormFields.length > 0
+                        ? React.createElement(FormPanel, {
+                            fields: previewFormFields,
+                            values: dummyEntity,
+                            errors: {},
+                            onChange: () => {},
+                            lang,
+                          })
+                        : <div style={{textAlign:'center',color:'var(--text-tertiary)',padding:32,fontSize:12}}>
+                            {resolveI18n({en:'No form groups defined in this template.',nl:'Geen formuliergroepen gedefinieerd in dit template.'},lang)}
+                          </div>
+                      }
+                    </div>
+                  )}
+
+                  {previewTab === 'list' && (
+                    <div style={{padding:12}}>
+                      {React.createElement(EntityList, {
+                        columns: previewListCols,
+                        dataSource: dummyEntities,
+                        rowKey: 'id',
+                        lang,
+                        title: {en:previewTemplate.name || previewType, nl:previewTemplate.name || previewType},
+                        searchable: false,
+                        emptyIcon: React.createElement(InboxOutlined),
+                        emptyText: {en:'No items',nl:'Geen items'},
+                      })}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Code Panel */}
+              <div style={{display:'flex',flexDirection:'column',gap:12}}>
+                {React.createElement(CodeViewer, {
+                  value: previewTemplate,
+                  title: {en:'Resolved Template',nl:'Opgelost Template'},
+                  collapsible: true,
+                  lang,
+                })}
+                {React.createElement(CodeViewer, {
+                  value: dummyEntity,
+                  title: {en:'Dummy Entity',nl:'Dummy Entiteit'},
+                  collapsible: true,
+                  lang,
+                })}
+              </div>
+            </div>
+          )}
         </div>
-      </div>
-    );
+      );
+    }
 
     return null;
   };
