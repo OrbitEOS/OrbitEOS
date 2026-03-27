@@ -6921,6 +6921,18 @@ const ENTITY_EDIT_SCHEMA = {
       ]
     }
   },
+  user: {
+    general: {
+      user: [
+        { key:'name', label:{en:'Full Name',nl:'Volledige Naam'}, type:'text', required:true },
+        { key:'properties.email', label:{en:'Email',nl:'E-mail'}, type:'text', required:true },
+        { key:'properties.phone', label:{en:'Phone',nl:'Telefoon'}, type:'text' },
+        { key:'properties.avatar_url', label:{en:'Avatar URL',nl:'Avatar URL'}, type:'text' },
+        { key:'properties.user_language', label:{en:'Language',nl:'Taal'}, type:'select', options:['en','nl'] },
+        { key:'properties.user_theme', label:{en:'Theme',nl:'Thema'}, type:'select', options:['dark','light'] },
+      ]
+    }
+  },
 };
 
 // ─── FormPanel — renders schema fields as an editable form ───
@@ -6945,16 +6957,18 @@ function FormPanel({ fields, values, errors, onChange, lang }) {
 }
 
 // ─── Non-entity type helpers ───
-const NON_ENTITY_TYPES = ['userAssignment','role','privilege','systemPermission'];
+const NON_ENTITY_TYPES = ['userAssignment','role','privilege','systemPermission','user'];
 const NON_ENTITY_ICONS = {
   userAssignment: TeamOutlined, role: SafetyCertificateOutlined,
   privilege: LockOutlined, systemPermission: SettingOutlined,
+  user: UserOutlined,
 };
 const NON_ENTITY_LABELS = {
   userAssignment: {en:'User Assignment',nl:'Gebruikerstoewijzing'},
   role: {en:'Role',nl:'Rol'},
   privilege: {en:'Privilege',nl:'Recht'},
   systemPermission: {en:'System Permission',nl:'Systeemrecht'},
+  user: {en:'User',nl:'Gebruiker'},
 };
 
 function getNonEntitySubTabs(entityType) {
@@ -6994,7 +7008,12 @@ function loadNonEntityRecord(entityType, entityId, parentId) {
     const all = SysPermStore.getAll().find(s => s.id === entityId);
     return all ? { category:all.category, label:all.label, description:all.description||'' } : { category:'', label:'', description:'' };
   }
+  if (entityType === 'user' && entityId) {
+    const user = UserStore.getUser(entityId);
+    if (user) return { name: user.name, properties: { email: user.email, phone: user.phone || '', avatar_url: user.avatar || '', user_language: user.lang || 'en', user_theme: user.theme || 'dark' } };
+  }
   // Defaults for create mode
+  if (entityType === 'user') return { name:'', properties: { email:'', phone:'', avatar_url:'', user_language:'en', user_theme:'dark' } };
   if (entityType === 'userAssignment') return { userId:'', role:'' };
   if (entityType === 'role') return { name:'', level:'Site', description:'' };
   if (entityType === 'privilege') return { appId:'', resource:'', actions:[] };
@@ -7034,6 +7053,10 @@ function saveNonEntityRecord(entityType, values, mode, entityId, parentId) {
     const id = entityId || `sys.${values.category.toLowerCase().replace(/\s+/g,'-')}.${values.label.trim().toLowerCase().replace(/\s+/g,'-')}`;
     SysPermStore.add({ id, category:values.category, label:values.label.trim(), description:values.description||'' });
     return id;
+  }
+  if (entityType === 'user') {
+    UserStore.updateProfile({ name: values.name, email: values.properties?.email, phone: values.properties?.phone, avatar: values.properties?.avatar_url, lang: values.properties?.user_language, theme: values.properties?.user_theme });
+    return entityId;
   }
   return null;
 }
@@ -7809,7 +7832,7 @@ function UsersTab({ entityId, t, lang, onOpenModal }) {
         title={{en:'Users',nl:'Gebruikers'}}
         addButton={{label:'',onClick:() => onOpenModal && onOpenModal({mode:'create', entityType:'userAssignment', parentId:entityId})}}
         rowActions={[
-          {key:'edit',icon:React.createElement(EditOutlined,{style:{fontSize:12}}),onClick:row => onOpenModal && onOpenModal({mode:'edit', entityType:'userAssignment', entityId:row.userId+'@'+entityId, parentId:entityId})},
+          {key:'edit',icon:React.createElement(EditOutlined,{style:{fontSize:12}}),onClick:row => onOpenModal && onOpenModal({mode:'edit', entityType:'user', entityId:row.userId})},
           {key:'delete',icon:React.createElement(DeleteOutlined,{style:{fontSize:12}}),danger:true,onClick:handleRemove},
         ]}
         emptyIcon={React.createElement(TeamOutlined)} emptyText={{en:'No users at this scope',nl:'Geen gebruikers in deze scope'}}/>
@@ -9480,13 +9503,23 @@ function DeveloperStudioPage({t, lang, tab}) {
   const [editingTmpl, setEditingTmpl] = useState(null);
   const [creatingTmpl, setCreatingTmpl] = useState(false);
   const [newTmplData, setNewTmplData] = useState({entity_type:'',type_key:'',name:'',description:'',lifecycle_status:'draft'});
-
-  // ── Property Dictionary now delegated to PropertyCatalogTab ──
+  const [activeSection, setActiveSection] = useState(tab || 'templates');
 
   // Template data from real stores
   const allTemplates = EntityTemplateStore.getTemplates();
   const allDefs = PropertyCatalogStore.getDefinitions();
   const allGroups = PropertyCatalogStore.getGroups();
+
+  const sections = [
+    { key:'templates', label:{en:'Entity Templates',nl:'Entiteit Templates'}, icon:BlockOutlined, count:allTemplates.length },
+    { key:'properties', label:{en:'Property Dictionary',nl:'Eigenschappen Woordenboek'}, icon:BookOutlined, count:allDefs.length },
+    { key:'domains', label:{en:'Domain Plugins',nl:'Domein Plugins'}, icon:GatewayOutlined },
+    { key:'flows', label:{en:'Flow Templates',nl:'Flow Templates'}, icon:BranchesOutlined },
+    { key:'mcp', label:{en:'MCP Tools',nl:'MCP Tools'}, icon:ToolOutlined },
+    { key:'apiKeys', label:{en:'API Keys',nl:'API Sleutels'}, icon:KeyOutlined },
+  ];
+
+  const currentSection = sections.find(s => s.key === activeSection) || sections[0];
 
   const lifecycleColor = (s) => s==='active'?'green':s==='deprecated'?'orange':s==='archived'?'red':'default';
   const lifecycleI18n = (s) => resolveI18n({
@@ -9532,271 +9565,303 @@ function DeveloperStudioPage({t, lang, tab}) {
     rerender();
   };
 
-  // ── (Property filtering now handled inside PropertyCatalogTab) ──
-
-  return (
-    <div className="page-enter">
-      {/* ════════ TEMPLATES TAB ════════ */}
-      {tab==='templates' && (
-        <div>
-          {/* Create template modal */}
-          {creatingTmpl && (
-            <div className="card" style={{marginBottom:16,border:'2px solid var(--brand)'}}>
-              <div style={{padding:'16px 20px'}}>
-                <div className="card-title" style={{marginBottom:12}}>{resolveI18n({en:'New Entity Template',nl:'Nieuw Entiteit Template'},lang)}</div>
-                <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginBottom:12}}>
-                  <div>
-                    <div style={{fontSize:11,fontWeight:500,color:'var(--text-secondary)',marginBottom:4}}>{resolveI18n({en:'Entity Type',nl:'Entiteitstype'},lang)}</div>
-                    <select style={{width:'100%',padding:'6px 8px',borderRadius:6,border:'1px solid var(--border)',background:'var(--bg-input)',color:'var(--text-primary)',fontSize:12}}
-                      value={newTmplData.entity_type} onChange={e=>setNewTmplData({...newTmplData,entity_type:e.target.value})}>
-                      <option value="">{resolveI18n({en:'Select...',nl:'Selecteer...'},lang)}</option>
-                      {Object.entries(ENTITY_TYPE_REGISTRY).map(([k,v])=>(
-                        <option key={k} value={k}>{resolveI18n(v.label,lang)}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <div style={{fontSize:11,fontWeight:500,color:'var(--text-secondary)',marginBottom:4}}>{resolveI18n({en:'Type Key (snake_case)',nl:'Type Sleutel (snake_case)'},lang)}</div>
-                    <input style={{width:'100%',padding:'6px 8px',borderRadius:6,border:'1px solid var(--border)',background:'var(--bg-input)',color:'var(--text-primary)',fontSize:12}}
-                      placeholder="e.g. default" value={newTmplData.type_key} onChange={e=>setNewTmplData({...newTmplData,type_key:e.target.value})}/>
-                  </div>
-                  <div>
-                    <div style={{fontSize:11,fontWeight:500,color:'var(--text-secondary)',marginBottom:4}}>{resolveI18n({en:'Name',nl:'Naam'},lang)}</div>
-                    <input style={{width:'100%',padding:'6px 8px',borderRadius:6,border:'1px solid var(--border)',background:'var(--bg-input)',color:'var(--text-primary)',fontSize:12}}
-                      placeholder={resolveI18n({en:'Template name',nl:'Templatenaam'},lang)} value={newTmplData.name} onChange={e=>setNewTmplData({...newTmplData,name:e.target.value})}/>
-                  </div>
-                  <div>
-                    <div style={{fontSize:11,fontWeight:500,color:'var(--text-secondary)',marginBottom:4}}>{resolveI18n({en:'Description',nl:'Beschrijving'},lang)}</div>
-                    <input style={{width:'100%',padding:'6px 8px',borderRadius:6,border:'1px solid var(--border)',background:'var(--bg-input)',color:'var(--text-primary)',fontSize:12}}
-                      placeholder={resolveI18n({en:'Optional description',nl:'Optionele beschrijving'},lang)} value={newTmplData.description} onChange={e=>setNewTmplData({...newTmplData,description:e.target.value})}/>
-                  </div>
+  // ── Render section content ──
+  const renderSectionContent = () => {
+    // ════════ TEMPLATES ════════
+    if (activeSection === 'templates') return (
+      <div>
+        {/* Create template modal */}
+        {creatingTmpl && (
+          <div className="card" style={{marginBottom:16,border:'2px solid var(--brand)'}}>
+            <div style={{padding:'16px 20px'}}>
+              <div className="card-title" style={{marginBottom:12}}>{resolveI18n({en:'New Entity Template',nl:'Nieuw Entiteit Template'},lang)}</div>
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginBottom:12}}>
+                <div>
+                  <div style={{fontSize:11,fontWeight:500,color:'var(--text-secondary)',marginBottom:4}}>{resolveI18n({en:'Entity Type',nl:'Entiteitstype'},lang)}</div>
+                  <select style={{width:'100%',padding:'6px 8px',borderRadius:6,border:'1px solid var(--border)',background:'var(--bg-input)',color:'var(--text-primary)',fontSize:12}}
+                    value={newTmplData.entity_type} onChange={e=>setNewTmplData({...newTmplData,entity_type:e.target.value})}>
+                    <option value="">{resolveI18n({en:'Select...',nl:'Selecteer...'},lang)}</option>
+                    {Object.entries(ENTITY_TYPE_REGISTRY).map(([k,v])=>(
+                      <option key={k} value={k}>{resolveI18n(v.label,lang)}</option>
+                    ))}
+                  </select>
                 </div>
-                <div style={{display:'flex',gap:8,justifyContent:'flex-end'}}>
-                  <button className="header-btn" onClick={()=>setCreatingTmpl(false)}>{resolveI18n({en:'Cancel',nl:'Annuleren'},lang)}</button>
-                  <button className="header-btn primary" onClick={handleCreateTemplate}
-                    disabled={!newTmplData.entity_type||!newTmplData.type_key||!newTmplData.name}>
-                    {resolveI18n({en:'Create Template',nl:'Template Aanmaken'},lang)}
-                  </button>
+                <div>
+                  <div style={{fontSize:11,fontWeight:500,color:'var(--text-secondary)',marginBottom:4}}>{resolveI18n({en:'Type Key (snake_case)',nl:'Type Sleutel (snake_case)'},lang)}</div>
+                  <input style={{width:'100%',padding:'6px 8px',borderRadius:6,border:'1px solid var(--border)',background:'var(--bg-input)',color:'var(--text-primary)',fontSize:12}}
+                    placeholder="e.g. default" value={newTmplData.type_key} onChange={e=>setNewTmplData({...newTmplData,type_key:e.target.value})}/>
+                </div>
+                <div>
+                  <div style={{fontSize:11,fontWeight:500,color:'var(--text-secondary)',marginBottom:4}}>{resolveI18n({en:'Name',nl:'Naam'},lang)}</div>
+                  <input style={{width:'100%',padding:'6px 8px',borderRadius:6,border:'1px solid var(--border)',background:'var(--bg-input)',color:'var(--text-primary)',fontSize:12}}
+                    placeholder={resolveI18n({en:'Template name',nl:'Templatenaam'},lang)} value={newTmplData.name} onChange={e=>setNewTmplData({...newTmplData,name:e.target.value})}/>
+                </div>
+                <div>
+                  <div style={{fontSize:11,fontWeight:500,color:'var(--text-secondary)',marginBottom:4}}>{resolveI18n({en:'Description',nl:'Beschrijving'},lang)}</div>
+                  <input style={{width:'100%',padding:'6px 8px',borderRadius:6,border:'1px solid var(--border)',background:'var(--bg-input)',color:'var(--text-primary)',fontSize:12}}
+                    placeholder={resolveI18n({en:'Optional description',nl:'Optionele beschrijving'},lang)} value={newTmplData.description} onChange={e=>setNewTmplData({...newTmplData,description:e.target.value})}/>
                 </div>
               </div>
+              <div style={{display:'flex',gap:8,justifyContent:'flex-end'}}>
+                <button className="header-btn" onClick={()=>setCreatingTmpl(false)}>{resolveI18n({en:'Cancel',nl:'Annuleren'},lang)}</button>
+                <button className="header-btn primary" onClick={handleCreateTemplate}
+                  disabled={!newTmplData.entity_type||!newTmplData.type_key||!newTmplData.name}>
+                  {resolveI18n({en:'Create Template',nl:'Template Aanmaken'},lang)}
+                </button>
+              </div>
             </div>
-          )}
+          </div>
+        )}
 
-          <div className="card" style={{padding:0}}>
-            <div style={{padding:'16px 20px',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-              <div className="card-title">{resolveI18n({en:'Entity Templates',nl:'Entiteit Templates'},lang)} ({allTemplates.length})</div>
-              <button className="header-btn primary" onClick={()=>setCreatingTmpl(true)}>+ {resolveI18n({en:'New Template',nl:'Nieuw Template'},lang)}</button>
-            </div>
-            <table className="data-table">
-              <thead><tr>
-                <th>{resolveI18n({en:'Name',nl:'Naam'},lang)}</th>
-                <th>{resolveI18n({en:'Entity Type',nl:'Entiteitstype'},lang)}</th>
-                <th>{resolveI18n({en:'Type Key',nl:'Type Sleutel'},lang)}</th>
-                <th>{resolveI18n({en:'Properties',nl:'Eigenschappen'},lang)}</th>
-                <th>{resolveI18n({en:'Status',nl:'Status'},lang)}</th>
-                <th>{resolveI18n({en:'Version',nl:'Versie'},lang)}</th>
-                <th>{resolveI18n({en:'Actions',nl:'Acties'},lang)}</th>
-              </tr></thead>
-              <tbody>{allTemplates.map(tmpl=>{
-                const tmplKey = `${tmpl.entity_type}:${tmpl.type_key||'default'}`;
-                const isExpanded = expandedTmpl === tmplKey;
-                const resolved = EntityTemplateStore.resolveTemplate(tmpl.entity_type, tmpl.type_key);
-                const etReg = ENTITY_TYPE_REGISTRY[tmpl.entity_type];
-                return React.createElement(React.Fragment,{key:tmplKey},
-                  <tr style={{cursor:'pointer',background:isExpanded?'var(--brand-bg)':'transparent'}} onClick={()=>setExpandedTmpl(isExpanded?null:tmplKey)}>
-                    <td style={{fontWeight:500}}>
-                      <span style={{marginRight:6,color:etReg?.color||'var(--text-tertiary)'}}>{React.createElement(window[tmpl.icon]||BlockOutlined,{style:{fontSize:14}})}</span>
-                      {tmpl.name}
-                    </td>
-                    <td><span style={{fontSize:11,color:etReg?.color||'var(--text-tertiary)'}}>{resolveI18n(etReg?.label,lang)||tmpl.entity_type}</span></td>
-                    <td style={{fontFamily:'monospace',fontSize:11,color:'var(--text-tertiary)'}}>{tmpl.type_key||'default'}</td>
-                    <td>{(tmpl.properties||[]).length}</td>
-                    <td>{React.createElement(Tag,{color:lifecycleColor(tmpl.lifecycle_status),style:{margin:0,fontSize:10}},lifecycleI18n(tmpl.lifecycle_status||'active'))}</td>
-                    <td style={{color:'var(--text-tertiary)'}}>v{tmpl.version||1}</td>
-                    <td onClick={e=>e.stopPropagation()} style={{display:'flex',gap:4}}>
-                      <button className="header-btn" style={{padding:'2px 8px',fontSize:11}} onClick={()=>setExpandedTmpl(isExpanded?null:tmplKey)}>{React.createElement(EditOutlined,{style:{fontSize:11}})}</button>
-                      <button className="header-btn" style={{padding:'2px 8px',fontSize:11,color:'var(--error)',borderColor:'var(--error)'}} onClick={()=>handleDeleteTemplate(tmpl)}>{React.createElement(DeleteOutlined,{style:{fontSize:11}})}</button>
-                    </td>
-                  </tr>,
-                  isExpanded && <tr key={tmplKey+'-detail'}><td colSpan={7} style={{padding:0,background:'var(--bg-secondary)'}}>
-                    <div style={{padding:16,display:'grid',gap:16}}>
-                      {/* ── General section ── */}
-                      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:12}}>
-                        <div>
-                          <div style={{fontSize:10,fontWeight:600,color:'var(--text-tertiary)',textTransform:'uppercase',marginBottom:4}}>{resolveI18n({en:'Entity Type',nl:'Entiteitstype'},lang)}</div>
-                          <div style={{fontSize:12,color:'var(--text-primary)'}}>{resolveI18n(etReg?.label,lang)||tmpl.entity_type}</div>
-                        </div>
-                        <div>
-                          <div style={{fontSize:10,fontWeight:600,color:'var(--text-tertiary)',textTransform:'uppercase',marginBottom:4}}>{resolveI18n({en:'Description',nl:'Beschrijving'},lang)}</div>
-                          <div style={{fontSize:12,color:'var(--text-secondary)'}}>{tmpl.description || resolveI18n({en:'No description',nl:'Geen beschrijving'},lang)}</div>
-                        </div>
-                        <div>
-                          <div style={{fontSize:10,fontWeight:600,color:'var(--text-tertiary)',textTransform:'uppercase',marginBottom:4}}>{resolveI18n({en:'Icon',nl:'Icoon'},lang)}</div>
-                          <div style={{fontSize:12,color:'var(--text-primary)',display:'flex',alignItems:'center',gap:6}}>
-                            {React.createElement(window[tmpl.icon]||BlockOutlined,{style:{fontSize:16,color:etReg?.color}})}
-                            <span style={{fontFamily:'monospace',fontSize:11,color:'var(--text-tertiary)'}}>{tmpl.icon}</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* ── Lifecycle controls ── */}
-                      <div style={{padding:'10px 14px',background:'var(--bg-card)',borderRadius:8,border:'1px solid var(--border)',display:'flex',alignItems:'center',gap:12,flexWrap:'wrap'}}>
-                        <span style={{fontSize:11,fontWeight:600,color:'var(--text-secondary)'}}>{resolveI18n({en:'Lifecycle',nl:'Levenscyclus'},lang)}:</span>
-                        {React.createElement(Tag,{color:lifecycleColor(tmpl.lifecycle_status),style:{fontSize:11,fontWeight:600}},lifecycleI18n(tmpl.lifecycle_status||'active'))}
-                        <span style={{fontSize:11,color:'var(--text-tertiary)'}}>v{tmpl.version||1}</span>
-                        <div style={{flex:1}}/>
-                        {(tmpl.lifecycle_status==='draft'||!tmpl.lifecycle_status) && (
-                          <button className="header-btn" style={{fontSize:11,color:'var(--success)',borderColor:'var(--success)'}}
-                            onClick={()=>handleLifecycleTransition(tmpl,'active')}>
-                            {React.createElement(CheckCircleFilled,{style:{fontSize:10,marginRight:4}})}
-                            {resolveI18n({en:'Activate',nl:'Activeren'},lang)}
-                          </button>
-                        )}
-                        {tmpl.lifecycle_status==='active' && (
-                          <button className="header-btn" style={{fontSize:11,color:'var(--warning)',borderColor:'var(--warning)'}}
-                            onClick={()=>handleLifecycleTransition(tmpl,'deprecated')}>
-                            {React.createElement(WarningOutlined,{style:{fontSize:10,marginRight:4}})}
-                            {resolveI18n({en:'Deprecate',nl:'Verouderen'},lang)}
-                          </button>
-                        )}
-                        {tmpl.lifecycle_status==='deprecated' && (
-                          <button className="header-btn" style={{fontSize:11,color:'var(--error)',borderColor:'var(--error)'}}
-                            onClick={()=>handleLifecycleTransition(tmpl,'archived')}>
-                            {React.createElement(StopOutlined,{style:{fontSize:10,marginRight:4}})}
-                            {resolveI18n({en:'Archive',nl:'Archiveren'},lang)}
-                          </button>
-                        )}
-                        {tmpl.lifecycle_status!=='draft' && tmpl.lifecycle_status && (
-                          <button className="header-btn" style={{fontSize:11,color:'var(--info)',borderColor:'var(--info)'}}
-                            onClick={()=>handleLifecycleTransition(tmpl,'draft')}>
-                            {React.createElement(RollbackOutlined,{style:{fontSize:10,marginRight:4}})}
-                            {resolveI18n({en:'Rollback to Draft',nl:'Terugzetten naar Concept'},lang)}
-                          </button>
-                        )}
-                      </div>
-
-                      {/* ── Properties section ── */}
+        <div className="card" style={{padding:0}}>
+          <div style={{padding:'16px 20px',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+            <div className="card-title">{resolveI18n({en:'Entity Templates',nl:'Entiteit Templates'},lang)} ({allTemplates.length})</div>
+            <button className="header-btn primary" onClick={()=>setCreatingTmpl(true)}>+ {resolveI18n({en:'New Template',nl:'Nieuw Template'},lang)}</button>
+          </div>
+          <table className="data-table">
+            <thead><tr>
+              <th>{resolveI18n({en:'Name',nl:'Naam'},lang)}</th>
+              <th>{resolveI18n({en:'Entity Type',nl:'Entiteitstype'},lang)}</th>
+              <th>{resolveI18n({en:'Type Key',nl:'Type Sleutel'},lang)}</th>
+              <th>{resolveI18n({en:'Properties',nl:'Eigenschappen'},lang)}</th>
+              <th>{resolveI18n({en:'Status',nl:'Status'},lang)}</th>
+              <th>{resolveI18n({en:'Version',nl:'Versie'},lang)}</th>
+              <th>{resolveI18n({en:'Actions',nl:'Acties'},lang)}</th>
+            </tr></thead>
+            <tbody>{allTemplates.map(tmpl=>{
+              const tmplKey = `${tmpl.entity_type}:${tmpl.type_key||'default'}`;
+              const isExpanded = expandedTmpl === tmplKey;
+              const resolved = EntityTemplateStore.resolveTemplate(tmpl.entity_type, tmpl.type_key);
+              const etReg = ENTITY_TYPE_REGISTRY[tmpl.entity_type];
+              return React.createElement(React.Fragment,{key:tmplKey},
+                <tr style={{cursor:'pointer',background:isExpanded?'var(--brand-bg)':'transparent'}} onClick={()=>setExpandedTmpl(isExpanded?null:tmplKey)}>
+                  <td style={{fontWeight:500}}>
+                    <span style={{marginRight:6,color:etReg?.color||'var(--text-tertiary)'}}>{React.createElement(window[tmpl.icon]||BlockOutlined,{style:{fontSize:14}})}</span>
+                    {tmpl.name}
+                  </td>
+                  <td><span style={{fontSize:11,color:etReg?.color||'var(--text-tertiary)'}}>{resolveI18n(etReg?.label,lang)||tmpl.entity_type}</span></td>
+                  <td style={{fontFamily:'monospace',fontSize:11,color:'var(--text-tertiary)'}}>{tmpl.type_key||'default'}</td>
+                  <td>{(tmpl.properties||[]).length}</td>
+                  <td>{React.createElement(Tag,{color:lifecycleColor(tmpl.lifecycle_status),style:{margin:0,fontSize:10}},lifecycleI18n(tmpl.lifecycle_status||'active'))}</td>
+                  <td style={{color:'var(--text-tertiary)'}}>v{tmpl.version||1}</td>
+                  <td onClick={e=>e.stopPropagation()} style={{display:'flex',gap:4}}>
+                    <button className="header-btn" style={{padding:'2px 8px',fontSize:11}} onClick={()=>setExpandedTmpl(isExpanded?null:tmplKey)}>{React.createElement(EditOutlined,{style:{fontSize:11}})}</button>
+                    <button className="header-btn" style={{padding:'2px 8px',fontSize:11,color:'var(--error)',borderColor:'var(--error)'}} onClick={()=>handleDeleteTemplate(tmpl)}>{React.createElement(DeleteOutlined,{style:{fontSize:11}})}</button>
+                  </td>
+                </tr>,
+                isExpanded && <tr key={tmplKey+'-detail'}><td colSpan={7} style={{padding:0,background:'var(--bg-secondary)'}}>
+                  <div style={{padding:16,display:'grid',gap:16}}>
+                    {/* ── General section ── */}
+                    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:12}}>
                       <div>
-                        <div style={{fontSize:11,fontWeight:600,color:'var(--text-primary)',marginBottom:6}}>{resolveI18n({en:'Properties',nl:'Eigenschappen'},lang)} ({(tmpl.properties||[]).length})</div>
-                        <div style={{display:'flex',flexWrap:'wrap',gap:4}}>
-                          {(resolved?.resolved?.properties||[]).map(p => (
-                            <span key={p.property_key||p.key} style={{padding:'3px 8px',borderRadius:4,fontSize:10,background:'var(--bg-card)',border:'1px solid var(--border)',
-                              display:'flex',alignItems:'center',gap:4}}>
-                              <span style={{fontFamily:'monospace',color:'var(--brand)'}}>{p.property_key||p.key}</span>
-                              <span style={{color:'var(--text-tertiary)'}}>({p.group_key})</span>
-                              {p.is_required && <span style={{color:'var(--error)',fontSize:9}}>*</span>}
-                            </span>
-                          ))}
-                          {(tmpl.properties||[]).length===0 && <span style={{fontSize:11,color:'var(--text-tertiary)',fontStyle:'italic'}}>{resolveI18n({en:'No properties defined',nl:'Geen eigenschappen gedefinieerd'},lang)}</span>}
-                        </div>
+                        <div style={{fontSize:10,fontWeight:600,color:'var(--text-tertiary)',textTransform:'uppercase',marginBottom:4}}>{resolveI18n({en:'Entity Type',nl:'Entiteitstype'},lang)}</div>
+                        <div style={{fontSize:12,color:'var(--text-primary)'}}>{resolveI18n(etReg?.label,lang)||tmpl.entity_type}</div>
                       </div>
-
-                      {/* ── Form Groups section ── */}
                       <div>
-                        <div style={{fontSize:11,fontWeight:600,color:'var(--text-primary)',marginBottom:6}}>{resolveI18n({en:'Form Groups',nl:'Formuliergroepen'},lang)} ({(tmpl.form_groups||[]).length})</div>
-                        <div style={{display:'grid',gap:6}}>
-                          {(tmpl.form_groups||[]).map(fg => (
-                            <div key={fg.key} style={{padding:'8px 12px',background:'var(--bg-card)',borderRadius:6,border:'1px solid var(--border)'}}>
-                              <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:4}}>
-                                {fg.icon && React.createElement(window[fg.icon]||SettingOutlined,{style:{fontSize:12,color:'var(--text-tertiary)'}})}
-                                <span style={{fontSize:11,fontWeight:600,color:'var(--text-primary)'}}>{resolveI18n(fg.label,lang)||fg.key}</span>
-                                <span style={{fontSize:10,color:'var(--text-tertiary)',fontFamily:'monospace'}}>{fg.key}</span>
-                              </div>
-                              <div style={{display:'flex',flexWrap:'wrap',gap:3}}>
-                                {(fg.property_keys||[]).map(pk => (
-                                  <span key={pk} style={{padding:'1px 6px',borderRadius:3,fontSize:9,background:'var(--brand-bg)',color:'var(--brand)',fontFamily:'monospace'}}>{pk}</span>
-                                ))}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
+                        <div style={{fontSize:10,fontWeight:600,color:'var(--text-tertiary)',textTransform:'uppercase',marginBottom:4}}>{resolveI18n({en:'Description',nl:'Beschrijving'},lang)}</div>
+                        <div style={{fontSize:12,color:'var(--text-secondary)'}}>{tmpl.description || resolveI18n({en:'No description',nl:'Geen beschrijving'},lang)}</div>
                       </div>
-
-                      {/* ── Columns section ── */}
                       <div>
-                        <div style={{fontSize:11,fontWeight:600,color:'var(--text-primary)',marginBottom:6}}>{resolveI18n({en:'List Columns',nl:'Lijstkolommen'},lang)} ({(tmpl.columns||[]).length})</div>
-                        <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
-                          {(tmpl.columns||[]).map(col => (
-                            <span key={col.property_key} style={{padding:'3px 8px',borderRadius:4,fontSize:10,background:'var(--bg-card)',border:'1px solid var(--border)',display:'flex',gap:4}}>
-                              <span style={{fontFamily:'monospace',color:'var(--text-primary)'}}>{col.property_key}</span>
-                              {col.sortable && <span style={{color:'var(--info)',fontSize:8}}>{React.createElement(SortAscendingOutlined)}</span>}
-                              {col.filterable && <span style={{color:'var(--warning)',fontSize:8}}>{React.createElement(FilterOutlined)}</span>}
-                            </span>
-                          ))}
+                        <div style={{fontSize:10,fontWeight:600,color:'var(--text-tertiary)',textTransform:'uppercase',marginBottom:4}}>{resolveI18n({en:'Icon',nl:'Icoon'},lang)}</div>
+                        <div style={{fontSize:12,color:'var(--text-primary)',display:'flex',alignItems:'center',gap:6}}>
+                          {React.createElement(window[tmpl.icon]||BlockOutlined,{style:{fontSize:16,color:etReg?.color}})}
+                          <span style={{fontFamily:'monospace',fontSize:11,color:'var(--text-tertiary)'}}>{tmpl.icon}</span>
                         </div>
                       </div>
+                    </div>
 
-                      {/* ── Detail Tabs section ── */}
-                      <div>
-                        <div style={{fontSize:11,fontWeight:600,color:'var(--text-primary)',marginBottom:6}}>{resolveI18n({en:'Detail Tabs',nl:'Detail Tabbladen'},lang)} ({(tmpl.detail_tabs||[]).length})</div>
-                        <div style={{display:'flex',gap:4,flexWrap:'wrap'}}>
-                          {(tmpl.detail_tabs||[]).map(dt => (
-                            <span key={dt.key} style={{padding:'3px 8px',borderRadius:4,fontSize:10,
-                              background:dt.type==='overview'?'var(--brand-bg)':dt.type==='children'?'var(--success-bg)':'var(--bg-card)',
-                              border:'1px solid var(--border)',color:dt.type==='overview'?'var(--brand)':dt.type==='children'?'var(--success)':'var(--text-secondary)'}}>
-                              {resolveI18n(dt.label,lang)||dt.key}
-                              <span style={{marginLeft:4,fontSize:8,color:'var(--text-tertiary)'}}>{dt.type}</span>
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* ── Overview Layout summary ── */}
-                      {tmpl.overview && (
-                        <div>
-                          <div style={{fontSize:11,fontWeight:600,color:'var(--text-primary)',marginBottom:6}}>{resolveI18n({en:'Overview Layout',nl:'Overzicht Layout'},lang)}</div>
-                          <div style={{display:'flex',gap:12,flexWrap:'wrap',fontSize:10,color:'var(--text-tertiary)'}}>
-                            <span>{resolveI18n({en:'Properties',nl:'Eigenschappen'},lang)}: {(tmpl.overview.properties||[]).length}</span>
-                            <span>{resolveI18n({en:'KPIs',nl:'KPIs'},lang)}: {(tmpl.overview.kpis||[]).length}</span>
-                            <span>{resolveI18n({en:'Map',nl:'Kaart'},lang)}: {tmpl.overview.show_map?'Yes':'No'}</span>
-                            <span>{resolveI18n({en:'Alarms',nl:'Alarmen'},lang)}: {tmpl.overview.show_alarms?'Yes':'No'}</span>
-                          </div>
-                        </div>
+                    {/* ── Lifecycle controls ── */}
+                    <div style={{padding:'10px 14px',background:'var(--bg-card)',borderRadius:8,border:'1px solid var(--border)',display:'flex',alignItems:'center',gap:12,flexWrap:'wrap'}}>
+                      <span style={{fontSize:11,fontWeight:600,color:'var(--text-secondary)'}}>{resolveI18n({en:'Lifecycle',nl:'Levenscyclus'},lang)}:</span>
+                      {React.createElement(Tag,{color:lifecycleColor(tmpl.lifecycle_status),style:{fontSize:11,fontWeight:600}},lifecycleI18n(tmpl.lifecycle_status||'active'))}
+                      <span style={{fontSize:11,color:'var(--text-tertiary)'}}>v{tmpl.version||1}</span>
+                      <div style={{flex:1}}/>
+                      {(tmpl.lifecycle_status==='draft'||!tmpl.lifecycle_status) && (
+                        <button className="header-btn" style={{fontSize:11,color:'var(--success)',borderColor:'var(--success)'}}
+                          onClick={()=>handleLifecycleTransition(tmpl,'active')}>
+                          {React.createElement(CheckCircleFilled,{style:{fontSize:10,marginRight:4}})}
+                          {resolveI18n({en:'Activate',nl:'Activeren'},lang)}
+                        </button>
+                      )}
+                      {tmpl.lifecycle_status==='active' && (
+                        <button className="header-btn" style={{fontSize:11,color:'var(--warning)',borderColor:'var(--warning)'}}
+                          onClick={()=>handleLifecycleTransition(tmpl,'deprecated')}>
+                          {React.createElement(WarningOutlined,{style:{fontSize:10,marginRight:4}})}
+                          {resolveI18n({en:'Deprecate',nl:'Verouderen'},lang)}
+                        </button>
+                      )}
+                      {tmpl.lifecycle_status==='deprecated' && (
+                        <button className="header-btn" style={{fontSize:11,color:'var(--error)',borderColor:'var(--error)'}}
+                          onClick={()=>handleLifecycleTransition(tmpl,'archived')}>
+                          {React.createElement(StopOutlined,{style:{fontSize:10,marginRight:4}})}
+                          {resolveI18n({en:'Archive',nl:'Archiveren'},lang)}
+                        </button>
+                      )}
+                      {tmpl.lifecycle_status!=='draft' && tmpl.lifecycle_status && (
+                        <button className="header-btn" style={{fontSize:11,color:'var(--info)',borderColor:'var(--info)'}}
+                          onClick={()=>handleLifecycleTransition(tmpl,'draft')}>
+                          {React.createElement(RollbackOutlined,{style:{fontSize:10,marginRight:4}})}
+                          {resolveI18n({en:'Rollback to Draft',nl:'Terugzetten naar Concept'},lang)}
+                        </button>
                       )}
                     </div>
-                  </td></tr>
-                );
-              })}</tbody>
-            </table>
-          </div>
-        </div>
-      )}
 
-      {/* ════════ PROPERTIES TAB (delegates to PropertyCatalogTab) ════════ */}
-      {tab==='properties' && (
-        <PropertyCatalogTab entity={null} lang={lang} onOpenModal={null}/>
-      )}
+                    {/* ── Properties section ── */}
+                    <div>
+                      <div style={{fontSize:11,fontWeight:600,color:'var(--text-primary)',marginBottom:6}}>{resolveI18n({en:'Properties',nl:'Eigenschappen'},lang)} ({(tmpl.properties||[]).length})</div>
+                      <div style={{display:'flex',flexWrap:'wrap',gap:4}}>
+                        {(resolved?.resolved?.properties||[]).map(p => (
+                          <span key={p.property_key||p.key} style={{padding:'3px 8px',borderRadius:4,fontSize:10,background:'var(--bg-card)',border:'1px solid var(--border)',
+                            display:'flex',alignItems:'center',gap:4}}>
+                            <span style={{fontFamily:'monospace',color:'var(--brand)'}}>{p.property_key||p.key}</span>
+                            <span style={{color:'var(--text-tertiary)'}}>({p.group_key})</span>
+                            {p.is_required && <span style={{color:'var(--error)',fontSize:9}}>*</span>}
+                          </span>
+                        ))}
+                        {(tmpl.properties||[]).length===0 && <span style={{fontSize:11,color:'var(--text-tertiary)',fontStyle:'italic'}}>{resolveI18n({en:'No properties defined',nl:'Geen eigenschappen gedefinieerd'},lang)}</span>}
+                      </div>
+                    </div>
 
-      {/* ════════ DOMAINS TAB ════════ */}
-      {tab==='domains' && (
-        <div className="card" style={{padding:0}}>
-          <div style={{padding:'16px 20px'}}><div className="card-title">{resolveI18n({en:'Domain Plugins',nl:'Domein Plugins'},lang)}</div></div>
-          <table className="data-table">
-            <thead><tr><th>Domain</th><th>Version</th><th>Templates</th><th>Events</th><th>Actions</th><th>{t.status}</th></tr></thead>
-            <tbody>
-              {MockAPI.getDomainPlugins().map((d,i) => (
-                <tr key={i}><td style={{fontWeight:500}}>{d.name}</td><td>{d.version}</td><td>{d.templates}</td><td>{d.events}</td><td>{d.actions}</td>
-                  <td><span className={`status-dot ${d.statusClass}`}>{d.status}</span></td></tr>
-              ))}
-            </tbody>
+                    {/* ── Form Groups section ── */}
+                    <div>
+                      <div style={{fontSize:11,fontWeight:600,color:'var(--text-primary)',marginBottom:6}}>{resolveI18n({en:'Form Groups',nl:'Formuliergroepen'},lang)} ({(tmpl.form_groups||[]).length})</div>
+                      <div style={{display:'grid',gap:6}}>
+                        {(tmpl.form_groups||[]).map(fg => (
+                          <div key={fg.key} style={{padding:'8px 12px',background:'var(--bg-card)',borderRadius:6,border:'1px solid var(--border)'}}>
+                            <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:4}}>
+                              {fg.icon && React.createElement(window[fg.icon]||SettingOutlined,{style:{fontSize:12,color:'var(--text-tertiary)'}})}
+                              <span style={{fontSize:11,fontWeight:600,color:'var(--text-primary)'}}>{resolveI18n(fg.label,lang)||fg.key}</span>
+                              <span style={{fontSize:10,color:'var(--text-tertiary)',fontFamily:'monospace'}}>{fg.key}</span>
+                            </div>
+                            <div style={{display:'flex',flexWrap:'wrap',gap:3}}>
+                              {(fg.property_keys||[]).map(pk => (
+                                <span key={pk} style={{padding:'1px 6px',borderRadius:3,fontSize:9,background:'var(--brand-bg)',color:'var(--brand)',fontFamily:'monospace'}}>{pk}</span>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* ── Columns section ── */}
+                    <div>
+                      <div style={{fontSize:11,fontWeight:600,color:'var(--text-primary)',marginBottom:6}}>{resolveI18n({en:'List Columns',nl:'Lijstkolommen'},lang)} ({(tmpl.columns||[]).length})</div>
+                      <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
+                        {(tmpl.columns||[]).map(col => (
+                          <span key={col.property_key} style={{padding:'3px 8px',borderRadius:4,fontSize:10,background:'var(--bg-card)',border:'1px solid var(--border)',display:'flex',gap:4}}>
+                            <span style={{fontFamily:'monospace',color:'var(--text-primary)'}}>{col.property_key}</span>
+                            {col.sortable && <span style={{color:'var(--info)',fontSize:8}}>{React.createElement(SortAscendingOutlined)}</span>}
+                            {col.filterable && <span style={{color:'var(--warning)',fontSize:8}}>{React.createElement(FilterOutlined)}</span>}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* ── Detail Tabs section ── */}
+                    <div>
+                      <div style={{fontSize:11,fontWeight:600,color:'var(--text-primary)',marginBottom:6}}>{resolveI18n({en:'Detail Tabs',nl:'Detail Tabbladen'},lang)} ({(tmpl.detail_tabs||[]).length})</div>
+                      <div style={{display:'flex',gap:4,flexWrap:'wrap'}}>
+                        {(tmpl.detail_tabs||[]).map(dt => (
+                          <span key={dt.key} style={{padding:'3px 8px',borderRadius:4,fontSize:10,
+                            background:dt.type==='overview'?'var(--brand-bg)':dt.type==='children'?'var(--success-bg)':'var(--bg-card)',
+                            border:'1px solid var(--border)',color:dt.type==='overview'?'var(--brand)':dt.type==='children'?'var(--success)':'var(--text-secondary)'}}>
+                            {resolveI18n(dt.label,lang)||dt.key}
+                            <span style={{marginLeft:4,fontSize:8,color:'var(--text-tertiary)'}}>{dt.type}</span>
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* ── Overview Layout summary ── */}
+                    {tmpl.overview && (
+                      <div>
+                        <div style={{fontSize:11,fontWeight:600,color:'var(--text-primary)',marginBottom:6}}>{resolveI18n({en:'Overview Layout',nl:'Overzicht Layout'},lang)}</div>
+                        <div style={{display:'flex',gap:12,flexWrap:'wrap',fontSize:10,color:'var(--text-tertiary)'}}>
+                          <span>{resolveI18n({en:'Properties',nl:'Eigenschappen'},lang)}: {(tmpl.overview.properties||[]).length}</span>
+                          <span>{resolveI18n({en:'KPIs',nl:'KPIs'},lang)}: {(tmpl.overview.kpis||[]).length}</span>
+                          <span>{resolveI18n({en:'Map',nl:'Kaart'},lang)}: {tmpl.overview.show_map?'Yes':'No'}</span>
+                          <span>{resolveI18n({en:'Alarms',nl:'Alarmen'},lang)}: {tmpl.overview.show_alarms?'Yes':'No'}</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </td></tr>
+              );
+            })}</tbody>
           </table>
         </div>
-      )}
+      </div>
+    );
 
-      {/* ════════ STUB TABS ════════ */}
-      {(tab==='apikeys'||tab==='flows'||tab==='mcp') && (
-        <div className="card" style={{textAlign:'center',padding:40}}>
-          <div style={{fontSize:40,marginBottom:12}}>{React.createElement(tab==='apikeys'?KeyOutlined:tab==='flows'?BranchesOutlined:ToolOutlined)}</div>
-          <div style={{fontSize:14,color:'var(--text-primary)'}}>
-            {tab==='apikeys'?'API Key Management':tab==='flows'?'Flow Templates Library':'MCP Tool Registry'}
-          </div>
-          <div style={{fontSize:12,color:'var(--text-tertiary)',marginTop:4}}>
-            {tab==='apikeys'?`2 active keys · ${resolveI18n({en:'Manage API access',nl:'Beheer API-toegang'},lang)}`:
-             tab==='flows'?`12 templates · ${resolveI18n({en:'Reusable automation patterns',nl:'Herbruikbare automatiseringspatronen'},lang)}`:
-             `34 tools · ${resolveI18n({en:'Model Context Protocol tools',nl:'Model Context Protocol tools'},lang)}`}
+    // ════════ PROPERTIES ════════
+    if (activeSection === 'properties') return (
+      <PropertyCatalogTab entity={null} lang={lang} onOpenModal={null}/>
+    );
+
+    // ════════ DOMAINS ════════
+    if (activeSection === 'domains') return (
+      <div className="card" style={{padding:0}}>
+        <div style={{padding:'16px 20px'}}><div className="card-title">{resolveI18n({en:'Domain Plugins',nl:'Domein Plugins'},lang)}</div></div>
+        <table className="data-table">
+          <thead><tr><th>Domain</th><th>Version</th><th>Templates</th><th>Events</th><th>Actions</th><th>{t.status}</th></tr></thead>
+          <tbody>
+            {MockAPI.getDomainPlugins().map((d,i) => (
+              <tr key={i}><td style={{fontWeight:500}}>{d.name}</td><td>{d.version}</td><td>{d.templates}</td><td>{d.events}</td><td>{d.actions}</td>
+                <td><span className={`status-dot ${d.statusClass}`}>{d.status}</span></td></tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    );
+
+    // ════════ STUB SECTIONS (flows, mcp, apiKeys) ════════
+    const stubMap = {
+      flows: { icon: BranchesOutlined, title: 'Flow Templates Library', detail: `12 templates · ${resolveI18n({en:'Reusable automation patterns',nl:'Herbruikbare automatiseringspatronen'},lang)}` },
+      mcp: { icon: ToolOutlined, title: 'MCP Tool Registry', detail: `34 tools · ${resolveI18n({en:'Model Context Protocol tools',nl:'Model Context Protocol tools'},lang)}` },
+      apiKeys: { icon: KeyOutlined, title: 'API Key Management', detail: `2 active keys · ${resolveI18n({en:'Manage API access',nl:'Beheer API-toegang'},lang)}` },
+    };
+    const stub = stubMap[activeSection];
+    if (stub) return (
+      <div className="card" style={{textAlign:'center',padding:40}}>
+        <div style={{fontSize:40,marginBottom:12}}>{React.createElement(stub.icon)}</div>
+        <div style={{fontSize:14,color:'var(--text-primary)'}}>{stub.title}</div>
+        <div style={{fontSize:12,color:'var(--text-tertiary)',marginTop:4}}>{stub.detail}</div>
+      </div>
+    );
+
+    return null;
+  };
+
+  return (
+    <div className="config-page">
+      {/* Left nav */}
+      <div className="config-tree-panel">
+        <div className="config-tree-header">
+          <div style={{fontSize:13,fontWeight:600,color:'var(--text-primary)',padding:'4px 0'}}>
+            {resolveI18n({en:'Developer Studio',nl:'Developer Studio'},lang)}
           </div>
         </div>
-      )}
+        <div className="config-tree-scroll" style={{padding:'4px 0'}}>
+          {sections.map(sec => (
+            <div key={sec.key} className={`config-nav-item ${activeSection===sec.key?'active':''}`}
+              onClick={() => setActiveSection(sec.key)}>
+              <span className="nav-icon">{React.createElement(sec.icon,{style:{fontSize:14}})}</span>
+              <span className="nav-name">{resolveI18n(sec.label, lang)}</span>
+              {sec.count != null && <span className="nav-count">{sec.count}</span>}
+            </div>
+          ))}
+        </div>
+      </div>
+      {/* Right content */}
+      <div className="config-detail-panel">
+        <div className="config-detail-header">
+          <div className="config-entity-icon">{React.createElement(currentSection.icon,{style:{fontSize:16}})}</div>
+          <div className="config-entity-name">{resolveI18n(currentSection.label, lang)}</div>
+        </div>
+        <div className="config-detail-body">
+          {renderSectionContent()}
+        </div>
+      </div>
     </div>
   );
 }
