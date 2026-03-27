@@ -1454,7 +1454,7 @@ const ENTITY_TYPE_REGISTRY = {
   device:      { label:{en:'Device',nl:'Apparaat',de:'Gerät'}, icon:'HddOutlined', color:'var(--solar)' },
   sensor:      { label:{en:'Sensor',nl:'Sensor',de:'Sensor'}, icon:'RadarChartOutlined', color:'var(--info)' },
   actuator:    { label:{en:'Actuator',nl:'Actuator',de:'Aktor'}, icon:'SlidersOutlined', color:'var(--warning)' },
-  zone:        { label:{en:'Zone',nl:'Zone',de:'Zone'}, icon:'BlockOutlined', color:'var(--info)' },
+  role:        { label:{en:'Role',nl:'Rol',de:'Rolle'}, icon:'SafetyCertificateOutlined', color:'var(--warning)' },
 };
 
 // Role styling (used by RolesTab, UsersTab)
@@ -2095,21 +2095,28 @@ const PropertyCatalogStore = (() => {
     enum_values_i18n:{light:{en:'Light',nl:'Licht'},dark:{en:'Dark',nl:'Donker'},system:{en:'System',nl:'Systeem'}} },
 ].forEach(d => PropertyCatalogStore.putDefinition(d));
 
-// ── Zone-specific properties ──
+// ── Zone as tag/property (not a hierarchy entity) ──
 PropertyCatalogStore.putDefinition({
-  key: 'arm_state', name: 'Arm State', i18n: {en:'Arm State',nl:'Alarmstatus'},
-  group_key: 'operational', category: 'state', data_type: 'enum', ui_representation: 'dropdown',
-  enum_values: ['armed_away','armed_home','disarmed'],
-  enum_values_i18n: { armed_away:{en:'Armed Away',nl:'Afwezig Bewapend'}, armed_home:{en:'Armed Home',nl:'Thuis Bewapend'}, disarmed:{en:'Disarmed',nl:'Ontwapend'} },
-  applies_to: ['zone'], is_required: false, is_readonly: false,
-  entity_path: 'properties.armState', lifecycle_status: 'active'
+  key:'zone', name:'Zone', i18n:{en:'Zone',nl:'Zone'},
+  group_key:'location', category:'fixed', data_type:'string', ui_representation:'text',
+  applies_to:['device','sensor','actuator','deviceGroup'],
+  is_required:false, is_readonly:false,
+  entity_path:'properties.zone', lifecycle_status:'active'
 });
 PropertyCatalogStore.putDefinition({
-  key: 'floor_number', name: 'Floor', i18n: {en:'Floor',nl:'Verdieping'},
-  group_key: 'location', category: 'fixed', data_type: 'number', ui_representation: 'number',
-  validation: {min:-5, max:200},
-  applies_to: ['zone'], is_required: false, is_readonly: false,
-  entity_path: 'properties.floorNumber', lifecycle_status: 'active'
+  key:'zones', name:'Zones', i18n:{en:'Zones',nl:'Zones'},
+  group_key:'location', category:'fixed', data_type:'json', ui_representation:'tags',
+  applies_to:['site'],
+  is_required:false, is_readonly:false, is_array:true,
+  default_value:[], entity_path:'properties.zones', lifecycle_status:'active'
+});
+// ── Role-specific property ──
+PropertyCatalogStore.putDefinition({
+  key:'role_level', name:'Scope Level', i18n:{en:'Scope Level',nl:'Bereikniveau'},
+  group_key:'operational', category:'fixed', data_type:'enum', ui_representation:'dropdown',
+  enum_values:['Platform','Account','Sub-account','Site'],
+  applies_to:['role'], is_required:true, is_readonly:false,
+  entity_path:'properties.level', lifecycle_status:'active'
 });
 
 console.log(`PropertyCatalogStore: ${PropertyCatalogStore.getDefinitions().length} definitions, ${PropertyCatalogStore.getGroups().length} groups`);
@@ -2173,7 +2180,9 @@ const EntityTemplateStore = (() => {
 // ── Seed: Entity Templates (9 entity types) ──
 [
   // ── Platform template ──
-  { entity_type:'platform', type_key:'default', name:'Platform', icon:'GlobalOutlined', lifecycle_status:'active', version:1,
+  { entity_type:'platform', type_key:'default', name:'Platform',
+    description:{en:'The root platform entity managing all accounts, sites, and system settings',nl:'Het rootplatform dat alle accounts, locaties en systeeminstellingen beheert'},
+    icon:'GlobalOutlined', lifecycle_status:'active', version:1,
     properties: [
       { property_key:'name', required:true, sort_order:1 },
       { property_key:'version', sort_order:2 },
@@ -2226,7 +2235,9 @@ const EntityTemplateStore = (() => {
   },
 
   // ── Account template ──
-  { entity_type:'account', type_key:'default', name:'Account', icon:'BankOutlined', lifecycle_status:'active', version:1,
+  { entity_type:'account', type_key:'default', name:'Account',
+    description:{en:'An organization or company managing energy assets across multiple sites',nl:'Een organisatie die energie-assets beheert over meerdere locaties'},
+    icon:'BankOutlined', lifecycle_status:'active', version:1,
     properties: [
       { property_key:'name', required:true, sort_order:1 },
       { property_key:'account_type', required:true, sort_order:2 },
@@ -2281,7 +2292,9 @@ const EntityTemplateStore = (() => {
   },
 
   // ── Sub-account template ──
-  { entity_type:'subAccount', type_key:'default', name:'Sub-account', icon:'TeamOutlined', lifecycle_status:'active', version:1,
+  { entity_type:'subAccount', type_key:'default', name:'Sub-account',
+    description:{en:'A regional division within an account, grouping sites by geography or business unit',nl:'Een regionale afdeling binnen een account'},
+    icon:'TeamOutlined', lifecycle_status:'active', version:1,
     properties: [
       { property_key:'name', required:true, sort_order:1 },
       { property_key:'region', required:true, sort_order:2 },
@@ -2325,7 +2338,9 @@ const EntityTemplateStore = (() => {
   },
 
   // ── Site template ──
-  { entity_type:'site', type_key:'default', name:'Site', icon:'HomeOutlined', lifecycle_status:'active', version:1,
+  { entity_type:'site', type_key:'default', name:'Site',
+    description:{en:'A physical location with energy devices — a building, farm, or industrial facility',nl:'Een fysieke locatie met energieapparaten — een gebouw, boerderij of industriele faciliteit'},
+    icon:'HomeOutlined', lifecycle_status:'active', version:1,
     properties: [
       { property_key:'name', required:true, sort_order:1 },
       { property_key:'site_type', required:true, sort_order:2 },
@@ -2337,13 +2352,14 @@ const EntityTemplateStore = (() => {
       { property_key:'longitude', sort_order:12 },
       { property_key:'contract_limit', sort_order:20 },
       { property_key:'grid_connection', sort_order:21 },
+      { property_key:'zones', sort_order:25 },
       { property_key:'data_retention', sort_order:30 },
     ],
     form_groups: [
       { key:'general', label:{en:'General',nl:'Algemeen'}, icon:'SettingOutlined',
         property_keys:['name','site_type','capacity','dso','tags'] },
       { key:'location', label:{en:'Location',nl:'Locatie'}, icon:'EnvironmentOutlined',
-        property_keys:['address','latitude','longitude'] },
+        property_keys:['address','latitude','longitude','zones'] },
       { key:'contract', label:{en:'Contract',nl:'Contract'}, icon:'EuroCircleOutlined',
         property_keys:['contract_limit','grid_connection'] },
       { key:'compliance', label:{en:'Compliance',nl:'Naleving'}, icon:'SafetyCertificateOutlined',
@@ -2357,7 +2373,6 @@ const EntityTemplateStore = (() => {
     detail_tabs: [
       { key:'overview', label:{en:'Overview',nl:'Overzicht'}, type:'overview' },
       { key:'deviceGroups', label:{en:'Device Groups',nl:'Apparaatgroepen'}, type:'children', child_type:'deviceGroup' },
-      { key:'zones', label:{en:'Zones',nl:'Zones'}, type:'children', child_type:'zone' },
       { key:'allDevices', label:{en:'All Devices',nl:'Alle Apparaten'}, type:'action', mfe_key:'AllDevicesTab' },
       { key:'users', label:{en:'Users',nl:'Gebruikers'}, type:'action', mfe_key:'UsersTab' },
       { key:'roles', label:{en:'Roles',nl:'Rollen'}, type:'action', mfe_key:'RolesTab' },
@@ -2387,15 +2402,18 @@ const EntityTemplateStore = (() => {
   },
 
   // ── DeviceGroup template ──
-  { entity_type:'deviceGroup', type_key:'default', name:'Device Group', icon:'AppstoreOutlined', lifecycle_status:'active', version:1,
+  { entity_type:'deviceGroup', type_key:'default', name:'Device Group',
+    description:{en:'A logical grouping of devices — solar array, battery storage, EV charging station',nl:'Een logische groep apparaten — zonnepanelen, batterijopslag, EV-laadstation'},
+    icon:'AppstoreOutlined', lifecycle_status:'active', version:1,
     properties: [
       { property_key:'name', required:true, sort_order:1 },
       { property_key:'device_group_type', required:true, sort_order:2 },
-      { property_key:'tags', sort_order:3 },
+      { property_key:'zone', sort_order:3 },
+      { property_key:'tags', sort_order:4 },
     ],
     form_groups: [
       { key:'general', label:{en:'General',nl:'Algemeen'}, icon:'SettingOutlined',
-        property_keys:['name','device_group_type','tags'] },
+        property_keys:['name','device_group_type','zone','tags'] },
     ],
     columns: [
       { property_key:'name', sortable:true },
@@ -2425,7 +2443,9 @@ const EntityTemplateStore = (() => {
   },
 
   // ── Device template ──
-  { entity_type:'device', type_key:'default', name:'Device', icon:'HddOutlined', lifecycle_status:'active', version:1,
+  { entity_type:'device', type_key:'default', name:'Device',
+    description:{en:'A physical energy device — inverter, battery, charger, meter, or gateway',nl:'Een fysiek energieapparaat — omvormer, batterij, lader, meter of gateway'},
+    icon:'HddOutlined', lifecycle_status:'active', version:1,
     properties: [
       { property_key:'name', required:true, sort_order:1 },
       { property_key:'device_type', required:true, sort_order:2 },
@@ -2433,7 +2453,8 @@ const EntityTemplateStore = (() => {
       { property_key:'model', required:true, sort_order:4 },
       { property_key:'serial_number', sort_order:5 },
       { property_key:'install_date', sort_order:6 },
-      { property_key:'tags', sort_order:7 },
+      { property_key:'zone', sort_order:7 },
+      { property_key:'tags', sort_order:8 },
       { property_key:'protocol', sort_order:10 },
       { property_key:'ip_address', sort_order:11 },
       { property_key:'port', sort_order:12 },
@@ -2444,7 +2465,7 @@ const EntityTemplateStore = (() => {
     ],
     form_groups: [
       { key:'general', label:{en:'General',nl:'Algemeen'}, icon:'SettingOutlined',
-        property_keys:['name','device_type','manufacturer','model','serial_number','install_date','tags'] },
+        property_keys:['name','device_type','manufacturer','model','serial_number','install_date','zone','tags'] },
       { key:'network', label:{en:'Network',nl:'Netwerk'}, icon:'ApiOutlined',
         property_keys:['protocol','ip_address','port','modbus_id','poll_interval'] },
       { key:'firmware', label:{en:'Firmware',nl:'Firmware'}, icon:'CloudServerOutlined',
@@ -2479,7 +2500,9 @@ const EntityTemplateStore = (() => {
   },
 
   // ── Sensor template ──
-  { entity_type:'sensor', type_key:'default', name:'Sensor', icon:'RadarChartOutlined', lifecycle_status:'active', version:1,
+  { entity_type:'sensor', type_key:'default', name:'Sensor',
+    description:{en:'A measurement point on a device — power, voltage, temperature, energy',nl:'Een meetpunt op een apparaat — vermogen, spanning, temperatuur, energie'},
+    icon:'RadarChartOutlined', lifecycle_status:'active', version:1,
     properties: [
       { property_key:'name', required:true, sort_order:1 },
       { property_key:'sensor_type', required:true, sort_order:2 },
@@ -2531,7 +2554,9 @@ const EntityTemplateStore = (() => {
   },
 
   // ── Actuator template ──
-  { entity_type:'actuator', type_key:'default', name:'Actuator', icon:'SlidersOutlined', lifecycle_status:'active', version:1,
+  { entity_type:'actuator', type_key:'default', name:'Actuator',
+    description:{en:'A control point on a device — power limit, mode switch, relay',nl:'Een besturingspunt op een apparaat — vermogenslimiet, modusschakelaar, relais'},
+    icon:'SlidersOutlined', lifecycle_status:'active', version:1,
     properties: [
       { property_key:'name', required:true, sort_order:1 },
       { property_key:'actuator_type', required:true, sort_order:2 },
@@ -2582,7 +2607,9 @@ const EntityTemplateStore = (() => {
   },
 
   // ── User template ──
-  { entity_type:'user', type_key:'default', name:'User', icon:'UserOutlined', lifecycle_status:'active', version:1,
+  { entity_type:'user', type_key:'default', name:'User',
+    description:{en:'A person who accesses the platform with specific roles and permissions',nl:'Een persoon die het platform gebruikt met specifieke rollen en rechten'},
+    icon:'UserOutlined', lifecycle_status:'active', version:1,
     properties: [
       { property_key:'name', required:true, sort_order:1 },
       { property_key:'email', required:true, sort_order:2 },
@@ -2614,40 +2641,32 @@ const EntityTemplateStore = (() => {
   },
 ].forEach(t => EntityTemplateStore.putTemplate(t));
 
-// ── Zone template (template-driven, no custom MFE) ──
+// ── Role template (template-driven, backed by RoleStore) ──
 EntityTemplateStore.putTemplate({
-  entity_type: 'zone', type_key: 'default', name: 'Zone',
-  icon: 'BlockOutlined', lifecycle_status: 'active', version: 1,
+  entity_type: 'role', type_key: 'default', name: 'Role',
+  description:{en:'An access control role defining what a user can do at each scope level',nl:'Een toegangsrol die bepaalt wat een gebruiker kan doen op elk bereikniveau'},
+  icon: 'SafetyCertificateOutlined', lifecycle_status: 'active', version: 1,
   properties: [
     {property_key:'name', required:true, sort_order:1},
     {property_key:'description', sort_order:2},
-    {property_key:'arm_state', sort_order:3},
-    {property_key:'floor_number', sort_order:4},
-    {property_key:'tags', sort_order:5},
+    {property_key:'role_level', sort_order:3},
   ],
   form_groups: [
     {key:'general', label:{en:'General',nl:'Algemeen'}, icon:'SettingOutlined',
-     property_keys:['name','description','arm_state','floor_number','tags']}
+     property_keys:['name','description','role_level']}
   ],
   columns: [
     {property_key:'name', sortable:true},
-    {property_key:'arm_state', filterable:true},
-    {property_key:'floor_number', sortable:true},
+    {property_key:'role_level', filterable:true},
   ],
   detail_tabs: [
-    {key:'overview', label:{en:'Overview',nl:'Overzicht'}, type:'overview'},
-    {key:'devices', label:{en:'Devices',nl:'Apparaten'}, type:'children', child_type:'device'},
-    {key:'sensors', label:{en:'Sensors',nl:'Sensoren'}, type:'children', child_type:'sensor'},
-    {key:'events', label:{en:'Events',nl:'Gebeurtenissen'}, type:'action', mfe_key:'EventsTab'},
-    {key:'alarms', label:{en:'Alarms',nl:'Alarmen'}, type:'action', mfe_key:'AlarmsTab'},
+    {key:'overview', label:{en:'Overview'}, type:'overview'},
+    {key:'privileges', label:{en:'Privileges'}, type:'custom', mfe_key:'RolePrivilegesTab'},
   ],
   overview: {
-    properties: [{property_key:'arm_state'},{property_key:'floor_number'}],
-    kpis: [
-      {key:'_deviceCount', label:{en:'Devices',nl:'Apparaten'}, color:'var(--brand)', icon:'HddOutlined'},
-      {key:'_activeAlarms', label:{en:'Alarms',nl:'Alarmen'}, color:'var(--error)', icon:'AlertOutlined'},
-    ],
-    show_map: false, show_alarms: true,
+    properties: [{property_key:'role_level'},{property_key:'description'}],
+    kpis: [],
+    show_map: false, show_alarms: false,
   }
 });
 
@@ -2694,6 +2713,7 @@ EntityStore.put({ id:'gg-commercial', entityType:'subAccount', parentId:'greengr
 const SITE_SEEDS = [
   { id:'dg-maasland', parentId:'acme-nl', name:'De Groot Agri',
     properties:{ location:'Maasland, NL', type:'Agricultural', capacity:'42 kW', lat:51.933, lng:4.250, contractLimit:40, dso:'Stedin', connection:'3×25A',
+      zones:['Ground Floor','Server Room','Rooftop'],
       tags:['agricultural','solar','battery','ev-charging'],
       costSaved:{value:'€34.20',trend:'€8.40'}, tariffPrices:[0.06,0.05,0.04,0.04,0.06,0.08,0.12,0.18,0.24,0.28,0.26,0.22,0.19,0.17,0.15,0.16,0.20,0.26,0.24,0.18,0.12,0.09,0.07,0.06],
       compliance:{score:98,tracked:12,compliant:11,actionNeeded:1,auditEntries:'1,842',retention:'5 yr'},
@@ -2818,19 +2838,8 @@ const SITE_SEEDS = [
 // Register sites into EntityStore
 SITE_SEEDS.forEach(s => EntityStore.put({ ...s, entityType: 'site', capabilities: s.capabilities || ['energy_management','device_control','compliance'] }));
 
-// ─── Seed: Zone entities ───
-EntityStore.put({
-  id: 'zone-ground-floor', entityType: 'zone', parentId: 'dg-maasland',
-  name: 'Ground Floor',
-  properties: { armState: 'disarmed', floorNumber: 0, tags: ['main','production'] },
-  state: { status: 'online' }, alarms: [], capabilities: []
-});
-EntityStore.put({
-  id: 'zone-server-room', entityType: 'zone', parentId: 'dg-maasland',
-  name: 'Server Room',
-  properties: { armState: 'armed_away', floorNumber: 1, tags: ['critical','secure'] },
-  state: { status: 'online' }, alarms: [{id:'za-1',sev:'warning',msg:'Motion detected in armed zone',time:'5 min ago'}], capabilities: []
-});
+// ─── Zone values seeded as properties on sites and devices (zone is a tag, not an entity) ───
+// Zones are defined at site level, applied as tags on devices/groups within that site.
 
 // ─── Seed: ACCOUNTS kept as convenience alias for backward compat ───
 const ACCOUNTS = EntityStore.getByType('account').map(a => ({
@@ -3509,6 +3518,16 @@ console.log(`EntityStore hydrated: ${EntityStore.size()} entities across 7 level
 ].forEach(({id, alarms}) => {
   const entity = EntityStore.get(id);
   if (entity) EntityStore.update(id, { alarms });
+});
+
+// ─── Seed zone property values on devices in dg-maasland ───
+['sma-001','sma-002'].forEach(id => {
+  const e = EntityStore.get(id);
+  if (e) e.properties.zone = 'Rooftop';
+});
+['byd-rack1'].forEach(id => {
+  const e = EntityStore.get(id);
+  if (e) e.properties.zone = 'Ground Floor';
 });
 
 const USERS = [
@@ -6892,16 +6911,6 @@ const ENTITY_EDIT_SCHEMA = {
       ]
     }
   },
-  role: {
-    general: {
-      role: [
-        { key:'name', label:{en:'Role Name',nl:'Rolnaam'}, type:'text', required:true },
-        { key:'level', label:{en:'Scope Level',nl:'Bereikniveau'}, type:'select', required:true,
-          optionsFrom:'scopeLevels' },
-        { key:'description', label:{en:'Description',nl:'Beschrijving'}, type:'textarea' },
-      ]
-    }
-  },
   privilege: {
     general: {
       privilege: [
@@ -6957,7 +6966,7 @@ function FormPanel({ fields, values, errors, onChange, lang }) {
 }
 
 // ─── Non-entity type helpers ───
-const NON_ENTITY_TYPES = ['userAssignment','role','privilege','systemPermission'];
+const NON_ENTITY_TYPES = ['userAssignment','privilege','systemPermission'];
 // 'user' removed from NON_ENTITY_TYPES — it has a full template in EntityTemplateStore
 const NON_ENTITY_ICONS = {
   userAssignment: TeamOutlined, role: SafetyCertificateOutlined,
@@ -6997,10 +7006,6 @@ function loadNonEntityRecord(entityType, entityId, parentId) {
     const rec = AccessStore.getForScope(scopeId).find(a => a.userId === userId);
     return rec ? {...rec} : { userId:'', role:'' };
   }
-  if (entityType === 'role' && entityId) {
-    const r = RoleStore.get(entityId);
-    return r ? { name:r.name, level:r.level, description:r.description||'' } : { name:'', level:'Site', description:'' };
-  }
   if (entityType === 'privilege' && entityId) {
     const p = PrivilegeStore.get(entityId);
     return p ? { appId:p.appId, resource:p.resource, actions:[p.action] } : { appId:'', resource:'', actions:[] };
@@ -7016,7 +7021,6 @@ function loadNonEntityRecord(entityType, entityId, parentId) {
   // Defaults for create mode
   if (entityType === 'user') return { name:'', properties: { email:'', phone:'', avatar_url:'', user_language:'en', user_theme:'dark' } };
   if (entityType === 'userAssignment') return { userId:'', role:'' };
-  if (entityType === 'role') return { name:'', level:'Site', description:'' };
   if (entityType === 'privilege') return { appId:'', resource:'', actions:[] };
   if (entityType === 'systemPermission') return { category:'', label:'', description:'' };
   return {};
@@ -7031,15 +7035,6 @@ function saveNonEntityRecord(entityType, values, mode, entityId, parentId) {
     }
     AccessStore.add({ userId:values.userId, scopeId, role:values.role, permissions:[] });
     return values.userId + '@' + scopeId;
-  }
-  if (entityType === 'role') {
-    if (mode === 'edit' && entityId) {
-      const existing = RoleStore.get(entityId);
-      if (existing) { existing.name = values.name; existing.level = values.level; existing.description = values.description||''; }
-      return entityId;
-    }
-    const r = RoleStore.put({ name:values.name, level:values.level, description:values.description||'', privileges:[], systemPerms:[] });
-    return r.id;
   }
   if (entityType === 'privilege') {
     if (mode === 'edit' && entityId) { PrivilegeStore.remove(entityId); }
@@ -7083,6 +7078,15 @@ function EntityEditModal({ visible, mode, entityType, entityId, parentId, onSave
         else setValues({ name:'', entityType:'user', properties:{email:'',phone:'',avatar_url:'',user_language:'en',user_theme:'dark'} });
       } else {
         setValues({ name:'', entityType:'user', properties:{email:'',phone:'',avatar_url:'',user_language:'en',user_theme:'dark'} });
+      }
+    } else if (entityType === 'role') {
+      // Roles live in RoleStore, but use template-driven forms
+      if (mode === 'edit' && entityId) {
+        const r = RoleStore.get(entityId);
+        if (r) setValues({ name:r.name, entityType:'role', properties:{ level:r.level, description:r.description||'' } });
+        else setValues({ name:'', entityType:'role', properties:{ level:'Site', description:'' } });
+      } else {
+        setValues({ name:'', entityType:'role', properties:{ level:'Site', description:'' } });
       }
     } else if (mode === 'edit' && entityId) {
       const entity = EntityStore.get(entityId);
@@ -7176,6 +7180,15 @@ function EntityEditModal({ visible, mode, entityType, entityId, parentId, onSave
         }
         onSave(entityId);
       }
+    } else if (entityType === 'role') {
+      // Roles save to RoleStore (convenience layer), not EntityStore
+      if (mode === 'create') {
+        RoleStore.put({ name:values.name, level:values.properties?.level||'Site', description:values.properties?.description||'', privileges:[], systemPerms:[] });
+      } else {
+        const r = RoleStore.get(entityId);
+        if (r) { r.name = values.name; r.level = values.properties?.level||r.level; r.description = values.properties?.description||''; }
+      }
+      onSave(entityId || 'role-created');
     } else if (mode === 'create') {
       const newId = `${entityType}-${Date.now()}`;
       const entity = { ...values, id:newId, entityType, parentId };
@@ -7205,7 +7218,9 @@ function EntityEditModal({ visible, mode, entityType, entityId, parentId, onSave
 
   const currentFields = getFieldsForTab(activeTab);
   const HeaderIcon = isNonEntity ? (NON_ENTITY_ICONS[entityType] || SettingOutlined) : null;
-  const typeLabel = isNonEntity ? resolveI18n(NON_ENTITY_LABELS[entityType] || {en:entityType}, lang) : entityType;
+  const regEntry = ENTITY_TYPE_REGISTRY[entityType];
+  const typeLabel = isNonEntity ? resolveI18n(NON_ENTITY_LABELS[entityType] || {en:entityType}, lang)
+    : (regEntry ? resolveI18n(regEntry.label, lang) : entityType);
   const title = mode === 'create'
     ? resolveI18n({en:`Create ${typeLabel}`,nl:`${typeLabel} aanmaken`}, lang)
     : (isNonEntity ? (values.name || values.label || values.userId || typeLabel) : (values.name || ''));
@@ -7217,7 +7232,12 @@ function EntityEditModal({ visible, mode, entityType, entityId, parentId, onSave
         React.createElement('div', {className:'eem-header'},
           React.createElement('div', {className:'eem-header-icon'},
             isNonEntity ? React.createElement(HeaderIcon, {style:{fontSize:16,color:'var(--brand)'}}) : React.createElement(EntityTypeIcon, {type:entityType})),
-          React.createElement('div', {className:'eem-header-title'}, title),
+          React.createElement('div', null,
+            React.createElement('div', {className:'eem-header-title'}, title),
+            mode === 'create' && resolvedTemplate?.description && React.createElement('div', {
+              style:{fontSize:11,color:'var(--text-tertiary)',marginTop:2,maxWidth:400}
+            }, resolveI18n(resolvedTemplate.description, lang))
+          ),
           React.createElement('span', {className:'eem-header-badge'}, typeLabel),
           React.createElement('span', {className:'eem-header-close', onClick:handleCancel}, React.createElement(CloseOutlined))
         ),
@@ -8635,7 +8655,7 @@ function ConfigurationPage({ t, lang, navigateWithLoader, focusedEntityId, setFo
   const handleModalSave = (id) => {
     closeEditModal();
     // For non-entity types, just re-render the page; for entities, navigate to the new entity
-    if (NON_ENTITY_TYPES.includes(editModalState.entityType)) {
+    if (NON_ENTITY_TYPES.includes(editModalState.entityType) || editModalState.entityType === 'role' || editModalState.entityType === 'user') {
       rerenderConfig();
     } else {
       handleSelect(id);
@@ -9693,7 +9713,7 @@ function DeveloperStudioPage({t, lang, tab}) {
                       </div>
                       <div>
                         <div style={{fontSize:10,fontWeight:600,color:'var(--text-tertiary)',textTransform:'uppercase',marginBottom:4}}>{resolveI18n({en:'Description',nl:'Beschrijving'},lang)}</div>
-                        <div style={{fontSize:12,color:'var(--text-secondary)'}}>{tmpl.description || resolveI18n({en:'No description',nl:'Geen beschrijving'},lang)}</div>
+                        <div style={{fontSize:12,color:'var(--text-secondary)'}}>{tmpl.description ? (typeof tmpl.description === 'object' ? resolveI18n(tmpl.description,lang) : tmpl.description) : resolveI18n({en:'No description',nl:'Geen beschrijving'},lang)}</div>
                       </div>
                       <div>
                         <div style={{fontSize:10,fontWeight:600,color:'var(--text-tertiary)',textTransform:'uppercase',marginBottom:4}}>{resolveI18n({en:'Icon',nl:'Icoon'},lang)}</div>
