@@ -8551,7 +8551,7 @@ MFERegistry.register('deviceGroup', 'metrics', MetricsTab);
 MFERegistry.register('account', 'billing', BillingTab);
 MFERegistry.register('account', 'apiKeys', ApiKeysTab);
 MFERegistry.register('platform', 'domains', DomainsTab);
-MFERegistry.register('platform', 'propertyCatalog', PropertyCatalogTab);
+// PropertyCatalogTab moved to Developer Studio (Properties tab) — no longer a platform MFE
 MFERegistry.register('user', 'security', UserSecurityMFE);
 MFERegistry.register('user', 'permissions', UserPermissionsMFE);
 MFERegistry.register('site', 'allDevices', AllDevicesTab);
@@ -9481,13 +9481,7 @@ function DeveloperStudioPage({t, lang, tab}) {
   const [creatingTmpl, setCreatingTmpl] = useState(false);
   const [newTmplData, setNewTmplData] = useState({entity_type:'',type_key:'',name:'',description:'',lifecycle_status:'draft'});
 
-  // ── Property Dictionary state ──
-  const [propSearch, setPropSearch] = useState('');
-  const [propFilterGroup, setPropFilterGroup] = useState('');
-  const [propFilterType, setPropFilterType] = useState('');
-  const [propFilterStatus, setPropFilterStatus] = useState('');
-  const [propFilterApplies, setPropFilterApplies] = useState('');
-  const [expandedPropGroup, setExpandedPropGroup] = useState(null);
+  // ── Property Dictionary now delegated to PropertyCatalogTab ──
 
   // Template data from real stores
   const allTemplates = EntityTemplateStore.getTemplates();
@@ -9538,21 +9532,7 @@ function DeveloperStudioPage({t, lang, tab}) {
     rerender();
   };
 
-  // ── Filtered properties for Property Dictionary ──
-  const filteredDefs = allDefs.filter(d => {
-    if (propSearch) {
-      const s = propSearch.toLowerCase();
-      if (!(d.key||'').toLowerCase().includes(s) && !(d.name||'').toLowerCase().includes(s) && !(resolveI18n(d.i18n,lang)||'').toLowerCase().includes(s)) return false;
-    }
-    if (propFilterGroup && d.group_key !== propFilterGroup) return false;
-    if (propFilterType && d.data_type !== propFilterType) return false;
-    if (propFilterStatus && d.lifecycle_status !== propFilterStatus) return false;
-    if (propFilterApplies && !(d.applies_to||[]).includes(propFilterApplies)) return false;
-    return true;
-  });
-  const uniqueDataTypes = [...new Set(allDefs.map(d=>d.data_type).filter(Boolean))].sort();
-  const uniqueStatuses = [...new Set(allDefs.map(d=>d.lifecycle_status).filter(Boolean))].sort();
-  const uniqueAppliesTo = [...new Set(allDefs.flatMap(d=>d.applies_to||[]))].sort();
+  // ── (Property filtering now handled inside PropertyCatalogTab) ──
 
   return (
     <div className="page-enter">
@@ -9782,111 +9762,9 @@ function DeveloperStudioPage({t, lang, tab}) {
         </div>
       )}
 
-      {/* ════════ PROPERTIES TAB (Enhanced Property Dictionary) ════════ */}
+      {/* ════════ PROPERTIES TAB (delegates to PropertyCatalogTab) ════════ */}
       {tab==='properties' && (
-        <div>
-          <div className="card" style={{padding:'12px 20px',marginBottom:12}}>
-            <div style={{display:'flex',gap:8,alignItems:'center',flexWrap:'wrap'}}>
-              <input style={{flex:'1 1 200px',padding:'6px 10px',borderRadius:6,border:'1px solid var(--border)',background:'var(--bg-input)',color:'var(--text-primary)',fontSize:12}}
-                placeholder={resolveI18n({en:'Search properties...',nl:'Zoek eigenschappen...'},lang)}
-                value={propSearch} onChange={e=>setPropSearch(e.target.value)}/>
-              <select style={{padding:'6px 8px',borderRadius:6,border:'1px solid var(--border)',background:'var(--bg-input)',color:'var(--text-primary)',fontSize:11}}
-                value={propFilterGroup} onChange={e=>setPropFilterGroup(e.target.value)}>
-                <option value="">{resolveI18n({en:'All Groups',nl:'Alle Groepen'},lang)}</option>
-                {allGroups.map(g=><option key={g.key} value={g.key}>{resolveI18n(g.i18n,lang)||g.name}</option>)}
-              </select>
-              <select style={{padding:'6px 8px',borderRadius:6,border:'1px solid var(--border)',background:'var(--bg-input)',color:'var(--text-primary)',fontSize:11}}
-                value={propFilterType} onChange={e=>setPropFilterType(e.target.value)}>
-                <option value="">{resolveI18n({en:'All Types',nl:'Alle Types'},lang)}</option>
-                {uniqueDataTypes.map(dt=><option key={dt} value={dt}>{dt}</option>)}
-              </select>
-              <select style={{padding:'6px 8px',borderRadius:6,border:'1px solid var(--border)',background:'var(--bg-input)',color:'var(--text-primary)',fontSize:11}}
-                value={propFilterStatus} onChange={e=>setPropFilterStatus(e.target.value)}>
-                <option value="">{resolveI18n({en:'All Statuses',nl:'Alle Statussen'},lang)}</option>
-                {uniqueStatuses.map(s=><option key={s} value={s}>{lifecycleI18n(s)}</option>)}
-              </select>
-              <select style={{padding:'6px 8px',borderRadius:6,border:'1px solid var(--border)',background:'var(--bg-input)',color:'var(--text-primary)',fontSize:11}}
-                value={propFilterApplies} onChange={e=>setPropFilterApplies(e.target.value)}>
-                <option value="">{resolveI18n({en:'All Entity Types',nl:'Alle Entiteitstypen'},lang)}</option>
-                {uniqueAppliesTo.map(et=><option key={et} value={et}>{resolveI18n(ENTITY_TYPE_REGISTRY[et]?.label,lang)||et}</option>)}
-              </select>
-              <span style={{fontSize:11,color:'var(--text-tertiary)'}}>{filteredDefs.length}/{allDefs.length}</span>
-            </div>
-          </div>
-
-          <div className="card" style={{padding:0}}>
-            <div style={{padding:'16px 20px',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-              <div className="card-title">{resolveI18n({en:'Property Dictionary',nl:'Eigenschap Woordenboek'},lang)} ({filteredDefs.length})</div>
-            </div>
-
-            {/* Grouped view if no search/filter active, flat table otherwise */}
-            {!propSearch && !propFilterGroup && !propFilterType && !propFilterStatus && !propFilterApplies ? (
-              <div style={{padding:'0 4px 8px'}}>
-                {allGroups.map(grp => {
-                  const grpDefs = PropertyCatalogStore.getByGroup(grp.key);
-                  const isOpen = expandedPropGroup === grp.key;
-                  return (
-                    <div key={grp.key} style={{background:'var(--bg-secondary)',borderRadius:8,border:'1px solid var(--border)',overflow:'hidden',marginBottom:4}}>
-                      <div style={{display:'flex',alignItems:'center',gap:8,padding:'8px 12px',cursor:'pointer'}} onClick={()=>setExpandedPropGroup(isOpen?null:grp.key)}>
-                        {grp.icon && React.createElement(window[grp.icon]||SettingOutlined,{style:{fontSize:12,color:'var(--text-tertiary)'}})}
-                        <span style={{fontSize:12,fontWeight:600,color:'var(--text-primary)'}}>{resolveI18n(grp.i18n,lang)||grp.name}</span>
-                        <span style={{fontSize:10,color:'var(--text-tertiary)',flex:1}}>{grpDefs.length} {resolveI18n({en:'properties',nl:'eigenschappen'},lang)}</span>
-                        {React.createElement(RightOutlined,{style:{fontSize:8,color:'var(--text-tertiary)',transform:isOpen?'rotate(90deg)':'none',transition:'transform 0.15s'}})}
-                      </div>
-                      {isOpen && (
-                        <div style={{borderTop:'1px solid var(--border)'}}>
-                          <table className="data-table" style={{marginBottom:0}}>
-                            <thead><tr>
-                              <th>{resolveI18n({en:'Key',nl:'Sleutel'},lang)}</th>
-                              <th>{resolveI18n({en:'Name',nl:'Naam'},lang)}</th>
-                              <th>{resolveI18n({en:'Type',nl:'Type'},lang)}</th>
-                              <th>{resolveI18n({en:'Applies To',nl:'Toepasselijk Op'},lang)}</th>
-                              <th>{resolveI18n({en:'Status',nl:'Status'},lang)}</th>
-                            </tr></thead>
-                            <tbody>{grpDefs.map(d=>(
-                              <tr key={d.key}>
-                                <td style={{fontFamily:'monospace',fontSize:11,color:'var(--brand)'}}>{d.key}</td>
-                                <td style={{fontWeight:500,fontSize:12}}>{resolveI18n(d.i18n,lang)||d.name}</td>
-                                <td style={{fontSize:11,color:'var(--text-tertiary)'}}>{d.data_type}</td>
-                                <td><div style={{display:'flex',gap:2,flexWrap:'wrap'}}>{(d.applies_to||[]).map(et=>(
-                                  <span key={et} style={{padding:'1px 5px',borderRadius:3,fontSize:9,background:'var(--bg-card)',border:'1px solid var(--border)',color:ENTITY_TYPE_REGISTRY[et]?.color||'var(--text-tertiary)'}}>{et}</span>
-                                ))}</div></td>
-                                <td>{React.createElement(Tag,{color:lifecycleColor(d.lifecycle_status),style:{margin:0,fontSize:9}},d.lifecycle_status)}</td>
-                              </tr>
-                            ))}</tbody>
-                          </table>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <table className="data-table">
-                <thead><tr>
-                  <th>{resolveI18n({en:'Key',nl:'Sleutel'},lang)}</th>
-                  <th>{resolveI18n({en:'Name',nl:'Naam'},lang)}</th>
-                  <th>{resolveI18n({en:'Group',nl:'Groep'},lang)}</th>
-                  <th>{resolveI18n({en:'Type',nl:'Type'},lang)}</th>
-                  <th>{resolveI18n({en:'Applies To',nl:'Toepasselijk Op'},lang)}</th>
-                  <th>{resolveI18n({en:'Status',nl:'Status'},lang)}</th>
-                </tr></thead>
-                <tbody>{filteredDefs.map(d=>(
-                  <tr key={d.key}>
-                    <td style={{fontFamily:'monospace',fontSize:11,color:'var(--brand)'}}>{d.key}</td>
-                    <td style={{fontWeight:500,fontSize:12}}>{resolveI18n(d.i18n,lang)||d.name}</td>
-                    <td style={{fontSize:11,color:'var(--text-tertiary)'}}>{resolveI18n(PropertyCatalogStore.getGroup(d.group_key)?.i18n,lang)||d.group_key}</td>
-                    <td style={{fontSize:11,color:'var(--text-tertiary)'}}>{d.data_type}</td>
-                    <td><div style={{display:'flex',gap:2,flexWrap:'wrap'}}>{(d.applies_to||[]).map(et=>(
-                      <span key={et} style={{padding:'1px 5px',borderRadius:3,fontSize:9,background:'var(--bg-card)',border:'1px solid var(--border)',color:ENTITY_TYPE_REGISTRY[et]?.color||'var(--text-tertiary)'}}>{et}</span>
-                    ))}</div></td>
-                    <td>{React.createElement(Tag,{color:lifecycleColor(d.lifecycle_status),style:{margin:0,fontSize:9}},d.lifecycle_status)}</td>
-                  </tr>
-                ))}</tbody>
-              </table>
-            )}
-          </div>
-        </div>
+        <PropertyCatalogTab entity={null} lang={lang} onOpenModal={null}/>
       )}
 
       {/* ════════ DOMAINS TAB ════════ */}
