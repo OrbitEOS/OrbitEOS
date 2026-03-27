@@ -2187,6 +2187,52 @@ PropertyCatalogStore.putDefinition({
   entity_path:'properties.level', lifecycle_status:'active'
 });
 
+// ── Solar inverter properties ──
+PropertyCatalogStore.putDefinition({
+  key:'string_count', name:'String Count', i18n:{en:'String Count',nl:'Aantal Strings'},
+  group_key:'electrical', category:'fixed', data_type:'number', ui_representation:'number',
+  validation:{min:1,max:24}, applies_to:['device'], entity_path:'properties.stringCount', lifecycle_status:'active'
+});
+PropertyCatalogStore.putDefinition({
+  key:'mppt_count', name:'MPPT Count', i18n:{en:'MPPT Count',nl:'Aantal MPPT'},
+  group_key:'electrical', category:'fixed', data_type:'number', ui_representation:'number',
+  validation:{min:1,max:12}, applies_to:['device'], entity_path:'properties.mpptCount', lifecycle_status:'active'
+});
+PropertyCatalogStore.putDefinition({
+  key:'max_ac_power', name:'Max AC Power', i18n:{en:'Max AC Power',nl:'Max AC Vermogen'},
+  group_key:'electrical', category:'fixed', data_type:'number', ui_representation:'number',
+  unit:'kW', applies_to:['device'], entity_path:'properties.maxAcPower', lifecycle_status:'active'
+});
+
+// ── Battery properties ──
+PropertyCatalogStore.putDefinition({
+  key:'cell_chemistry', name:'Cell Chemistry', i18n:{en:'Cell Chemistry',nl:'Celchemie'},
+  group_key:'electrical', category:'fixed', data_type:'enum', ui_representation:'dropdown',
+  enum_values:['LFP','NMC','NCA','LTO'], applies_to:['device'], entity_path:'properties.cellChemistry', lifecycle_status:'active'
+});
+PropertyCatalogStore.putDefinition({
+  key:'rated_capacity', name:'Rated Capacity', i18n:{en:'Rated Capacity',nl:'Nominale Capaciteit'},
+  group_key:'electrical', category:'fixed', data_type:'number', ui_representation:'number',
+  unit:'kWh', applies_to:['device'], entity_path:'properties.ratedCapacity', lifecycle_status:'active'
+});
+PropertyCatalogStore.putDefinition({
+  key:'max_charge_rate', name:'Max Charge Rate', i18n:{en:'Max Charge Rate',nl:'Max Laadsnelheid'},
+  group_key:'electrical', category:'fixed', data_type:'number', ui_representation:'number',
+  unit:'kW', applies_to:['device'], entity_path:'properties.maxChargeRate', lifecycle_status:'active'
+});
+
+// ── EV charger properties ──
+PropertyCatalogStore.putDefinition({
+  key:'ocpp_version', name:'OCPP Version', i18n:{en:'OCPP Version',nl:'OCPP Versie'},
+  group_key:'communication', category:'fixed', data_type:'enum', ui_representation:'dropdown',
+  enum_values:['1.6','2.0','2.0.1'], applies_to:['device'], entity_path:'properties.ocppVersion', lifecycle_status:'active'
+});
+PropertyCatalogStore.putDefinition({
+  key:'max_current', name:'Max Current', i18n:{en:'Max Current',nl:'Max Stroom'},
+  group_key:'electrical', category:'fixed', data_type:'number', ui_representation:'number',
+  unit:'A', applies_to:['device'], entity_path:'properties.maxCurrent', lifecycle_status:'active'
+});
+
 console.log(`PropertyCatalogStore: ${PropertyCatalogStore.getDefinitions().length} definitions, ${PropertyCatalogStore.getGroups().length} groups`);
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -2234,11 +2280,47 @@ const EntityTemplateStore = (() => {
   }
 
   function resolveTemplate(entityType, typeKey) {
-    const tmpl = getTemplate(entityType, typeKey);
+    const key = `${entityType}:${typeKey||'default'}`;
+    const tmpl = _templates.get(key) || _templates.get(`${entityType}:default`);
     if (!tmpl) return null;
 
-    // Resolve properties
-    const resolvedProperties = (tmpl.properties || []).map(pRef => {
+    // ── Phase 1a: Template inheritance — resolve parent first if extends ──
+    let parentResolved = null;
+    if (tmpl.extends_key) {
+      const [pType, pKey] = tmpl.extends_key.split(':');
+      parentResolved = resolveTemplate(pType, pKey);
+    }
+
+    // Merge properties: parent (inherited) + own (override or add)
+    let mergedProperties = [];
+    if (parentResolved?.properties) {
+      mergedProperties = [...parentResolved.properties.map(p => ({...p, inherited: true}))];
+    }
+    (tmpl.properties || []).forEach(p => {
+      const existing = mergedProperties.findIndex(mp => mp.property_key === p.property_key);
+      if (existing >= 0) mergedProperties[existing] = {...p, inherited: false};
+      else mergedProperties.push({...p, inherited: false});
+    });
+
+    // Merge form_groups: parent (inherited) + own (override or add)
+    let mergedFormGroups = [];
+    if (parentResolved?.form_groups) {
+      mergedFormGroups = [...parentResolved.form_groups.map(fg => ({...fg, inherited: true}))];
+    }
+    (tmpl.form_groups || []).forEach(fg => {
+      const existing = mergedFormGroups.findIndex(mfg => mfg.key === fg.key);
+      if (existing >= 0) mergedFormGroups[existing] = {...fg, inherited: false};
+      else mergedFormGroups.push({...fg, inherited: false});
+    });
+
+    // Use own columns/tabs/overview if set, else parent's
+    const mergedColumns = (tmpl.columns && tmpl.columns.length > 0) ? tmpl.columns : (parentResolved?.columns || []);
+    const mergedTabs = (tmpl.detail_tabs && tmpl.detail_tabs.length > 0) ? tmpl.detail_tabs : (parentResolved?.detail_tabs || []);
+    const mergedOverview = tmpl.overview?.properties?.length > 0 ? tmpl.overview : (parentResolved?.overview || tmpl.overview);
+    const mergedChildrenTypes = tmpl.children_types || parentResolved?.children_types || [];
+
+    // ── Resolve properties against PropertyCatalogStore ──
+    const resolvedProperties = mergedProperties.map(pRef => {
       const def = PropertyCatalogStore.getDefinition(pRef.property_key);
       if (!def) return { ...pRef, _missing: true };
       return { ...def, ...pRef, _resolved: true,
@@ -2248,22 +2330,33 @@ const EntityTemplateStore = (() => {
       };
     }).filter(p => !p._missing);
 
-    // Resolve form groups
-    const resolvedFormGroups = (tmpl.form_groups || []).map(fg => {
-      const resolvedProps = (fg.property_keys || []).map(pk => {
-        const prop = resolvedProperties.find(p => p.property_key === pk || p.key === pk);
-        return prop || null;
-      }).filter(Boolean);
+    // ── Resolve form groups with from_group support (Phase 2a) ──
+    const resolvedFormGroups = mergedFormGroups.map(fg => {
+      let resolvedProps = [];
+      if (fg.from_group) {
+        // Phase 2a: Pull all properties from that PropertyCatalogStore group applicable to this entity type
+        const groupProps = PropertyCatalogStore.getByGroup(fg.from_group)
+          .filter(p => (p.applies_to || []).includes(entityType));
+        resolvedProps = groupProps.map(p => ({...p, fromBlock: true}));
+      } else if (fg.property_keys) {
+        resolvedProps = (fg.property_keys || []).map(pk => {
+          const prop = resolvedProperties.find(p => p.property_key === pk || p.key === pk);
+          return prop || null;
+        }).filter(Boolean);
+      }
       return { ...fg, resolvedProperties: resolvedProps };
     });
 
-    // Resolve columns
-    const resolvedColumns = (tmpl.columns || []).map(col => {
+    // ── Resolve columns ──
+    const resolvedColumns = (mergedColumns || []).map(col => {
       const def = PropertyCatalogStore.getDefinition(col.property_key);
       return { ...col, resolvedProperty: def || null };
     });
 
-    return { ...tmpl, resolved: { properties: resolvedProperties, formGroups: resolvedFormGroups, columns: resolvedColumns } };
+    return { ...tmpl, properties: mergedProperties, form_groups: mergedFormGroups,
+      columns: mergedColumns, detail_tabs: mergedTabs, overview: mergedOverview,
+      children_types: mergedChildrenTypes,
+      resolved: { properties: resolvedProperties, formGroups: resolvedFormGroups, columns: resolvedColumns } };
   }
 
   return { putTemplate, getTemplate, getTemplates, getByEntityType, removeTemplate, resolveTemplate, subscribe, getVersions, rollback };
@@ -2564,8 +2657,7 @@ const EntityTemplateStore = (() => {
     form_groups: [
       { key:'general', label:{en:'General',nl:'Algemeen'}, icon:'SettingOutlined',
         property_keys:['name','device_type','manufacturer','model','serial_number','install_date','zone','tags'] },
-      { key:'network', label:{en:'Network',nl:'Netwerk'}, icon:'ApiOutlined',
-        property_keys:['protocol','ip_address','port','modbus_id','poll_interval'] },
+      { key:'network', label:{en:'Network',nl:'Netwerk'}, icon:'ApiOutlined', from_group:'communication' },
       { key:'firmware', label:{en:'Firmware',nl:'Firmware'}, icon:'CloudServerOutlined',
         property_keys:['firmware','auto_update'] },
     ],
@@ -2597,6 +2689,59 @@ const EntityTemplateStore = (() => {
     },
   },
 
+  // ── Device subtype: Solar Inverter (extends device:default) ──
+  { entity_type:'device', type_key:'solar_inverter', name:'Solar Inverter',
+    description:{en:'Grid-tied or hybrid solar inverter with DC string inputs',nl:'Netgekoppelde of hybride zonne-omvormer met DC string-ingangen'},
+    icon:'SunOutlined', lifecycle_status:'active', version:1,
+    extends_key:'device:default',
+    properties:[
+      {property_key:'string_count',sort_order:20},
+      {property_key:'mppt_count',sort_order:21},
+      {property_key:'max_ac_power',required:true,sort_order:22},
+    ],
+    form_groups:[
+      {key:'solar',label:{en:'Solar Config',nl:'Zonne-configuratie'},icon:'SunOutlined',
+       property_keys:['string_count','mppt_count','max_ac_power']}
+    ],
+    columns:[], detail_tabs:[], overview:{ properties:[], kpis:[], show_map:false, show_alarms:true },
+    children_types:[]
+  },
+
+  // ── Device subtype: Battery Storage (extends device:default) ──
+  { entity_type:'device', type_key:'battery', name:'Battery Storage',
+    description:{en:'Battery energy storage system (BESS) with charge/discharge management',nl:'Batterij energieopslagsysteem (BESS) met laad-/ontlaadbeheer'},
+    icon:'DatabaseOutlined', lifecycle_status:'active', version:1,
+    extends_key:'device:default',
+    properties:[
+      {property_key:'cell_chemistry',sort_order:20},
+      {property_key:'rated_capacity',required:true,sort_order:21},
+      {property_key:'max_charge_rate',sort_order:22},
+    ],
+    form_groups:[
+      {key:'battery',label:{en:'Battery Config',nl:'Batterij-configuratie'},icon:'DatabaseOutlined',
+       property_keys:['cell_chemistry','rated_capacity','max_charge_rate']}
+    ],
+    columns:[], detail_tabs:[], overview:{ properties:[], kpis:[], show_map:false, show_alarms:true },
+    children_types:[]
+  },
+
+  // ── Device subtype: EV Charger (extends device:default) ──
+  { entity_type:'device', type_key:'ev_charger', name:'EV Charger',
+    description:{en:'Electric vehicle charging station with OCPP protocol support',nl:'Elektrisch voertuig laadstation met OCPP-protocolondersteuning'},
+    icon:'CarOutlined', lifecycle_status:'active', version:1,
+    extends_key:'device:default',
+    properties:[
+      {property_key:'ocpp_version',sort_order:20},
+      {property_key:'max_current',required:true,sort_order:21},
+    ],
+    form_groups:[
+      {key:'evConfig',label:{en:'OCPP Config',nl:'OCPP Configuratie'},icon:'CarOutlined',
+       property_keys:['ocpp_version','max_current']}
+    ],
+    columns:[], detail_tabs:[], overview:{ properties:[], kpis:[], show_map:false, show_alarms:true },
+    children_types:[]
+  },
+
   // ── Sensor template ──
   { entity_type:'sensor', type_key:'default', name:'Sensor',
     description:{en:'A measurement point on a device — power, voltage, temperature, energy',nl:'Een meetpunt op een apparaat — vermogen, spanning, temperatuur, energie'},
@@ -2625,8 +2770,7 @@ const EntityTemplateStore = (() => {
         property_keys:['name','sensor_type','unit','tags'] },
       { key:'network', label:{en:'Network',nl:'Netwerk'}, icon:'ApiOutlined',
         property_keys:['protocol','ip_address','port','modbus_id','poll_interval'] },
-      { key:'thresholds', label:{en:'Thresholds',nl:'Drempels'}, icon:'ControlOutlined',
-        property_keys:['warn_min','warn_max','crit_min','crit_max','calib_offset','calib_scale_factor','calib_method'] },
+      { key:'thresholds', label:{en:'Thresholds',nl:'Drempels'}, icon:'ControlOutlined', from_group:'environmental' },
     ],
     columns: [
       { property_key:'name', sortable:true },
@@ -7883,11 +8027,19 @@ function resolvedPropertyToField(prop) {
 }
 
 // ── BaseFormMFE — auto-renders a form group from resolved template ──
+// Phase 2c: supports `mfe` field on form_group for custom MFE rendering
 function BaseFormMFE({ entity, lang, formGroupKey, onSave }) {
   const template = EntityTemplateStore.resolveTemplate(entity.entityType);
   if (!template) return null;
   const group = template.resolved.formGroups.find(g => g.key === formGroupKey);
   if (!group) return null;
+
+  // Phase 2c: If form_group has `mfe` field, delegate to custom MFE from registry
+  if (group.mfe) {
+    const CustomMFE = MFERegistry.get(entity.entityType, group.mfe) || MFERegistry.get('*', group.mfe);
+    if (CustomMFE) return React.createElement(CustomMFE, { entity, lang, formGroupKey, onSave });
+  }
+
   const fields = group.resolvedProperties.map(resolvedPropertyToField);
   const [values, setValues] = useState(() => JSON.parse(JSON.stringify(entity)));
   const [errors, setErrors] = useState({});
