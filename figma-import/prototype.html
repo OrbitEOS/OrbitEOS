@@ -820,6 +820,51 @@ function NavIcon({name, style}) {
 // Properties cascade UP from children (aggregated) and DOWN from parents (inherited).
 // To migrate to production: replace seed data with API hydration, add WebSocket state updates.
 // ═══════════════════════════════════════════════════════════════════════
+
+// ─── BaseEntity — common base class for ALL entities in the platform ───
+// Every entity inherits this shape. Adding a field here propagates to all entity types.
+// In production this maps to the entity_instances table + entity_templates reference.
+function createEntity(overrides) {
+  const now = new Date().toISOString();
+  const base = {
+    // Identity
+    id: null,
+    entityType: null,
+    parentId: null,
+    name: '',
+    description: '',
+
+    // Data
+    properties: {},
+    state: { status: 'online' },
+    alarms: [],
+    capabilities: [],
+
+    // Metadata (audit, versioning, lifecycle)
+    metadata: {
+      templateKey: 'default',
+      lifecycle_status: 'active',
+      version: 1,
+      createdAt: now,
+      updatedAt: now,
+      createdBy: null,
+      updatedBy: null,
+    },
+  };
+
+  // Deep merge overrides
+  const entity = { ...base, ...overrides };
+  entity.properties = { ...base.properties, ...overrides.properties };
+  entity.state = { ...base.state, ...overrides.state };
+  entity.metadata = { ...base.metadata, ...overrides.metadata, updatedAt: now };
+
+  // Auto-generate ID if missing
+  if (!entity.id) entity.id = `${entity.entityType}-${Date.now()}-${Math.random().toString(36).slice(2,6)}`;
+
+  return entity;
+}
+
+// ─── EntityStore (Zustand-like normalized cache with pub/sub) ───
 const EntityStore = (() => {
   const _entities = new Map();
   const _subscribers = [];
@@ -827,13 +872,24 @@ const EntityStore = (() => {
   function subscribe(fn) { _subscribers.push(fn); return () => { const i = _subscribers.indexOf(fn); if (i >= 0) _subscribers.splice(i, 1); }; }
   function _notify(event, payload) { _subscribers.forEach(fn => fn({ event, ...payload })); }
 
-  // ── Entity shape ──
-  // { id, entityType, parentId, name, properties:{}, state:{}, alarms:[], capabilities:[] }
-  // entityType: 'platform'|'account'|'subAccount'|'site'|'deviceGroup'|'device'|'sensor'|'actuator'
-
+  // put() normalizes through createEntity base class on first insert
+  // Subsequent puts (updates) preserve metadata.createdAt
   function put(entity) {
-    _entities.set(entity.id, entity);
-    _notify('put', { entityId: entity.id, entity });
+    const existing = _entities.get(entity.id);
+    if (existing) {
+      // Update — preserve createdAt, bump updatedAt
+      const updated = { ...existing, ...entity };
+      updated.properties = { ...existing.properties, ...entity.properties };
+      updated.state = { ...existing.state, ...entity.state };
+      updated.metadata = { ...existing.metadata, ...entity.metadata, updatedAt: new Date().toISOString() };
+      _entities.set(entity.id, updated);
+      _notify('put', { entityId: entity.id, entity: updated });
+    } else {
+      // New entity — normalize through base class
+      const normalized = createEntity(entity);
+      _entities.set(normalized.id, normalized);
+      _notify('put', { entityId: normalized.id, entity: normalized });
+    }
   }
 
   function get(id) { return _entities.get(id); }
@@ -8803,9 +8859,16 @@ function ConfigurationPage({ t, lang, navigateWithLoader, focusedEntityId, setFo
               <div className="config-detail-header">
                 <div className="config-entity-icon"><EntityTypeIcon type={selectedEntity.entityType}/></div>
                 <div style={{flex:1,minWidth:0}}>
-                  <div style={{display:'flex',alignItems:'center',gap:8}}>
+                  <div style={{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap'}}>
                     <span className="config-entity-name">{selectedEntity.name}</span>
                     <span className="config-entity-type">{resolveI18n(ENTITY_TYPE_REGISTRY[selectedEntity.entityType]?.label, lang) || selectedEntity.entityType}</span>
+                    {selectedEntity.metadata?.lifecycle_status && selectedEntity.metadata.lifecycle_status !== 'active' && (
+                      <span style={{fontSize:9,padding:'1px 6px',borderRadius:8,fontWeight:500,
+                        background:selectedEntity.metadata.lifecycle_status==='draft'?'var(--bg-card-hover)':selectedEntity.metadata.lifecycle_status==='deprecated'?'var(--warning-bg)':'var(--error-bg)',
+                        color:selectedEntity.metadata.lifecycle_status==='draft'?'var(--text-tertiary)':selectedEntity.metadata.lifecycle_status==='deprecated'?'var(--warning)':'var(--error)'}}>
+                        {selectedEntity.metadata.lifecycle_status}
+                      </span>
+                    )}
                     {(selectedEntity.properties?.tags || []).map(tag => (
                       <span key={tag} style={{fontSize:10,padding:'1px 7px',borderRadius:8,background:'var(--bg-secondary)',color:'var(--text-secondary)',border:'1px solid var(--border)'}}>{tag}</span>
                     ))}
