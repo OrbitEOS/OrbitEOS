@@ -7800,6 +7800,16 @@ const StoreAdapter = (() => {
 })();
 
 // ─── FormPanel — renders schema fields as an editable form ───
+// ─── FormLabel — shared label renderer with optional hint tooltip ───
+function FormLabel({ text, required, hint, lang }) {
+  return React.createElement('div', {className:'eem-form-label'},
+    text,
+    required && React.createElement('span',{style:{color:'var(--error)',marginLeft:2}},'*'),
+    hint && React.createElement(Tooltip, {title:resolveI18n(hint,lang)},
+      React.createElement(InfoCircleFilled, {style:{fontSize:10,color:'var(--text-tertiary)',marginLeft:4,cursor:'help'}}))
+  );
+}
+
 function FormPanel({ fields, values, errors, onChange, lang }) {
   return React.createElement('div', {className:'eem-form-grid'},
     fields.map(field => {
@@ -7853,7 +7863,7 @@ function EntityEditModal({ visible, mode, entityType, entityId, parentId, onSave
       setValues(createEntity({ entityType, parentId }));
     }
     setErrors({}); setDirty(false); setActiveTab('general');
-    setSelectedTypeKey(null);
+    if (mode === 'create') setSelectedTypeKey(null);
   }, [visible, entityId, mode, entityType, parentId]);
 
   // Template resolution — pure, all entity types use the same pipeline
@@ -9462,79 +9472,79 @@ function PropertyEditModal({ mode, def, lang, onSave, onCancel }) {
   const renderTabContent = () => {
     if (activeTab === 'general') return React.createElement('div',{className:'eem-form-grid'},
       React.createElement('div',{className:'eem-form-field'},
-        React.createElement('div',{className:'eem-form-label'},'Key *'),
+        React.createElement(FormLabel,{text:'Key',required:true,hint:{en:'Unique snake_case identifier for this property',nl:'Unieke snake_case identifier'},lang}),
         React.createElement(Input,{size:'small',value:values.key||'',onChange:e=>handleChange('key',e.target.value),
           disabled:mode==='edit',placeholder:'property_key',style:{fontFamily:'monospace'}}),
         errors.key && React.createElement('div',{className:'eem-form-error'},errors.key)),
       React.createElement('div',{className:'eem-form-field'},
-        React.createElement('div',{className:'eem-form-label'},'Name *'),
+        React.createElement(FormLabel,{text:'Name',required:true,hint:{en:'Human-readable display name',nl:'Leesbare weergavenaam'},lang}),
         React.createElement(Input,{size:'small',value:values.name||'',onChange:e=>handleChange('name',e.target.value),placeholder:'Display name'}),
         errors.name && React.createElement('div',{className:'eem-form-error'},errors.name)),
       React.createElement('div',{className:'eem-form-field full'},
-        React.createElement('div',{className:'eem-form-label'},'Description'),
+        React.createElement(FormLabel,{text:'Description',hint:{en:'Optional explanation of this item',nl:'Optionele uitleg'},lang}),
         React.createElement(Input.TextArea,{size:'small',rows:2,value:values.description||'',onChange:e=>handleChange('description',e.target.value)})),
       React.createElement('div',{className:'eem-form-field'},
-        React.createElement('div',{className:'eem-form-label'},'Group *'),
+        React.createElement(FormLabel,{text:'Group',required:true,hint:{en:'Property group for organization',nl:'Eigenschapgroep voor organisatie'},lang}),
         React.createElement(Select,{size:'small',style:{width:'100%'},value:values.group_key,onChange:v=>handleChange('group_key',v),
           options:groups.map(g=>({value:g.key,label:resolveI18n(g.i18n,lang)||g.name}))}),
         errors.group_key && React.createElement('div',{className:'eem-form-error'},errors.group_key)),
       React.createElement('div',{className:'eem-form-field'},
-        React.createElement('div',{className:'eem-form-label'},'Category'),
+        React.createElement(FormLabel,{text:'Category',hint:{en:'How this property behaves: fixed, cascaded, state, or computed',nl:'Gedragstype: vast, cascaderend, status of berekend'},lang}),
         React.createElement(Select,{size:'small',style:{width:'100%'},value:values.category,onChange:v=>handleChange('category',v),
           options:['fixed','cascaded','state','computed'].map(v=>({value:v,label:v}))})),
       React.createElement('div',{className:'eem-form-field'},
-        React.createElement('div',{className:'eem-form-label'},'Lifecycle'),
+        React.createElement(FormLabel,{text:'Lifecycle',hint:{en:'Current lifecycle stage: draft, active, deprecated, archived',nl:'Levenscyclusfase'},lang}),
         React.createElement(Select,{size:'small',style:{width:'100%'},value:values.lifecycle_status,onChange:v=>handleChange('lifecycle_status',v),
           options:['draft','active','deprecated','archived'].map(v=>({value:v,label:v}))})),
     );
 
     if (activeTab === 'typeui') return React.createElement('div',{className:'eem-form-grid'},
       React.createElement('div',{className:'eem-form-field'},
-        React.createElement('div',{className:'eem-form-label'},'Data Type'),
+        React.createElement(FormLabel,{text:'Data Type',hint:{en:'Value type: string, number, boolean, enum, json, datetime',nl:'Waardetype'},lang}),
         React.createElement(Select,{size:'small',style:{width:'100%'},value:values.data_type,onChange:v=>handleChange('data_type',v),
           options:['string','number','boolean','enum','json','datetime','geo_point'].map(v=>({value:v,label:v}))})),
       React.createElement('div',{className:'eem-form-field'},
-        React.createElement('div',{className:'eem-form-label'},'UI Representation'),
+        React.createElement(FormLabel,{text:'UI Representation',hint:{en:'How this field renders in forms: text, dropdown, toggle, etc.',nl:'Hoe dit veld in formulieren verschijnt'},lang}),
         React.createElement(Select,{size:'small',style:{width:'100%'},value:values.ui_representation,onChange:v=>handleChange('ui_representation',v),
           options:['text','number','dropdown','toggle','date','textarea','tags','slider','email','phone'].map(v=>({value:v,label:v}))})),
       React.createElement('div',{className:'eem-form-field'},
-        React.createElement('div',{className:'eem-form-label'},'Unit'),
+        React.createElement(FormLabel,{text:'Unit',hint:{en:'Measurement unit (kW, °C, %, etc.)',nl:'Meeteenheid'},lang}),
         React.createElement(Input,{size:'small',value:values.unit||'',onChange:e=>handleChange('unit',e.target.value),placeholder:'kW, \u00b0C, %...'})),
       React.createElement('div',{className:'eem-form-field'},
-        React.createElement('div',{className:'eem-form-label'},'Default Value'),
+        React.createElement(FormLabel,{text:'Default Value',hint:{en:'Pre-filled value when creating new entities',nl:'Vooraf ingevulde waarde bij aanmaken'},lang}),
         React.createElement(Input,{size:'small',value:values.default_value!=null?String(values.default_value):'',onChange:e=>handleChange('default_value',e.target.value)})),
       React.createElement('div',{className:'eem-form-field'},
         React.createElement('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center'}},
-          React.createElement('span',{className:'eem-form-label'},'Required'),
+          React.createElement(FormLabel,{text:'Required',hint:{en:'Must be filled when creating entities',nl:'Moet ingevuld worden'},lang}),
           React.createElement(Switch,{size:'small',checked:values.is_required,onChange:v=>handleChange('is_required',v)}))),
       React.createElement('div',{className:'eem-form-field'},
         React.createElement('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center'}},
-          React.createElement('span',{className:'eem-form-label'},'Read Only'),
+          React.createElement(FormLabel,{text:'Read Only',hint:{en:'Cannot be edited after creation',nl:'Kan niet worden bewerkt na aanmaken'},lang}),
           React.createElement(Switch,{size:'small',checked:values.is_readonly,onChange:v=>handleChange('is_readonly',v)}))),
       React.createElement('div',{className:'eem-form-field'},
         React.createElement('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center'}},
-          React.createElement('span',{className:'eem-form-label'},'Is Array'),
+          React.createElement(FormLabel,{text:'Is Array',hint:{en:'Stores multiple values instead of one',nl:'Slaat meerdere waarden op'},lang}),
           React.createElement(Switch,{size:'small',checked:values.is_array,onChange:v=>handleChange('is_array',v)}))),
     );
 
     if (activeTab === 'constraints') return React.createElement('div',{className:'eem-form-grid'},
       (values.data_type==='number'||values.data_type==='string') && React.createElement('div',{className:'eem-form-field'},
-        React.createElement('div',{className:'eem-form-label'},values.data_type==='number'?'Min Value':'Min Length'),
+        React.createElement(FormLabel,{text:values.data_type==='number'?'Min Value':'Min Length',hint:{en:values.data_type==='number'?'Minimum allowed value':'Minimum character count'},lang}),
         React.createElement(InputNumber,{size:'small',style:{width:'100%'},value:values.validation?.min??values.validation?.min_length,
           onChange:v=>handleChange(values.data_type==='number'?'validation.min':'validation.min_length',v)})),
       (values.data_type==='number'||values.data_type==='string') && React.createElement('div',{className:'eem-form-field'},
-        React.createElement('div',{className:'eem-form-label'},values.data_type==='number'?'Max Value':'Max Length'),
+        React.createElement(FormLabel,{text:values.data_type==='number'?'Max Value':'Max Length',hint:{en:values.data_type==='number'?'Maximum allowed value':'Maximum character count'},lang}),
         React.createElement(InputNumber,{size:'small',style:{width:'100%'},value:values.validation?.max??values.validation?.max_length,
           onChange:v=>handleChange(values.data_type==='number'?'validation.max':'validation.max_length',v)})),
       values.data_type==='number' && React.createElement('div',{className:'eem-form-field'},
-        React.createElement('div',{className:'eem-form-label'},'Step'),
+        React.createElement(FormLabel,{text:'Step',hint:{en:'Increment step for number input',nl:'Stap voor nummerinvoer'},lang}),
         React.createElement(InputNumber,{size:'small',style:{width:'100%'},value:values.validation?.step,onChange:v=>handleChange('validation.step',v)})),
       values.data_type==='string' && React.createElement('div',{className:'eem-form-field full'},
-        React.createElement('div',{className:'eem-form-label'},'Pattern (regex)'),
+        React.createElement(FormLabel,{text:'Pattern (regex)',hint:{en:'Regular expression for value validation',nl:'Reguliere expressie voor validatie'},lang}),
         React.createElement(Input,{size:'small',value:values.validation?.pattern||'',onChange:e=>handleChange('validation.pattern',e.target.value),
           placeholder:'^[a-z_]+$',style:{fontFamily:'monospace'}})),
       values.data_type==='enum' && React.createElement('div',{className:'eem-form-field full'},
-        React.createElement('div',{className:'eem-form-label'},'Enum Values *'),
+        React.createElement(FormLabel,{text:'Enum Values',required:true,hint:{en:'Allowed values for enum type (type and press Enter)',nl:'Toegestane waarden (typ en druk Enter)'},lang}),
         React.createElement(Select,{mode:'tags',size:'small',style:{width:'100%'},value:values.enum_values||[],
           onChange:v=>handleChange('enum_values',v),placeholder:'Type and press Enter...'}),
         errors.enum_values && React.createElement('div',{className:'eem-form-error'},errors.enum_values)),
@@ -9545,13 +9555,13 @@ function PropertyEditModal({ mode, def, lang, onSave, onCancel }) {
 
     if (activeTab === 'scope') return React.createElement('div',{className:'eem-form-grid'},
       React.createElement('div',{className:'eem-form-field full'},
-        React.createElement('div',{className:'eem-form-label'},'Applies To *'),
+        React.createElement(FormLabel,{text:'Applies To',required:true,hint:{en:'Which entity types can use this property',nl:'Welke entiteittypes deze eigenschap gebruiken'},lang}),
         React.createElement(Select,{mode:'multiple',size:'small',style:{width:'100%'},value:values.applies_to||[],
           onChange:v=>handleChange('applies_to',v),
           options:entityTypes.map(et=>({value:et,label:resolveI18n(ENTITY_TYPE_REGISTRY[et]?.label,lang)||et}))}),
         errors.applies_to && React.createElement('div',{className:'eem-form-error'},errors.applies_to)),
       React.createElement('div',{className:'eem-form-field full'},
-        React.createElement('div',{className:'eem-form-label'},'Entity Path'),
+        React.createElement(FormLabel,{text:'Entity Path',hint:{en:'Dot-notation path in entity object (e.g. properties.email)',nl:'Pad in entiteit object'},lang}),
         React.createElement(Input,{size:'small',value:values.entity_path||'',onChange:e=>handleChange('entity_path',e.target.value),
           placeholder:'properties.field_name',style:{fontFamily:'monospace'}})),
     );
