@@ -10367,7 +10367,7 @@ function DeveloperStudioPage({t, lang, tab, dsRoute, updateHash}) {
   const [dsTreeCollapsed, setDsTreeCollapsed] = useState(false);
   // Group tree structure: groups are label-only buckets (no templates)
   const [dsTreeOrder, setDsTreeOrder] = useState([
-    { key:'org', name:{en:'Organization',nl:'Organisatie',de:'Organisation'}, icon:'TeamOutlined', items:['account','subAccount'] },
+    { key:'org', name:{en:'Organization',nl:'Organisatie',de:'Organisation'}, icon:'TeamOutlined', items:['platform','account','subAccount','user'] },
     { key:'infra', name:{en:'Infrastructure',nl:'Infrastructuur',de:'Infrastruktur'}, icon:'HomeOutlined', items:['site','deviceGroup'] },
     { key:'devices', name:{en:'Devices',nl:'Apparaten',de:'Geraete'}, icon:'HddOutlined', items:['device','sensor','actuator'] },
     { key:'access', name:{en:'Access Control',nl:'Toegangsbeheer',de:'Zugriffskontrolle'}, icon:'LockOutlined', items:['_privileges','_privilegeGroups','_roleTemplates','role'] },
@@ -10679,33 +10679,11 @@ function DeveloperStudioPage({t, lang, tab, dsRoute, updateHash}) {
     const groupedTypes = new Set();
     dsTreeOrder.forEach(g => g.items.forEach(et => groupedTypes.add(et)));
 
-    // Platform is always root (no instance count — types only)
-    const platformReg = ENTITY_TYPE_REGISTRY.platform;
-    const platformActive = selectedNode.type === 'entity' && selectedNode.entityType === 'platform' && !selectedNode.typeKey;
-
+    // Entity Studio is the root — groups are direct children
     const nodes = [];
 
-    // Platform root node
-    nodes.push(
-      React.createElement('div', {key:'platform-root'},
-        React.createElement('div', {
-          className:`ds-tree-item ${platformActive?'active':''}`,
-          style:{paddingLeft:12, position:'relative'},
-          onClick:()=>{ dsNavigate({type:'entity', entityType:'platform'}); setEntityDetailTab('preview'); },
-          onMouseEnter:e=>{e.currentTarget.querySelectorAll('.tree-action-btn').forEach(b=>b.style.opacity='1');},
-          onMouseLeave:e=>{e.currentTarget.querySelectorAll('.tree-action-btn').forEach(b=>b.style.opacity='0');}
-        },
-          React.createElement(GlobalOutlined, {style:{fontSize:12,color:'var(--brand)'}}),
-          resolveI18n(platformReg?.label,lang) || 'Platform',
-          React.createElement('span', {style:treeActionWrapStyle},
-            React.createElement('span', {className:'tree-action-btn',title:resolveI18n({en:'Clone',nl:'Klonen'},lang),
-              style:{...treeActionBtnStyle,color:'var(--info)'},
-              onClick:e=>{e.stopPropagation();handleCloneTemplate('platform','default');}},
-              React.createElement(CopyOutlined,{style:{fontSize:10}}))
-          )
-        )
-      )
-    );
+    // No separate Platform root — it's inside the Organization group
+    // (added 'platform' to the org group items below)
 
     // Groups
     dsTreeOrder.forEach(group => {
