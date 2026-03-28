@@ -10696,18 +10696,21 @@ function DeveloperStudioPage({t, lang, tab, dsRoute, updateHash}) {
 
   // ── Phase 6c: Extend handler ──
   const handleExtendTemplate = (entityType) => {
+    const reg = ENTITY_TYPE_REGISTRY[entityType];
     const newKey = `${entityType}_subtype_${Date.now()}`;
     EntityTemplateStore.putTemplate({
       entity_type: entityType,
       type_key: newKey,
-      name: `New ${resolveI18n(ENTITY_TYPE_REGISTRY[entityType]?.label,lang)} Subtype`,
+      name: `New ${resolveI18n(reg?.label,lang)||entityType} Type`,
+      description: {en:`Custom ${resolveI18n(reg?.label,lang)||entityType} type`},
+      icon: reg?.icon || 'BlockOutlined',
       extends_key: `${entityType}:default`,
       lifecycle_status: 'draft',
       version: 1,
       properties: [],
       form_groups: [],
-      columns: [],
-      detail_tabs: [],
+      columns: [], // inherits from parent
+      detail_tabs: [], // inherits from parent
       overview: { properties:[], kpis:[], show_map:false, show_alarms:false },
       children_types: [],
     });
@@ -10811,13 +10814,9 @@ function DeveloperStudioPage({t, lang, tab, dsRoute, updateHash}) {
           onMouseEnter:e=>{e.currentTarget.querySelectorAll('.tree-action-btn').forEach(b=>b.style.opacity='1');},
           onMouseLeave:e=>{e.currentTarget.querySelectorAll('.tree-action-btn').forEach(b=>b.style.opacity='0');}
         },
-          subtypes.length > 0 && React.createElement('span', {
-            style:{fontSize:8,cursor:'pointer',width:10,textAlign:'center',flexShrink:0,transform:isTypeExpanded?'rotate(90deg)':'none',transition:'transform 0.15s'},
-            onClick:e=>{e.stopPropagation();setExpandedTypes(prev=>{const next=new Set(prev);if(next.has(entityType))next.delete(entityType);else next.add(entityType);return next;});}
-          }, React.createElement(RightOutlined,{style:{fontSize:8}})),
           React.createElement(Icon, {style:{fontSize:12,color:reg?.color}}),
           resolveI18n(reg?.label,lang) || entityType,
-          subtypes.length > 0 && !isTypeExpanded && React.createElement('span', {className:'ds-count'}, subtypes.length),
+          subtypes.length > 0 && React.createElement('span', {className:'ds-count'}, subtypes.length + 1),
           React.createElement('span', {style:treeActionWrapStyle},
             React.createElement('span', {className:'tree-action-btn',title:resolveI18n({en:'Clone',nl:'Klonen'},lang),
               style:{...treeActionBtnStyle,color:'var(--info)'},
@@ -10829,37 +10828,7 @@ function DeveloperStudioPage({t, lang, tab, dsRoute, updateHash}) {
               React.createElement(BranchesOutlined,{style:{fontSize:10}}))
           )
         ),
-        // Subtypes (only shown when expanded)
-        isTypeExpanded && subtypes.map(st => {
-          const stActive = selectedNode.type==='subtype' && selectedNode.entityType===st.entity_type && selectedNode.typeKey===st.type_key;
-          return React.createElement('div', {
-            key:`${st.entity_type}:${st.type_key}`,
-            className:`ds-tree-item ${stActive?'active':''}`,
-            style:{paddingLeft: 12 + (depth+1) * 14, fontSize:11, position:'relative'},
-            onClick:()=>{ dsNavigate({type:'subtype', entityType:st.entity_type, typeKey:st.type_key}); setEntityDetailTab('preview'); },
-            onMouseEnter:e=>{e.currentTarget.querySelectorAll('.tree-action-btn').forEach(b=>b.style.opacity='1');},
-            onMouseLeave:e=>{e.currentTarget.querySelectorAll('.tree-action-btn').forEach(b=>b.style.opacity='0');}
-          },
-            React.createElement(window[st.icon]||BlockOutlined, {style:{fontSize:11}}),
-            st.name,
-            React.createElement('span', {className:'ds-badge', style:{background:st.lifecycle_status==='active'?'var(--success-bg)':'var(--bg-secondary)',
-              color:st.lifecycle_status==='active'?'var(--success)':'var(--text-tertiary)'}}, st.lifecycle_status==='active'?'\u25cf':'\u25cb'),
-            React.createElement('span', {style:treeActionWrapStyle},
-              React.createElement('span', {className:'tree-action-btn',title:resolveI18n({en:'Clone',nl:'Klonen'},lang),
-                style:{...treeActionBtnStyle,color:'var(--info)'},
-                onClick:e=>{e.stopPropagation();handleCloneTemplate(st.entity_type,st.type_key);}},
-                React.createElement(CopyOutlined,{style:{fontSize:10}})),
-              React.createElement('span', {className:'tree-action-btn',title:resolveI18n({en:'Fork (independent copy)',nl:'Fork (onafhankelijke kopie)'},lang),
-                style:{...treeActionBtnStyle,color:'var(--warning)'},
-                onClick:e=>{e.stopPropagation();handleForkTemplate(st.entity_type,st.type_key);}},
-                React.createElement(BranchesOutlined,{style:{fontSize:10,transform:'scaleX(-1)'}})),
-              React.createElement('span', {className:'tree-action-btn',title:resolveI18n({en:'Delete',nl:'Verwijderen'},lang),
-                style:{...treeActionBtnStyle,color:'var(--error)'},
-                onClick:e=>{e.stopPropagation();handleDeleteTemplate(st);}},
-                React.createElement(DeleteOutlined,{style:{fontSize:10}}))
-            )
-          );
-        }),
+        // Subtypes now shown in the list view on the right — not in tree
         // Nested children from children_types (only for types NOT covered by groups)
         childEntityTypes.filter(ct => {
           // Only render children inline if they are NOT in any group's items
@@ -11371,7 +11340,7 @@ function DeveloperStudioPage({t, lang, tab, dsRoute, updateHash}) {
   // ── Entity Detail with tabs — Preview FIRST (Phase 3a) ──
   function renderEntityDetail(entityType, typeKey) {
     const tmpl = EntityTemplateStore.getTemplate(entityType, typeKey);
-    const resolved = EntityTemplateStore.resolveTemplate(entityType, typeKey);
+    const resolved = EntityTemplateStore.resolveTemplate(entityType, typeKey) || tmpl;
     if (!tmpl) return React.createElement('div',{style:{padding:20,color:'var(--text-tertiary)'}},resolveI18n({en:'No template found',nl:'Geen template gevonden'},lang));
 
     const isSubtype = !!tmpl.extends_key;
