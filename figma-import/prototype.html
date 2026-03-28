@@ -4043,7 +4043,7 @@ const USERS = [
 
 // ─── Live Simulation — periodic jitter on energy flow data in EntityStore ───
 (function startLiveSimulation() {
-  const jitter = (val, pct) => { const d = val * pct; return Math.max(0, +(val + (Math.random() - 0.5) * 2 * d).toFixed(1)); };
+  const jitter = (val, pct) => { const v = typeof val === 'string' ? parseFloat(val) : val; if (isNaN(v)) return val; const d = v * pct; return Math.max(0, +(v + (Math.random() - 0.5) * 2 * d).toFixed(1)); };
   setInterval(() => {
     EntityStore.getByType('site').forEach(site => {
       if (!site.state?.energyFlow) return;
