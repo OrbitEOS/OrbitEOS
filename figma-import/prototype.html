@@ -12849,44 +12849,13 @@ function DeveloperStudioPage({t, lang, tab, dsRoute, updateHash}) {
             </div>
           </div>
 
-          {/* Property Usage Matrix */}
-          <div className="card" style={{padding:0}}>
-            <div style={{padding:'16px 20px'}}>
-              <div className="card-title">{resolveI18n({en:'Property Usage Matrix',nl:'Eigenschap Gebruik Matrix'},lang)}</div>
-              <div className="card-subtitle">{resolveI18n({en:'Property groups used by each entity type',nl:'Eigenschappengroepen gebruikt per entiteitstype'},lang)}</div>
-            </div>
-            <div style={{overflowX:'auto'}}>
-              <table className="data-table" style={{fontSize:11}}>
-                <thead><tr>
-                  <th style={{minWidth:120}}>{resolveI18n({en:'Group',nl:'Groep'},lang)}</th>
-                  {entityTypesForMatrix.map(et => {
-                    const reg = ENTITY_TYPE_REGISTRY[et];
-                    return <th key={et} style={{textAlign:'center',minWidth:60}}>
-                      <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:2}}>
-                        {React.createElement(window[reg?.icon]||BlockOutlined,{style:{fontSize:11,color:reg?.color}})}
-                        <span style={{fontSize:9}}>{resolveI18n(reg?.label,lang)||et}</span>
-                      </div>
-                    </th>;
-                  })}
-                </tr></thead>
-                <tbody>{groupsForMatrix.map(g => (
-                  <tr key={g.key}>
-                    <td style={{fontWeight:500}}>{resolveI18n(g.i18n,lang)||g.name}</td>
-                    {entityTypesForMatrix.map(et => {
-                      const c = getGroupEntityCount(g.key, et);
-                      return <td key={et} style={{textAlign:'center'}}>
-                        {c > 0
-                          ? <span style={{fontSize:10,fontWeight:600,color:'var(--brand)',background:'var(--brand-bg)',padding:'2px 6px',borderRadius:8}}>{c}</span>
-                          : <span style={{color:'var(--text-tertiary)',fontSize:10}}>{'\u2014'}</span>}
-                      </td>;
-                    })}
-                  </tr>
-                ))}</tbody>
-              </table>
-            </div>
-          </div>
+          {/* All Entities/Tabs/Form Groups/Completeness moved to dedicated root tabs */}
+        </div>
+      );
+  }
 
-          {/* ═══ Phase 5a: All Entities Matrix ═══ */}
+  function __REMOVED_OVERVIEW_SECTIONS() { /* These sections are in their own tabs now */
+          {/* ═══ Phase 5a: All Entities Matrix — NOW IN "All Properties" TAB ═══ */}
           {React.createElement(EntityList, {
             columns: [
               {key:'entity', label:{en:'Entity',nl:'Entiteit'}, sortable:true, render:(_,r)=>{
@@ -13014,9 +12983,7 @@ function DeveloperStudioPage({t, lang, tab, dsRoute, updateHash}) {
               })}
             </div>
           </div>
-        </div>
-      );
-  }
+  } /* end __REMOVED_OVERVIEW_SECTIONS */
 
   // ── Template create modal (preserved from original) ──
   const renderCreateTemplateModal = () => {
