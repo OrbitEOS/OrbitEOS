@@ -2156,255 +2156,255 @@ const PropertyCatalogStore = (() => {
 // ── Seed: Property Definitions (~55 definitions) ──
 [
   // ── Identity group ──
-  { key:'name', name:'Name', i18n:{en:'Name',nl:'Naam',de:'Name'}, group_key:'identity', category:'fixed', data_type:'string',
+  { key:'name', name:'Name', i18n:{en:'Name',nl:'Naam',de:'Name'}, hint:{en:'Display name shown in tree and headers',nl:'Weergavenaam in boom en koppen'}, group_key:'identity', category:'fixed', data_type:'string',
     ui_representation:'text', validation:{min_length:2}, applies_to:['platform','account','subAccount','site','deviceGroup','device','sensor','actuator','user','role'],
     is_required:true, is_readonly:false, is_array:false, entity_path:'name', lifecycle_status:'active' },
-  { key:'entity_type_key', name:'Type', i18n:{en:'Type',nl:'Type',de:'Typ'}, group_key:'identity', category:'fixed', data_type:'enum',
+  { key:'entity_type_key', name:'Type', i18n:{en:'Type',nl:'Type',de:'Typ'}, hint:{en:'Specific subtype classification',nl:'Specifieke subtype classificatie'}, group_key:'identity', category:'fixed', data_type:'enum',
     ui_representation:'dropdown', applies_to:['account','subAccount','site','deviceGroup','device','sensor','actuator'],
     is_required:true, is_readonly:false, is_array:false, entity_path:'properties.type', lifecycle_status:'active',
     enum_values:null, enum_values_i18n:null },
-  { key:'account_type', name:'Account Type', i18n:{en:'Account Type',nl:'Accounttype'}, group_key:'identity', category:'fixed', data_type:'enum',
+  { key:'account_type', name:'Account Type', i18n:{en:'Account Type',nl:'Accounttype'}, hint:{en:'Classification of the account',nl:'Classificatie van het account'}, group_key:'identity', category:'fixed', data_type:'enum',
     ui_representation:'dropdown', applies_to:['account'], is_required:true, is_readonly:false, is_array:false,
     entity_path:'properties.type', lifecycle_status:'active',
     enum_values:['Commercial','Industrial','Residential','Government'],
     enum_values_i18n:{Commercial:{en:'Commercial',nl:'Commercieel'},Industrial:{en:'Industrial',nl:'Industrieel'},Residential:{en:'Residential',nl:'Residentieel'},Government:{en:'Government',nl:'Overheid'}} },
-  { key:'site_type', name:'Site Type', i18n:{en:'Site Type',nl:'Locatietype'}, group_key:'identity', category:'fixed', data_type:'enum',
+  { key:'site_type', name:'Site Type', i18n:{en:'Site Type',nl:'Locatietype'}, hint:{en:'Classification of the site',nl:'Classificatie van de locatie'}, group_key:'identity', category:'fixed', data_type:'enum',
     ui_representation:'dropdown', applies_to:['site'], is_required:true, is_readonly:false, is_array:false,
     entity_path:'properties.type', lifecycle_status:'active',
     enum_values:['Agricultural','Residential','Commercial Office','Industrial','Microgrid','Campus'],
     enum_values_i18n:{Agricultural:{en:'Agricultural',nl:'Agrarisch'},Residential:{en:'Residential',nl:'Residentieel'},'Commercial Office':{en:'Commercial Office',nl:'Commercieel Kantoor'},Industrial:{en:'Industrial',nl:'Industrieel'},Microgrid:{en:'Microgrid'},Campus:{en:'Campus'}} },
-  { key:'device_group_type', name:'Group Type', i18n:{en:'Group Type',nl:'Groeptype'}, group_key:'identity', category:'fixed', data_type:'enum',
+  { key:'device_group_type', name:'Group Type', i18n:{en:'Group Type',nl:'Groeptype'}, hint:{en:'Classification of the device group',nl:'Classificatie van de apparaatgroep'}, group_key:'identity', category:'fixed', data_type:'enum',
     ui_representation:'dropdown', applies_to:['deviceGroup'], is_required:true, is_readonly:false, is_array:false,
     entity_path:'properties.type', lifecycle_status:'active',
     enum_values:['Generation','Storage','EV Charging','Metering','HVAC','Infrastructure','Grid','Gateway'],
     enum_values_i18n:{Generation:{en:'Generation',nl:'Opwekking'},Storage:{en:'Storage',nl:'Opslag'},'EV Charging':{en:'EV Charging',nl:'EV Laden'},Metering:{en:'Metering',nl:'Meting'},HVAC:{en:'HVAC'},Infrastructure:{en:'Infrastructure',nl:'Infrastructuur'},Grid:{en:'Grid',nl:'Net'},Gateway:{en:'Gateway'}} },
-  { key:'device_type', name:'Device Type', i18n:{en:'Device Type',nl:'Apparaattype'}, group_key:'identity', category:'fixed', data_type:'enum',
+  { key:'device_type', name:'Device Type', i18n:{en:'Device Type',nl:'Apparaattype'}, hint:{en:'Classification of the device',nl:'Classificatie van het apparaat'}, group_key:'identity', category:'fixed', data_type:'enum',
     ui_representation:'dropdown', applies_to:['device'], is_required:true, is_readonly:false, is_array:false,
     entity_path:'properties.type', lifecycle_status:'active',
     enum_values:['Solar Inverter','Battery','EV Charger','Power Analyzer','Energy Meter','Wind Turbine','Heat Pump','Gateway','Relay','Fire Suppression','Climate Control','Router'],
     enum_values_i18n:{'Solar Inverter':{en:'Solar Inverter',nl:'Zonne-omvormer'},Battery:{en:'Battery',nl:'Batterij'},'EV Charger':{en:'EV Charger',nl:'EV Lader'},'Power Analyzer':{en:'Power Analyzer',nl:'Vermogensanalyzer'},'Energy Meter':{en:'Energy Meter',nl:'Energiemeter'},'Wind Turbine':{en:'Wind Turbine',nl:'Windturbine'},'Heat Pump':{en:'Heat Pump',nl:'Warmtepomp'},Gateway:{en:'Gateway'},Relay:{en:'Relay',nl:'Relais'},'Fire Suppression':{en:'Fire Suppression',nl:'Brandblussing'},'Climate Control':{en:'Climate Control',nl:'Klimaatbeheersing'},Router:{en:'Router'}} },
-  { key:'sensor_type', name:'Sensor Type', i18n:{en:'Sensor Type',nl:'Sensortype'}, group_key:'identity', category:'fixed', data_type:'enum',
+  { key:'sensor_type', name:'Sensor Type', i18n:{en:'Sensor Type',nl:'Sensortype'}, hint:{en:'Classification of the sensor',nl:'Classificatie van de sensor'}, group_key:'identity', category:'fixed', data_type:'enum',
     ui_representation:'dropdown', applies_to:['sensor'], is_required:true, is_readonly:false, is_array:false,
     entity_path:'properties.type', lifecycle_status:'active',
     enum_values:['power','energy','voltage','current','temperature','percentage','counter','frequency','humidity','pressure','status','ratio'],
     enum_values_i18n:{power:{en:'Power',nl:'Vermogen'},energy:{en:'Energy',nl:'Energie'},voltage:{en:'Voltage',nl:'Spanning'},current:{en:'Current',nl:'Stroom'},temperature:{en:'Temperature',nl:'Temperatuur'},percentage:{en:'Percentage'},counter:{en:'Counter',nl:'Teller'},frequency:{en:'Frequency',nl:'Frequentie'},humidity:{en:'Humidity',nl:'Vochtigheid'},pressure:{en:'Pressure',nl:'Druk'},status:{en:'Status'},ratio:{en:'Ratio'}} },
-  { key:'actuator_type', name:'Actuator Type', i18n:{en:'Actuator Type',nl:'Actuatortype'}, group_key:'identity', category:'fixed', data_type:'enum',
+  { key:'actuator_type', name:'Actuator Type', i18n:{en:'Actuator Type',nl:'Actuatortype'}, hint:{en:'Classification of the actuator',nl:'Classificatie van de actuator'}, group_key:'identity', category:'fixed', data_type:'enum',
     ui_representation:'dropdown', applies_to:['actuator'], is_required:true, is_readonly:false, is_array:false,
     entity_path:'properties.type', lifecycle_status:'active',
     enum_values:['power_limit','reactive_power','mode','switch','setpoint','valve','relay','temperature'],
     enum_values_i18n:{power_limit:{en:'Power Limit',nl:'Vermogenslimiet'},reactive_power:{en:'Reactive Power',nl:'Blindvermogen'},mode:{en:'Mode',nl:'Modus'},'switch':{en:'Switch',nl:'Schakelaar'},setpoint:{en:'Setpoint'},valve:{en:'Valve',nl:'Klep'},relay:{en:'Relay',nl:'Relais'},temperature:{en:'Temperature',nl:'Temperatuur'}} },
-  { key:'manufacturer', name:'Manufacturer', i18n:{en:'Manufacturer',nl:'Fabrikant'}, group_key:'identity', category:'fixed', data_type:'string',
+  { key:'manufacturer', name:'Manufacturer', i18n:{en:'Manufacturer',nl:'Fabrikant'}, hint:{en:'Company that manufactured the device',nl:'Bedrijf dat het apparaat heeft gemaakt'}, group_key:'identity', category:'fixed', data_type:'string',
     ui_representation:'text', applies_to:['device'], is_required:true, is_readonly:false, is_array:false,
     entity_path:'properties.manufacturer', lifecycle_status:'active' },
-  { key:'model', name:'Model', i18n:{en:'Model',nl:'Model'}, group_key:'identity', category:'fixed', data_type:'string',
+  { key:'model', name:'Model', i18n:{en:'Model',nl:'Model'}, hint:{en:'Product model number or name',nl:'Product modelnummer of naam'}, group_key:'identity', category:'fixed', data_type:'string',
     ui_representation:'text', applies_to:['device'], is_required:true, is_readonly:false, is_array:false,
     entity_path:'properties.model', lifecycle_status:'active' },
-  { key:'serial_number', name:'Serial Number', i18n:{en:'Serial Number',nl:'Serienummer'}, group_key:'identity', category:'fixed', data_type:'string',
+  { key:'serial_number', name:'Serial Number', i18n:{en:'Serial Number',nl:'Serienummer'}, hint:{en:'Unique serial number from manufacturer',nl:'Uniek serienummer van fabrikant'}, group_key:'identity', category:'fixed', data_type:'string',
     ui_representation:'text', applies_to:['device'], is_required:false, is_readonly:false, is_array:false,
     entity_path:'properties.serialNumber', lifecycle_status:'active' },
-  { key:'description', name:'Description', i18n:{en:'Description',nl:'Beschrijving'}, group_key:'identity', category:'fixed', data_type:'string',
+  { key:'description', name:'Description', i18n:{en:'Description',nl:'Beschrijving'}, hint:{en:'Free-text description of this entity',nl:'Vrije tekst beschrijving'}, group_key:'identity', category:'fixed', data_type:'string',
     ui_representation:'textarea', applies_to:['platform','account','subAccount','site','deviceGroup','device','sensor','actuator','user','role'],
     is_required:false, is_readonly:false, is_array:false, entity_path:'properties.description', lifecycle_status:'active' },
-  { key:'tags', name:'Tags', i18n:{en:'Tags',nl:'Labels',de:'Stichworte'}, group_key:'identity', category:'fixed', data_type:'json',
+  { key:'tags', name:'Tags', i18n:{en:'Tags',nl:'Labels',de:'Stichworte'}, hint:{en:'Labels for filtering and organization',nl:'Labels voor filtering en organisatie'}, group_key:'identity', category:'fixed', data_type:'json',
     ui_representation:'tags', applies_to:['platform','account','subAccount','site','deviceGroup','device','sensor','actuator','user','role'],
     is_required:false, is_readonly:false, is_array:true, entity_path:'properties.tags', lifecycle_status:'active' },
-  { key:'version', name:'Version', i18n:{en:'Version',nl:'Versie'}, group_key:'identity', category:'fixed', data_type:'string',
+  { key:'version', name:'Version', i18n:{en:'Version',nl:'Versie'}, hint:{en:'Current platform version number',nl:'Huidig platformversienummer'}, group_key:'identity', category:'fixed', data_type:'string',
     ui_representation:'text', applies_to:['platform'], is_required:false, is_readonly:true, is_array:false,
     entity_path:'properties.version', lifecycle_status:'active' },
 
   // ── Communication group ──
-  { key:'protocol', name:'Protocol', i18n:{en:'Protocol',nl:'Protocol'}, group_key:'communication', category:'fixed', data_type:'enum',
+  { key:'protocol', name:'Protocol', i18n:{en:'Protocol',nl:'Protocol'}, hint:{en:'Communication protocol for device connection',nl:'Communicatieprotocol voor apparaatverbinding'}, group_key:'communication', category:'fixed', data_type:'enum',
     ui_representation:'dropdown', applies_to:['device','sensor','actuator'], is_required:false, is_readonly:false, is_array:false,
     entity_path:'properties.protocol', lifecycle_status:'active',
     enum_values:['Modbus TCP','Modbus RTU','MQTT','OCPP','SunSpec','REST API','BACnet'],
     enum_values_i18n:{'Modbus TCP':{en:'Modbus TCP'},'Modbus RTU':{en:'Modbus RTU'},MQTT:{en:'MQTT'},OCPP:{en:'OCPP'},SunSpec:{en:'SunSpec'},'REST API':{en:'REST API'},BACnet:{en:'BACnet'}} },
-  { key:'ip_address', name:'IP Address', i18n:{en:'IP Address',nl:'IP-adres'}, group_key:'communication', category:'fixed', data_type:'string',
+  { key:'ip_address', name:'IP Address', i18n:{en:'IP Address',nl:'IP-adres'}, hint:{en:'Network IP address of the device',nl:'Netwerk IP-adres van het apparaat'}, group_key:'communication', category:'fixed', data_type:'string',
     ui_representation:'text', applies_to:['device','sensor','actuator'], is_required:false, is_readonly:false, is_array:false,
     entity_path:'properties.ip', lifecycle_status:'active' },
-  { key:'port', name:'Port', i18n:{en:'Port',nl:'Poort'}, group_key:'communication', category:'fixed', data_type:'number',
+  { key:'port', name:'Port', i18n:{en:'Port',nl:'Poort'}, hint:{en:'Network port number',nl:'Netwerk poortnummer'}, group_key:'communication', category:'fixed', data_type:'number',
     ui_representation:'number', validation:{min:1,max:65535}, applies_to:['device','sensor','actuator'],
     is_required:false, is_readonly:false, is_array:false, entity_path:'properties.port', lifecycle_status:'active' },
-  { key:'modbus_id', name:'Modbus ID', i18n:{en:'Modbus ID',nl:'Modbus ID'}, group_key:'communication', category:'fixed', data_type:'number',
+  { key:'modbus_id', name:'Modbus ID', i18n:{en:'Modbus ID',nl:'Modbus ID'}, hint:{en:'Modbus slave address (1-247)',nl:'Modbus slave-adres (1-247)'}, group_key:'communication', category:'fixed', data_type:'number',
     ui_representation:'number', validation:{min:1,max:247}, applies_to:['device','sensor','actuator'],
     is_required:false, is_readonly:false, is_array:false, entity_path:'properties.modbusId', lifecycle_status:'active' },
-  { key:'poll_interval', name:'Poll Interval', i18n:{en:'Poll Interval (s)',nl:'Poll Interval (s)'}, group_key:'communication', category:'fixed', data_type:'number',
+  { key:'poll_interval', name:'Poll Interval', i18n:{en:'Poll Interval (s)',nl:'Poll Interval (s)'}, hint:{en:'How often to read device data in seconds',nl:'Hoe vaak apparaatgegevens lezen in seconden'}, group_key:'communication', category:'fixed', data_type:'number',
     ui_representation:'number', validation:{min:1}, applies_to:['device','sensor','actuator'],
     is_required:false, is_readonly:false, is_array:false, entity_path:'properties.pollInterval', lifecycle_status:'active' },
-  { key:'firmware', name:'Firmware Version', i18n:{en:'Firmware Version',nl:'Firmwareversie'}, group_key:'communication', category:'fixed', data_type:'string',
+  { key:'firmware', name:'Firmware Version', i18n:{en:'Firmware Version',nl:'Firmwareversie'}, hint:{en:'Current firmware version installed',nl:'Huidige geïnstalleerde firmwareversie'}, group_key:'communication', category:'fixed', data_type:'string',
     ui_representation:'text', applies_to:['device'], is_required:false, is_readonly:true, is_array:false,
     entity_path:'properties.firmware', lifecycle_status:'active' },
-  { key:'auto_update', name:'Auto Update', i18n:{en:'Auto Update',nl:'Automatisch Updaten'}, group_key:'communication', category:'fixed', data_type:'boolean',
+  { key:'auto_update', name:'Auto Update', i18n:{en:'Auto Update',nl:'Automatisch Updaten'}, hint:{en:'Automatically install firmware updates',nl:'Automatisch firmware-updates installeren'}, group_key:'communication', category:'fixed', data_type:'boolean',
     ui_representation:'toggle', applies_to:['device'], is_required:false, is_readonly:false, is_array:false,
     entity_path:'properties.autoUpdate', lifecycle_status:'active' },
 
   // ── Location group ──
-  { key:'address', name:'Address', i18n:{en:'Address',nl:'Adres'}, group_key:'location', category:'fixed', data_type:'string',
+  { key:'address', name:'Address', i18n:{en:'Address',nl:'Adres'}, hint:{en:'Physical street address of the site',nl:'Fysiek adres van de locatie'}, group_key:'location', category:'fixed', data_type:'string',
     ui_representation:'text', applies_to:['site'], is_required:false, is_readonly:false, is_array:false,
     entity_path:'properties.location', lifecycle_status:'active' },
-  { key:'latitude', name:'Latitude', i18n:{en:'Latitude',nl:'Breedtegraad'}, group_key:'location', category:'fixed', data_type:'number',
+  { key:'latitude', name:'Latitude', i18n:{en:'Latitude',nl:'Breedtegraad'}, hint:{en:'GPS latitude coordinate (-90 to 90)',nl:'GPS breedtegraad (-90 tot 90)'}, group_key:'location', category:'fixed', data_type:'number',
     ui_representation:'number', validation:{min:-90,max:90,step:0.001}, applies_to:['site'],
     is_required:false, is_readonly:false, is_array:false, entity_path:'properties.lat', lifecycle_status:'active' },
-  { key:'longitude', name:'Longitude', i18n:{en:'Longitude',nl:'Lengtegraad'}, group_key:'location', category:'fixed', data_type:'number',
+  { key:'longitude', name:'Longitude', i18n:{en:'Longitude',nl:'Lengtegraad'}, hint:{en:'GPS longitude coordinate (-180 to 180)',nl:'GPS lengtegraad (-180 tot 180)'}, group_key:'location', category:'fixed', data_type:'number',
     ui_representation:'number', validation:{min:-180,max:180,step:0.001}, applies_to:['site'],
     is_required:false, is_readonly:false, is_array:false, entity_path:'properties.lng', lifecycle_status:'active' },
-  { key:'region', name:'Region', i18n:{en:'Region',nl:'Regio'}, group_key:'location', category:'fixed', data_type:'string',
+  { key:'region', name:'Region', i18n:{en:'Region',nl:'Regio'}, hint:{en:'Geographic region or business unit',nl:'Geografische regio of bedrijfseenheid'}, group_key:'location', category:'fixed', data_type:'string',
     ui_representation:'text', applies_to:['subAccount'], is_required:true, is_readonly:false, is_array:false,
     entity_path:'properties.region', lifecycle_status:'active' },
 
   // ── Operational group ──
-  { key:'install_date', name:'Install Date', i18n:{en:'Install Date',nl:'Installatiedatum'}, group_key:'operational', category:'fixed', data_type:'datetime',
+  { key:'install_date', name:'Install Date', i18n:{en:'Install Date',nl:'Installatiedatum'}, hint:{en:'Date the device was installed',nl:'Datum waarop het apparaat is geïnstalleerd'}, group_key:'operational', category:'fixed', data_type:'datetime',
     ui_representation:'date', applies_to:['device'], is_required:false, is_readonly:false, is_array:false,
     entity_path:'properties.installDate', lifecycle_status:'active' },
-  { key:'contact_email', name:'Contact Email', i18n:{en:'Contact Email',nl:'Contact E-mail'}, group_key:'operational', category:'fixed', data_type:'string',
+  { key:'contact_email', name:'Contact Email', i18n:{en:'Contact Email',nl:'Contact E-mail'}, hint:{en:'Primary contact email address',nl:'Primair contact e-mailadres'}, group_key:'operational', category:'fixed', data_type:'string',
     ui_representation:'email', applies_to:['account'], is_required:true, is_readonly:false, is_array:false,
     entity_path:'properties.contactEmail', lifecycle_status:'active' },
-  { key:'vat_number', name:'VAT Number', i18n:{en:'VAT Number',nl:'BTW-nummer'}, group_key:'operational', category:'fixed', data_type:'string',
+  { key:'vat_number', name:'VAT Number', i18n:{en:'VAT Number',nl:'BTW-nummer'}, hint:{en:'VAT registration number',nl:'BTW-registratienummer'}, group_key:'operational', category:'fixed', data_type:'string',
     ui_representation:'text', applies_to:['account'], is_required:false, is_readonly:false, is_array:false,
     entity_path:'properties.vatNumber', lifecycle_status:'active' },
-  { key:'plan', name:'Plan', i18n:{en:'Plan',nl:'Abonnement'}, group_key:'operational', category:'fixed', data_type:'enum',
+  { key:'plan', name:'Plan', i18n:{en:'Plan',nl:'Abonnement'}, hint:{en:'Subscription plan tier',nl:'Abonnementsniveau'}, group_key:'operational', category:'fixed', data_type:'enum',
     ui_representation:'dropdown', applies_to:['account'], is_required:true, is_readonly:false, is_array:false,
     entity_path:'properties.plan', lifecycle_status:'active',
     enum_values:['Starter','Professional','Enterprise'],
     enum_values_i18n:{Starter:{en:'Starter'},Professional:{en:'Professional'},Enterprise:{en:'Enterprise'}} },
-  { key:'max_sites', name:'Max Sites', i18n:{en:'Max Sites',nl:'Max Locaties'}, group_key:'operational', category:'fixed', data_type:'number',
+  { key:'max_sites', name:'Max Sites', i18n:{en:'Max Sites',nl:'Max Locaties'}, hint:{en:'Maximum allowed sites under this account',nl:'Maximaal toegestane locaties'}, group_key:'operational', category:'fixed', data_type:'number',
     ui_representation:'number', validation:{min:1}, applies_to:['account'],
     is_required:false, is_readonly:false, is_array:false, entity_path:'properties.maxSites', lifecycle_status:'active' },
-  { key:'max_users', name:'Max Users', i18n:{en:'Max Users',nl:'Max Gebruikers'}, group_key:'operational', category:'fixed', data_type:'number',
+  { key:'max_users', name:'Max Users', i18n:{en:'Max Users',nl:'Max Gebruikers'}, hint:{en:'Maximum allowed users under this account',nl:'Maximaal toegestane gebruikers'}, group_key:'operational', category:'fixed', data_type:'number',
     ui_representation:'number', validation:{min:1}, applies_to:['account'],
     is_required:false, is_readonly:false, is_array:false, entity_path:'properties.maxUsers', lifecycle_status:'active' },
-  { key:'contract_start', name:'Contract Start', i18n:{en:'Contract Start',nl:'Contractstart'}, group_key:'operational', category:'fixed', data_type:'datetime',
+  { key:'contract_start', name:'Contract Start', i18n:{en:'Contract Start',nl:'Contractstart'}, hint:{en:'Contract start date',nl:'Contractstartdatum'}, group_key:'operational', category:'fixed', data_type:'datetime',
     ui_representation:'date', applies_to:['account'], is_required:false, is_readonly:false, is_array:false,
     entity_path:'properties.contractStart', lifecycle_status:'active' },
-  { key:'contract_end', name:'Contract End', i18n:{en:'Contract End',nl:'Contracteinde'}, group_key:'operational', category:'fixed', data_type:'datetime',
+  { key:'contract_end', name:'Contract End', i18n:{en:'Contract End',nl:'Contracteinde'}, hint:{en:'Contract end date',nl:'Contracteinddatum'}, group_key:'operational', category:'fixed', data_type:'datetime',
     ui_representation:'date', applies_to:['account'], is_required:false, is_readonly:false, is_array:false,
     entity_path:'properties.contractEnd', lifecycle_status:'active' },
-  { key:'contract_limit', name:'Contract Limit', i18n:{en:'Contract Limit (kW)',nl:'Contractlimiet (kW)'}, group_key:'operational', category:'fixed', data_type:'number',
+  { key:'contract_limit', name:'Contract Limit', i18n:{en:'Contract Limit (kW)',nl:'Contractlimiet (kW)'}, hint:{en:'Contracted maximum grid power in kW',nl:'Gecontracteerd maximaal netvermogen in kW'}, group_key:'operational', category:'fixed', data_type:'number',
     ui_representation:'number', validation:{min:0}, applies_to:['site'],
     is_required:false, is_readonly:false, is_array:false, entity_path:'properties.contractLimit', lifecycle_status:'active' },
-  { key:'grid_connection', name:'Grid Connection', i18n:{en:'Grid Connection',nl:'Netaansluiting'}, group_key:'operational', category:'fixed', data_type:'enum',
+  { key:'grid_connection', name:'Grid Connection', i18n:{en:'Grid Connection',nl:'Netaansluiting'}, hint:{en:'Grid connection type and amperage',nl:'Netaansluiting type en amperage'}, group_key:'operational', category:'fixed', data_type:'enum',
     ui_representation:'dropdown', applies_to:['site'], is_required:false, is_readonly:false, is_array:false,
     entity_path:'properties.connection', lifecycle_status:'active',
     enum_values:['1×25A','3×25A','3×35A','3×40A','3×63A','3×80A'],
     enum_values_i18n:{'1×25A':{en:'1×25A'},'3×25A':{en:'3×25A'},'3×35A':{en:'3×35A'},'3×40A':{en:'3×40A'},'3×63A':{en:'3×63A'},'3×80A':{en:'3×80A'}} },
-  { key:'dso', name:'DSO', i18n:{en:'DSO',nl:'Netbeheerder'}, group_key:'operational', category:'cascaded', data_type:'enum',
+  { key:'dso', name:'DSO', i18n:{en:'DSO',nl:'Netbeheerder'}, hint:{en:'Distribution System Operator managing the grid',nl:'Netbeheerder'}, group_key:'operational', category:'cascaded', data_type:'enum',
     ui_representation:'dropdown', applies_to:['subAccount','site'], is_required:false, is_readonly:false, is_array:false,
     entity_path:'properties.dso', lifecycle_status:'active',
     enum_values:['Stedin','Liander','Enexis','TenneT','Elia','Fluvius'],
     enum_values_i18n:{Stedin:{en:'Stedin'},Liander:{en:'Liander'},Enexis:{en:'Enexis'},TenneT:{en:'TenneT'},Elia:{en:'Elia'},Fluvius:{en:'Fluvius'}} },
-  { key:'capacity', name:'Capacity', i18n:{en:'Capacity',nl:'Capaciteit'}, group_key:'operational', category:'fixed', data_type:'string',
+  { key:'capacity', name:'Capacity', i18n:{en:'Capacity',nl:'Capaciteit'}, hint:{en:'Total rated capacity of the site',nl:'Totale nominale capaciteit'}, group_key:'operational', category:'fixed', data_type:'string',
     ui_representation:'text', applies_to:['site'], is_required:false, is_readonly:false, is_array:false,
     entity_path:'properties.capacity', lifecycle_status:'active' },
-  { key:'sub_lang', name:'Language', i18n:{en:'Language',nl:'Taal'}, group_key:'operational', category:'cascaded', data_type:'enum',
+  { key:'sub_lang', name:'Language', i18n:{en:'Language',nl:'Taal'}, hint:{en:'Default language for this sub-account',nl:'Standaardtaal voor dit sub-account'}, group_key:'operational', category:'cascaded', data_type:'enum',
     ui_representation:'dropdown', applies_to:['subAccount'], is_required:false, is_readonly:false, is_array:false,
     entity_path:'properties.lang', lifecycle_status:'active',
     enum_values:['en','nl','de','fr'],
     enum_values_i18n:{en:{en:'English'},nl:{en:'Nederlands'},de:{en:'Deutsch'},fr:{en:'Français'}} },
 
   // ── Environmental group (sensor thresholds) ──
-  { key:'warn_min', name:'Warning Min', i18n:{en:'Warning Min',nl:'Waarschuwing Min'}, group_key:'environmental', category:'fixed', data_type:'number',
+  { key:'warn_min', name:'Warning Min', i18n:{en:'Warning Min',nl:'Waarschuwing Min'}, hint:{en:'Minimum value before warning alarm',nl:'Minimumwaarde voor waarschuwingsalarm'}, group_key:'environmental', category:'fixed', data_type:'number',
     ui_representation:'number', applies_to:['sensor'], is_required:false, is_readonly:false, is_array:false,
     entity_path:'properties.warnMin', lifecycle_status:'active' },
-  { key:'warn_max', name:'Warning Max', i18n:{en:'Warning Max',nl:'Waarschuwing Max'}, group_key:'environmental', category:'fixed', data_type:'number',
+  { key:'warn_max', name:'Warning Max', i18n:{en:'Warning Max',nl:'Waarschuwing Max'}, hint:{en:'Maximum value before warning alarm',nl:'Maximumwaarde voor waarschuwingsalarm'}, group_key:'environmental', category:'fixed', data_type:'number',
     ui_representation:'number', applies_to:['sensor'], is_required:false, is_readonly:false, is_array:false,
     entity_path:'properties.warnMax', lifecycle_status:'active' },
-  { key:'crit_min', name:'Critical Min', i18n:{en:'Critical Min',nl:'Kritiek Min'}, group_key:'environmental', category:'fixed', data_type:'number',
+  { key:'crit_min', name:'Critical Min', i18n:{en:'Critical Min',nl:'Kritiek Min'}, hint:{en:'Minimum value before critical alarm',nl:'Minimumwaarde voor kritiek alarm'}, group_key:'environmental', category:'fixed', data_type:'number',
     ui_representation:'number', applies_to:['sensor'], is_required:false, is_readonly:false, is_array:false,
     entity_path:'properties.critMin', lifecycle_status:'active' },
-  { key:'crit_max', name:'Critical Max', i18n:{en:'Critical Max',nl:'Kritiek Max'}, group_key:'environmental', category:'fixed', data_type:'number',
+  { key:'crit_max', name:'Critical Max', i18n:{en:'Critical Max',nl:'Kritiek Max'}, hint:{en:'Maximum value before critical alarm',nl:'Maximumwaarde voor kritiek alarm'}, group_key:'environmental', category:'fixed', data_type:'number',
     ui_representation:'number', applies_to:['sensor'], is_required:false, is_readonly:false, is_array:false,
     entity_path:'properties.critMax', lifecycle_status:'active' },
-  { key:'calib_offset', name:'Calibration Offset', i18n:{en:'Calibration Offset',nl:'Kalibratie Offset'}, group_key:'environmental', category:'fixed', data_type:'number',
+  { key:'calib_offset', name:'Calibration Offset', i18n:{en:'Calibration Offset',nl:'Kalibratie Offset'}, hint:{en:'Calibration offset applied to raw readings',nl:'Kalibratie-offset toegepast op ruwe metingen'}, group_key:'environmental', category:'fixed', data_type:'number',
     ui_representation:'number', applies_to:['sensor'], is_required:false, is_readonly:false, is_array:false,
     entity_path:'properties.calibOffset', lifecycle_status:'active' },
-  { key:'calib_scale_factor', name:'Scale Factor', i18n:{en:'Scale Factor',nl:'Schaalfactor'}, group_key:'environmental', category:'fixed', data_type:'number',
+  { key:'calib_scale_factor', name:'Scale Factor', i18n:{en:'Scale Factor',nl:'Schaalfactor'}, hint:{en:'Calibration scale factor multiplier',nl:'Kalibratie schaalfactor'}, group_key:'environmental', category:'fixed', data_type:'number',
     ui_representation:'number', validation:{step:0.01}, applies_to:['sensor'], is_required:false, is_readonly:false, is_array:false,
     entity_path:'properties.calibScaleFactor', lifecycle_status:'active' },
-  { key:'calib_method', name:'Calibration Method', i18n:{en:'Calibration Method',nl:'Kalibratiemethode'}, group_key:'environmental', category:'fixed', data_type:'enum',
+  { key:'calib_method', name:'Calibration Method', i18n:{en:'Calibration Method',nl:'Kalibratiemethode'}, hint:{en:'Method used for sensor calibration',nl:'Methode gebruikt voor sensorkalibratie'}, group_key:'environmental', category:'fixed', data_type:'enum',
     ui_representation:'dropdown', applies_to:['sensor'], is_required:false, is_readonly:false, is_array:false,
     entity_path:'properties.calibMethod', lifecycle_status:'active',
     enum_values:['Manual','Automated','Factory'],
     enum_values_i18n:{Manual:{en:'Manual',nl:'Handmatig'},Automated:{en:'Automated',nl:'Automatisch'},Factory:{en:'Factory',nl:'Fabriek'}} },
-  { key:'unit', name:'Unit', i18n:{en:'Unit',nl:'Eenheid'}, group_key:'environmental', category:'fixed', data_type:'string',
+  { key:'unit', name:'Unit', i18n:{en:'Unit',nl:'Eenheid'}, hint:{en:'Measurement unit for sensor/actuator values',nl:'Meeteenheid voor sensor/actuator waarden'}, group_key:'environmental', category:'fixed', data_type:'string',
     ui_representation:'text', applies_to:['sensor','actuator'], is_required:true, is_readonly:false, is_array:false,
     entity_path:'properties.unit', lifecycle_status:'active' },
 
   // ── Compliance group (actuator limits) ──
-  { key:'min_value', name:'Min Value', i18n:{en:'Min Value',nl:'Min Waarde'}, group_key:'compliance', category:'fixed', data_type:'number',
+  { key:'min_value', name:'Min Value', i18n:{en:'Min Value',nl:'Min Waarde'}, hint:{en:'Minimum allowed actuator output value',nl:'Minimum toegestane actuatorwaarde'}, group_key:'compliance', category:'fixed', data_type:'number',
     ui_representation:'number', applies_to:['actuator'], is_required:false, is_readonly:false, is_array:false,
     entity_path:'properties.minValue', lifecycle_status:'active' },
-  { key:'max_value', name:'Max Value', i18n:{en:'Max Value',nl:'Max Waarde'}, group_key:'compliance', category:'fixed', data_type:'number',
+  { key:'max_value', name:'Max Value', i18n:{en:'Max Value',nl:'Max Waarde'}, hint:{en:'Maximum allowed actuator output value',nl:'Maximum toegestane actuatorwaarde'}, group_key:'compliance', category:'fixed', data_type:'number',
     ui_representation:'number', applies_to:['actuator'], is_required:false, is_readonly:false, is_array:false,
     entity_path:'properties.maxValue', lifecycle_status:'active' },
-  { key:'rate_limit', name:'Rate Limit', i18n:{en:'Rate Limit',nl:'Snelheidslimiet'}, group_key:'compliance', category:'fixed', data_type:'number',
+  { key:'rate_limit', name:'Rate Limit', i18n:{en:'Rate Limit',nl:'Snelheidslimiet'}, hint:{en:'Maximum rate of change per time unit',nl:'Maximale wijzigingssnelheid'}, group_key:'compliance', category:'fixed', data_type:'number',
     ui_representation:'number', validation:{min:0}, applies_to:['actuator'],
     is_required:false, is_readonly:false, is_array:false, entity_path:'properties.rateLimit', lifecycle_status:'active' },
-  { key:'ramp_rate', name:'Ramp Rate', i18n:{en:'Ramp Rate',nl:'Opvoersnelheid'}, group_key:'compliance', category:'fixed', data_type:'number',
+  { key:'ramp_rate', name:'Ramp Rate', i18n:{en:'Ramp Rate',nl:'Opvoersnelheid'}, hint:{en:'Speed of value change during transitions',nl:'Snelheid van waardewijziging'}, group_key:'compliance', category:'fixed', data_type:'number',
     ui_representation:'number', validation:{min:0}, applies_to:['actuator'],
     is_required:false, is_readonly:false, is_array:false, entity_path:'properties.rampRate', lifecycle_status:'active' },
-  { key:'safety_override', name:'Safety Override', i18n:{en:'Safety Override',nl:'Veiligheidsoverride'}, group_key:'compliance', category:'fixed', data_type:'boolean',
+  { key:'safety_override', name:'Safety Override', i18n:{en:'Safety Override',nl:'Veiligheidsoverride'}, hint:{en:'Allow safety system to override this actuator',nl:'Sta veiligheidssysteem toe om te overschrijven'}, group_key:'compliance', category:'fixed', data_type:'boolean',
     ui_representation:'toggle', applies_to:['actuator'], is_required:false, is_readonly:false, is_array:false,
     entity_path:'properties.safetyOverride', lifecycle_status:'active' },
-  { key:'data_retention', name:'Data Retention', i18n:{en:'Data Retention',nl:'Dataretentie'}, group_key:'compliance', category:'fixed', data_type:'enum',
+  { key:'data_retention', name:'Data Retention', i18n:{en:'Data Retention',nl:'Dataretentie'}, hint:{en:'How long to retain historical data',nl:'Hoe lang historische gegevens bewaren'}, group_key:'compliance', category:'fixed', data_type:'enum',
     ui_representation:'dropdown', applies_to:['site'], is_required:false, is_readonly:false, is_array:false,
     entity_path:'properties.compliance.retention', lifecycle_status:'active',
     enum_values:['1 yr','3 yr','5 yr','7 yr','10 yr'],
     enum_values_i18n:{'1 yr':{en:'1 year',nl:'1 jaar'},'3 yr':{en:'3 years',nl:'3 jaar'},'5 yr':{en:'5 years',nl:'5 jaar'},'7 yr':{en:'7 years',nl:'7 jaar'},'10 yr':{en:'10 years',nl:'10 jaar'}} },
 
   // ── Platform Settings group ──
-  { key:'default_lang', name:'Default Language', i18n:{en:'Default Language',nl:'Standaardtaal'}, group_key:'platform_settings', category:'fixed', data_type:'enum',
+  { key:'default_lang', name:'Default Language', i18n:{en:'Default Language',nl:'Standaardtaal'}, hint:{en:'Default language for new users',nl:'Standaardtaal voor nieuwe gebruikers'}, group_key:'platform_settings', category:'fixed', data_type:'enum',
     ui_representation:'dropdown', applies_to:['platform'], is_required:false, is_readonly:false, is_array:false,
     entity_path:'properties.defaultLang', lifecycle_status:'active',
     enum_values:['en','nl','de','fr'],
     enum_values_i18n:{en:{en:'English'},nl:{en:'Nederlands'},de:{en:'Deutsch'},fr:{en:'Français'}} },
-  { key:'timezone', name:'Timezone', i18n:{en:'Timezone',nl:'Tijdzone'}, group_key:'platform_settings', category:'fixed', data_type:'enum',
+  { key:'timezone', name:'Timezone', i18n:{en:'Timezone',nl:'Tijdzone'}, hint:{en:'Default timezone for date/time display',nl:'Standaard tijdzone'}, group_key:'platform_settings', category:'fixed', data_type:'enum',
     ui_representation:'dropdown', applies_to:['platform'], is_required:false, is_readonly:false, is_array:false,
     entity_path:'properties.timezone', lifecycle_status:'active',
     enum_values:['Europe/Amsterdam','Europe/Brussels','Europe/Berlin','Europe/London','UTC'],
     enum_values_i18n:{'Europe/Amsterdam':{en:'Europe/Amsterdam'},'Europe/Brussels':{en:'Europe/Brussels'},'Europe/Berlin':{en:'Europe/Berlin'},'Europe/London':{en:'Europe/London'},UTC:{en:'UTC'}} },
-  { key:'currency', name:'Currency', i18n:{en:'Currency',nl:'Valuta'}, group_key:'platform_settings', category:'fixed', data_type:'enum',
+  { key:'currency', name:'Currency', i18n:{en:'Currency',nl:'Valuta'}, hint:{en:'Default currency for financial values',nl:'Standaard valuta'}, group_key:'platform_settings', category:'fixed', data_type:'enum',
     ui_representation:'dropdown', applies_to:['platform'], is_required:false, is_readonly:false, is_array:false,
     entity_path:'properties.currency', lifecycle_status:'active',
     enum_values:['EUR','USD','GBP','CHF'],
     enum_values_i18n:{EUR:{en:'EUR (€)'},USD:{en:'USD ($)'},GBP:{en:'GBP (£)'},CHF:{en:'CHF'}} },
-  { key:'date_format', name:'Date Format', i18n:{en:'Date Format',nl:'Datumformaat'}, group_key:'platform_settings', category:'fixed', data_type:'enum',
+  { key:'date_format', name:'Date Format', i18n:{en:'Date Format',nl:'Datumformaat'}, hint:{en:'Date display format preference',nl:'Datumweergave voorkeur'}, group_key:'platform_settings', category:'fixed', data_type:'enum',
     ui_representation:'dropdown', applies_to:['platform'], is_required:false, is_readonly:false, is_array:false,
     entity_path:'properties.dateFormat', lifecycle_status:'active',
     enum_values:['DD-MM-YYYY','MM-DD-YYYY','YYYY-MM-DD'],
     enum_values_i18n:{'DD-MM-YYYY':{en:'DD-MM-YYYY'},'MM-DD-YYYY':{en:'MM-DD-YYYY'},'YYYY-MM-DD':{en:'YYYY-MM-DD'}} },
-  { key:'energy_unit', name:'Energy Unit', i18n:{en:'Energy Unit',nl:'Energieeenheid'}, group_key:'platform_settings', category:'fixed', data_type:'enum',
+  { key:'energy_unit', name:'Energy Unit', i18n:{en:'Energy Unit',nl:'Energieeenheid'}, hint:{en:'Unit for energy measurements',nl:'Eenheid voor energiemetingen'}, group_key:'platform_settings', category:'fixed', data_type:'enum',
     ui_representation:'dropdown', applies_to:['platform'], is_required:false, is_readonly:false, is_array:false,
     entity_path:'properties.energyUnit', lifecycle_status:'active',
     enum_values:['kWh','MWh','Wh'],
     enum_values_i18n:{kWh:{en:'kWh'},MWh:{en:'MWh'},Wh:{en:'Wh'}} },
-  { key:'self_cons_target', name:'Self-consumption Target', i18n:{en:'Self-consumption Target (%)',nl:'Zelfverbruiksdoel (%)'}, group_key:'platform_settings', category:'fixed', data_type:'number',
+  { key:'self_cons_target', name:'Self-consumption Target', i18n:{en:'Self-consumption Target (%)',nl:'Zelfverbruiksdoel (%)'}, hint:{en:'Target self-consumption percentage',nl:'Doel zelfverbruikspercentage'}, group_key:'platform_settings', category:'fixed', data_type:'number',
     ui_representation:'slider', validation:{min:0,max:100}, applies_to:['platform'],
     is_required:false, is_readonly:false, is_array:false, entity_path:'properties.selfConsTarget', lifecycle_status:'active' },
-  { key:'realtime_enabled', name:'Enable Real-time', i18n:{en:'Enable Real-time',nl:'Realtime Inschakelen'}, group_key:'platform_settings', category:'fixed', data_type:'boolean',
+  { key:'realtime_enabled', name:'Enable Real-time', i18n:{en:'Enable Real-time',nl:'Realtime Inschakelen'}, hint:{en:'Enable real-time data streaming',nl:'Real-time datastreaming inschakelen'}, group_key:'platform_settings', category:'fixed', data_type:'boolean',
     ui_representation:'toggle', applies_to:['platform'], is_required:false, is_readonly:false, is_array:false,
     entity_path:'properties.realtimeEnabled', lifecycle_status:'active' },
-  { key:'auto_ack_alerts', name:'Auto-ack Info Alerts', i18n:{en:'Auto-ack Info Alerts',nl:'Auto-bevestig Info'}, group_key:'platform_settings', category:'fixed', data_type:'boolean',
+  { key:'auto_ack_alerts', name:'Auto-ack Info Alerts', i18n:{en:'Auto-ack Info Alerts',nl:'Auto-bevestig Info'}, hint:{en:'Automatically acknowledge info-level alerts',nl:'Automatisch info-meldingen bevestigen'}, group_key:'platform_settings', category:'fixed', data_type:'boolean',
     ui_representation:'toggle', applies_to:['platform'], is_required:false, is_readonly:false, is_array:false,
     entity_path:'properties.autoAckAlerts', lifecycle_status:'active' },
-  { key:'daily_reports', name:'Daily Reports', i18n:{en:'Daily Reports',nl:'Dagelijkse Rapporten'}, group_key:'platform_settings', category:'fixed', data_type:'boolean',
+  { key:'daily_reports', name:'Daily Reports', i18n:{en:'Daily Reports',nl:'Dagelijkse Rapporten'}, hint:{en:'Send daily summary email reports',nl:'Dagelijkse samenvattingsrapporten verzenden'}, group_key:'platform_settings', category:'fixed', data_type:'boolean',
     ui_representation:'toggle', applies_to:['platform'], is_required:false, is_readonly:false, is_array:false,
     entity_path:'properties.dailyReports', lifecycle_status:'active' },
 
   // ── User Profile group ──
-  { key:'email', name:'Email', i18n:{en:'Email',nl:'E-mail'}, group_key:'user_profile', category:'fixed', data_type:'string',
+  { key:'email', name:'Email', i18n:{en:'Email',nl:'E-mail'}, hint:{en:'Login email address',nl:'Inlog e-mailadres'}, group_key:'user_profile', category:'fixed', data_type:'string',
     ui_representation:'email', applies_to:['user'], is_required:true, is_readonly:false, is_array:false,
     entity_path:'properties.email', lifecycle_status:'active' },
-  { key:'phone', name:'Phone', i18n:{en:'Phone',nl:'Telefoon'}, group_key:'user_profile', category:'fixed', data_type:'string',
+  { key:'phone', name:'Phone', i18n:{en:'Phone',nl:'Telefoon'}, hint:{en:'Contact phone number',nl:'Contacttelefoonnummer'}, group_key:'user_profile', category:'fixed', data_type:'string',
     ui_representation:'phone', applies_to:['user'], is_required:false, is_readonly:false, is_array:false,
     entity_path:'properties.phone', lifecycle_status:'active' },
-  { key:'avatar_url', name:'Avatar', i18n:{en:'Avatar',nl:'Avatar'}, group_key:'user_profile', category:'fixed', data_type:'string',
+  { key:'avatar_url', name:'Avatar', i18n:{en:'Avatar',nl:'Avatar'}, hint:{en:'Profile picture URL or upload',nl:'Profielfoto URL of upload'}, group_key:'user_profile', category:'fixed', data_type:'string',
     ui_representation:'avatar', applies_to:['user'], is_required:false, is_readonly:false, is_array:false,
     entity_path:'properties.avatarUrl', lifecycle_status:'active' },
-  { key:'user_language', name:'Language', i18n:{en:'Language',nl:'Taal'}, group_key:'user_profile', category:'fixed', data_type:'enum',
+  { key:'user_language', name:'Language', i18n:{en:'Language',nl:'Taal'}, hint:{en:'Preferred interface language',nl:'Voorkeurstaal'}, group_key:'user_profile', category:'fixed', data_type:'enum',
     ui_representation:'dropdown', applies_to:['user'], is_required:false, is_readonly:false, is_array:false,
     entity_path:'properties.language', lifecycle_status:'active',
     enum_values:['en','nl','de','fr'],
     enum_values_i18n:{en:{en:'English'},nl:{en:'Nederlands'},de:{en:'Deutsch'},fr:{en:'Français'}} },
-  { key:'user_theme', name:'Theme', i18n:{en:'Theme',nl:'Thema'}, group_key:'user_profile', category:'fixed', data_type:'enum',
+  { key:'user_theme', name:'Theme', i18n:{en:'Theme',nl:'Thema'}, hint:{en:'Preferred color theme',nl:'Voorkeurskleurthema'}, group_key:'user_profile', category:'fixed', data_type:'enum',
     ui_representation:'dropdown', applies_to:['user'], is_required:false, is_readonly:false, is_array:false,
     entity_path:'properties.theme', lifecycle_status:'active',
     enum_values:['light','dark','system'],
@@ -2413,19 +2413,19 @@ const PropertyCatalogStore = (() => {
 
 // ── Operator properties ──
 PropertyCatalogStore.putDefinition({
-  key:'shift_schedule', name:'Shift Schedule', i18n:{en:'Shift Schedule',nl:'Dienstrooster'},
+  key:'shift_schedule', name:'Shift Schedule', i18n:{en:'Shift Schedule',nl:'Dienstrooster'}, hint:{en:'Work shift pattern for the operator',nl:'Werkrooster voor de operator'},
   group_key:'user_profile', category:'fixed', data_type:'enum', ui_representation:'dropdown',
   enum_values:['day','night','rotating','on-call'],
   enum_values_i18n:{day:{en:'Day Shift'},night:{en:'Night Shift'},rotating:{en:'Rotating'},['on-call']:{en:'On-call'}},
   applies_to:['user'], is_required:false, is_readonly:false, entity_path:'properties.shiftSchedule', lifecycle_status:'active'
 });
 PropertyCatalogStore.putDefinition({
-  key:'certification', name:'Certification', i18n:{en:'Certification',nl:'Certificering'},
+  key:'certification', name:'Certification', i18n:{en:'Certification',nl:'Certificering'}, hint:{en:'Professional certification or qualification',nl:'Professionele certificering'},
   group_key:'user_profile', category:'fixed', data_type:'string', ui_representation:'text',
   applies_to:['user'], is_required:false, is_readonly:false, entity_path:'properties.certification', lifecycle_status:'active'
 });
 PropertyCatalogStore.putDefinition({
-  key:'site_access_level', name:'Site Access Level', i18n:{en:'Site Access Level',nl:'Locatie Toegangsniveau'},
+  key:'site_access_level', name:'Site Access Level', i18n:{en:'Site Access Level',nl:'Locatie Toegangsniveau'}, hint:{en:'Physical access level to site facilities',nl:'Fysiek toegangsniveau tot locatie'},
   group_key:'user_profile', category:'fixed', data_type:'enum', ui_representation:'dropdown',
   enum_values:['full','restricted','supervised','emergency-only'],
   applies_to:['user'], is_required:false, is_readonly:false, entity_path:'properties.siteAccessLevel', lifecycle_status:'active'
@@ -2433,19 +2433,19 @@ PropertyCatalogStore.putDefinition({
 
 // ── API Service properties ──
 PropertyCatalogStore.putDefinition({
-  key:'api_scope', name:'API Scope', i18n:{en:'API Scope',nl:'API Bereik'},
+  key:'api_scope', name:'API Scope', i18n:{en:'API Scope',nl:'API Bereik'}, hint:{en:'API access permission level',nl:'API-toegangsniveau'},
   group_key:'user_profile', category:'fixed', data_type:'enum', ui_representation:'dropdown',
   enum_values:['read-only','read-write','admin'],
   applies_to:['user'], is_required:true, is_readonly:false, entity_path:'properties.apiScope', lifecycle_status:'active'
 });
 PropertyCatalogStore.putDefinition({
-  key:'rate_limit', name:'Rate Limit', i18n:{en:'Rate Limit (req/min)',nl:'Snelheidslimiet (verz/min)'},
+  key:'rate_limit', name:'Rate Limit', i18n:{en:'Rate Limit (req/min)',nl:'Snelheidslimiet (verz/min)'}, hint:{en:'Maximum API requests per minute',nl:'Maximaal API-verzoeken per minuut'},
   group_key:'user_profile', category:'fixed', data_type:'number', ui_representation:'number',
   validation:{min:1,max:10000}, unit:'req/min',
   applies_to:['user'], is_required:false, is_readonly:false, entity_path:'properties.rateLimit', lifecycle_status:'active'
 });
 PropertyCatalogStore.putDefinition({
-  key:'webhook_url', name:'Webhook URL', i18n:{en:'Webhook URL',nl:'Webhook URL'},
+  key:'webhook_url', name:'Webhook URL', i18n:{en:'Webhook URL',nl:'Webhook URL'}, hint:{en:'URL for receiving webhook callbacks',nl:'URL voor ontvangen van webhook callbacks'},
   group_key:'user_profile', category:'fixed', data_type:'string', ui_representation:'text',
   validation:{pattern:'^https?://'},
   applies_to:['user'], is_required:false, is_readonly:false, entity_path:'properties.webhookUrl', lifecycle_status:'active'
@@ -2453,17 +2453,17 @@ PropertyCatalogStore.putDefinition({
 
 // ── Installer properties ──
 PropertyCatalogStore.putDefinition({
-  key:'company', name:'Company', i18n:{en:'Company',nl:'Bedrijf'},
+  key:'company', name:'Company', i18n:{en:'Company',nl:'Bedrijf'}, hint:{en:'Company or organization name',nl:'Bedrijfs- of organisatienaam'},
   group_key:'user_profile', category:'fixed', data_type:'string', ui_representation:'text',
   applies_to:['user'], is_required:false, is_readonly:false, entity_path:'properties.company', lifecycle_status:'active'
 });
 PropertyCatalogStore.putDefinition({
-  key:'license_number', name:'License Number', i18n:{en:'License Number',nl:'Licentienummer'},
+  key:'license_number', name:'License Number', i18n:{en:'License Number',nl:'Licentienummer'}, hint:{en:'Professional license or certification number',nl:'Professioneel licentienummer'},
   group_key:'user_profile', category:'fixed', data_type:'string', ui_representation:'text',
   applies_to:['user'], is_required:false, is_readonly:false, entity_path:'properties.licenseNumber', lifecycle_status:'active'
 });
 PropertyCatalogStore.putDefinition({
-  key:'specialization', name:'Specialization', i18n:{en:'Specialization',nl:'Specialisatie'},
+  key:'specialization', name:'Specialization', i18n:{en:'Specialization',nl:'Specialisatie'}, hint:{en:'Area of technical specialization',nl:'Technisch specialisatiegebied'},
   group_key:'user_profile', category:'fixed', data_type:'enum', ui_representation:'dropdown',
   enum_values:['solar','battery','ev-charging','hvac','electrical','general'],
   applies_to:['user'], is_required:false, is_readonly:false, entity_path:'properties.specialization', lifecycle_status:'active'
@@ -2471,14 +2471,14 @@ PropertyCatalogStore.putDefinition({
 
 // ── Zone as tag/property (not a hierarchy entity) ──
 PropertyCatalogStore.putDefinition({
-  key:'zone', name:'Zone', i18n:{en:'Zone',nl:'Zone'},
+  key:'zone', name:'Zone', i18n:{en:'Zone',nl:'Zone'}, hint:{en:'Zone label within the site',nl:'Zone-label binnen de locatie'},
   group_key:'location', category:'fixed', data_type:'string', ui_representation:'text',
   applies_to:['device','sensor','actuator','deviceGroup'],
   is_required:false, is_readonly:false,
   entity_path:'properties.zone', lifecycle_status:'active'
 });
 PropertyCatalogStore.putDefinition({
-  key:'zones', name:'Zones', i18n:{en:'Zones',nl:'Zones'},
+  key:'zones', name:'Zones', i18n:{en:'Zones',nl:'Zones'}, hint:{en:'List of available zones at this site',nl:'Lijst met beschikbare zones'},
   group_key:'location', category:'fixed', data_type:'json', ui_representation:'tags',
   applies_to:['site'],
   is_required:false, is_readonly:false, is_array:true,
@@ -2486,7 +2486,7 @@ PropertyCatalogStore.putDefinition({
 });
 // ── Role-specific property ──
 PropertyCatalogStore.putDefinition({
-  key:'role_level', name:'Scope Level', i18n:{en:'Scope Level',nl:'Bereikniveau'},
+  key:'role_level', name:'Scope Level', i18n:{en:'Scope Level',nl:'Bereikniveau'}, hint:{en:'Organizational level where this role applies',nl:'Organisatieniveau waar deze rol geldt'},
   group_key:'operational', category:'fixed', data_type:'enum', ui_representation:'dropdown',
   enum_values:['Platform','Account','Sub-account','Site'],
   applies_to:['role'], is_required:true, is_readonly:false,
@@ -2495,78 +2495,78 @@ PropertyCatalogStore.putDefinition({
 
 // ── Solar inverter properties ──
 PropertyCatalogStore.putDefinition({
-  key:'string_count', name:'String Count', i18n:{en:'String Count',nl:'Aantal Strings'},
+  key:'string_count', name:'String Count', i18n:{en:'String Count',nl:'Aantal Strings'}, hint:{en:'Number of PV string inputs on the inverter',nl:'Aantal PV string-ingangen'},
   group_key:'electrical', category:'fixed', data_type:'number', ui_representation:'number',
   validation:{min:1,max:24}, applies_to:['device'], entity_path:'properties.stringCount', lifecycle_status:'active'
 });
 PropertyCatalogStore.putDefinition({
-  key:'mppt_count', name:'MPPT Count', i18n:{en:'MPPT Count',nl:'Aantal MPPT'},
+  key:'mppt_count', name:'MPPT Count', i18n:{en:'MPPT Count',nl:'Aantal MPPT'}, hint:{en:'Number of maximum power point trackers',nl:'Aantal MPPT-trackers'},
   group_key:'electrical', category:'fixed', data_type:'number', ui_representation:'number',
   validation:{min:1,max:12}, applies_to:['device'], entity_path:'properties.mpptCount', lifecycle_status:'active'
 });
 PropertyCatalogStore.putDefinition({
-  key:'max_ac_power', name:'Max AC Power', i18n:{en:'Max AC Power',nl:'Max AC Vermogen'},
+  key:'max_ac_power', name:'Max AC Power', i18n:{en:'Max AC Power',nl:'Max AC Vermogen'}, hint:{en:'Maximum AC output power in kW',nl:'Maximaal AC vermogen in kW'},
   group_key:'electrical', category:'fixed', data_type:'number', ui_representation:'number',
   unit:'kW', applies_to:['device'], entity_path:'properties.maxAcPower', lifecycle_status:'active'
 });
 
 // ── Battery properties ──
 PropertyCatalogStore.putDefinition({
-  key:'cell_chemistry', name:'Cell Chemistry', i18n:{en:'Cell Chemistry',nl:'Celchemie'},
+  key:'cell_chemistry', name:'Cell Chemistry', i18n:{en:'Cell Chemistry',nl:'Celchemie'}, hint:{en:'Battery cell technology type',nl:'Batterijcel technologietype'},
   group_key:'electrical', category:'fixed', data_type:'enum', ui_representation:'dropdown',
   enum_values:['LFP','NMC','NCA','LTO'], applies_to:['device'], entity_path:'properties.cellChemistry', lifecycle_status:'active'
 });
 PropertyCatalogStore.putDefinition({
-  key:'rated_capacity', name:'Rated Capacity', i18n:{en:'Rated Capacity',nl:'Nominale Capaciteit'},
+  key:'rated_capacity', name:'Rated Capacity', i18n:{en:'Rated Capacity',nl:'Nominale Capaciteit'}, hint:{en:'Nameplate energy storage capacity',nl:'Nominale energieopslagcapaciteit'},
   group_key:'electrical', category:'fixed', data_type:'number', ui_representation:'number',
   unit:'kWh', applies_to:['device'], entity_path:'properties.ratedCapacity', lifecycle_status:'active'
 });
 PropertyCatalogStore.putDefinition({
-  key:'max_charge_rate', name:'Max Charge Rate', i18n:{en:'Max Charge Rate',nl:'Max Laadsnelheid'},
+  key:'max_charge_rate', name:'Max Charge Rate', i18n:{en:'Max Charge Rate',nl:'Max Laadsnelheid'}, hint:{en:'Maximum charging power in kW',nl:'Maximaal laadvermogen in kW'},
   group_key:'electrical', category:'fixed', data_type:'number', ui_representation:'number',
   unit:'kW', applies_to:['device'], entity_path:'properties.maxChargeRate', lifecycle_status:'active'
 });
 
 // ── EV charger properties ──
 PropertyCatalogStore.putDefinition({
-  key:'ocpp_version', name:'OCPP Version', i18n:{en:'OCPP Version',nl:'OCPP Versie'},
+  key:'ocpp_version', name:'OCPP Version', i18n:{en:'OCPP Version',nl:'OCPP Versie'}, hint:{en:'Open Charge Point Protocol version',nl:'OCPP-protocolversie'},
   group_key:'communication', category:'fixed', data_type:'enum', ui_representation:'dropdown',
   enum_values:['1.6','2.0','2.0.1'], applies_to:['device'], entity_path:'properties.ocppVersion', lifecycle_status:'active'
 });
 PropertyCatalogStore.putDefinition({
-  key:'max_current', name:'Max Current', i18n:{en:'Max Current',nl:'Max Stroom'},
+  key:'max_current', name:'Max Current', i18n:{en:'Max Current',nl:'Max Stroom'}, hint:{en:'Maximum current per connector',nl:'Maximale stroom per connector'},
   group_key:'electrical', category:'fixed', data_type:'number', ui_representation:'number',
   unit:'A', applies_to:['device'], entity_path:'properties.maxCurrent', lifecycle_status:'active'
 });
 
 // ── StoreAdapter-supporting property definitions (user_ref, role_ref, icon, lifecycle_status, type_key) ──
 PropertyCatalogStore.putDefinition({
-  key:'user_ref', name:'User', i18n:{en:'User',nl:'Gebruiker'},
+  key:'user_ref', name:'User', i18n:{en:'User',nl:'Gebruiker'}, hint:{en:'Select a user to assign',nl:'Selecteer een gebruiker'},
   group_key:'operational', category:'fixed', data_type:'string', ui_representation:'dropdown',
   optionsFrom:'users', applies_to:['userAssignment'], is_required:true,
   entity_path:'properties.userId', lifecycle_status:'active'
 });
 PropertyCatalogStore.putDefinition({
-  key:'role_ref', name:'Role', i18n:{en:'Role',nl:'Rol'},
+  key:'role_ref', name:'Role', i18n:{en:'Role',nl:'Rol'}, hint:{en:'Select a role for this assignment',nl:'Selecteer een rol'},
   group_key:'operational', category:'fixed', data_type:'string', ui_representation:'dropdown',
   optionsFrom:'roles', applies_to:['userAssignment'], is_required:true,
   entity_path:'properties.role', lifecycle_status:'active'
 });
 PropertyCatalogStore.putDefinition({
-  key:'icon', name:'Icon', i18n:{en:'Icon',nl:'Icoon'},
+  key:'icon', name:'Icon', i18n:{en:'Icon',nl:'Icoon'}, hint:{en:'Visual icon for this template',nl:'Visueel icoon voor dit template'},
   group_key:'identity', category:'fixed', data_type:'string', ui_representation:'icon_picker',
   applies_to:['entityTemplate'], is_required:false,
   entity_path:'properties.icon', lifecycle_status:'active'
 });
 PropertyCatalogStore.putDefinition({
-  key:'lifecycle_status', name:'Lifecycle Status', i18n:{en:'Lifecycle',nl:'Levenscyclus'},
+  key:'lifecycle_status', name:'Lifecycle Status', i18n:{en:'Lifecycle',nl:'Levenscyclus'}, hint:{en:'Current lifecycle stage of this template',nl:'Huidige levenscyclusfase'},
   group_key:'operational', category:'fixed', data_type:'enum', ui_representation:'dropdown',
   enum_values:['draft','active','deprecated','archived'],
   applies_to:['entityTemplate'], is_required:false,
   entity_path:'properties.lifecycle_status', lifecycle_status:'active'
 });
 PropertyCatalogStore.putDefinition({
-  key:'type_key', name:'Type Key', i18n:{en:'Type Key',nl:'Type Sleutel'},
+  key:'type_key', name:'Type Key', i18n:{en:'Type Key',nl:'Type Sleutel'}, hint:{en:'Unique identifier key (snake_case)',nl:'Unieke sleutel (snake_case)'},
   group_key:'identity', category:'fixed', data_type:'string', ui_representation:'text',
   applies_to:['entityTemplate'], is_required:true,
   entity_path:'properties.type_key', lifecycle_status:'active'
@@ -7807,14 +7807,19 @@ function FormPanel({ fields, values, errors, onChange, lang }) {
       const err = errors?.[field.key];
       return React.createElement('div', {key:field.key, className:`eem-form-field ${field.full?'full':''}`},
         field.type !== 'switch' && React.createElement('div', {className:'eem-form-label'},
-          resolveI18n(field.label, lang), field.required && React.createElement('span',{style:{color:'var(--error)',marginLeft:2}},'*')),
+          resolveI18n(field.label, lang),
+          field.required && React.createElement('span',{style:{color:'var(--error)',marginLeft:2}},'*'),
+          field.helpText && React.createElement(Tooltip,{title:resolveI18n(field.helpText,lang)},
+            React.createElement(InfoCircleFilled,{style:{fontSize:10,color:'var(--text-tertiary)',marginLeft:4,cursor:'help'}}))),
         field.type === 'switch'
           ? React.createElement('div', {style:{display:'flex',alignItems:'center',justifyContent:'space-between'}},
-              React.createElement('span', {className:'eem-form-label'}, resolveI18n(field.label, lang)),
+              React.createElement('span', {className:'eem-form-label'},
+                resolveI18n(field.label, lang),
+                field.helpText && React.createElement(Tooltip,{title:resolveI18n(field.helpText,lang)},
+                  React.createElement(InfoCircleFilled,{style:{fontSize:10,color:'var(--text-tertiary)',marginLeft:4,cursor:'help'}}))),
               React.createElement(FieldRenderer, { field, value:val, onChange:v=>onChange(field.key,v), lang }))
           : React.createElement(FieldRenderer, { field, value:val, onChange:v=>onChange(field.key,v), lang }),
-        err && React.createElement('div', {className:'eem-form-error'}, err),
-        field.helpText && React.createElement('div', {className:'eem-form-help'}, resolveI18n(field.helpText, lang))
+        err && React.createElement('div', {className:'eem-form-error'}, err)
       );
     })
   );
@@ -8527,6 +8532,7 @@ function resolvedPropertyToField(prop) {
       label: prop.enum_values_i18n?.[v] || { en: v }
     })) : undefined,
     full: ['textarea','slider','tags','icon_picker'].includes(prop.ui_representation),
+    helpText: prop.hint || null,
   };
 }
 
@@ -9356,6 +9362,8 @@ function PropertyCatalogTab({ entity, lang, onOpenModal }) {
     { key:'lifecycle_status', label:{en:'Status',nl:'Status'}, filterable:true,
       filterOptions: [{value:'active',label:'Active'},{value:'deprecated',label:'Deprecated'},{value:'draft',label:'Draft'}],
       render:(_,r) => React.createElement(Tag,{color:r.lifecycle_status==='active'?'green':r.lifecycle_status==='deprecated'?'orange':'default',style:{margin:0,fontSize:9}},r.lifecycle_status) },
+    { key:'hint', label:{en:'Hint',nl:'Hint'}, hidden:true,
+      render:(_,r) => r.hint ? React.createElement('span',{style:{fontSize:10,color:'var(--text-tertiary)',fontStyle:'italic'}},resolveI18n(r.hint,lang)) : '\u2014' },
   ];
 
   const handleExport = () => {
