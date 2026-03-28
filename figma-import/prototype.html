@@ -12417,58 +12417,44 @@ function App() {
 
   const t = T[lang];
 
-  // Sync page state with URL hash
+  // Sync page state with URL hash — ref-based to avoid stale closures
+  const pageRef2 = useRef(page);
+  pageRef2.current = page;
+
   useEffect(() => {
+    const routeMap = {
+      'dashboard':'dashboard','fleet':'fleet','devices':'devices','alerts':'alerts',
+      'configuration':'configuration','developer-studio':'entityTemplates',
+      'marketplace':'marketplace','rules':'rulesEngine','tariff':'tariffArbitrage',
+      'peak-shaving':'peakShaving','battery':'batteryMgmt','ev-charging':'evCharging',
+      'grid-congestion':'gridCongestion','compliance':'compliance','iot-fleet':'iotFleet',
+    };
+
     const handleHash = () => {
       const { parts } = parseHash();
       if (parts.length === 0 || parts[0] === 'login') {
-        if (page !== 'login') setPage('login');
+        if (pageRef2.current !== 'login') setPage('login');
         return;
       }
-
-      // Map routes to pages
-      const routeMap = {
-        'dashboard': 'dashboard',
-        'fleet': 'fleet',
-        'devices': 'devices',
-        'alerts': 'alerts',
-        'configuration': 'configuration',
-        'developer-studio': 'entityTemplates',
-        'marketplace': 'marketplace',
-        'rules': 'rulesEngine',
-        'tariff': 'tariffArbitrage',
-        'peak-shaving': 'peakShaving',
-        'battery': 'batteryMgmt',
-        'ev-charging': 'evCharging',
-        'grid-congestion': 'gridCongestion',
-        'compliance': 'compliance',
-        'iot-fleet': 'iotFleet',
-      };
-
       const pageKey = routeMap[parts[0]] || parts[0];
-      if (pageKey !== page) setPage(pageKey);
+      if (pageKey !== pageRef2.current) setPage(pageKey);
 
-      // Deep links
-      if (parts[0] === 'configuration' && parts[1]) {
-        setFocusedEntityId(parts[1]);
-      }
+      if (parts[0] === 'configuration' && parts[1]) setFocusedEntityId(parts[1]);
       if (parts[0] === 'developer-studio') {
-        if (parts[1] === 'props' && parts[2]) {
-          setDsRoute({ propGroup: parts[2] });
-        } else if (parts[1] && parts[2]) {
-          setDsRoute({ entityType: parts[1], typeKey: parts[2] });
-        } else if (parts[1]) {
-          setDsRoute({ entityType: parts[1] });
-        } else {
-          setDsRoute(null);
-        }
+        if (parts[1] === 'props' && parts[2]) setDsRoute({ propGroup: parts[2] });
+        else if (parts[1] && parts[2]) setDsRoute({ entityType: parts[1], typeKey: parts[2] });
+        else if (parts[1]) setDsRoute({ entityType: parts[1] });
+        else setDsRoute(null);
       }
     };
 
     window.addEventListener('hashchange', handleHash);
-    handleHash(); // initial parse
+    // Only parse initial hash if not on login (avoids flicker)
+    if (window.location.hash && window.location.hash !== '#' && window.location.hash !== '#/login') {
+      handleHash();
+    }
     return () => window.removeEventListener('hashchange', handleHash);
-  }, [page]);
+  }, []); // empty deps — never recreates
 
   // Persist preferences
   useEffect(() => { localStorage.setItem('orbiteos-lang', lang); }, [lang]);
