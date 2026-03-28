@@ -7257,14 +7257,14 @@ function FormPanel({ fields, values, errors, onChange, lang }) {
 }
 
 // ─── Non-entity type helpers ───
-const NON_ENTITY_TYPES = ['userAssignment','privilege','systemPermission'];
-// 'user' removed from NON_ENTITY_TYPES — it has a full template in EntityTemplateStore
-const NON_ENTITY_ICONS = {
+// Relationship/config record types — not full entities, no templates
+const RELATIONSHIP_TYPES = ['userAssignment','privilege','systemPermission'];
+const RELATIONSHIP_ICONS = {
   userAssignment: TeamOutlined, role: SafetyCertificateOutlined,
   privilege: LockOutlined, systemPermission: SettingOutlined,
   user: UserOutlined,
 };
-const NON_ENTITY_LABELS = {
+const RELATIONSHIP_LABELS = {
   userAssignment: {en:'User Assignment',nl:'Gebruikerstoewijzing'},
   role: {en:'Role',nl:'Rol'},
   privilege: {en:'Privilege',nl:'Recht'},
@@ -7272,7 +7272,7 @@ const NON_ENTITY_LABELS = {
   user: {en:'User',nl:'Gebruiker'},
 };
 
-function getNonEntitySubTabs(entityType) {
+function getRelationshipSubTabs(entityType) {
   const schemaGroup = ENTITY_EDIT_SCHEMA[entityType];
   if (!schemaGroup) return [];
   return Object.keys(schemaGroup).map(tabKey => ({
@@ -7282,7 +7282,7 @@ function getNonEntitySubTabs(entityType) {
   }));
 }
 
-function getNonEntityFields(entityType, subTabKey) {
+function getRelationshipFields(entityType, subTabKey) {
   const schemaGroup = ENTITY_EDIT_SCHEMA[entityType];
   if (!schemaGroup || !schemaGroup[subTabKey]) return [];
   const allFields = schemaGroup[subTabKey]._all || [];
@@ -7355,11 +7355,11 @@ function EntityEditModal({ visible, mode, entityType, entityId, parentId, onSave
   const [errors, setErrors] = useState({});
   const [dirty, setDirty] = useState(false);
 
-  const isNonEntity = NON_ENTITY_TYPES.includes(entityType);
+  const isRelationship = RELATIONSHIP_TYPES.includes(entityType);
 
   useEffect(() => {
     if (!visible) return;
-    if (isNonEntity) {
+    if (isRelationship) {
       setValues(loadNonEntityRecord(entityType, mode === 'edit' ? entityId : null, parentId));
     } else if (entityType === 'user') {
       // Users live in UserStore, not EntityStore
@@ -7393,14 +7393,14 @@ function EntityEditModal({ visible, mode, entityType, entityId, parentId, onSave
   }, [visible, entityId, mode, entityType, parentId]);
 
   // Phase 3: Template-driven sub-tabs with fallback to old schemas
-  const resolvedTemplate = !NON_ENTITY_TYPES.includes(entityType) ? EntityTemplateStore.resolveTemplate(entityType) : null;
+  const resolvedTemplate = !RELATIONSHIP_TYPES.includes(entityType) ? EntityTemplateStore.resolveTemplate(entityType) : null;
 
-  const subTabs = isNonEntity
-    ? getNonEntitySubTabs(entityType)
+  const subTabs = isRelationship
+    ? getRelationshipSubTabs(entityType)
     : (resolvedTemplate?.resolved?.formGroups || []).map(fg => ({ key: fg.key, label: fg.label, icon: fg.icon || 'SettingOutlined' }));
 
   const getFieldsForTab = (tabKey) => {
-    if (isNonEntity) return getNonEntityFields(entityType, tabKey);
+    if (isRelationship) return getRelationshipFields(entityType, tabKey);
     const group = (resolvedTemplate?.resolved?.formGroups || []).find(g => g.key === tabKey);
     return group ? group.resolvedProperties.map(resolvedPropertyToField) : [];
   };
@@ -7444,7 +7444,7 @@ function EntityEditModal({ visible, mode, entityType, entityId, parentId, onSave
       }
       return;
     }
-    if (isNonEntity) {
+    if (isRelationship) {
       const resultId = saveNonEntityRecord(entityType, values, mode, entityId, parentId);
       onSave(resultId);
     } else if (entityType === 'user') {
@@ -7508,13 +7508,13 @@ function EntityEditModal({ visible, mode, entityType, entityId, parentId, onSave
   if (!visible) return null;
 
   const currentFields = getFieldsForTab(activeTab);
-  const HeaderIcon = isNonEntity ? (NON_ENTITY_ICONS[entityType] || SettingOutlined) : null;
+  const HeaderIcon = isRelationship ? (RELATIONSHIP_ICONS[entityType] || SettingOutlined) : null;
   const regEntry = ENTITY_TYPE_REGISTRY[entityType];
-  const typeLabel = isNonEntity ? resolveI18n(NON_ENTITY_LABELS[entityType] || {en:entityType}, lang)
+  const typeLabel = isRelationship ? resolveI18n(RELATIONSHIP_LABELS[entityType] || {en:entityType}, lang)
     : (regEntry ? resolveI18n(regEntry.label, lang) : entityType);
   const title = mode === 'create'
     ? resolveI18n({en:`Create ${typeLabel}`,nl:`${typeLabel} aanmaken`}, lang)
-    : (isNonEntity ? (values.name || values.label || values.userId || typeLabel) : (values.name || ''));
+    : (isRelationship ? (values.name || values.label || values.userId || typeLabel) : (values.name || ''));
 
   return ReactDOM.createPortal(
     React.createElement('div', {className:'eem-overlay', onClick:handleCancel},
@@ -7522,7 +7522,7 @@ function EntityEditModal({ visible, mode, entityType, entityId, parentId, onSave
         // Header
         React.createElement('div', {className:'eem-header'},
           React.createElement('div', {className:'eem-header-icon'},
-            isNonEntity ? React.createElement(HeaderIcon, {style:{fontSize:16,color:'var(--brand)'}}) : React.createElement(EntityTypeIcon, {type:entityType})),
+            isRelationship ? React.createElement(HeaderIcon, {style:{fontSize:16,color:'var(--brand)'}}) : React.createElement(EntityTypeIcon, {type:entityType})),
           React.createElement('div', null,
             React.createElement('div', {className:'eem-header-title'}, title),
             mode === 'create' && resolvedTemplate?.description && React.createElement('div', {
@@ -9212,7 +9212,7 @@ function ConfigurationPage({ t, lang, navigateWithLoader, focusedEntityId, setFo
   const handleModalSave = (id) => {
     closeEditModal();
     // For non-entity types, just re-render the page; for entities, navigate to the new entity
-    if (NON_ENTITY_TYPES.includes(editModalState.entityType) || editModalState.entityType === 'role' || editModalState.entityType === 'user') {
+    if (RELATIONSHIP_TYPES.includes(editModalState.entityType) || editModalState.entityType === 'role' || editModalState.entityType === 'user') {
       rerenderConfig();
     } else {
       handleSelect(id);
@@ -10573,7 +10573,7 @@ function DeveloperStudioPage({t, lang, tab, dsRoute, updateHash}) {
   function renderFormBlocks() {
     const usedGroups = new Set();
     allTemplates.forEach(t => (t.form_groups||[]).forEach(fg => { if (fg.from_group) usedGroups.add(fg.from_group); }));
-    if (!treeSearch && usedGroups.size === 0) return React.createElement('div',{className:'ds-tree-item',style:{fontSize:11,color:'var(--text-tertiary)',fontStyle:'italic'}},resolveI18n({en:'No form blocks',nl:'Geen formulierblokken'},lang));
+    if (!treeSearch && usedGroups.size === 0) return React.createElement('div',{className:'ds-tree-item',style:{fontSize:11,color:'var(--text-tertiary)',fontStyle:'italic'}},resolveI18n({en:'No property groups',nl:'Geen formulierblokken'},lang));
 
     return PropertyCatalogStore.getGroups().filter(g => usedGroups.has(g.key)).filter(g => {
       if (!treeSearch) return true;
@@ -10660,7 +10660,7 @@ function DeveloperStudioPage({t, lang, tab, dsRoute, updateHash}) {
       return React.createElement(React.Fragment,null,
         React.createElement(BuildOutlined,{style:{fontSize:14}}),
         React.createElement('span',{style:{fontWeight:600,fontSize:13}},resolveI18n(g?.i18n,lang)||g?.name||selectedNode.groupKey),
-        React.createElement('span',{style:{fontSize:10,color:'var(--text-tertiary)'}},'('+resolveI18n({en:'form block',nl:'formulierblok'},lang)+')')
+        React.createElement('span',{style:{fontSize:10,color:'var(--text-tertiary)'}},'('+resolveI18n({en:'property group',nl:'formulierblok'},lang)+')')
       );
     }
     if (selectedNode.type === 'propGroup') {
@@ -11313,7 +11313,7 @@ function DeveloperStudioPage({t, lang, tab, dsRoute, updateHash}) {
     return null;
   }
 
-  // ── Block Detail (Phase 4: form block content) ──
+  // ── Block Detail (Phase 4: property group content) ──
   function renderBlockDetail(groupKey) {
     const group = PropertyCatalogStore.getGroup(groupKey);
     const props = PropertyCatalogStore.getByGroup(groupKey);
@@ -11396,7 +11396,7 @@ function DeveloperStudioPage({t, lang, tab, dsRoute, updateHash}) {
     }
     if (selectedNode.type === 'block') {
       const g = PropertyCatalogStore.getGroup(selectedNode.groupKey);
-      crumbs.push({ label: resolveI18n({en:'Form Blocks',nl:'Formulierblokken'},lang) });
+      crumbs.push({ label: resolveI18n({en:'Property Groups',nl:'Eigenschapgroepen'},lang) });
       crumbs.push({ label: resolveI18n(g?.i18n,lang) || g?.name || selectedNode.groupKey });
     }
     if (selectedNode.type === 'property') {
@@ -11493,7 +11493,7 @@ function DeveloperStudioPage({t, lang, tab, dsRoute, updateHash}) {
         React.createElement('div', {style:{flex:1,minWidth:0}},
           React.createElement('div', {style:{display:'flex',alignItems:'center',gap:8}},
             React.createElement('span', {className:'config-entity-name'}, resolveI18n(g?.i18n,lang) || g?.name || selectedNode.groupKey),
-            React.createElement('span', {className:'config-entity-type'}, resolveI18n({en:'form block',nl:'formulierblok'},lang))
+            React.createElement('span', {className:'config-entity-type'}, resolveI18n({en:'property group',nl:'formulierblok'},lang))
           )
         )
       );
