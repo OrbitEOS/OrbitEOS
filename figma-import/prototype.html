@@ -2155,7 +2155,7 @@ const PropertyCatalogStore = (() => {
 [
   // ── Identity group ──
   { key:'name', name:'Name', i18n:{en:'Name',nl:'Naam',de:'Name'}, group_key:'identity', category:'fixed', data_type:'string',
-    ui_representation:'text', validation:{min_length:2}, applies_to:['platform','account','subAccount','site','deviceGroup','device','sensor','actuator'],
+    ui_representation:'text', validation:{min_length:2}, applies_to:['platform','account','subAccount','site','deviceGroup','device','sensor','actuator','user','role'],
     is_required:true, is_readonly:false, is_array:false, entity_path:'name', lifecycle_status:'active' },
   { key:'entity_type_key', name:'Type', i18n:{en:'Type',nl:'Type',de:'Typ'}, group_key:'identity', category:'fixed', data_type:'enum',
     ui_representation:'dropdown', applies_to:['account','subAccount','site','deviceGroup','device','sensor','actuator'],
@@ -2201,10 +2201,10 @@ const PropertyCatalogStore = (() => {
     ui_representation:'text', applies_to:['device'], is_required:false, is_readonly:false, is_array:false,
     entity_path:'properties.serialNumber', lifecycle_status:'active' },
   { key:'description', name:'Description', i18n:{en:'Description',nl:'Beschrijving'}, group_key:'identity', category:'fixed', data_type:'string',
-    ui_representation:'textarea', applies_to:['platform','account','subAccount','site','deviceGroup','device','sensor','actuator'],
+    ui_representation:'textarea', applies_to:['platform','account','subAccount','site','deviceGroup','device','sensor','actuator','user','role'],
     is_required:false, is_readonly:false, is_array:false, entity_path:'properties.description', lifecycle_status:'active' },
   { key:'tags', name:'Tags', i18n:{en:'Tags',nl:'Labels',de:'Stichworte'}, group_key:'identity', category:'fixed', data_type:'json',
-    ui_representation:'tags', applies_to:['platform','account','subAccount','site','deviceGroup','device','sensor','actuator'],
+    ui_representation:'tags', applies_to:['platform','account','subAccount','site','deviceGroup','device','sensor','actuator','user','role'],
     is_required:false, is_readonly:false, is_array:true, entity_path:'properties.tags', lifecycle_status:'active' },
   { key:'version', name:'Version', i18n:{en:'Version',nl:'Versie'}, group_key:'identity', category:'fixed', data_type:'string',
     ui_representation:'text', applies_to:['platform'], is_required:false, is_readonly:true, is_array:false,
@@ -11182,7 +11182,6 @@ function DeveloperStudioPage({t, lang, tab, dsRoute, updateHash}) {
       renderEntityTabContent(entityType, typeKey, 'general', tmpl, resolved),
       !isSubtype && renderEntityTabContent(entityType, typeKey, 'subtypes', tmpl, resolved),
       renderEntityTabContent(entityType, typeKey, 'instances', tmpl, resolved),
-      React.createElement(CodeViewer, { value:tmpl, title:{en:'Full Template JSON',nl:'Volledige Template JSON'}, lang, collapsible:true })
     );
   }
 
@@ -11311,7 +11310,6 @@ function DeveloperStudioPage({t, lang, tab, dsRoute, updateHash}) {
           ],
         }),
         // Inline CodeViewer (Phase 5)
-        React.createElement(CodeViewer, { value:tmpl.properties||[], title:{en:'Properties JSON',nl:'Eigenschappen JSON'}, lang, collapsible:true }),
         propModalFromPicker && React.createElement(PropertyEditModal, {
           mode:'create', def:null, lang,
           onSave:(def) => { PropertyCatalogStore.putDefinition(def); addPropertyToTemplate(propModalFromPicker, def.key); setPropModalFromPicker(null); rerender(); },
@@ -11356,7 +11354,6 @@ function DeveloperStudioPage({t, lang, tab, dsRoute, updateHash}) {
             }},
           ],
         }),
-        React.createElement(CodeViewer, { value:tmpl.form_groups||[], title:{en:'Form Groups JSON',nl:'Formuliergroepen JSON'}, lang, collapsible:true })
       );
     }
 
@@ -11395,7 +11392,6 @@ function DeveloperStudioPage({t, lang, tab, dsRoute, updateHash}) {
             }},
           ],
         }),
-        React.createElement(CodeViewer, { value:tmpl.columns||[], title:{en:'Columns JSON',nl:'Kolommen JSON'}, lang, collapsible:true })
       );
     }
 
@@ -11429,7 +11425,6 @@ function DeveloperStudioPage({t, lang, tab, dsRoute, updateHash}) {
             }},
           ],
         }),
-        React.createElement(CodeViewer, { value:tmpl.detail_tabs||[], title:{en:'Tabs JSON',nl:'Tabs JSON'}, lang, collapsible:true })
       );
     }
 
@@ -11593,7 +11588,6 @@ function DeveloperStudioPage({t, lang, tab, dsRoute, updateHash}) {
             }},
           ],
         }),
-        React.createElement(CodeViewer, { value:tmpl.children_types||[], title:{en:'Relationships JSON',nl:'Relaties JSON'}, lang, collapsible:true })
       );
     }
 
