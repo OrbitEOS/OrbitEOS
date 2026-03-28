@@ -11147,9 +11147,66 @@ function DeveloperStudioPage({t, lang, tab, dsRoute, updateHash}) {
     return null;
   }
 
+  function renderEntityTypeListView(entityType, templates) {
+    const reg = ENTITY_TYPE_REGISTRY[entityType];
+    const baseTmpl = templates.find(t => !t.extends_key || t.type_key === 'default');
+    const subtypes = templates.filter(t => t.extends_key || t.type_key !== 'default');
+    const allTemplates = [baseTmpl, ...subtypes].filter(Boolean);
+
+    const cols = [
+      { key:'name', label:{en:'Template',nl:'Template'}, sortable:true,
+        render:(_,r) => React.createElement('div',{style:{display:'flex',alignItems:'center',gap:8}},
+          React.createElement('div',{style:{width:28,height:28,borderRadius:6,background:'var(--brand-bg)',display:'flex',alignItems:'center',justifyContent:'center'}},
+            React.createElement(resolveIcon(r.icon)||UserOutlined,{style:{fontSize:13,color:'var(--brand)'}})),
+          React.createElement('div',null,
+            React.createElement('div',{style:{fontWeight:500,fontSize:12}},r.name),
+            r.description && React.createElement('div',{style:{fontSize:10,color:'var(--text-tertiary)'}},resolveI18n(r.description,lang))
+          )
+        ) },
+      { key:'type_key', label:{en:'Key',nl:'Sleutel'},
+        render:(_,r) => React.createElement('span',{style:{fontFamily:'monospace',fontSize:10,color:'var(--text-tertiary)'}},r.type_key) },
+      { key:'extends', label:{en:'Extends',nl:'Erft van'},
+        render:(_,r) => r.extends_key ? React.createElement('span',{style:{fontSize:10,color:'var(--info)'}},r.extends_key.split(':')[1]) : React.createElement('span',{style:{color:'var(--text-tertiary)'}},'—') },
+      { key:'properties', label:{en:'Properties',nl:'Eigenschappen'}, sortable:true,
+        getValue:r => (r.properties||[]).length + (r.extends_key ? ' + inherited' : ''),
+        render:(_,r) => { const own = (r.properties||[]).length; return React.createElement('span',null, own, r.extends_key && React.createElement('span',{style:{fontSize:9,color:'var(--text-tertiary)'}},' + inherited')); } },
+      { key:'form_groups', label:{en:'Form Groups',nl:'Formuliergroepen'},
+        getValue:r => (r.form_groups||[]).length,
+        render:(_,r) => React.createElement('span',null,(r.form_groups||[]).length, r.extends_key && React.createElement('span',{style:{fontSize:9,color:'var(--text-tertiary)'}},' + inherited')) },
+      { key:'lifecycle_status', label:{en:'Status',nl:'Status'}, filterable:true,
+        render:(_,r) => React.createElement(Tag,{color:r.lifecycle_status==='active'?'green':r.lifecycle_status==='deprecated'?'orange':'default',style:{margin:0,fontSize:9}},r.lifecycle_status) },
+    ];
+
+    return React.createElement('div',{className:'config-tab-content'},
+      React.createElement('div',{style:{fontSize:11,color:'var(--text-tertiary)',marginBottom:12}},
+        resolveI18n({en:`${allTemplates.length} templates define how ${resolveI18n(reg?.label,lang)} entities are created and displayed`,
+          nl:`${allTemplates.length} templates bepalen hoe ${resolveI18n(reg?.label,lang)} entiteiten worden aangemaakt`},lang)),
+      React.createElement(EntityList,{
+        columns:cols, dataSource:allTemplates, rowKey:'type_key', lang, searchable:true,
+        title:{en:`${resolveI18n(reg?.label,lang)} Templates`,nl:`${resolveI18n(reg?.label,lang)} Templates`},
+        onRowClick: row => dsNavigate({type:'subtype', entityType:row.entity_type, typeKey:row.type_key}),
+        addButton:{label:'',onClick:()=>handleExtendTemplate(entityType)},
+        rowActions:[
+          {key:'edit',icon:React.createElement(EditOutlined,{style:{fontSize:12}}),onClick:row=>dsNavigate({type:'subtype',entityType:row.entity_type,typeKey:row.type_key})},
+          {key:'delete',icon:React.createElement(DeleteOutlined,{style:{fontSize:12}}),danger:true,onClick:row=>{
+            if(!row.extends_key){return;} // can't delete base template
+            Modal.confirm({title:`Delete template "${row.name}"?`,okType:'danger',okText:'Delete',
+              onOk:()=>{EntityTemplateStore.removeTemplate(row.entity_type,row.type_key);rerender();}});
+          }},
+        ],
+        emptyIcon:React.createElement(BlockOutlined),
+        emptyText:{en:'No templates defined',nl:'Geen templates gedefinieerd'},
+      })
+    );
+  }
+
   function renderCenterContent() {
     if (selectedNode.type === 'overview') return renderOverviewDashboard();
-    if (selectedNode.type === 'entity') return renderEntityDetail(selectedNode.entityType, 'default');
+    if (selectedNode.type === 'entity') {
+      const subtypes = EntityTemplateStore.getTemplates().filter(t => t.entity_type === selectedNode.entityType);
+      if (subtypes.length > 1) return renderEntityTypeListView(selectedNode.entityType, subtypes);
+      return renderEntityDetail(selectedNode.entityType, 'default');
+    }
     if (selectedNode.type === 'subtype') return renderEntityDetail(selectedNode.entityType, selectedNode.typeKey);
     if (selectedNode.type === 'block') return renderBlockDetail(selectedNode.groupKey);
     if (selectedNode.type === 'propGroup') return renderPropertyGroupDetail(selectedNode.groupKey);
@@ -13210,7 +13267,11 @@ function DeveloperStudioPage({t, lang, tab, dsRoute, updateHash}) {
   // Determine center content based on selected node
   const detailContent = (() => {
     if (selectedNode.type === 'overview') return renderRootContent();
-    if (selectedNode.type === 'entity') return renderEntityDetail(selectedNode.entityType, 'default');
+    if (selectedNode.type === 'entity') {
+      const subtypes = EntityTemplateStore.getTemplates().filter(t => t.entity_type === selectedNode.entityType);
+      if (subtypes.length > 1) return renderEntityTypeListView(selectedNode.entityType, subtypes);
+      return renderEntityDetail(selectedNode.entityType, 'default');
+    }
     if (selectedNode.type === 'subtype') return renderEntityDetail(selectedNode.entityType, selectedNode.typeKey);
     if (selectedNode.type === 'block') return renderBlockDetail(selectedNode.groupKey);
     if (selectedNode.type === 'propGroup') return renderPropertyGroupWithTabs(selectedNode.groupKey);
