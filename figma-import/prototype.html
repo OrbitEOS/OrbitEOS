@@ -1567,6 +1567,8 @@ const ENTITY_TYPE_REGISTRY = {
   user:        { label:{en:'User',nl:'Gebruiker',de:'Benutzer'}, icon:'UserOutlined', color:'var(--info)' },
   role:        { label:{en:'Role',nl:'Rol',de:'Rolle'}, icon:'SafetyCertificateOutlined', color:'var(--warning)' },
   group:       { label:{en:'Group',nl:'Groep',de:'Gruppe'}, icon:'FolderOutlined', color:'var(--text-tertiary)' },
+  entityTemplate: { label:{en:'Template',nl:'Template'}, icon:'BlockOutlined', color:'var(--text-tertiary)' },
+  userAssignment: { label:{en:'Assignment',nl:'Toewijzing'}, icon:'TeamOutlined', color:'var(--info)' },
 };
 
 // Role styling (used by RolesTab, UsersTab)
@@ -2537,6 +2539,39 @@ PropertyCatalogStore.putDefinition({
   unit:'A', applies_to:['device'], entity_path:'properties.maxCurrent', lifecycle_status:'active'
 });
 
+// ── StoreAdapter-supporting property definitions (user_ref, role_ref, icon, lifecycle_status, type_key) ──
+PropertyCatalogStore.putDefinition({
+  key:'user_ref', name:'User', i18n:{en:'User',nl:'Gebruiker'},
+  group_key:'operational', category:'fixed', data_type:'string', ui_representation:'dropdown',
+  optionsFrom:'users', applies_to:['userAssignment'], is_required:true,
+  entity_path:'properties.userId', lifecycle_status:'active'
+});
+PropertyCatalogStore.putDefinition({
+  key:'role_ref', name:'Role', i18n:{en:'Role',nl:'Rol'},
+  group_key:'operational', category:'fixed', data_type:'string', ui_representation:'dropdown',
+  optionsFrom:'roles', applies_to:['userAssignment'], is_required:true,
+  entity_path:'properties.role', lifecycle_status:'active'
+});
+PropertyCatalogStore.putDefinition({
+  key:'icon', name:'Icon', i18n:{en:'Icon',nl:'Icoon'},
+  group_key:'identity', category:'fixed', data_type:'string', ui_representation:'icon_picker',
+  applies_to:['entityTemplate'], is_required:false,
+  entity_path:'properties.icon', lifecycle_status:'active'
+});
+PropertyCatalogStore.putDefinition({
+  key:'lifecycle_status', name:'Lifecycle Status', i18n:{en:'Lifecycle',nl:'Levenscyclus'},
+  group_key:'operational', category:'fixed', data_type:'enum', ui_representation:'dropdown',
+  enum_values:['draft','active','deprecated','archived'],
+  applies_to:['entityTemplate'], is_required:false,
+  entity_path:'properties.lifecycle_status', lifecycle_status:'active'
+});
+PropertyCatalogStore.putDefinition({
+  key:'type_key', name:'Type Key', i18n:{en:'Type Key',nl:'Type Sleutel'},
+  group_key:'identity', category:'fixed', data_type:'string', ui_representation:'text',
+  applies_to:['entityTemplate'], is_required:true,
+  entity_path:'properties.type_key', lifecycle_status:'active'
+});
+
 console.log(`PropertyCatalogStore: ${PropertyCatalogStore.getDefinitions().length} definitions, ${PropertyCatalogStore.getGroups().length} groups`);
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -3273,6 +3308,42 @@ EntityTemplateStore.putTemplate({
     kpis: [],
     show_map: false, show_alarms: false,
   }
+});
+
+// ── UserAssignment template (template-driven, backed by AccessStore via StoreAdapter) ──
+EntityTemplateStore.putTemplate({
+  entity_type:'userAssignment', type_key:'default', name:'User Assignment',
+  description:{en:'Assigns a user to a scope with a specific role',nl:'Wijst een gebruiker toe aan een bereik met een specifieke rol'},
+  icon:'TeamOutlined', lifecycle_status:'active', version:1,
+  properties:[{property_key:'user_ref',required:true,sort_order:1},{property_key:'role_ref',required:true,sort_order:2}],
+  form_groups:[{key:'general',label:{en:'Assignment',nl:'Toewijzing'},icon:'TeamOutlined',property_keys:['user_ref','role_ref']}],
+  columns:[{property_key:'user_ref',sortable:true},{property_key:'role_ref',filterable:true}],
+  detail_tabs:[],
+  overview:{properties:[],kpis:[],show_map:false,show_alarms:false},
+  children_types:[]
+});
+
+// ── EntityTemplate template (template-driven, backed by EntityTemplateStore via StoreAdapter) ──
+EntityTemplateStore.putTemplate({
+  entity_type:'entityTemplate', type_key:'default', name:'Entity Template',
+  description:{en:'A blueprint defining the shape, form, and behavior of an entity type',nl:'Een blauwdruk die de vorm en het gedrag van een entiteitstype definieert'},
+  icon:'BlockOutlined', lifecycle_status:'active', version:1,
+  properties:[
+    {property_key:'name',required:true,sort_order:1},
+    {property_key:'type_key',required:true,sort_order:2},
+    {property_key:'description',sort_order:3},
+    {property_key:'icon',sort_order:4},
+    {property_key:'lifecycle_status',sort_order:5},
+  ],
+  form_groups:[
+    {key:'general',label:{en:'General',nl:'Algemeen'},icon:'SettingOutlined',property_keys:['name','type_key','description']},
+    {key:'appearance',label:{en:'Appearance',nl:'Weergave'},icon:'BgColorsOutlined',property_keys:['icon']},
+    {key:'lifecycle',label:{en:'Lifecycle',nl:'Levenscyclus'},icon:'ClockCircleOutlined',property_keys:['lifecycle_status']},
+  ],
+  columns:[{property_key:'name',sortable:true},{property_key:'type_key',sortable:true},{property_key:'lifecycle_status',filterable:true}],
+  detail_tabs:[],
+  overview:{properties:[{property_key:'type_key'},{property_key:'lifecycle_status'}],kpis:[],show_map:false,show_alarms:false},
+  children_types:[]
 });
 
 // Groups are UI-only tree organizers — no template needed in EntityTemplateStore
@@ -7450,6 +7521,42 @@ function MetricCard({ value, label, color, pct, lang }) {
   );
 }
 
+// ─── IconPicker — visual Ant Design icon grid for entity templates ───
+function IconPicker({ value, onChange }) {
+  const [search, setSearch] = useState('');
+  const allIcons = [
+    'UserOutlined','TeamOutlined','HomeOutlined','HddOutlined','SettingOutlined',
+    'GlobalOutlined','BankOutlined','ApiOutlined','LockOutlined','SafetyCertificateOutlined',
+    'SunOutlined','DatabaseOutlined','CarOutlined','BuildOutlined','ToolOutlined',
+    'RadarChartOutlined','SlidersOutlined','AppstoreOutlined','BlockOutlined',
+    'ThunderboltOutlined','AlertOutlined','BookOutlined','CodeOutlined',
+    'BranchesOutlined','KeyOutlined','CloudServerOutlined','EnvironmentOutlined',
+    'FolderOutlined','EyeOutlined','EditOutlined','DashboardOutlined',
+    'ClockCircleOutlined','FireOutlined','RobotOutlined','ShopOutlined',
+    'FundOutlined','PieChartOutlined','BarChartOutlined','ExperimentOutlined',
+  ];
+  const filtered = search ? allIcons.filter(i => i.toLowerCase().includes(search.toLowerCase())) : allIcons;
+
+  return React.createElement('div', null,
+    React.createElement(Input, {size:'small', placeholder:'Search icons...', value:search, onChange:e=>setSearch(e.target.value),
+      prefix:React.createElement(SearchOutlined,{style:{color:'var(--text-tertiary)'}}), allowClear:true,
+      style:{marginBottom:8,borderRadius:6}}),
+    React.createElement('div', {style:{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(36px,1fr))',gap:4,maxHeight:200,overflowY:'auto'}},
+      filtered.map(iconName => {
+        const Icon = window[iconName] || BlockOutlined;
+        const isSelected = value === iconName;
+        return React.createElement('div', {key:iconName, title:iconName,
+          style:{width:36,height:36,borderRadius:6,display:'flex',alignItems:'center',justifyContent:'center',
+            cursor:'pointer',border:`2px solid ${isSelected?'var(--brand)':'var(--border)'}`,
+            background:isSelected?'var(--brand-bg)':'transparent',transition:'all 0.12s'},
+          onClick:()=>onChange(iconName)},
+          React.createElement(Icon, {style:{fontSize:16,color:isSelected?'var(--brand)':'var(--text-secondary)'}})
+        );
+      })
+    )
+  );
+}
+
 function FieldRenderer({ field, value, onChange, lang, readOnly }) {
   const label = resolveI18n(field.label, lang);
   const placeholder = resolveI18n(field.placeholder, lang) || label;
@@ -7505,73 +7612,192 @@ function FieldRenderer({ field, value, onChange, lang, readOnly }) {
   if (type === 'textarea') {
     return React.createElement(Input.TextArea, { size:'small', value:value||'', placeholder, rows:3, onChange:e=>onChange(e.target.value) });
   }
+  if (type === 'icon_picker') {
+    return React.createElement(IconPicker, { value:value||'', onChange:v=>onChange(v) });
+  }
   return React.createElement(Input, { size:'small', value:value||'', placeholder, onChange:e=>onChange(e.target.value) });
 }
 
-// ─── Non-entity CRUD schemas (entity-specific schemas removed — now template-driven) ───
-const ENTITY_EDIT_SCHEMA = {
-  // ─── Non-entity CRUD schemas (userAssignment, role, privilege, systemPermission) ───
-  userAssignment: {
-    general: {
-      userAssignment: [
-        { key:'userId', label:{en:'User',nl:'Gebruiker'}, type:'select', required:true, optionsFrom:'users' },
-        { key:'role', label:{en:'Role',nl:'Rol'}, type:'select', required:true, optionsFrom:'roles' },
-      ]
+// ─── StoreAdapter — bridges stores to the unified rendering pipeline ───
+// This is the ONLY place with entity-type-specific routing.
+// All rendering code above this is generic. All stores below are optimized.
+const StoreAdapter = (() => {
+  function load(entityType, entityId) {
+    if (!entityId) return null;
+    switch(entityType) {
+      case 'user': {
+        const u = UserStore.getUser(entityId);
+        if (!u) return null;
+        return createEntity({ id:u.id, entityType:'user', name:u.name, parentId:'orbiteos',
+          properties:{ email:u.email, phone:u.phone||'', avatar_url:u.avatar||'',
+            user_language:u.lang||'en', user_theme:u.theme||'dark',
+            shiftSchedule:u.shiftSchedule||'', certification:u.certification||'', siteAccessLevel:u.siteAccessLevel||'',
+            apiScope:u.apiScope||'', rateLimit:u.rateLimit||'', webhookUrl:u.webhookUrl||'',
+            company:u.company||'', licenseNumber:u.licenseNumber||'', specialization:u.specialization||'' },
+          state:{ status:u.status||'online' },
+          metadata:{ templateKey:u.templateKey||'default' } });
+      }
+      case 'role': {
+        const r = RoleStore.get(entityId);
+        if (!r) return null;
+        return createEntity({ id:r.id, entityType:'role', name:r.name, parentId:'orbiteos',
+          properties:{ level:r.level, description:r.description||'', privileges:r.privileges||[], systemPerms:r.systemPerms||[] } });
+      }
+      case 'userAssignment': {
+        const [userId, scopeId] = (entityId||'').split('@');
+        const rec = AccessStore.getForScope(scopeId).find(a => a.userId === userId);
+        if (!rec) return null;
+        return createEntity({ id:entityId, entityType:'userAssignment', parentId:scopeId, name:'',
+          properties:{ userId:rec.userId, role:rec.role } });
+      }
+      case 'entityTemplate': {
+        const [eType, tKey] = (entityId||'').split(':');
+        const tmpl = EntityTemplateStore.getTemplate(eType, tKey);
+        if (!tmpl) return null;
+        return createEntity({ id:entityId, entityType:'entityTemplate', name:tmpl.name,
+          properties:{ type_key:tmpl.type_key, description:resolveI18n(tmpl.description,'en')||'',
+            icon:tmpl.icon||'', lifecycle_status:tmpl.lifecycle_status||'draft', _entityType:eType } });
+      }
+      default:
+        return EntityStore.get(entityId);
     }
-  },
-  privilege: {
-    general: {
-      privilege: [
-        { key:'appId', label:{en:'Application',nl:'Applicatie'}, type:'select', required:true, optionsFrom:'apps' },
-        { key:'resource', label:{en:'Resource',nl:'Resource'}, type:'text', required:true },
-        { key:'actions', label:{en:'Actions',nl:'Acties'}, type:'tags', required:true,
-          options:['view','create','edit','delete','manage'] },
-      ]
+  }
+
+  function save(entityType, values, mode, entityId, parentId) {
+    switch(entityType) {
+      case 'user': {
+        if (mode === 'create') {
+          const newId = `user-${Date.now()}`;
+          const userProps = {
+            id:newId, name:values.name, email:values.properties?.email||'',
+            phone:values.properties?.phone||'', avatar:values.properties?.avatar_url||'',
+            lang:values.properties?.user_language||'en', theme:values.properties?.user_theme||'dark',
+            password:'orbit2026', role:'Viewer', accountId:null,
+            initials:(values.name||'').split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2),
+            permissions:[], lastLogin:'Never', status:'offline',
+            templateKey:values.metadata?.templateKey||'default'
+          };
+          // Carry through all subtype-specific properties from the entity model
+          const sp = values.properties || {};
+          userProps.shiftSchedule = sp.shiftSchedule || '';
+          userProps.certification = sp.certification || '';
+          userProps.siteAccessLevel = sp.siteAccessLevel || '';
+          userProps.apiScope = sp.apiScope || '';
+          userProps.rateLimit = sp.rateLimit || '';
+          userProps.webhookUrl = sp.webhookUrl || '';
+          userProps.company = sp.company || '';
+          userProps.licenseNumber = sp.licenseNumber || '';
+          userProps.specialization = sp.specialization || '';
+          UserStore.register(userProps);
+          if (parentId) AccessStore.add({ userId:newId, scopeId:parentId, role:'Viewer', permissions:[] });
+          return newId;
+        } else {
+          const user = UserStore.getUser(entityId);
+          if (user) {
+            user.name = values.name; user.email = values.properties?.email||user.email;
+            user.phone = values.properties?.phone||''; user.avatar = values.properties?.avatar_url||'';
+            user.lang = values.properties?.user_language||'en'; user.theme = values.properties?.user_theme||'dark';
+            user.initials = (values.name||'').split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
+            const sp = values.properties || {};
+            user.shiftSchedule = sp.shiftSchedule || user.shiftSchedule || '';
+            user.certification = sp.certification || user.certification || '';
+            user.siteAccessLevel = sp.siteAccessLevel || user.siteAccessLevel || '';
+            user.apiScope = sp.apiScope || user.apiScope || '';
+            user.rateLimit = sp.rateLimit || user.rateLimit || '';
+            user.webhookUrl = sp.webhookUrl || user.webhookUrl || '';
+            user.company = sp.company || user.company || '';
+            user.licenseNumber = sp.licenseNumber || user.licenseNumber || '';
+            user.specialization = sp.specialization || user.specialization || '';
+          }
+          return entityId;
+        }
+      }
+      case 'role': {
+        if (mode === 'create') {
+          const r = RoleStore.put({ name:values.name, level:values.properties?.level||'Site',
+            description:values.properties?.description||'', privileges:[], systemPerms:[] });
+          return r.id;
+        } else {
+          const r = RoleStore.get(entityId);
+          if (r) { r.name = values.name; r.level = values.properties?.level||r.level; r.description = values.properties?.description||''; }
+          return entityId;
+        }
+      }
+      case 'userAssignment': {
+        const scopeId = parentId;
+        if (mode === 'edit' && entityId) {
+          const [oldUserId, oldScope] = entityId.split('@');
+          AccessStore.remove(oldUserId, oldScope);
+        }
+        AccessStore.add({ userId:values.properties?.userId, scopeId, role:values.properties?.role, permissions:[] });
+        return values.properties?.userId + '@' + scopeId;
+      }
+      case 'entityTemplate': {
+        const eType = values.properties?._entityType || parentId;
+        const typeKey = mode === 'edit' ? (entityId||'').split(':')[1] : (values.properties?.type_key||'').trim().toLowerCase().replace(/\s+/g,'_');
+        if (mode === 'create') {
+          EntityTemplateStore.putTemplate({
+            entity_type:eType, type_key:typeKey, name:values.name,
+            description:{en:values.properties?.description||''},
+            icon:values.properties?.icon||ENTITY_TYPE_REGISTRY[eType]?.icon||'BlockOutlined',
+            extends_key:`${eType}:default`, lifecycle_status:values.properties?.lifecycle_status||'draft',
+            version:1, properties:[], form_groups:[], columns:[], detail_tabs:[],
+            overview:{properties:[],kpis:[],show_map:false,show_alarms:false}, children_types:[]
+          });
+          return `${eType}:${typeKey}`;
+        } else {
+          const [oldType, oldKey] = (entityId||'').split(':');
+          const existing = EntityTemplateStore.getTemplate(oldType, oldKey);
+          if (existing) {
+            EntityTemplateStore.putTemplate({...existing, name:values.name,
+              description:{en:values.properties?.description||''},
+              icon:values.properties?.icon||existing.icon,
+              lifecycle_status:values.properties?.lifecycle_status||existing.lifecycle_status });
+          }
+          return entityId;
+        }
+      }
+      default: {
+        if (mode === 'create') {
+          const newId = `${entityType}-${Date.now()}`;
+          EntityStore.put({ ...values, id:newId, entityType, parentId });
+          return newId;
+        } else {
+          EntityStore.put(values);
+          return entityId;
+        }
+      }
     }
-  },
-  systemPermission: {
-    general: {
-      systemPermission: [
-        { key:'category', label:{en:'Category',nl:'Categorie'}, type:'select', required:true, optionsFrom:'sysPermCategories' },
-        { key:'label', label:{en:'Label',nl:'Label'}, type:'text', required:true },
-        { key:'description', label:{en:'Description',nl:'Beschrijving'}, type:'textarea' },
-      ]
+  }
+
+  function list(entityType, parentId) {
+    switch(entityType) {
+      case 'user': return UserStore.getAllUsers().map(u => createEntity({
+        id:u.id, entityType:'user', name:u.name, properties:{email:u.email,phone:u.phone},
+        state:{status:u.status}, metadata:{templateKey:u.templateKey} }));
+      case 'role': return RoleStore.getAll().map(r => createEntity({
+        id:r.id, entityType:'role', name:r.name, properties:{level:r.level,description:r.description} }));
+      case 'userAssignment': return AccessStore.getForScope(parentId);
+      default: return EntityStore.getByType(entityType);
     }
-  },
-  user: {
-    general: {
-      user: [
-        { key:'name', label:{en:'Full Name',nl:'Volledige Naam'}, type:'text', required:true },
-        { key:'properties.email', label:{en:'Email',nl:'E-mail'}, type:'text', required:true },
-        { key:'properties.phone', label:{en:'Phone',nl:'Telefoon'}, type:'text' },
-        { key:'properties.avatar_url', label:{en:'Avatar URL',nl:'Avatar URL'}, type:'text' },
-        { key:'properties.user_language', label:{en:'Language',nl:'Taal'}, type:'select', options:['en','nl'] },
-        { key:'properties.user_theme', label:{en:'Theme',nl:'Thema'}, type:'select', options:['dark','light'] },
-      ]
+  }
+
+  function remove(entityType, entityId) {
+    switch(entityType) {
+      case 'userAssignment': {
+        const [userId, scopeId] = (entityId||'').split('@');
+        AccessStore.remove(userId, scopeId); break;
+      }
+      case 'entityTemplate': {
+        const [eType, tKey] = (entityId||'').split(':');
+        EntityTemplateStore.removeTemplate(eType, tKey); break;
+      }
+      default: EntityStore.remove(entityId);
     }
-  },
-  entityTemplate: {
-    general: {
-      entityTemplate: [
-        { key:'name', label:{en:'Template Name',nl:'Template Naam'}, type:'text', required:true },
-        { key:'type_key', label:{en:'Type Key (snake_case)',nl:'Type Sleutel (snake_case)'}, type:'text', required:true, mode:'create-only' },
-        { key:'description', label:{en:'Description',nl:'Beschrijving'}, type:'textarea', full:true },
-      ]
-    },
-    appearance: {
-      entityTemplate: [
-        { key:'icon', label:{en:'Icon',nl:'Icoon'}, type:'select',
-          options:['UserOutlined','ToolOutlined','ApiOutlined','BuildOutlined','HddOutlined','SunOutlined','DatabaseOutlined','CarOutlined','SafetyCertificateOutlined','BlockOutlined','SettingOutlined','GlobalOutlined','HomeOutlined','TeamOutlined','RadarChartOutlined','SlidersOutlined','AppstoreOutlined'].map(v=>({value:v,label:v})) },
-      ]
-    },
-    lifecycle: {
-      entityTemplate: [
-        { key:'lifecycle_status', label:{en:'Lifecycle Status',nl:'Levenscyclus'}, type:'select',
-          options:[{value:'draft',label:{en:'Draft'}},{value:'active',label:{en:'Active'}},{value:'deprecated',label:{en:'Deprecated'}},{value:'archived',label:{en:'Archived'}}] },
-      ]
-    },
-  },
-};
+  }
+
+  return { load, save, list, remove };
+})();
 
 // ─── FormPanel — renders schema fields as an editable form ───
 function FormPanel({ fields, values, errors, onChange, lang }) {
@@ -7594,140 +7820,7 @@ function FormPanel({ fields, values, errors, onChange, lang }) {
   );
 }
 
-// ─── Non-entity type helpers ───
-// Relationship/config record types — not full entities, no templates
-const RELATIONSHIP_TYPES = ['userAssignment','privilege','systemPermission','entityTemplate'];
-const RELATIONSHIP_ICONS = {
-  userAssignment: TeamOutlined, role: SafetyCertificateOutlined,
-  privilege: LockOutlined, systemPermission: SettingOutlined,
-  user: UserOutlined, entityTemplate: BlockOutlined,
-};
-const RELATIONSHIP_LABELS = {
-  userAssignment: {en:'User Assignment',nl:'Gebruikerstoewijzing'},
-  role: {en:'Role',nl:'Rol'},
-  privilege: {en:'Privilege',nl:'Recht'},
-  systemPermission: {en:'System Permission',nl:'Systeemrecht'},
-  user: {en:'User',nl:'Gebruiker'},
-  entityTemplate: {en:'Entity Template',nl:'Entiteit Template'},
-};
-
-function getRelationshipSubTabs(entityType) {
-  const schemaGroup = ENTITY_EDIT_SCHEMA[entityType];
-  if (!schemaGroup) return [];
-  return Object.keys(schemaGroup).map(tabKey => ({
-    key: tabKey,
-    label: {en: tabKey.charAt(0).toUpperCase() + tabKey.slice(1), nl: tabKey.charAt(0).toUpperCase() + tabKey.slice(1)},
-    icon: 'SettingOutlined',
-  }));
-}
-
-function getRelationshipFields(entityType, subTabKey) {
-  const schemaGroup = ENTITY_EDIT_SCHEMA[entityType];
-  if (!schemaGroup || !schemaGroup[subTabKey]) return [];
-  const allFields = schemaGroup[subTabKey]._all || [];
-  const typeFields = schemaGroup[subTabKey][entityType] || [];
-  return [...allFields, ...typeFields];
-}
-
-function loadNonEntityRecord(entityType, entityId, parentId) {
-  if (entityType === 'userAssignment' && entityId) {
-    const parts = entityId.split('@');
-    const userId = parts[0], scopeId = parts[1];
-    const rec = AccessStore.getForScope(scopeId).find(a => a.userId === userId);
-    return rec ? {...rec} : { userId:'', role:'' };
-  }
-  if (entityType === 'privilege' && entityId) {
-    const p = PrivilegeStore.get(entityId);
-    return p ? { appId:p.appId, resource:p.resource, actions:[p.action] } : { appId:'', resource:'', actions:[] };
-  }
-  if (entityType === 'systemPermission' && entityId) {
-    const all = SysPermStore.getAll().find(s => s.id === entityId);
-    return all ? { category:all.category, label:all.label, description:all.description||'' } : { category:'', label:'', description:'' };
-  }
-  if (entityType === 'user' && entityId) {
-    const user = UserStore.getUser(entityId);
-    if (user) return { name: user.name, properties: { email: user.email, phone: user.phone || '', avatar_url: user.avatar || '', user_language: user.lang || 'en', user_theme: user.theme || 'dark' } };
-  }
-  if (entityType === 'entityTemplate' && entityId) {
-    // entityId format: "entityType:typeKey" e.g. "user:operator"
-    const [eType, tKey] = entityId.split(':');
-    const tmpl = EntityTemplateStore.getTemplate(eType, tKey);
-    if (tmpl) return { name: tmpl.name, type_key: tmpl.type_key, description: resolveI18n(tmpl.description,'en')||'', icon: tmpl.icon||'', lifecycle_status: tmpl.lifecycle_status||'draft', _entityType: eType };
-  }
-  // Defaults for create mode
-  if (entityType === 'entityTemplate') return { name:'', type_key:'', description:'', icon:'BlockOutlined', lifecycle_status:'draft', _entityType: parentId };
-  if (entityType === 'user') return { name:'', properties: { email:'', phone:'', avatar_url:'', user_language:'en', user_theme:'dark' } };
-  if (entityType === 'userAssignment') return { userId:'', role:'' };
-  if (entityType === 'privilege') return { appId:'', resource:'', actions:[] };
-  if (entityType === 'systemPermission') return { category:'', label:'', description:'' };
-  return {};
-}
-
-function saveNonEntityRecord(entityType, values, mode, entityId, parentId) {
-  if (entityType === 'entityTemplate') {
-    const eType = values._entityType || parentId;
-    const typeKey = mode === 'edit' ? entityId.split(':')[1] : values.type_key.trim().toLowerCase().replace(/\s+/g,'_');
-    if (mode === 'create') {
-      EntityTemplateStore.putTemplate({
-        entity_type: eType,
-        type_key: typeKey,
-        name: values.name.trim(),
-        description: { en: values.description||'' },
-        icon: values.icon || ENTITY_TYPE_REGISTRY[eType]?.icon || 'BlockOutlined',
-        extends_key: `${eType}:default`,
-        lifecycle_status: values.lifecycle_status || 'draft',
-        version: 1,
-        properties: [], form_groups: [], columns: [], detail_tabs: [],
-        overview: { properties:[], kpis:[], show_map:false, show_alarms:false },
-        children_types: [],
-      });
-      return `${eType}:${typeKey}`;
-    } else {
-      const [oldType, oldKey] = entityId.split(':');
-      const existing = EntityTemplateStore.getTemplate(oldType, oldKey);
-      if (existing) {
-        EntityTemplateStore.putTemplate({
-          ...existing,
-          name: values.name.trim(),
-          description: { en: values.description||'' },
-          icon: values.icon || existing.icon,
-          lifecycle_status: values.lifecycle_status || existing.lifecycle_status,
-        });
-      }
-      return entityId;
-    }
-  }
-  if (entityType === 'userAssignment') {
-    const scopeId = parentId;
-    if (mode === 'edit' && entityId) {
-      const parts = entityId.split('@');
-      AccessStore.remove(parts[0], parts[1]);
-    }
-    AccessStore.add({ userId:values.userId, scopeId, role:values.role, permissions:[] });
-    return values.userId + '@' + scopeId;
-  }
-  if (entityType === 'privilege') {
-    if (mode === 'edit' && entityId) { PrivilegeStore.remove(entityId); }
-    const res = values.resource.trim().toLowerCase().replace(/\s+/g,'-');
-    (values.actions||['view']).forEach(a => {
-      PrivilegeStore.put({ id:`${values.appId}.${res}.${a}`, appId:values.appId, resource:res, action:a });
-    });
-    return `${values.appId}.${res}`;
-  }
-  if (entityType === 'systemPermission') {
-    if (mode === 'edit' && entityId) { SysPermStore.remove(entityId); }
-    const id = entityId || `sys.${values.category.toLowerCase().replace(/\s+/g,'-')}.${values.label.trim().toLowerCase().replace(/\s+/g,'-')}`;
-    SysPermStore.add({ id, category:values.category, label:values.label.trim(), description:values.description||'' });
-    return id;
-  }
-  if (entityType === 'user') {
-    UserStore.updateProfile({ name: values.name, email: values.properties?.email, phone: values.properties?.phone, avatar: values.properties?.avatar_url, lang: values.properties?.user_language, theme: values.properties?.user_theme });
-    return entityId;
-  }
-  return null;
-}
-
-// ─── EntityEditModal — unified edit/create modal ───
+// ─── EntityEditModal — unified edit/create modal (StoreAdapter-driven, ZERO entity-type if/else) ───
 function EntityEditModal({ visible, mode, entityType, entityId, parentId, onSave, onCancel, lang }) {
   const [activeTab, setActiveTab] = useState('general');
   const [values, setValues] = useState({});
@@ -7735,67 +7828,40 @@ function EntityEditModal({ visible, mode, entityType, entityId, parentId, onSave
   const [dirty, setDirty] = useState(false);
   const [selectedTypeKey, setSelectedTypeKey] = useState(null);
 
-  const isRelationship = RELATIONSHIP_TYPES.includes(entityType);
-
   // Reset selectedTypeKey when modal closes or entityType changes
   useEffect(() => {
     if (!visible) setSelectedTypeKey(null);
   }, [visible, entityType]);
 
+  // Load values via StoreAdapter — no entity-type branches
   useEffect(() => {
     if (!visible) return;
-    if (isRelationship) {
-      setValues(loadNonEntityRecord(entityType, mode === 'edit' ? entityId : null, parentId));
-    } else if (entityType === 'user') {
-      // Users live in UserStore, not EntityStore
-      if (mode === 'edit' && entityId) {
-        const user = UserStore.getUser(entityId);
-        if (user) {
-          setSelectedTypeKey(user.templateKey || 'default');
-          setValues({ name:user.name, entityType:'user', properties:{
-            email:user.email, phone:user.phone||'', avatar_url:user.avatar||'', user_language:user.lang||'en', user_theme:user.theme||'dark',
-            shiftSchedule:user.shiftSchedule||'', certification:user.certification||'', siteAccessLevel:user.siteAccessLevel||'',
-            apiScope:user.apiScope||'', rateLimit:user.rateLimit||'', webhookUrl:user.webhookUrl||'',
-            company:user.company||'', licenseNumber:user.licenseNumber||'', specialization:user.specialization||''
-          }});
-        } else setValues({ name:'', entityType:'user', properties:{email:'',phone:'',avatar_url:'',user_language:'en',user_theme:'dark'} });
-      } else {
-        setValues({ name:'', entityType:'user', properties:{email:'',phone:'',avatar_url:'',user_language:'en',user_theme:'dark'} });
-      }
-    } else if (entityType === 'role') {
-      // Roles live in RoleStore, but use template-driven forms
-      if (mode === 'edit' && entityId) {
-        const r = RoleStore.get(entityId);
-        if (r) setValues({ name:r.name, entityType:'role', properties:{ level:r.level, description:r.description||'' } });
-        else setValues({ name:'', entityType:'role', properties:{ level:'Site', description:'' } });
-      } else {
-        setValues({ name:'', entityType:'role', properties:{ level:'Site', description:'' } });
-      }
-    } else if (mode === 'edit' && entityId) {
-      const entity = EntityStore.get(entityId);
+    if (mode === 'edit' && entityId) {
+      const entity = StoreAdapter.load(entityType, entityId);
       if (entity) {
         setValues(JSON.parse(JSON.stringify(entity)));
+        if (entity.metadata?.templateKey) setSelectedTypeKey(entity.metadata.templateKey);
+      } else {
+        setValues(createEntity({ entityType, parentId }));
       }
     } else {
-      setValues({ name:'', entityType, parentId, properties:{tags:[]}, state:{status:'online'}, alarms:[], capabilities:[] });
+      setValues(createEntity({ entityType, parentId }));
     }
-    setErrors({});
-    setDirty(false);
-    setActiveTab('general');
+    setErrors({}); setDirty(false); setActiveTab('general');
+    setSelectedTypeKey(null);
   }, [visible, entityId, mode, entityType, parentId]);
 
-  // Phase 3: Template-driven sub-tabs with fallback to old schemas
-  const typeKeyToUse = selectedTypeKey || (mode === 'edit' && entityId ? (entityType === 'user' ? (UserStore.getUser(entityId)?.templateKey || 'default') : 'default') : 'default');
-  const resolvedTemplate = !RELATIONSHIP_TYPES.includes(entityType) ? EntityTemplateStore.resolveTemplate(entityType, typeKeyToUse) : null;
+  // Template resolution — pure, all entity types use the same pipeline
+  const typeKeyToUse = selectedTypeKey || values?.metadata?.templateKey || 'default';
+  const resolvedTemplate = EntityTemplateStore.resolveTemplate(entityType, typeKeyToUse);
   const allTypeTemplates = EntityTemplateStore.getByEntityType(entityType);
   const hasSubtypes = allTypeTemplates.length > 1;
 
-  const subTabs = isRelationship
-    ? getRelationshipSubTabs(entityType)
-    : (resolvedTemplate?.resolved?.formGroups || []).map(fg => ({ key: fg.key, label: fg.label, icon: fg.icon || 'SettingOutlined' }));
+  const subTabs = (resolvedTemplate?.resolved?.formGroups || resolvedTemplate?.form_groups || []).map(fg => ({
+    key: fg.key, label: fg.label, icon: fg.icon || 'SettingOutlined'
+  }));
 
   const getFieldsForTab = (tabKey) => {
-    if (isRelationship) return getRelationshipFields(entityType, tabKey);
     const group = (resolvedTemplate?.resolved?.formGroups || []).find(g => g.key === tabKey);
     return group ? group.resolvedProperties.map(resolvedPropertyToField) : [];
   };
@@ -7826,6 +7892,7 @@ function EntityEditModal({ visible, mode, entityType, entityId, parentId, onSave
     return errs;
   };
 
+  // Save via StoreAdapter — no entity-type branches
   const handleSave = () => {
     const errs = validate();
     if (Object.keys(errs).length > 0) {
@@ -7839,66 +7906,10 @@ function EntityEditModal({ visible, mode, entityType, entityId, parentId, onSave
       }
       return;
     }
-    if (isRelationship) {
-      const resultId = saveNonEntityRecord(entityType, values, mode, entityId, parentId);
-      onSave(resultId);
-    } else if (entityType === 'user') {
-      // Save to UserStore
-      if (mode === 'create') {
-        const newId = `user-${Date.now()}`;
-        const userProps = { id:newId, name:values.name, email:values.properties?.email||'', phone:values.properties?.phone||'',
-          avatar:values.properties?.avatar_url||'', lang:values.properties?.user_language||'en', theme:values.properties?.user_theme||'dark',
-          password:'orbit2026', role:'Viewer', accountId:null, initials:(values.name||'').split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2),
-          permissions:[], lastLogin:'Never', status:'offline', templateKey: selectedTypeKey || 'default' };
-        // Store subtype-specific properties
-        if (selectedTypeKey === 'operator') {
-          userProps.shiftSchedule = values.properties?.shiftSchedule || '';
-          userProps.certification = values.properties?.certification || '';
-          userProps.siteAccessLevel = values.properties?.siteAccessLevel || '';
-        } else if (selectedTypeKey === 'api_service') {
-          userProps.apiScope = values.properties?.apiScope || '';
-          userProps.rateLimit = values.properties?.rateLimit || '';
-          userProps.webhookUrl = values.properties?.webhookUrl || '';
-        } else if (selectedTypeKey === 'installer') {
-          userProps.company = values.properties?.company || '';
-          userProps.licenseNumber = values.properties?.licenseNumber || '';
-          userProps.specialization = values.properties?.specialization || '';
-        }
-        UserStore.register(userProps);
-        // Auto-assign to parent scope if provided
-        if (parentId) AccessStore.add({ userId:newId, scopeId:parentId, role:'Viewer', permissions:[] });
-        onSave(newId);
-      } else {
-        const user = UserStore.getUser(entityId);
-        if (user) {
-          user.name = values.name;
-          user.email = values.properties?.email || user.email;
-          user.phone = values.properties?.phone || '';
-          user.avatar = values.properties?.avatar_url || '';
-          user.lang = values.properties?.user_language || 'en';
-          user.theme = values.properties?.user_theme || 'dark';
-          user.initials = (values.name||'').split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
-        }
-        onSave(entityId);
-      }
-    } else if (entityType === 'role') {
-      // Roles save to RoleStore (convenience layer), not EntityStore
-      if (mode === 'create') {
-        RoleStore.put({ name:values.name, level:values.properties?.level||'Site', description:values.properties?.description||'', privileges:[], systemPerms:[] });
-      } else {
-        const r = RoleStore.get(entityId);
-        if (r) { r.name = values.name; r.level = values.properties?.level||r.level; r.description = values.properties?.description||''; }
-      }
-      onSave(entityId || 'role-created');
-    } else if (mode === 'create') {
-      const newId = `${entityType}-${Date.now()}`;
-      const entity = { ...values, id:newId, entityType, parentId };
-      EntityStore.put(entity);
-      onSave(newId);
-    } else {
-      EntityStore.put(values);
-      onSave(entityId);
-    }
+    const typeKey = selectedTypeKey || values.metadata?.templateKey || 'default';
+    if (values.metadata) values.metadata.templateKey = typeKey;
+    const resultId = StoreAdapter.save(entityType, values, mode, entityId, parentId);
+    onSave(resultId);
   };
 
   const handleCancel = () => {
@@ -7918,16 +7929,15 @@ function EntityEditModal({ visible, mode, entityType, entityId, parentId, onSave
   if (!visible) return null;
 
   const currentFields = getFieldsForTab(activeTab).map(f => (f.mode === 'create-only' && mode === 'edit') ? {...f, readOnly:true} : f);
-  const HeaderIcon = isRelationship ? (RELATIONSHIP_ICONS[entityType] || SettingOutlined) : null;
-  const regEntry = ENTITY_TYPE_REGISTRY[entityType];
-  const typeLabel = isRelationship ? resolveI18n(RELATIONSHIP_LABELS[entityType] || {en:entityType}, lang)
-    : (regEntry ? resolveI18n(regEntry.label, lang) : entityType);
+  // Header rendering — pure, uses ENTITY_TYPE_REGISTRY for everything
+  const reg = ENTITY_TYPE_REGISTRY[entityType];
+  const HeaderIcon = reg ? (window[reg.icon] || BlockOutlined) : BlockOutlined;
+  const typeLabel = resolveI18n(reg?.label, lang) || entityType;
   const selectedTemplateName = selectedTypeKey && resolvedTemplate ? resolvedTemplate.name : null;
   const title = mode === 'create'
-    ? (selectedTypeKey && hasSubtypes && !selectedTypeKey ? resolveI18n({en:`Create ${typeLabel}`,nl:`${typeLabel} aanmaken`}, lang)
-      : selectedTemplateName ? resolveI18n({en:`Create ${selectedTemplateName}`,nl:`${selectedTemplateName} aanmaken`}, lang)
+    ? (selectedTemplateName ? resolveI18n({en:`Create ${selectedTemplateName}`,nl:`${selectedTemplateName} aanmaken`}, lang)
       : resolveI18n({en:`Create ${typeLabel}`,nl:`${typeLabel} aanmaken`}, lang))
-    : (isRelationship ? (values.name || values.label || values.userId || typeLabel) : (values.name || ''));
+    : (values.name || values.properties?.userId || typeLabel);
 
   return ReactDOM.createPortal(
     React.createElement('div', {className:'eem-overlay', onClick:handleCancel},
@@ -7935,7 +7945,7 @@ function EntityEditModal({ visible, mode, entityType, entityId, parentId, onSave
         // Header
         React.createElement('div', {className:'eem-header'},
           React.createElement('div', {className:'eem-header-icon'},
-            isRelationship ? React.createElement(HeaderIcon, {style:{fontSize:16,color:'var(--brand)'}}) : React.createElement(EntityTypeIcon, {type:entityType})),
+            React.createElement(HeaderIcon, {style:{fontSize:16,color:'var(--brand)'}})),
           React.createElement('div', null,
             React.createElement('div', {className:'eem-header-title'}, title),
             mode === 'create' && resolvedTemplate?.description && React.createElement('div', {
@@ -8503,7 +8513,7 @@ function resolvedPropertyToField(prop) {
   return {
     key: prop.entity_path || `properties.${prop.key}`,
     label: prop.i18n || { en: prop.name },
-    type: mapUiRepToFieldType(prop.ui_representation),
+    type: prop.ui_representation === 'icon_picker' ? 'icon_picker' : mapUiRepToFieldType(prop.ui_representation),
     inputType: prop.ui_representation === 'email' ? 'email' : prop.ui_representation === 'phone' ? 'tel' : undefined,
     required: prop.is_required,
     readOnly: prop.is_readonly,
@@ -8511,11 +8521,12 @@ function resolvedPropertyToField(prop) {
     max: prop.validation?.max,
     step: prop.validation?.step,
     minLength: prop.validation?.min_length,
+    optionsFrom: prop.optionsFrom || undefined,
     options: prop.enum_values ? prop.enum_values.map(v => ({
       value: v,
       label: prop.enum_values_i18n?.[v] || { en: v }
     })) : undefined,
-    full: ['textarea','slider','tags'].includes(prop.ui_representation),
+    full: ['textarea','slider','tags','icon_picker'].includes(prop.ui_representation),
   };
 }
 
@@ -9680,8 +9691,9 @@ function ConfigurationPage({ t, lang, navigateWithLoader, focusedEntityId, setFo
   const closeEditModal = () => setEditModalState({ visible:false, mode:'edit', entityType:null, entityId:null, parentId:null });
   const handleModalSave = (id) => {
     closeEditModal();
-    // For non-entity types, just re-render the page; for entities, navigate to the new entity
-    if (RELATIONSHIP_TYPES.includes(editModalState.entityType) || editModalState.entityType === 'role' || editModalState.entityType === 'user') {
+    // For store-adapter-managed types (not in EntityStore), just re-render; for entities, navigate
+    const NON_NAVIGABLE_TYPES = ['userAssignment','privilege','systemPermission','entityTemplate','role','user'];
+    if (NON_NAVIGABLE_TYPES.includes(editModalState.entityType)) {
       rerenderConfig();
     } else {
       handleSelect(id);
