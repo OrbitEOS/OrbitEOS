@@ -10353,7 +10353,7 @@ function DeveloperStudioPage({t, lang, tab, dsRoute, updateHash}) {
   const [selectedNode, setSelectedNode] = useState({ type:'overview' });
   const [treeSearch, setTreeSearch] = useState('');
   const [codeCollapsed, setCodeCollapsed] = useState(false);
-  const [entityDetailTab, setEntityDetailTab] = useState('general');
+  const [entityDetailTab, setEntityDetailTab] = useState('preview');
   // Phase 7: Property detail state
   const [expandedPropGroups, setExpandedPropGroups] = useState(new Set());
   // Phase 8: Preview mode state
@@ -10378,6 +10378,11 @@ function DeveloperStudioPage({t, lang, tab, dsRoute, updateHash}) {
   // Drag state for visual feedback
   const [dragOverGroup, setDragOverGroup] = useState(null);
   const [draggingItem, setDraggingItem] = useState(null);
+  // Phase 3: CRUD modal state for FormGroup, Tab, Privilege, PrivilegeGroup editors
+  const [fgEditModal, setFgEditModal] = useState({ visible:false, fg:null, tmpl:null });
+  const [tabEditModal, setTabEditModal] = useState({ visible:false, tab:null, tmpl:null });
+  const [privEditModal, setPrivEditModal] = useState({ visible:false, priv:null });
+  const [privGroupEditModal, setPrivGroupEditModal] = useState({ visible:false, group:null });
 
   // Deep-link from URL hash (dsRoute prop)
   useEffect(() => {
@@ -10401,6 +10406,10 @@ function DeveloperStudioPage({t, lang, tab, dsRoute, updateHash}) {
   // URL update helper for Developer Studio navigation
   const dsNavigate = (node) => {
     setSelectedNode(node);
+    // Phase 1: Reset tab to preview on entity/subtype navigation, overview on root
+    if (node.type === 'entity' || node.type === 'subtype') setEntityDetailTab('preview');
+    else if (node.type === 'overview') setEntityDetailTab('overview');
+    else setEntityDetailTab('overview');
     if (!updateHash) return;
     if (node.type === 'overview') updateHash('/developer-studio');
     else if (node.type === 'entity') updateHash('/developer-studio/' + node.entityType);
@@ -11172,7 +11181,8 @@ function DeveloperStudioPage({t, lang, tab, dsRoute, updateHash}) {
     return React.createElement('div', {style:{display:'grid',gap:16,padding:'12px 0'}},
       renderEntityTabContent(entityType, typeKey, 'general', tmpl, resolved),
       !isSubtype && renderEntityTabContent(entityType, typeKey, 'subtypes', tmpl, resolved),
-      renderEntityTabContent(entityType, typeKey, 'instances', tmpl, resolved)
+      renderEntityTabContent(entityType, typeKey, 'instances', tmpl, resolved),
+      React.createElement(CodeViewer, { value:tmpl, title:{en:'Full Template JSON',nl:'Volledige Template JSON'}, lang, collapsible:true })
     );
   }
 
@@ -11258,43 +11268,50 @@ function DeveloperStudioPage({t, lang, tab, dsRoute, updateHash}) {
       );
     }
 
-    // ── Properties tab ──
+    // ── Properties tab (EntityList) ──
     if (tabKey === 'properties') {
+      const propData = (resolved?.resolved?.properties||resolved?.properties||[]).map(p => ({
+        ...p, _key: p.property_key||p.key, _def: PropertyCatalogStore.getDefinition(p.property_key||p.key),
+      }));
+      const propCols = [
+        {key:'_key', label:{en:'Key',nl:'Sleutel'}, sortable:true, render:(_,r)=>React.createElement('span',{style:{fontFamily:'monospace',color:'var(--brand)',fontWeight:600,fontSize:11}},r._key)},
+        {key:'name', label:{en:'Name',nl:'Naam'}, sortable:true, getValue:r=>resolveI18n(r._def?.i18n,lang)||r._def?.name||''},
+        {key:'group', label:{en:'Group',nl:'Groep'}, sortable:true, filterable:true, getValue:r=>r._def?.group_key||r.group_key||''},
+        {key:'data_type', label:{en:'Type',nl:'Type'}, sortable:true, filterable:true, getValue:r=>r._def?.data_type||''},
+        {key:'required', label:{en:'Req',nl:'Verp'}, getValue:r=>r.is_required||r._def?.is_required?'*':'',
+          render:(_,r)=>(r.is_required||r._def?.is_required)?React.createElement(CheckOutlined,{style:{color:'var(--success)',fontSize:10}}):React.createElement('span',{style:{color:'var(--text-tertiary)'}},'—')},
+        {key:'inherited', label:{en:'Inherited',nl:'Overgenomen'}, getValue:r=>r.inherited?'yes':'',
+          render:(_,r)=>r.inherited?React.createElement('span',{className:'ds-inherited-badge',style:{fontSize:9}},resolveI18n({en:'inherited',nl:'overgenomen'},lang)):null},
+      ];
       return React.createElement('div', {style:{padding:'12px 0'}},
-        React.createElement('div', {style:{display:'flex',flexWrap:'wrap',gap:4,marginBottom:8}},
-          (resolved?.resolved?.properties||[]).map(p => {
-            const isInherited = p.inherited;
-            return React.createElement('span', {key:p.property_key||p.key, className:isInherited?'ds-inherited':'',
-              style:{padding:'3px 8px',borderRadius:4,fontSize:10,background:'var(--bg-secondary)',border:'1px solid var(--border)',
-              display:'flex',alignItems:'center',gap:4}},
-              React.createElement('span', {style:{fontFamily:'monospace',color:'var(--brand)'}}, p.property_key||p.key),
-              React.createElement('span', {style:{color:'var(--text-tertiary)'}}, '('+p.group_key+')'),
-              p.is_required && React.createElement('span', {style:{color:'var(--error)',fontSize:9}}, '*'),
-              isInherited && React.createElement('span', {className:'ds-inherited-badge'}, resolveI18n({en:'inherited',nl:'overgenomen'},lang)),
-              !isInherited && React.createElement('span', {style:{cursor:'pointer',color:'var(--text-tertiary)',fontSize:9,marginLeft:2,lineHeight:1},
-                onClick:()=>{removePropertyFromTemplate(tmpl,p.property_key||p.key)},
-                title:resolveI18n({en:'Remove property',nl:'Eigenschap verwijderen'},lang)}, '\u00d7')
-            );
-          }),
-          (resolved?.properties||[]).length===0 && React.createElement('span', {style:{fontSize:11,color:'var(--text-tertiary)',fontStyle:'italic'}},resolveI18n({en:'No properties defined',nl:'Geen eigenschappen gedefinieerd'},lang))
-        ),
-        React.createElement(Select, {
-          size:'small', style:{width:280},
-          showSearch:true, filterOption:(input,option) => (option?.label||'').toLowerCase().includes(input.toLowerCase()),
-          placeholder:resolveI18n({en:'Add property...',nl:'Eigenschap toevoegen...'},lang),
-          value:undefined,
-          onChange:(val) => {
-            if (val === '__create_new__') { setPropModalFromPicker(tmpl); }
-            else { addPropertyToTemplate(tmpl, val); }
-          },
-          options:[
-            ...allDefs
-              .filter(d => !(tmpl.properties||[]).some(p => p.property_key === d.key))
-              .map(d => ({value:d.key, label:`${d.key} \u2014 ${resolveI18n(d.i18n,lang)||d.name} (${d.group_key})`})),
-            {value:'__divider__', label:'\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500', disabled:true},
-            {value:'__create_new__', label:resolveI18n({en:'+ Create new property',nl:'+ Nieuwe eigenschap'},lang)},
+        React.createElement(EntityList, {
+          columns: propCols, dataSource: propData, rowKey:'_key', lang,
+          title: resolveI18n({en:'Properties',nl:'Eigenschappen'},lang),
+          searchable:true, emptyIcon:React.createElement(InboxOutlined),
+          emptyText:{en:'No properties defined',nl:'Geen eigenschappen gedefinieerd'},
+          addButton:{label:'',onClick:()=>{
+            const opts = allDefs.filter(d=>!(tmpl.properties||[]).some(p=>p.property_key===d.key));
+            if (opts.length === 0) { setPropModalFromPicker(tmpl); return; }
+            // Use prompt for quick add, or open modal for new
+            const key = prompt(resolveI18n({en:'Property key to add (or leave empty for new):',nl:'Eigenschap sleutel (leeg = nieuw):'},lang));
+            if (key === null) return;
+            if (key === '') { setPropModalFromPicker(tmpl); return; }
+            const def = PropertyCatalogStore.getDefinition(key);
+            if (def) { addPropertyToTemplate(tmpl, key); }
+            else { message.error(resolveI18n({en:'Property not found',nl:'Eigenschap niet gevonden'},lang)); }
+          }},
+          rowActions:[
+            {key:'edit',icon:React.createElement(EditOutlined,{style:{fontSize:12}}),onClick:row=>{
+              const def = PropertyCatalogStore.getDefinition(row._key);
+              if (def) setPropModalFromPicker(tmpl);
+            }},
+            {key:'delete',icon:React.createElement(DeleteOutlined,{style:{fontSize:12}}),danger:true,onClick:row=>{
+              if (!row.inherited) removePropertyFromTemplate(tmpl, row._key);
+            }},
           ],
         }),
+        // Inline CodeViewer (Phase 5)
+        React.createElement(CodeViewer, { value:tmpl.properties||[], title:{en:'Properties JSON',nl:'Eigenschappen JSON'}, lang, collapsible:true }),
         propModalFromPicker && React.createElement(PropertyEditModal, {
           mode:'create', def:null, lang,
           onSave:(def) => { PropertyCatalogStore.putDefinition(def); addPropertyToTemplate(propModalFromPicker, def.key); setPropModalFromPicker(null); rerender(); },
@@ -11303,62 +11320,116 @@ function DeveloperStudioPage({t, lang, tab, dsRoute, updateHash}) {
       );
     }
 
-    // ── Form Groups tab ──
+    // ── Form Groups tab (EntityList) ──
     if (tabKey === 'formGroups') {
-      return React.createElement('div', {style:{padding:'12px 0',display:'grid',gap:6}},
-        (resolved?.form_groups||[]).map(fg => {
-          const isInherited = fg.inherited;
-          return React.createElement('div', {key:fg.key, className:isInherited?'ds-inherited':'',
-            style:{padding:'8px 12px',background:'var(--bg-secondary)',borderRadius:6,border:'1px solid var(--border)'}},
-            React.createElement('div', {style:{display:'flex',alignItems:'center',gap:6,marginBottom:4}},
-              fg.icon && React.createElement(window[fg.icon]||SettingOutlined,{style:{fontSize:12,color:'var(--text-tertiary)'}}),
-              React.createElement('span', {style:{fontSize:11,fontWeight:600,color:'var(--text-primary)'}}, resolveI18n(fg.label,lang)||fg.key),
-              React.createElement('span', {style:{fontSize:10,color:'var(--text-tertiary)',fontFamily:'monospace'}}, fg.key),
-              fg.from_group && React.createElement('span', {style:{fontSize:8,padding:'1px 5px',borderRadius:6,background:'var(--brand-bg)',color:'var(--brand)'}}, 'from:'+fg.from_group),
-              isInherited && React.createElement('span', {className:'ds-inherited-badge'}, resolveI18n({en:'inherited',nl:'overgenomen'},lang))
-            ),
-            React.createElement('div', {style:{display:'flex',flexWrap:'wrap',gap:3}},
-              (fg.resolvedProperties||fg.property_keys||[]).map(pk => {
-                const key = typeof pk === 'object' ? (pk.property_key||pk.key) : pk;
-                return React.createElement('span', {key, style:{padding:'1px 6px',borderRadius:3,fontSize:9,background:'var(--brand-bg)',color:'var(--brand)',fontFamily:'monospace'}}, key);
-              })
-            )
-          );
+      const fgData = (resolved?.form_groups||[]).map(fg => ({
+        ...fg, _propCount: (fg.property_keys||[]).length + (fg.from_group ? PropertyCatalogStore.getByGroup(fg.from_group).length : 0),
+      }));
+      const fgCols = [
+        {key:'key', label:{en:'Key',nl:'Sleutel'}, sortable:true, render:(_,r)=>React.createElement('span',{style:{fontFamily:'monospace',color:'var(--brand)',fontWeight:600,fontSize:11}},r.key)},
+        {key:'label', label:{en:'Label',nl:'Label'}, sortable:true, getValue:r=>resolveI18n(r.label,lang)||r.key},
+        {key:'_propCount', label:{en:'Properties',nl:'Eigenschappen'}, sortable:true, getValue:r=>r._propCount,
+          render:(_,r)=>React.createElement('span',{style:{fontSize:10}},r._propCount+' '+resolveI18n({en:'props',nl:'eig.'},lang))},
+        {key:'from_group', label:{en:'From Group',nl:'Van Groep'}, getValue:r=>r.from_group||'',
+          render:(_,r)=>r.from_group?React.createElement(Tag,{color:'blue',style:{margin:0,fontSize:9}},r.from_group):React.createElement('span',{style:{color:'var(--text-tertiary)'}},'—')},
+        {key:'mfe', label:{en:'MFE',nl:'MFE'}, getValue:r=>r.mfe||'',
+          render:(_,r)=>r.mfe?React.createElement(Tag,{color:'purple',style:{margin:0,fontSize:9}},r.mfe):React.createElement('span',{style:{color:'var(--text-tertiary)'}},'—')},
+        {key:'inherited', label:{en:'Inherited',nl:'Overgenomen'}, getValue:r=>r.inherited?'yes':'',
+          render:(_,r)=>r.inherited?React.createElement('span',{className:'ds-inherited-badge',style:{fontSize:9}},resolveI18n({en:'inherited',nl:'overgenomen'},lang)):null},
+      ];
+      return React.createElement('div', {style:{padding:'12px 0'}},
+        React.createElement(EntityList, {
+          columns: fgCols, dataSource: fgData, rowKey:'key', lang,
+          title: resolveI18n({en:'Form Groups',nl:'Formuliergroepen'},lang),
+          searchable:true, emptyIcon:React.createElement(InboxOutlined),
+          emptyText:{en:'No form groups defined',nl:'Geen formuliergroepen gedefinieerd'},
+          addButton:{label:'',onClick:()=>setFgEditModal({visible:true,fg:null,tmpl})},
+          rowActions:[
+            {key:'edit',icon:React.createElement(EditOutlined,{style:{fontSize:12}}),onClick:row=>{
+              if (!row.inherited) setFgEditModal({visible:true,fg:row,tmpl});
+            }},
+            {key:'delete',icon:React.createElement(DeleteOutlined,{style:{fontSize:12}}),danger:true,onClick:row=>{
+              if (!row.inherited) {
+                const updated = {...tmpl, form_groups:(tmpl.form_groups||[]).filter(fg=>fg.key!==row.key)};
+                EntityTemplateStore.putTemplate(updated); rerender();
+              }
+            }},
+          ],
         }),
-        (resolved?.form_groups||[]).length===0 && React.createElement('div',{style:{fontSize:11,color:'var(--text-tertiary)',fontStyle:'italic',padding:8}},resolveI18n({en:'No form groups defined',nl:'Geen formuliergroepen gedefinieerd'},lang))
+        React.createElement(CodeViewer, { value:tmpl.form_groups||[], title:{en:'Form Groups JSON',nl:'Formuliergroepen JSON'}, lang, collapsible:true })
       );
     }
 
-    // ── Columns tab ──
+    // ── Columns tab (EntityList) ──
     if (tabKey === 'columns') {
+      const colData = (resolved?.columns||[]).map(c => ({
+        ...c, _def: PropertyCatalogStore.getDefinition(c.property_key),
+      }));
+      const colCols = [
+        {key:'property_key', label:{en:'Property Key',nl:'Eigenschap Sleutel'}, sortable:true,
+          render:(_,r)=>React.createElement('span',{style:{fontFamily:'monospace',color:'var(--brand)',fontWeight:600,fontSize:11}},r.property_key)},
+        {key:'name', label:{en:'Name',nl:'Naam'}, sortable:true, getValue:r=>resolveI18n(r._def?.i18n,lang)||r._def?.name||r.property_key},
+        {key:'sortable', label:{en:'Sortable',nl:'Sorteerbaar'}, getValue:r=>r.sortable?'yes':'',
+          render:(_,r)=>r.sortable?React.createElement(CheckOutlined,{style:{color:'var(--success)',fontSize:10}}):React.createElement('span',{style:{color:'var(--text-tertiary)'}},'—')},
+        {key:'filterable', label:{en:'Filterable',nl:'Filterbaar'}, getValue:r=>r.filterable?'yes':'',
+          render:(_,r)=>r.filterable?React.createElement(CheckOutlined,{style:{color:'var(--success)',fontSize:10}}):React.createElement('span',{style:{color:'var(--text-tertiary)'}},'—')},
+      ];
       return React.createElement('div', {style:{padding:'12px 0'}},
-        React.createElement('div', {style:{display:'flex',gap:6,flexWrap:'wrap'}},
-          (resolved?.columns||[]).map(col => (
-            React.createElement('span', {key:col.property_key, style:{padding:'3px 8px',borderRadius:4,fontSize:10,background:'var(--bg-secondary)',border:'1px solid var(--border)',display:'flex',gap:4}},
-              React.createElement('span', {style:{fontFamily:'monospace',color:'var(--text-primary)'}}, col.property_key),
-              col.sortable && React.createElement('span', {style:{color:'var(--info)',fontSize:8}}, React.createElement(SortAscendingOutlined)),
-              col.filterable && React.createElement('span', {style:{color:'var(--warning)',fontSize:8}}, React.createElement(FilterOutlined))
-            )
-          )),
-          (resolved?.columns||[]).length===0 && React.createElement('span',{style:{fontSize:11,color:'var(--text-tertiary)',fontStyle:'italic'}},resolveI18n({en:'No columns defined',nl:'Geen kolommen gedefinieerd'},lang))
-        )
+        React.createElement(EntityList, {
+          columns: colCols, dataSource: colData, rowKey:'property_key', lang,
+          title: resolveI18n({en:'Columns',nl:'Kolommen'},lang),
+          searchable:true, emptyIcon:React.createElement(InboxOutlined),
+          emptyText:{en:'No columns defined',nl:'Geen kolommen gedefinieerd'},
+          addButton:{label:'',onClick:()=>{
+            const availableProps = (resolved?.resolved?.properties||resolved?.properties||[]).filter(p=>!(resolved?.columns||[]).some(c=>c.property_key===(p.property_key||p.key)));
+            if (availableProps.length===0) { message.info(resolveI18n({en:'All properties already added as columns',nl:'Alle eigenschappen al als kolom toegevoegd'},lang)); return; }
+            const key = prompt(resolveI18n({en:'Property key for column:',nl:'Eigenschap sleutel voor kolom:'},lang), availableProps[0]?.property_key||availableProps[0]?.key||'');
+            if (!key) return;
+            const updated = {...tmpl, columns:[...(tmpl.columns||[]),{property_key:key,sortable:true,filterable:false}]};
+            EntityTemplateStore.putTemplate(updated); rerender();
+          }},
+          rowActions:[
+            {key:'delete',icon:React.createElement(DeleteOutlined,{style:{fontSize:12}}),danger:true,onClick:row=>{
+              const updated = {...tmpl, columns:(tmpl.columns||[]).filter(c=>c.property_key!==row.property_key)};
+              EntityTemplateStore.putTemplate(updated); rerender();
+            }},
+          ],
+        }),
+        React.createElement(CodeViewer, { value:tmpl.columns||[], title:{en:'Columns JSON',nl:'Kolommen JSON'}, lang, collapsible:true })
       );
     }
 
-    // ── Tabs tab ──
+    // ── Tabs tab (EntityList) ──
     if (tabKey === 'tabs') {
+      const tabData = resolved?.detail_tabs||[];
+      const tabCols = [
+        {key:'key', label:{en:'Key',nl:'Sleutel'}, sortable:true, render:(_,r)=>React.createElement('span',{style:{fontFamily:'monospace',color:'var(--brand)',fontWeight:600,fontSize:11}},r.key)},
+        {key:'label', label:{en:'Label',nl:'Label'}, sortable:true, getValue:r=>resolveI18n(r.label,lang)||r.key},
+        {key:'type', label:{en:'Type',nl:'Type'}, sortable:true, filterable:true, getValue:r=>r.type,
+          render:(_,r)=>React.createElement(Tag,{color:r.type==='overview'?'blue':r.type==='children'?'green':r.type==='form'?'orange':'default',style:{margin:0,fontSize:9}},r.type)},
+        {key:'child_type', label:{en:'Child Type',nl:'Kindtype'}, getValue:r=>r.child_type||'',
+          render:(_,r)=>r.child_type?React.createElement(Tag,{color:'cyan',style:{margin:0,fontSize:9}},r.child_type):React.createElement('span',{style:{color:'var(--text-tertiary)'}},'—')},
+        {key:'mfe_key', label:{en:'MFE Key',nl:'MFE Sleutel'}, getValue:r=>r.mfe_key||'',
+          render:(_,r)=>r.mfe_key?React.createElement('span',{style:{fontFamily:'monospace',fontSize:10,color:'var(--info)'}},r.mfe_key):React.createElement('span',{style:{color:'var(--text-tertiary)'}},'—')},
+      ];
       return React.createElement('div', {style:{padding:'12px 0'}},
-        React.createElement('div', {style:{display:'flex',gap:4,flexWrap:'wrap',marginBottom:12}},
-          (resolved?.detail_tabs||[]).map(dt => (
-            React.createElement('span', {key:dt.key, style:{padding:'4px 10px',borderRadius:4,fontSize:11,cursor:'default',
-              background:dt.type==='overview'?'var(--brand-bg)':dt.type==='children'?'var(--success-bg)':'var(--bg-secondary)',
-              border:'1px solid var(--border)',color:dt.type==='overview'?'var(--brand)':dt.type==='children'?'var(--success)':'var(--text-secondary)'}},
-              resolveI18n(dt.label,lang)||dt.key,
-              React.createElement('span', {style:{marginLeft:4,fontSize:8,color:'var(--text-tertiary)'}}, dt.type)
-            )
-          ))
-        ),
-        (resolved?.detail_tabs||[]).length===0 && React.createElement('div',{style:{fontSize:11,color:'var(--text-tertiary)',fontStyle:'italic'}},resolveI18n({en:'No tabs defined',nl:'Geen tabs gedefinieerd'},lang))
+        React.createElement(EntityList, {
+          columns: tabCols, dataSource: tabData, rowKey:'key', lang,
+          title: resolveI18n({en:'Detail Tabs',nl:'Detail Tabs'},lang),
+          searchable:true, emptyIcon:React.createElement(InboxOutlined),
+          emptyText:{en:'No tabs defined',nl:'Geen tabs gedefinieerd'},
+          addButton:{label:'',onClick:()=>setTabEditModal({visible:true,tab:null,tmpl})},
+          rowActions:[
+            {key:'edit',icon:React.createElement(EditOutlined,{style:{fontSize:12}}),onClick:row=>{
+              setTabEditModal({visible:true,tab:row,tmpl});
+            }},
+            {key:'delete',icon:React.createElement(DeleteOutlined,{style:{fontSize:12}}),danger:true,onClick:row=>{
+              const updated = {...tmpl, detail_tabs:(tmpl.detail_tabs||[]).filter(dt=>dt.key!==row.key)};
+              EntityTemplateStore.putTemplate(updated); rerender();
+            }},
+          ],
+        }),
+        React.createElement(CodeViewer, { value:tmpl.detail_tabs||[], title:{en:'Tabs JSON',nl:'Tabs JSON'}, lang, collapsible:true })
       );
     }
 
@@ -11479,75 +11550,82 @@ function DeveloperStudioPage({t, lang, tab, dsRoute, updateHash}) {
             spellCheck:false
           }),
           dummyJson && (() => { try { JSON.parse(dummyJson); return null; } catch(e) { return React.createElement('div',{style:{fontSize:10,color:'var(--error)',marginTop:2}},resolveI18n({en:'Invalid JSON',nl:'Ongeldige JSON'},lang),': ',e.message); } })()
-        )
+        ),
+        // Phase 5: Inline CodeViewer for resolved template
+        React.createElement(CodeViewer, { value:resolved, title:{en:'Resolved Template JSON',nl:'Opgelost Template JSON'}, lang, collapsible:true })
       );
     }
 
-    // ── Relationships tab ──
+    // ── Relationships tab (EntityList) ──
     if (tabKey === 'relations') {
       const childTypes = tmpl.children_types || [];
-      const availableTypes = Object.keys(ENTITY_TYPE_REGISTRY).filter(et => !childTypes.some(ct => ct.entity_type === et));
+      const relData = childTypes.map(ct => ({
+        ...ct, _reg: ENTITY_TYPE_REGISTRY[ct.entity_type],
+      }));
+      const relCols = [
+        {key:'entity_type', label:{en:'Entity Type',nl:'Entiteittype'}, sortable:true,
+          render:(_,r)=>{
+            const CtIcon = window[r._reg?.icon]||BlockOutlined;
+            return React.createElement('span',{style:{display:'flex',alignItems:'center',gap:6}},
+              React.createElement(CtIcon,{style:{fontSize:12,color:r._reg?.color||'var(--text-tertiary)'}}),
+              React.createElement('span',{style:{fontWeight:500,fontSize:11}},resolveI18n(r._reg?.label,lang)||r.entity_type)
+            );
+          }},
+      ];
       return React.createElement('div', {style:{padding:'12px 0'}},
-        React.createElement('div', {style:{display:'flex',flexWrap:'wrap',gap:4,marginBottom:8}},
-          childTypes.length === 0
-            ? React.createElement('span', {style:{fontSize:11,color:'var(--text-tertiary)',fontStyle:'italic'}},
-                resolveI18n({en:'No child types allowed (leaf entity)',nl:'Geen kindtypen toegestaan (bladentiteit)'},lang))
-            : childTypes.map(ct => {
-                const ctReg = ENTITY_TYPE_REGISTRY[ct.entity_type];
-                const CtIcon = window[ctReg?.icon] || BlockOutlined;
-                return React.createElement('span', {key:ct.entity_type, style:{padding:'3px 8px',borderRadius:4,fontSize:10,
-                  background:'var(--bg-secondary)',border:'1px solid var(--border)',display:'flex',alignItems:'center',gap:4}},
-                  React.createElement(CtIcon, {style:{fontSize:11,color:ctReg?.color||'var(--text-tertiary)'}}),
-                  React.createElement('span', {style:{color:'var(--text-primary)'}}, resolveI18n(ctReg?.label,lang)||ct.entity_type),
-                  React.createElement('span', {style:{cursor:'pointer',color:'var(--text-tertiary)',fontSize:9,marginLeft:2,lineHeight:1},
-                    title:resolveI18n({en:'Remove relationship',nl:'Relatie verwijderen'},lang),
-                    onClick:() => {
-                      const updated = {...tmpl, children_types: (tmpl.children_types||[]).filter(c => c.entity_type !== ct.entity_type)};
-                      EntityTemplateStore.putTemplate(updated);
-                      rerender();
-                    }}, '\u00d7')
-                );
-              })
-        ),
-        availableTypes.length > 0 && React.createElement(Select, {
-          size:'small', style:{width:220},
-          showSearch:true, filterOption:(input,option) => (option?.label||'').toLowerCase().includes(input.toLowerCase()),
-          placeholder:resolveI18n({en:'Add child type...',nl:'Kindtype toevoegen...'},lang),
-          value:undefined,
-          onChange:(val) => {
+        React.createElement(EntityList, {
+          columns: relCols, dataSource: relData, rowKey:'entity_type', lang,
+          title: resolveI18n({en:'Child Entity Types',nl:'Kind Entiteittypes'},lang),
+          searchable:true, emptyIcon:React.createElement(InboxOutlined),
+          emptyText:{en:'No child types allowed (leaf entity)',nl:'Geen kindtypen toegestaan (bladentiteit)'},
+          addButton:{label:'',onClick:()=>{
+            const availableTypes = Object.keys(ENTITY_TYPE_REGISTRY).filter(et => !childTypes.some(ct => ct.entity_type === et));
+            if (availableTypes.length===0) { message.info(resolveI18n({en:'All entity types already added',nl:'Alle entiteittypes al toegevoegd'},lang)); return; }
+            const val = prompt(resolveI18n({en:'Entity type to add as child:',nl:'Entiteittype toevoegen als kind:'},lang)+'\n'+availableTypes.join(', '));
+            if (!val || !ENTITY_TYPE_REGISTRY[val]) return;
             const updated = {...tmpl, children_types: [...(tmpl.children_types||[]), {entity_type:val}]};
-            EntityTemplateStore.putTemplate(updated);
-            rerender();
-          },
-          options:availableTypes.map(et => {
-            const etR = ENTITY_TYPE_REGISTRY[et];
-            return {value:et, label:resolveI18n(etR?.label,lang)||et};
-          }),
-        })
+            EntityTemplateStore.putTemplate(updated); rerender();
+          }},
+          rowActions:[
+            {key:'delete',icon:React.createElement(DeleteOutlined,{style:{fontSize:12}}),danger:true,onClick:row=>{
+              const updated = {...tmpl, children_types: (tmpl.children_types||[]).filter(c => c.entity_type !== row.entity_type)};
+              EntityTemplateStore.putTemplate(updated); rerender();
+            }},
+          ],
+        }),
+        React.createElement(CodeViewer, { value:tmpl.children_types||[], title:{en:'Relationships JSON',nl:'Relaties JSON'}, lang, collapsible:true })
       );
     }
 
-    // ── Subtypes tab ──
+    // ── Subtypes tab (EntityList) ──
     if (tabKey === 'subtypes') {
-      const subtypes = EntityTemplateStore.getTemplates().filter(t => t.extends_key === `${entityType}:default`);
-      return React.createElement('div', {style:{padding:'12px 0',display:'grid',gap:8}},
-        subtypes.length === 0
-          ? React.createElement('div',{style:{fontSize:11,color:'var(--text-tertiary)',fontStyle:'italic'}},resolveI18n({en:'No subtypes defined',nl:'Geen subtypes gedefinieerd'},lang))
-          : subtypes.map(st => {
-              const stRes = EntityTemplateStore.resolveTemplate(st.entity_type, st.type_key);
-              return React.createElement('div', {key:`${st.entity_type}:${st.type_key}`,
-                style:{padding:'10px 14px',background:'var(--bg-secondary)',borderRadius:8,border:'1px solid var(--border)',display:'flex',alignItems:'center',gap:8,cursor:'pointer'},
-                onClick:()=>{ dsNavigate({type:'subtype', entityType:st.entity_type, typeKey:st.type_key}); setEntityDetailTab('preview'); }
-              },
-                React.createElement(window[st.icon]||BlockOutlined,{style:{fontSize:14}}),
-                React.createElement('span', {style:{fontWeight:600,fontSize:12,color:'var(--text-primary)'}}, st.name),
-                React.createElement('span', {style:{fontSize:10,fontFamily:'monospace',color:'var(--text-tertiary)'}}, st.type_key),
-                React.createElement(Tag,{color:lifecycleColor(st.lifecycle_status),style:{margin:0,fontSize:9}},lifecycleI18n(st.lifecycle_status||'draft')),
-                React.createElement('span', {style:{fontSize:10,color:'var(--text-tertiary)',marginLeft:'auto'}}, '+'+(st.properties||[]).length+' '+resolveI18n({en:'props',nl:'eig.'},lang))
-              );
-            }),
-        React.createElement('button', {className:'header-btn primary', style:{justifySelf:'start',marginTop:4},
-          onClick:()=>setCreatingTmpl(true)}, '+ '+resolveI18n({en:'New Subtype',nl:'Nieuw Subtype'},lang))
+      const subtypeData = EntityTemplateStore.getTemplates().filter(t => t.extends_key === `${entityType}:default`);
+      const subtypeCols = [
+        {key:'name', label:{en:'Name',nl:'Naam'}, sortable:true,
+          render:(_,r)=>React.createElement('span',{style:{display:'flex',alignItems:'center',gap:6}},
+            React.createElement(window[r.icon]||BlockOutlined,{style:{fontSize:12}}),
+            React.createElement('span',{style:{fontWeight:600,fontSize:11}},r.name))},
+        {key:'type_key', label:{en:'Type Key',nl:'Type Sleutel'}, sortable:true,
+          render:(_,r)=>React.createElement('span',{style:{fontFamily:'monospace',fontSize:10,color:'var(--text-tertiary)'}},r.type_key)},
+        {key:'lifecycle', label:{en:'Status',nl:'Status'}, filterable:true, getValue:r=>r.lifecycle_status||'draft',
+          render:(_,r)=>React.createElement(Tag,{color:lifecycleColor(r.lifecycle_status),style:{margin:0,fontSize:9}},lifecycleI18n(r.lifecycle_status||'draft'))},
+        {key:'props', label:{en:'Properties',nl:'Eigenschappen'}, sortable:true, getValue:r=>(r.properties||[]).length,
+          render:(_,r)=>React.createElement('span',{style:{fontSize:10,color:'var(--text-tertiary)'}},'+' + (r.properties||[]).length + ' ' + resolveI18n({en:'props',nl:'eig.'},lang))},
+      ];
+      return React.createElement('div', {style:{padding:'12px 0'}},
+        React.createElement(EntityList, {
+          columns: subtypeCols, dataSource: subtypeData, rowKey: r=>`${r.entity_type}:${r.type_key}`, lang,
+          title: resolveI18n({en:'Subtypes',nl:'Subtypes'},lang),
+          searchable:true, emptyIcon:React.createElement(InboxOutlined),
+          emptyText:{en:'No subtypes defined',nl:'Geen subtypes gedefinieerd'},
+          onRowClick: r => { dsNavigate({type:'subtype', entityType:r.entity_type, typeKey:r.type_key}); },
+          addButton:{label:'',onClick:()=>handleExtendTemplate(entityType)},
+          rowActions:[
+            {key:'delete',icon:React.createElement(DeleteOutlined,{style:{fontSize:12}}),danger:true,onClick:row=>{
+              handleDeleteTemplate(row);
+            }},
+          ],
+        })
       );
     }
 
@@ -11574,6 +11652,216 @@ function DeveloperStudioPage({t, lang, tab, dsRoute, updateHash}) {
     }
 
     return null;
+  }
+
+  // ── Phase 3: FormGroupEditModal ──
+  function renderFormGroupEditModal() {
+    if (!fgEditModal.visible) return null;
+    const isEdit = !!fgEditModal.fg;
+    const [fgKey, setFgKey] = useState(fgEditModal.fg?.key || '');
+    const [fgLabel, setFgLabel] = useState(fgEditModal.fg?.label ? (typeof fgEditModal.fg.label === 'object' ? fgEditModal.fg.label[lang]||fgEditModal.fg.label.en||'' : fgEditModal.fg.label) : '');
+    const [fgIcon, setFgIcon] = useState(fgEditModal.fg?.icon || '');
+    const [fgRenderMode, setFgRenderMode] = useState(fgEditModal.fg?.mfe ? 'mfe' : fgEditModal.fg?.from_group ? 'shared' : 'auto');
+    const [fgPropKeys, setFgPropKeys] = useState(fgEditModal.fg?.property_keys || []);
+    const [fgFromGroup, setFgFromGroup] = useState(fgEditModal.fg?.from_group || '');
+    const [fgMfe, setFgMfe] = useState(fgEditModal.fg?.mfe || '');
+    const tmpl = fgEditModal.tmpl;
+    const availProps = (tmpl?.properties||[]).map(p=>p.property_key);
+    const handleSave = () => {
+      if (!fgKey) return;
+      const fg = { key:fgKey, label:{[lang]:fgLabel||fgKey}, icon:fgIcon||undefined, property_keys: fgRenderMode==='auto'?fgPropKeys:[], from_group:fgRenderMode==='shared'?fgFromGroup:undefined, mfe:fgRenderMode==='mfe'?fgMfe:undefined };
+      let fgs = [...(tmpl.form_groups||[])];
+      const idx = fgs.findIndex(f=>f.key===fgKey);
+      if (idx >= 0) fgs[idx] = {...fgs[idx],...fg}; else fgs.push(fg);
+      EntityTemplateStore.putTemplate({...tmpl, form_groups:fgs});
+      setFgEditModal({visible:false,fg:null,tmpl:null}); rerender();
+    };
+    return React.createElement('div', {className:'eem-overlay', onClick:()=>setFgEditModal({visible:false,fg:null,tmpl:null})},
+      React.createElement('div', {className:'eem-modal', style:{width:480,maxWidth:480,height:'auto',maxHeight:'70vh'}, onClick:e=>e.stopPropagation()},
+        React.createElement('div', {style:{padding:'12px 16px',borderBottom:'1px solid var(--border)',fontSize:13,fontWeight:600}},
+          isEdit ? resolveI18n({en:'Edit Form Group',nl:'Formuliergroep Bewerken'},lang) : resolveI18n({en:'New Form Group',nl:'Nieuwe Formuliergroep'},lang)),
+        React.createElement('div', {style:{padding:16,display:'grid',gap:12,overflowY:'auto'}},
+          React.createElement('div', null,
+            React.createElement('label',{style:{fontSize:10,fontWeight:600,color:'var(--text-secondary)',display:'block',marginBottom:3}},resolveI18n({en:'Key',nl:'Sleutel'},lang)),
+            React.createElement(Input,{size:'small',value:fgKey,onChange:e=>setFgKey(e.target.value),disabled:isEdit,placeholder:'general_info'})),
+          React.createElement('div', null,
+            React.createElement('label',{style:{fontSize:10,fontWeight:600,color:'var(--text-secondary)',display:'block',marginBottom:3}},resolveI18n({en:'Label',nl:'Label'},lang)),
+            React.createElement(Input,{size:'small',value:fgLabel,onChange:e=>setFgLabel(e.target.value),placeholder:'General Information'})),
+          React.createElement('div', null,
+            React.createElement('label',{style:{fontSize:10,fontWeight:600,color:'var(--text-secondary)',display:'block',marginBottom:3}},resolveI18n({en:'Icon',nl:'Icoon'},lang)),
+            React.createElement(Input,{size:'small',value:fgIcon,onChange:e=>setFgIcon(e.target.value),placeholder:'InfoCircleOutlined'})),
+          React.createElement('div', null,
+            React.createElement('label',{style:{fontSize:10,fontWeight:600,color:'var(--text-secondary)',display:'block',marginBottom:3}},resolveI18n({en:'Rendering Mode',nl:'Render Modus'},lang)),
+            React.createElement(Segmented,{size:'small',options:[{value:'auto',label:'Auto'},{value:'shared',label:'Shared Block'},{value:'mfe',label:'Custom MFE'}],value:fgRenderMode,onChange:setFgRenderMode})),
+          fgRenderMode==='auto' && React.createElement('div', null,
+            React.createElement('label',{style:{fontSize:10,fontWeight:600,color:'var(--text-secondary)',display:'block',marginBottom:3}},resolveI18n({en:'Property Keys',nl:'Eigenschap Sleutels'},lang)),
+            React.createElement(Select,{mode:'multiple',size:'small',style:{width:'100%'},value:fgPropKeys,onChange:setFgPropKeys,
+              options:availProps.map(k=>({value:k,label:k}))})),
+          fgRenderMode==='shared' && React.createElement('div', null,
+            React.createElement('label',{style:{fontSize:10,fontWeight:600,color:'var(--text-secondary)',display:'block',marginBottom:3}},resolveI18n({en:'From Group',nl:'Van Groep'},lang)),
+            React.createElement(Select,{size:'small',style:{width:'100%'},value:fgFromGroup,onChange:setFgFromGroup,
+              options:allGroups.map(g=>({value:g.key,label:resolveI18n(g.i18n,lang)||g.name||g.key}))})),
+          fgRenderMode==='mfe' && React.createElement('div', null,
+            React.createElement('label',{style:{fontSize:10,fontWeight:600,color:'var(--text-secondary)',display:'block',marginBottom:3}},resolveI18n({en:'MFE Key',nl:'MFE Sleutel'},lang)),
+            React.createElement(Input,{size:'small',value:fgMfe,onChange:e=>setFgMfe(e.target.value),placeholder:'@domain/my-form'}))
+        ),
+        React.createElement('div', {style:{padding:'8px 16px',borderTop:'1px solid var(--border)',display:'flex',justifyContent:'flex-end',gap:8}},
+          React.createElement('button',{className:'header-btn',onClick:()=>setFgEditModal({visible:false,fg:null,tmpl:null})},resolveI18n({en:'Cancel',nl:'Annuleren'},lang)),
+          React.createElement('button',{className:'header-btn primary',onClick:handleSave},resolveI18n({en:'Save',nl:'Opslaan'},lang)))
+      )
+    );
+  }
+
+  // ── Phase 3: TabEditModal ──
+  function renderTabEditModal() {
+    if (!tabEditModal.visible) return null;
+    const isEdit = !!tabEditModal.tab;
+    const [tKey, setTKey] = useState(tabEditModal.tab?.key || '');
+    const [tLabel, setTLabel] = useState(tabEditModal.tab?.label ? (typeof tabEditModal.tab.label === 'object' ? tabEditModal.tab.label[lang]||tabEditModal.tab.label.en||'' : tabEditModal.tab.label) : '');
+    const [tType, setTType] = useState(tabEditModal.tab?.type || 'overview');
+    const [tChildType, setTChildType] = useState(tabEditModal.tab?.child_type || '');
+    const [tMfeKey, setTMfeKey] = useState(tabEditModal.tab?.mfe_key || '');
+    const [tFormGroupKey, setTFormGroupKey] = useState(tabEditModal.tab?.form_group_key || '');
+    const tmpl = tabEditModal.tmpl;
+    const handleSave = () => {
+      if (!tKey) return;
+      const tab = { key:tKey, label:{[lang]:tLabel||tKey}, type:tType };
+      if (tType==='children' && tChildType) tab.child_type = tChildType;
+      if ((tType==='action'||tType==='custom') && tMfeKey) tab.mfe_key = tMfeKey;
+      if (tType==='form' && tFormGroupKey) tab.form_group_key = tFormGroupKey;
+      let tabs = [...(tmpl.detail_tabs||[])];
+      const idx = tabs.findIndex(t=>t.key===tKey);
+      if (idx >= 0) tabs[idx] = {...tabs[idx],...tab}; else tabs.push(tab);
+      EntityTemplateStore.putTemplate({...tmpl, detail_tabs:tabs});
+      setTabEditModal({visible:false,tab:null,tmpl:null}); rerender();
+    };
+    return React.createElement('div', {className:'eem-overlay', onClick:()=>setTabEditModal({visible:false,tab:null,tmpl:null})},
+      React.createElement('div', {className:'eem-modal', style:{width:440,maxWidth:440,height:'auto',maxHeight:'60vh'}, onClick:e=>e.stopPropagation()},
+        React.createElement('div', {style:{padding:'12px 16px',borderBottom:'1px solid var(--border)',fontSize:13,fontWeight:600}},
+          isEdit ? resolveI18n({en:'Edit Tab',nl:'Tab Bewerken'},lang) : resolveI18n({en:'New Tab',nl:'Nieuwe Tab'},lang)),
+        React.createElement('div', {style:{padding:16,display:'grid',gap:12,overflowY:'auto'}},
+          React.createElement('div', null,
+            React.createElement('label',{style:{fontSize:10,fontWeight:600,color:'var(--text-secondary)',display:'block',marginBottom:3}},resolveI18n({en:'Key',nl:'Sleutel'},lang)),
+            React.createElement(Input,{size:'small',value:tKey,onChange:e=>setTKey(e.target.value),disabled:isEdit,placeholder:'devices'})),
+          React.createElement('div', null,
+            React.createElement('label',{style:{fontSize:10,fontWeight:600,color:'var(--text-secondary)',display:'block',marginBottom:3}},resolveI18n({en:'Label',nl:'Label'},lang)),
+            React.createElement(Input,{size:'small',value:tLabel,onChange:e=>setTLabel(e.target.value),placeholder:'Devices'})),
+          React.createElement('div', null,
+            React.createElement('label',{style:{fontSize:10,fontWeight:600,color:'var(--text-secondary)',display:'block',marginBottom:3}},resolveI18n({en:'Type',nl:'Type'},lang)),
+            React.createElement(Select,{size:'small',style:{width:'100%'},value:tType,onChange:setTType,
+              options:[{value:'overview',label:'Overview'},{value:'children',label:'Children'},{value:'action',label:'Action'},{value:'form',label:'Form'},{value:'custom',label:'Custom'}]})),
+          tType==='children' && React.createElement('div', null,
+            React.createElement('label',{style:{fontSize:10,fontWeight:600,color:'var(--text-secondary)',display:'block',marginBottom:3}},resolveI18n({en:'Child Type',nl:'Kindtype'},lang)),
+            React.createElement(Select,{size:'small',style:{width:'100%'},value:tChildType,onChange:setTChildType,
+              options:(tmpl?.children_types||[]).map(ct=>({value:ct.entity_type,label:resolveI18n(ENTITY_TYPE_REGISTRY[ct.entity_type]?.label,lang)||ct.entity_type}))})),
+          (tType==='action'||tType==='custom') && React.createElement('div', null,
+            React.createElement('label',{style:{fontSize:10,fontWeight:600,color:'var(--text-secondary)',display:'block',marginBottom:3}},resolveI18n({en:'MFE Key',nl:'MFE Sleutel'},lang)),
+            React.createElement(Input,{size:'small',value:tMfeKey,onChange:e=>setTMfeKey(e.target.value),placeholder:'@domain/my-tab'})),
+          tType==='form' && React.createElement('div', null,
+            React.createElement('label',{style:{fontSize:10,fontWeight:600,color:'var(--text-secondary)',display:'block',marginBottom:3}},resolveI18n({en:'Form Group',nl:'Formuliergroep'},lang)),
+            React.createElement(Select,{size:'small',style:{width:'100%'},value:tFormGroupKey,onChange:setTFormGroupKey,
+              options:(tmpl?.form_groups||[]).map(fg=>({value:fg.key,label:resolveI18n(fg.label,lang)||fg.key}))}))
+        ),
+        React.createElement('div', {style:{padding:'8px 16px',borderTop:'1px solid var(--border)',display:'flex',justifyContent:'flex-end',gap:8}},
+          React.createElement('button',{className:'header-btn',onClick:()=>setTabEditModal({visible:false,tab:null,tmpl:null})},resolveI18n({en:'Cancel',nl:'Annuleren'},lang)),
+          React.createElement('button',{className:'header-btn primary',onClick:handleSave},resolveI18n({en:'Save',nl:'Opslaan'},lang)))
+      )
+    );
+  }
+
+  // ── Phase 3: PrivilegeEditModal ──
+  function renderPrivilegeEditModal() {
+    if (!privEditModal.visible) return null;
+    const isEdit = !!privEditModal.priv;
+    const [pKey, setPKey] = useState(privEditModal.priv?.key || '');
+    const [pApp, setPApp] = useState(privEditModal.priv?.app || '');
+    const [pResource, setPResource] = useState(privEditModal.priv?.resource || '');
+    const [pAction, setPAction] = useState(privEditModal.priv?.action || 'view');
+    const [pDesc, setPDesc] = useState(privEditModal.priv?.description || '');
+    const apps = [...new Set(PrivilegeCatalogStore.getDefinitions().map(d=>d.app))];
+    const handleSave = () => {
+      const key = pKey || `${pApp}.${pResource}.${pAction}`;
+      if (!pApp || !pResource) return;
+      PrivilegeCatalogStore.putDefinition({key, name:`${pResource} ${pAction}`, i18n:{en:`${pResource} — ${pAction}`}, description:pDesc, app:pApp, resource:pResource, action:pAction, group_key:null, lifecycle_status:'active'});
+      PrivilegeStore.put({id:key, appId:pApp, resource:pResource, action:pAction});
+      setPrivEditModal({visible:false,priv:null}); rerender();
+    };
+    return React.createElement('div', {className:'eem-overlay', onClick:()=>setPrivEditModal({visible:false,priv:null})},
+      React.createElement('div', {className:'eem-modal', style:{width:440,maxWidth:440,height:'auto',maxHeight:'60vh'}, onClick:e=>e.stopPropagation()},
+        React.createElement('div', {style:{padding:'12px 16px',borderBottom:'1px solid var(--border)',fontSize:13,fontWeight:600}},
+          isEdit ? resolveI18n({en:'Edit Privilege',nl:'Recht Bewerken'},lang) : resolveI18n({en:'New Privilege',nl:'Nieuw Recht'},lang)),
+        React.createElement('div', {style:{padding:16,display:'grid',gap:12,overflowY:'auto'}},
+          React.createElement('div', null,
+            React.createElement('label',{style:{fontSize:10,fontWeight:600,color:'var(--text-secondary)',display:'block',marginBottom:3}},resolveI18n({en:'Key (auto: app.resource.action)',nl:'Sleutel (auto: app.bron.actie)'},lang)),
+            React.createElement(Input,{size:'small',value:pKey,onChange:e=>setPKey(e.target.value),disabled:isEdit,placeholder:'dashboard.reports.view'})),
+          React.createElement('div', null,
+            React.createElement('label',{style:{fontSize:10,fontWeight:600,color:'var(--text-secondary)',display:'block',marginBottom:3}},resolveI18n({en:'App',nl:'App'},lang)),
+            React.createElement(Select,{size:'small',style:{width:'100%'},value:pApp,onChange:setPApp,showSearch:true,
+              options:[...apps.map(a=>({value:a,label:a})),{value:'__new__',label:'+ New app'}],
+              onSelect:v=>{ if (v==='__new__') { const a=prompt('App name:'); if(a) setPApp(a); }}})),
+          React.createElement('div', null,
+            React.createElement('label',{style:{fontSize:10,fontWeight:600,color:'var(--text-secondary)',display:'block',marginBottom:3}},resolveI18n({en:'Resource',nl:'Bron'},lang)),
+            React.createElement(Input,{size:'small',value:pResource,onChange:e=>setPResource(e.target.value),placeholder:'reports'})),
+          React.createElement('div', null,
+            React.createElement('label',{style:{fontSize:10,fontWeight:600,color:'var(--text-secondary)',display:'block',marginBottom:3}},resolveI18n({en:'Action',nl:'Actie'},lang)),
+            React.createElement(Select,{size:'small',style:{width:'100%'},value:pAction,onChange:setPAction,
+              options:[{value:'view',label:'view'},{value:'create',label:'create'},{value:'edit',label:'edit'},{value:'delete',label:'delete'},{value:'manage',label:'manage'}]})),
+          React.createElement('div', null,
+            React.createElement('label',{style:{fontSize:10,fontWeight:600,color:'var(--text-secondary)',display:'block',marginBottom:3}},resolveI18n({en:'Description',nl:'Beschrijving'},lang)),
+            React.createElement(Input.TextArea,{size:'small',rows:2,value:pDesc,onChange:e=>setPDesc(e.target.value),placeholder:'Can view reports in the dashboard'}))
+        ),
+        React.createElement('div', {style:{padding:'8px 16px',borderTop:'1px solid var(--border)',display:'flex',justifyContent:'flex-end',gap:8}},
+          React.createElement('button',{className:'header-btn',onClick:()=>setPrivEditModal({visible:false,priv:null})},resolveI18n({en:'Cancel',nl:'Annuleren'},lang)),
+          React.createElement('button',{className:'header-btn primary',onClick:handleSave},resolveI18n({en:'Save',nl:'Opslaan'},lang)))
+      )
+    );
+  }
+
+  // ── Phase 3: PrivilegeGroupEditModal ──
+  function renderPrivilegeGroupEditModal() {
+    if (!privGroupEditModal.visible) return null;
+    const isEdit = !!privGroupEditModal.group;
+    const [gKey, setGKey] = useState(privGroupEditModal.group?.key || '');
+    const [gName, setGName] = useState(privGroupEditModal.group?.name ? (typeof privGroupEditModal.group.name === 'object' ? privGroupEditModal.group.name[lang]||privGroupEditModal.group.name.en||'' : privGroupEditModal.group.name) : '');
+    const [gApp, setGApp] = useState(privGroupEditModal.group?.app || '');
+    const [gLevel, setGLevel] = useState(privGroupEditModal.group?.level || 'viewer');
+    const [gPrivKeys, setGPrivKeys] = useState(privGroupEditModal.group?.privilege_keys || []);
+    const apps = [...new Set(PrivilegeCatalogStore.getDefinitions().map(d=>d.app))];
+    const allPrivDefs = PrivilegeCatalogStore.getDefinitions();
+    const handleSave = () => {
+      if (!gKey || !gName) return;
+      PrivilegeCatalogStore.putGroup({key:gKey, name:gName, i18n:{[lang]:gName}, app:gApp, level:gLevel, privilege_keys:gPrivKeys, icon:'LockOutlined'});
+      setPrivGroupEditModal({visible:false,group:null}); rerender();
+    };
+    return React.createElement('div', {className:'eem-overlay', onClick:()=>setPrivGroupEditModal({visible:false,group:null})},
+      React.createElement('div', {className:'eem-modal', style:{width:480,maxWidth:480,height:'auto',maxHeight:'70vh'}, onClick:e=>e.stopPropagation()},
+        React.createElement('div', {style:{padding:'12px 16px',borderBottom:'1px solid var(--border)',fontSize:13,fontWeight:600}},
+          isEdit ? resolveI18n({en:'Edit Privilege Group',nl:'Rechtengroep Bewerken'},lang) : resolveI18n({en:'New Privilege Group',nl:'Nieuwe Rechtengroep'},lang)),
+        React.createElement('div', {style:{padding:16,display:'grid',gap:12,overflowY:'auto'}},
+          React.createElement('div', null,
+            React.createElement('label',{style:{fontSize:10,fontWeight:600,color:'var(--text-secondary)',display:'block',marginBottom:3}},resolveI18n({en:'Key',nl:'Sleutel'},lang)),
+            React.createElement(Input,{size:'small',value:gKey,onChange:e=>setGKey(e.target.value),disabled:isEdit,placeholder:'config_viewer'})),
+          React.createElement('div', null,
+            React.createElement('label',{style:{fontSize:10,fontWeight:600,color:'var(--text-secondary)',display:'block',marginBottom:3}},resolveI18n({en:'Name',nl:'Naam'},lang)),
+            React.createElement(Input,{size:'small',value:gName,onChange:e=>setGName(e.target.value),placeholder:'Configuration Viewer'})),
+          React.createElement('div', null,
+            React.createElement('label',{style:{fontSize:10,fontWeight:600,color:'var(--text-secondary)',display:'block',marginBottom:3}},resolveI18n({en:'App',nl:'App'},lang)),
+            React.createElement(Select,{size:'small',style:{width:'100%'},value:gApp,onChange:setGApp,showSearch:true,
+              options:apps.map(a=>({value:a,label:a}))})),
+          React.createElement('div', null,
+            React.createElement('label',{style:{fontSize:10,fontWeight:600,color:'var(--text-secondary)',display:'block',marginBottom:3}},resolveI18n({en:'Level',nl:'Niveau'},lang)),
+            React.createElement(Select,{size:'small',style:{width:'100%'},value:gLevel,onChange:setGLevel,
+              options:[{value:'viewer',label:'Viewer'},{value:'editor',label:'Editor'},{value:'manager',label:'Manager'},{value:'admin',label:'Admin'}]})),
+          React.createElement('div', null,
+            React.createElement('label',{style:{fontSize:10,fontWeight:600,color:'var(--text-secondary)',display:'block',marginBottom:3}},resolveI18n({en:'Privilege Keys',nl:'Recht Sleutels'},lang)),
+            React.createElement(Select,{mode:'multiple',size:'small',style:{width:'100%'},value:gPrivKeys,onChange:setGPrivKeys,
+              options:allPrivDefs.filter(d=>!gApp||d.app===gApp).map(d=>({value:d.key,label:d.key}))}))
+        ),
+        React.createElement('div', {style:{padding:'8px 16px',borderTop:'1px solid var(--border)',display:'flex',justifyContent:'flex-end',gap:8}},
+          React.createElement('button',{className:'header-btn',onClick:()=>setPrivGroupEditModal({visible:false,group:null})},resolveI18n({en:'Cancel',nl:'Annuleren'},lang)),
+          React.createElement('button',{className:'header-btn primary',onClick:handleSave},resolveI18n({en:'Save',nl:'Opslaan'},lang)))
+      )
+    );
   }
 
   // ── Block Detail (Phase 4: property group content) ──
@@ -11740,10 +12028,8 @@ function DeveloperStudioPage({t, lang, tab, dsRoute, updateHash}) {
           ),
           desc && React.createElement('div', {style:{fontSize:10,color:'var(--text-tertiary)',marginTop:2}}, desc)
         ),
-        // Code toggle + Edit + Delete buttons
+        // Edit + Delete buttons (matching Config pattern)
         React.createElement('div', {style:{display:'flex',gap:4,flexShrink:0}},
-          React.createElement('span', {className:'crud-btn', title:'JSON', style:{cursor:'pointer',padding:'4px 6px',borderRadius:4,border:'1px solid var(--border)',color:showCodePanel?'var(--brand)':'var(--text-tertiary)',background:showCodePanel?'var(--brand-bg)':'transparent',fontSize:11,fontWeight:600,lineHeight:1},
-            onClick:()=>setShowCodePanel(!showCodePanel)}, '</>'),
           React.createElement('span', {className:'crud-btn crud-btn-edit', onClick:()=>setTmplEditModal({visible:true, tmpl})},
             React.createElement(EditOutlined, {style:{fontSize:12}})),
           isSubtype && React.createElement('span', {className:'crud-btn crud-btn-delete', onClick:()=>{
@@ -12013,19 +12299,9 @@ function DeveloperStudioPage({t, lang, tab, dsRoute, updateHash}) {
                 title: resolveI18n({en:'All Privileges',nl:'Alle Rechten'},lang),
                 searchable:true, emptyIcon:React.createElement(InboxOutlined),
                 emptyText:{en:'No privileges defined',nl:'Geen rechten gedefinieerd'},
-                addButton:{label:'',onClick:()=>{
-                  const key = prompt(resolveI18n({en:'Privilege key (e.g. dashboard.reports.view):',nl:'Rechtsleutel (bijv. dashboard.reports.view):'},lang));
-                  if (!key) return;
-                  const parts = key.split('.');
-                  if (parts.length < 3) { message.error('Key must be app.resource.action'); return; }
-                  const action = parts.pop();
-                  const resource = parts.pop();
-                  const app = parts.join('.');
-                  PrivilegeCatalogStore.putDefinition({key, name:`${resource} ${action}`, i18n:{en:`${resource} — ${action}`}, description:'', app, resource, action, group_key:null, lifecycle_status:'active'});
-                  PrivilegeStore.put({id:key, appId:app, resource, action});
-                  rerender();
-                }},
+                addButton:{label:'',onClick:()=>setPrivEditModal({visible:true,priv:null})},
                 rowActions:[
+                  {key:'edit',icon:React.createElement(EditOutlined,{style:{fontSize:12}}),onClick:row=>setPrivEditModal({visible:true,priv:row})},
                   {key:'delete',icon:React.createElement(DeleteOutlined,{style:{fontSize:12}}),danger:true,onClick:row=>{
                     PrivilegeCatalogStore.removeDefinition(row.key);
                     PrivilegeStore.remove(row.key);
@@ -12092,14 +12368,7 @@ function DeveloperStudioPage({t, lang, tab, dsRoute, updateHash}) {
                 title: resolveI18n({en:'All Privilege Groups',nl:'Alle Rechtengroepen'},lang),
                 searchable:true, emptyIcon:React.createElement(InboxOutlined),
                 emptyText:{en:'No privilege groups defined',nl:'Geen rechtengroepen gedefinieerd'},
-                addButton:{label:'',onClick:()=>{
-                  const key = prompt(resolveI18n({en:'Group key (e.g. reports.viewer):',nl:'Groepsleutel (bijv. reports.viewer):'},lang));
-                  if (!key) return;
-                  const name = prompt(resolveI18n({en:'Group name:',nl:'Groepnaam:'},lang),'');
-                  if (!name) return;
-                  PrivilegeCatalogStore.putGroup({key, name, i18n:{en:name}, app:key.split('.')[0]||'custom', level:key.split('.')[1]||'custom', icon:'LockOutlined', description:{en:''}, privilege_keys:[]});
-                  rerender();
-                }},
+                addButton:{label:'',onClick:()=>setPrivGroupEditModal({visible:true,group:null})},
                 expandable:{
                   expandedRowKeys: expandedGroupKey ? [expandedGroupKey] : [],
                   onExpand: (id) => setExpandedGroupKey(expandedGroupKey === id ? null : id),
@@ -12131,6 +12400,7 @@ function DeveloperStudioPage({t, lang, tab, dsRoute, updateHash}) {
                   }
                 },
                 rowActions:[
+                  {key:'edit',icon:React.createElement(EditOutlined,{style:{fontSize:12}}),onClick:row=>setPrivGroupEditModal({visible:true,group:row})},
                   {key:'delete',icon:React.createElement(DeleteOutlined,{style:{fontSize:12}}),danger:true,onClick:row=>{
                     PrivilegeCatalogStore.removeGroup(row.key);
                     rerender();
@@ -12142,13 +12412,25 @@ function DeveloperStudioPage({t, lang, tab, dsRoute, updateHash}) {
     });
   }
 
-  // ── 8. Role Templates View ──
+  // ── 8. Role Templates View (Phase 6: EntityList with CRUD) ──
   function renderRoleTemplatesView() {
     const roles = RoleStore.getAll();
     const [expandedRoleKey, setExpandedRoleKey] = useState(null);
     const roleTabs = [
       { key:'overview', label:resolveI18n({en:'Overview',nl:'Overzicht'},lang), desc:resolveI18n({en:'Role template summary',nl:'Rolsjabloon samenvatting'},lang) },
       { key:'allRoles', label:`${resolveI18n({en:'All Roles',nl:'Alle Rollen'},lang)} (${roles.length})`, desc:resolveI18n({en:'Role definitions composed from privilege groups',nl:'Roldefinities samengesteld uit rechtengroepen'},lang) },
+    ];
+    const roleCols = [
+      {key:'name', label:{en:'Name',nl:'Naam'}, sortable:true,
+        render:(_,r)=>React.createElement('span',{style:{display:'flex',alignItems:'center',gap:6}},
+          React.createElement(SafetyCertificateOutlined,{style:{fontSize:11,color:ROLE_STYLING[r.name]?.color?`var(--${ROLE_STYLING[r.name].color})`:'var(--text-tertiary)'}}),
+          React.createElement('span',{style:{fontWeight:600,fontSize:11}},r.name))},
+      {key:'level', label:{en:'Scope Level',nl:'Bereikniveau'}, sortable:true, filterable:true, getValue:r=>r.level,
+        render:(_,r)=>React.createElement(Tag,{color:'purple',style:{margin:0,fontSize:9}},r.level)},
+      {key:'groups', label:{en:'Privilege Groups',nl:'Rechtengroepen'}, sortable:true, getValue:r=>(r.privilege_groups||[]).length,
+        render:(_,r)=>React.createElement('span',{style:{fontSize:10,color:'var(--text-tertiary)'}},`${(r.privilege_groups||[]).length} `+resolveI18n({en:'groups',nl:'groepen'},lang))},
+      {key:'lifecycle', label:{en:'Status',nl:'Status'}, filterable:true, getValue:r=>'active',
+        render:()=>React.createElement(Tag,{color:'green',style:{margin:0,fontSize:9}},resolveI18n({en:'active',nl:'actief'},lang))},
     ];
     return React.createElement(Tabs, {
       activeKey:entityDetailTab==='general'||entityDetailTab==='preview'?'overview':entityDetailTab, onChange:setEntityDetailTab,
@@ -12195,21 +12477,35 @@ function DeveloperStudioPage({t, lang, tab, dsRoute, updateHash}) {
             )
           : React.createElement('div', {style:{padding:16}},
               React.createElement(EntityList, {
-                columns: [
-                  {key:'name', label:{en:'Role',nl:'Rol'}, sortable:true,
-                    render:(_,r)=>React.createElement(Tag,{color:ROLE_STYLING[r.name]?.color||'default',style:{margin:0,fontWeight:600,fontSize:11}},r.name)},
-                  {key:'level', label:{en:'Scope',nl:'Bereik'}, sortable:true, filterable:true, getValue:r=>r.level,
-                    render:(_,r)=>React.createElement(Tag,{color:'purple',style:{margin:0,fontSize:9}},r.level)},
-                  {key:'description', label:{en:'Description',nl:'Beschrijving'}, getValue:r=>r.description||''},
-                  {key:'groups', label:{en:'Privilege Groups',nl:'Rechtengroepen'}, sortable:true, getValue:r=>(r.privilege_groups||[]).length,
-                    render:(_,r)=>React.createElement('span',{style:{fontSize:10,color:'var(--text-tertiary)'}},`${(r.privilege_groups||[]).length} groups`)},
-                  {key:'privCount', label:{en:'Privileges',nl:'Rechten'}, sortable:true, getValue:r=>r.privileges?.length||0,
-                    render:(_,r)=>React.createElement('span',{style:{fontSize:10,color:'var(--text-tertiary)'}},`${r.privileges?.length||0} app + ${r.systemPerms?.length||0} sys`)},
-                ],
+                columns: roleCols,
                 dataSource: roles, rowKey:'id', lang,
                 title: resolveI18n({en:'All Role Templates',nl:'Alle Rolsjablonen'},lang),
                 searchable:true, emptyIcon:React.createElement(SafetyCertificateOutlined),
                 emptyText:{en:'No role templates defined',nl:'Geen rolsjablonen gedefinieerd'},
+                addButton:{label:'',onClick:()=>{
+                  const name = prompt(resolveI18n({en:'Role name:',nl:'Rolnaam:'},lang));
+                  if (!name) return;
+                  const level = prompt(resolveI18n({en:'Scope level (Platform/Account/SubAccount/Site/DeviceGroup/Device):',nl:'Bereikniveau:'},lang),'Site');
+                  if (!level) return;
+                  RoleStore.put({name, level, description:'', privileges:[], systemPerms:[], privilege_groups:[]});
+                  rerender();
+                }},
+                rowActions:[
+                  {key:'edit',icon:React.createElement(EditOutlined,{style:{fontSize:12}}),onClick:row=>{
+                    const name = prompt(resolveI18n({en:'Role name:',nl:'Rolnaam:'},lang), row.name);
+                    if (!name) return;
+                    const r = RoleStore.get(row.id);
+                    if (r) { r.name = name; RoleStore.put(r); rerender(); }
+                  }},
+                  {key:'delete',icon:React.createElement(DeleteOutlined,{style:{fontSize:12}}),danger:true,onClick:row=>{
+                    Modal.confirm({
+                      title:resolveI18n({en:'Delete role?',nl:'Rol verwijderen?'},lang),
+                      content:row.name,
+                      okText:resolveI18n({en:'Delete',nl:'Verwijderen'},lang), okType:'danger',
+                      onOk:()=>{ RoleStore.remove(row.id); rerender(); }
+                    });
+                  }},
+                ],
                 expandable:{
                   expandedRowKeys: expandedRoleKey ? [expandedRoleKey] : [],
                   onExpand: (id) => setExpandedRoleKey(expandedRoleKey === id ? null : id),
@@ -12258,7 +12554,9 @@ function DeveloperStudioPage({t, lang, tab, dsRoute, updateHash}) {
                     );
                   }
                 },
-              })
+              }),
+              // Phase 5: Inline CodeViewer for roles
+              React.createElement(CodeViewer, { value:roles.map(r=>({...r,privilege_groups:r.privilege_groups||[]})), title:{en:'Role Templates JSON',nl:'Rolsjablonen JSON'}, lang, collapsible:true })
             )
       }))
     });
@@ -12733,39 +13031,29 @@ function DeveloperStudioPage({t, lang, tab, dsRoute, updateHash}) {
           </div>
         )}
 
-        {/* RIGHT: Detail Panel — same CSS as ConfigurationPage */}
-        <div className="config-detail-panel" style={{display:'flex',flexDirection:'row',gap:0,overflow:'hidden'}}>
-          <div style={{flex:1,display:'flex',flexDirection:'column',overflow:'hidden',minWidth:0}}>
-            {/* Breadcrumb */}
-            {renderDsBreadcrumb()}
+        {/* RIGHT: Detail Panel — 2-panel layout matching ConfigurationPage */}
+        <div className="config-detail-panel">
+          {/* Breadcrumb */}
+          {renderDsBreadcrumb()}
 
-            {/* Header — matches Configuration entity header */}
-            {renderDetailHeader()}
+          {/* Header — matches Configuration entity header */}
+          {renderDetailHeader()}
 
-            {/* Content / Tabs */}
-            <div className="config-detail-body">
-              {renderCreateTemplateModal()}
-              {detailContent}
-            </div>
+          {/* Content / Tabs */}
+          <div className="config-detail-body">
+            {renderCreateTemplateModal()}
+            {detailContent}
           </div>
-
-          {/* Code Panel — slides in from right when toggled */}
-          {showCodePanel && (selectedNode.type === 'entity' || selectedNode.type === 'subtype' || selectedNode.type === 'block' || selectedNode.type === 'propGroup' || selectedNode.type === 'property' || selectedNode.type === 'dsGroup' || selectedNode.type === '_privileges' || selectedNode.type === '_privilegeGroups' || selectedNode.type === '_roleTemplates') && (
-            <div className="ds-code" style={{width:280,minWidth:200,borderLeft:'1px solid var(--border)',borderRadius:0}}>
-              <div className="ds-code-header">
-                <span>JSON</span>
-                {React.createElement(CloseOutlined, {style:{fontSize:10,cursor:'pointer',color:'var(--text-tertiary)'}, onClick:()=>setShowCodePanel(false)})}
-              </div>
-              <div className="ds-code-body">
-                {renderCodePanel()}
-              </div>
-            </div>
-          )}
         </div>
       </div>
 
       {/* Template Edit Modal (Phase 4a) */}
       {renderTemplateEditModal()}
+      {/* Phase 3: CRUD Modals */}
+      {renderFormGroupEditModal()}
+      {renderTabEditModal()}
+      {renderPrivilegeEditModal()}
+      {renderPrivilegeGroupEditModal()}
     </div>
   );
 }
