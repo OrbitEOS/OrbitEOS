@@ -10522,6 +10522,122 @@ function MarketplacePage({t, lang}) {
 }
 
 // ─── Developer Studio Page ───
+// ── TemplateCreateModal — base class for ALL entity type templates ──
+function TemplateCreateModal({ visible, mode, entityType, template, lang, onSave, onCancel }) {
+  const [values, setValues] = useState({});
+  const [errors, setErrors] = useState({});
+
+  useEffect(() => {
+    if (!visible) return;
+    if (mode === 'edit' && template) {
+      setValues({ name: template.name, description: resolveI18n(template.description, 'en') || '', icon: template.icon || '', type_key: template.type_key || '' });
+    } else {
+      setValues({ name: '', description: '', icon: ENTITY_TYPE_REGISTRY[entityType]?.icon || 'BlockOutlined', type_key: '' });
+    }
+    setErrors({});
+  }, [visible, mode, entityType]);
+
+  const handleSave = () => {
+    const errs = {};
+    if (!values.name?.trim()) errs.name = resolveI18n({en:'Required',nl:'Verplicht'},lang);
+    if (mode === 'create' && !values.type_key?.trim()) errs.type_key = resolveI18n({en:'Required',nl:'Verplicht'},lang);
+    if (Object.keys(errs).length > 0) { setErrors(errs); return; }
+
+    const typeKey = mode === 'edit' ? template.type_key : values.type_key.trim().toLowerCase().replace(/\s+/g,'_');
+
+    if (mode === 'create') {
+      EntityTemplateStore.putTemplate({
+        entity_type: entityType,
+        type_key: typeKey,
+        name: values.name.trim(),
+        description: { en: values.description.trim() },
+        icon: values.icon || ENTITY_TYPE_REGISTRY[entityType]?.icon || 'BlockOutlined',
+        extends_key: `${entityType}:default`,
+        lifecycle_status: 'draft',
+        version: 1,
+        properties: [],
+        form_groups: [],
+        columns: [],
+        detail_tabs: [],
+        overview: { properties:[], kpis:[], show_map:false, show_alarms:false },
+        children_types: [],
+      });
+      onSave(typeKey);
+    } else {
+      const existing = EntityTemplateStore.getTemplate(entityType, template.type_key);
+      if (existing) {
+        EntityTemplateStore.putTemplate({
+          ...existing,
+          name: values.name.trim(),
+          description: { en: values.description.trim() },
+          icon: values.icon || existing.icon,
+        });
+        onSave(template.type_key);
+      }
+    }
+  };
+
+  if (!visible) return null;
+
+  const reg = ENTITY_TYPE_REGISTRY[entityType];
+  const title = mode === 'create'
+    ? resolveI18n({en:`New ${resolveI18n(reg?.label,lang)} Template`,nl:`Nieuw ${resolveI18n(reg?.label,lang)} Template`},lang)
+    : resolveI18n({en:`Edit Template: ${values.name}`,nl:`Template Bewerken: ${values.name}`},lang);
+
+  return ReactDOM.createPortal(
+    React.createElement('div', {className:'eem-overlay', onClick:onCancel},
+      React.createElement('div', {className:'eem-modal', style:{maxWidth:500,height:'auto',maxHeight:'60vh'}, onClick:e=>e.stopPropagation()},
+        // Header
+        React.createElement('div', {className:'eem-header'},
+          React.createElement('div', {className:'eem-header-icon'}, React.createElement(resolveIcon(reg?.icon)||BlockOutlined)),
+          React.createElement('div', {className:'eem-header-title'}, title),
+          React.createElement('span', {className:'eem-header-close', onClick:onCancel}, React.createElement(CloseOutlined))
+        ),
+        // Body
+        React.createElement('div', {style:{padding:'16px 20px',display:'grid',gap:14}},
+          // Name
+          React.createElement('div', {className:'eem-form-field'},
+            React.createElement('div', {className:'eem-form-label'}, resolveI18n({en:'Template Name',nl:'Template Naam'},lang), ' *'),
+            React.createElement(Input, {size:'small', value:values.name||'', placeholder:resolveI18n({en:'e.g. Operator, API Service',nl:'bijv. Operator, API Service'},lang),
+              onChange:e=>setValues(prev=>({...prev,name:e.target.value}))}),
+            errors.name && React.createElement('div', {className:'eem-form-error'}, errors.name)
+          ),
+          // Type Key (only on create)
+          mode === 'create' && React.createElement('div', {className:'eem-form-field'},
+            React.createElement('div', {className:'eem-form-label'}, resolveI18n({en:'Type Key (snake_case)',nl:'Type Sleutel (snake_case)'},lang), ' *'),
+            React.createElement(Input, {size:'small', value:values.type_key||'', placeholder:'e.g. operator, api_service',
+              style:{fontFamily:'monospace'},
+              onChange:e=>setValues(prev=>({...prev,type_key:e.target.value.toLowerCase().replace(/\s+/g,'_')}))}),
+            errors.type_key && React.createElement('div', {className:'eem-form-error'}, errors.type_key)
+          ),
+          // Description
+          React.createElement('div', {className:'eem-form-field'},
+            React.createElement('div', {className:'eem-form-label'}, resolveI18n({en:'Description',nl:'Beschrijving'},lang)),
+            React.createElement(Input.TextArea, {size:'small', rows:2, value:values.description||'',
+              placeholder:resolveI18n({en:'What makes this template different?',nl:'Wat maakt dit template anders?'},lang),
+              onChange:e=>setValues(prev=>({...prev,description:e.target.value}))})
+          ),
+          // Extends info (read-only)
+          mode === 'create' && React.createElement('div', {style:{fontSize:10,color:'var(--text-tertiary)',padding:'4px 0',borderTop:'1px solid var(--border)'}},
+            resolveI18n({en:`Extends: ${entityType}:default \u2014 inherits all properties, form groups, and tabs`,
+              nl:`Erft van: ${entityType}:default \u2014 erft alle eigenschappen, formuliergroepen en tabs`},lang)
+          )
+        ),
+        // Footer
+        React.createElement('div', {className:'eem-footer'},
+          React.createElement('span'),
+          React.createElement('div', {style:{display:'flex',gap:8}},
+            React.createElement(Button, {size:'small', onClick:onCancel}, resolveI18n({en:'Cancel',nl:'Annuleren'},lang)),
+            React.createElement(Button, {size:'small', type:'primary', onClick:handleSave},
+              resolveI18n(mode==='create'?{en:'Create',nl:'Aanmaken'}:{en:'Save',nl:'Opslaan'},lang))
+          )
+        )
+      )
+    ),
+    document.body
+  );
+}
+
 function DeveloperStudioPage({t, lang, tab, dsRoute, updateHash}) {
   const [, setTick] = useState(0);
   const rerender = () => setTick(tk => tk+1);
@@ -10531,6 +10647,7 @@ function DeveloperStudioPage({t, lang, tab, dsRoute, updateHash}) {
   const [newTmplData, setNewTmplData] = useState({entity_type:'',type_key:'',name:'',description:'',lifecycle_status:'draft'});
   const [propPickerSearch, setPropPickerSearch] = useState('');
   const [propModalFromPicker, setPropModalFromPicker] = useState(null);
+  const [templateModal, setTemplateModal] = useState({ visible:false, mode:'create', entityType:null, template:null });
   const [previewType, setPreviewType] = useState(null);
   const [previewTab, setPreviewTab] = useState('overview');
   // Phase 3: 3-panel workspace state
@@ -10824,7 +10941,7 @@ function DeveloperStudioPage({t, lang, tab, dsRoute, updateHash}) {
               React.createElement(CopyOutlined,{style:{fontSize:10}})),
             React.createElement('span', {className:'tree-action-btn',title:resolveI18n({en:'Extend (create subtype)',nl:'Uitbreiden (subtype maken)'},lang),
               style:{...treeActionBtnStyle,color:'var(--brand)'},
-              onClick:e=>{e.stopPropagation();handleExtendTemplate(entityType);}},
+              onClick:e=>{e.stopPropagation();setTemplateModal({visible:true,mode:'create',entityType,template:null});}},
               React.createElement(BranchesOutlined,{style:{fontSize:10}}))
           )
         ),
@@ -11154,14 +11271,20 @@ function DeveloperStudioPage({t, lang, tab, dsRoute, updateHash}) {
         columns:cols, dataSource:allTemplates, rowKey:'type_key', lang, searchable:true,
         title:{en:`${resolveI18n(reg?.label,lang)} Templates`,nl:`${resolveI18n(reg?.label,lang)} Templates`},
         onRowClick: row => dsNavigate({type:'subtype', entityType:row.entity_type, typeKey:row.type_key}),
-        addButton:{label:'',onClick:()=>handleExtendTemplate(entityType)},
+        addButton:{label:'',onClick:()=>setTemplateModal({visible:true,mode:'create',entityType,template:null})},
         rowActions:[
-          {key:'edit',icon:React.createElement(EditOutlined,{style:{fontSize:12}}),onClick:row=>dsNavigate({type:'subtype',entityType:row.entity_type,typeKey:row.type_key})},
-          {key:'delete',icon:React.createElement(DeleteOutlined,{style:{fontSize:12}}),danger:true,onClick:row=>{
-            if(!row.extends_key){return;} // can't delete base template
-            Modal.confirm({title:`Delete template "${row.name}"?`,okType:'danger',okText:'Delete',
-              onOk:()=>{EntityTemplateStore.removeTemplate(row.entity_type,row.type_key);rerender();}});
-          }},
+          {key:'edit',icon:React.createElement(EditOutlined,{style:{fontSize:12}}),
+            onClick:row=>setTemplateModal({visible:true,mode:'edit',entityType:row.entity_type,template:row})},
+          {key:'view',icon:React.createElement(EyeOutlined,{style:{fontSize:12}}),
+            onClick:row=>dsNavigate({type:'subtype',entityType:row.entity_type,typeKey:row.type_key})},
+          {key:'delete',icon:React.createElement(DeleteOutlined,{style:{fontSize:12}}),danger:true,
+            onClick:row=>{
+              if(!row.extends_key){Modal.info({title:resolveI18n({en:'Cannot delete base template',nl:'Kan basistemplate niet verwijderen'},lang)});return;}
+              Modal.confirm({title:resolveI18n({en:`Delete "${row.name}"?`,nl:`"${row.name}" verwijderen?`},lang),
+                content:resolveI18n({en:'This template will be permanently removed.',nl:'Dit template wordt permanent verwijderd.'},lang),
+                okType:'danger',okText:resolveI18n({en:'Delete',nl:'Verwijderen'},lang),
+                onOk:()=>{EntityTemplateStore.removeTemplate(row.entity_type,row.type_key);rerender();}});
+            }},
         ],
         emptyIcon:React.createElement(BlockOutlined),
         emptyText:{en:'No templates defined',nl:'Geen templates gedefinieerd'},
@@ -11822,10 +11945,16 @@ function DeveloperStudioPage({t, lang, tab, dsRoute, updateHash}) {
           searchable:true, emptyIcon:React.createElement(InboxOutlined),
           emptyText:{en:'No subtypes defined',nl:'Geen subtypes gedefinieerd'},
           onRowClick: r => { dsNavigate({type:'subtype', entityType:r.entity_type, typeKey:r.type_key}); },
-          addButton:{label:'',onClick:()=>handleExtendTemplate(entityType)},
+          addButton:{label:'',onClick:()=>setTemplateModal({visible:true,mode:'create',entityType,template:null})},
           rowActions:[
+            {key:'edit',icon:React.createElement(EditOutlined,{style:{fontSize:12}}),
+              onClick:row=>setTemplateModal({visible:true,mode:'edit',entityType:row.entity_type,template:row})},
             {key:'delete',icon:React.createElement(DeleteOutlined,{style:{fontSize:12}}),danger:true,onClick:row=>{
-              handleDeleteTemplate(row);
+              if(!row.extends_key){Modal.info({title:resolveI18n({en:'Cannot delete base template',nl:'Kan basistemplate niet verwijderen'},lang)});return;}
+              Modal.confirm({title:resolveI18n({en:`Delete "${row.name}"?`,nl:`"${row.name}" verwijderen?`},lang),
+                content:resolveI18n({en:'This template will be permanently removed.',nl:'Dit template wordt permanent verwijderd.'},lang),
+                okType:'danger',okText:resolveI18n({en:'Delete',nl:'Verwijderen'},lang),
+                onOk:()=>{EntityTemplateStore.removeTemplate(row.entity_type,row.type_key);rerender();}});
             }},
           ],
         })
@@ -12273,12 +12402,12 @@ function DeveloperStudioPage({t, lang, tab, dsRoute, updateHash}) {
         ),
         // Edit + Delete buttons (matching Config pattern)
         React.createElement('div', {style:{display:'flex',gap:4,flexShrink:0}},
-          React.createElement('span', {className:'crud-btn crud-btn-edit', onClick:()=>setTmplEditModal({visible:true, tmpl})},
+          React.createElement('span', {className:'crud-btn crud-btn-edit', onClick:()=>setTemplateModal({visible:true,mode:'edit',entityType:selectedNode.entityType,template:tmpl})},
             React.createElement(EditOutlined, {style:{fontSize:12}})),
           isSubtype && React.createElement('span', {className:'crud-btn crud-btn-delete', onClick:()=>{
             Modal.confirm({
-              title: resolveI18n({en:'Delete template?',nl:'Template verwijderen?'},lang),
-              content: tmpl?.name,
+              title: resolveI18n({en:`Delete "${tmpl?.name}"?`,nl:`"${tmpl?.name}" verwijderen?`},lang),
+              content: resolveI18n({en:'This template will be permanently removed.',nl:'Dit template wordt permanent verwijderd.'},lang),
               okText: resolveI18n({en:'Delete',nl:'Verwijderen'},lang), okType:'danger',
               onOk:()=>{ handleDeleteTemplate(tmpl); dsNavigate({type:'entity', entityType:selectedNode.entityType}); }
             });
@@ -13310,6 +13439,24 @@ function DeveloperStudioPage({t, lang, tab, dsRoute, updateHash}) {
         </div>
       </div>
 
+      {/* Template Create/Edit Modal (base class for all entity types) */}
+      {React.createElement(TemplateCreateModal, {
+        visible: templateModal.visible,
+        mode: templateModal.mode,
+        entityType: templateModal.entityType,
+        template: templateModal.template,
+        lang,
+        onSave: (typeKey) => {
+          const prevMode = templateModal.mode;
+          const prevEntityType = templateModal.entityType;
+          setTemplateModal({visible:false, mode:'create', entityType:null, template:null});
+          rerender();
+          if (prevMode === 'create') {
+            dsNavigate({type:'subtype', entityType:prevEntityType, typeKey});
+          }
+        },
+        onCancel: () => setTemplateModal({visible:false, mode:'create', entityType:null, template:null}),
+      })}
       {/* Template Edit Modal (Phase 4a) */}
       {renderTemplateEditModal()}
       {/* Phase 3: CRUD Modals */}
