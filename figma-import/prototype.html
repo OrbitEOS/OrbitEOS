@@ -10719,7 +10719,7 @@ function DeveloperStudioPage({t, lang, tab, dsRoute, updateHash}) {
           React.createElement('div', {
             className:`ds-group-node ${isGroupActive?'active':''} ${dragOverGroup===group.key?'ds-drop-target':''}`,
             style:{paddingLeft:20},
-            onClick:()=>{ setExpandedGroups(prev=>{const next=new Set(prev);if(!next.has(group.key))next.add(group.key);else next.delete(group.key);return next;}); dsNavigate({type:'dsGroup', groupKey:group.key}); },
+            onClick:()=>{ setExpandedGroups(prev=>{const next=new Set(prev);if(next.has(group.key))next.delete(group.key);else next.add(group.key);return next;}); },
             onDragOver:e=>{e.preventDefault();e.dataTransfer.dropEffect='move';setDragOverGroup(group.key);},
             onDragLeave:()=>{setDragOverGroup(null);},
             onDrop:e=>{e.preventDefault();const et=e.dataTransfer.getData('text/plain');if(et){setDsTreeOrder(prev=>{const next=prev.map(g=>({...g,items:g.items.filter(i=>i!==et)}));const tg=next.find(g=>g.key===group.key);if(tg&&!tg.items.includes(et))tg.items.push(et);return next;});}setDragOverGroup(null);}
