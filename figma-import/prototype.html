@@ -7881,10 +7881,18 @@ function EntityEditModal({ visible, mode, entityType, entityId, parentId, onSave
     return group ? group.resolvedProperties.map(resolvedPropertyToField) : [];
   };
 
+  const [typeKeyManuallyEdited, setTypeKeyManuallyEdited] = useState(false);
+
   const handleChange = (key, val) => {
     setValues(prev => {
       const next = JSON.parse(JSON.stringify(prev));
       setNestedValue(next, key, val);
+      // Auto-generate type_key from name (unless manually edited)
+      if (key === 'name' && mode === 'create' && !typeKeyManuallyEdited) {
+        const autoKey = (val||'').trim().toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'');
+        setNestedValue(next, 'properties.type_key', autoKey);
+      }
+      if (key === 'properties.type_key') setTypeKeyManuallyEdited(true);
       return next;
     });
     setDirty(true);
@@ -9432,13 +9440,23 @@ function PropertyEditModal({ mode, def, lang, onSave, onCancel }) {
   const groups = PropertyCatalogStore.getGroups();
   const entityTypes = Object.keys(ENTITY_TYPE_REGISTRY);
 
+  const [keyManuallyEdited, setKeyManuallyEdited] = useState(mode === 'edit');
+
   const handleChange = (key, val) => {
     setValues(prev => {
       const n = {...prev};
       if (key.includes('.')) { setNestedValue(n, key, val); }
       else { n[key] = val; }
-      if (key === 'key') n.entity_path = `properties.${val}`;
-      if (key === 'name') n.i18n = {...(n.i18n||{}), en: val};
+      // Auto-generate key from name (unless manually edited)
+      if (key === 'name') {
+        n.i18n = {...(n.i18n||{}), en: val};
+        if (!keyManuallyEdited) {
+          const autoKey = (val||'').trim().toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'');
+          n.key = autoKey;
+          n.entity_path = `properties.${autoKey}`;
+        }
+      }
+      if (key === 'key') { n.entity_path = `properties.${val}`; setKeyManuallyEdited(true); }
       return n;
     });
   };
