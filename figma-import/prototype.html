@@ -1742,6 +1742,208 @@ const ROLE_DEFINITIONS = RoleStore.getAll().map(r => ({
   }
 }));
 
+// ─── PrivilegeCatalogStore (Privilege definitions + groups — parallel to PropertyCatalogStore) ───
+// Single source of truth for ALL privilege metadata. Privilege groups compose privileges
+// into logical bundles (by app x action level). Role templates compose privilege groups.
+// ═══════════════════════════════════════════════════════════════════════════════════════
+const PrivilegeCatalogStore = (() => {
+  const _definitions = new Map(); // key → privilege definition
+  const _groups = new Map(); // key → privilege group
+  const _listeners = [];
+
+  function _notify() { _listeners.forEach(fn => fn()); }
+  function subscribe(fn) { _listeners.push(fn); return () => { const i = _listeners.indexOf(fn); if (i >= 0) _listeners.splice(i, 1); }; }
+
+  // ── Definition API ──
+  function putDefinition(def) { _definitions.set(def.key, def); _notify(); }
+  function getDefinition(key) { return _definitions.get(key); }
+  function getDefinitions() { return Array.from(_definitions.values()); }
+  function getByApp(app) { return getDefinitions().filter(d => d.app === app); }
+  function getByGroup(groupKey) { return getDefinitions().filter(d => d.group_key === groupKey); }
+  function removeDefinition(key) { _definitions.delete(key); _notify(); }
+
+  // ── Group API (hybrid: app + action level) ──
+  function putGroup(group) { _groups.set(group.key, group); _notify(); }
+  function getGroup(key) { return _groups.get(key); }
+  function getGroups() { return Array.from(_groups.values()); }
+  function getGroupsByApp(app) { return getGroups().filter(g => g.app === app); }
+  function removeGroup(key) { _groups.delete(key); _notify(); }
+
+  return { putDefinition, getDefinition, getDefinitions, getByApp, getByGroup, removeDefinition,
+    putGroup, getGroup, getGroups, getGroupsByApp, removeGroup, subscribe };
+})();
+
+// ── Seed: Convert existing privileges to catalog definitions ──
+PrivilegeStore.getAll().forEach(p => {
+  PrivilegeCatalogStore.putDefinition({
+    key: p.id,
+    name: `${p.resource} ${p.action}`,
+    i18n: {en: `${p.resource.replace(/-/g,' ')} — ${p.action}`, nl: `${p.resource.replace(/-/g,' ')} — ${p.action}`},
+    description: '',
+    app: p.appId,
+    resource: p.resource,
+    action: p.action,
+    group_key: null, // assigned when groups are created
+    lifecycle_status: 'active',
+  });
+});
+
+// ── Seed: Privilege Groups (hybrid: by app x action level) ──
+// Dashboard groups
+PrivilegeCatalogStore.putGroup({
+  key:'dashboard.viewer', name:'Dashboard Viewer', i18n:{en:'Dashboard Viewer',nl:'Dashboard Kijker'},
+  app:'dashboard', level:'viewer', icon:'EyeOutlined',
+  description:{en:'View dashboard, fleet, and energy data',nl:'Bekijk dashboard, vloot en energiegegevens'},
+  privilege_keys: PrivilegeCatalogStore.getByApp('dashboard').filter(p=>p.action==='view').map(p=>p.key),
+});
+PrivilegeCatalogStore.putGroup({
+  key:'dashboard.editor', name:'Dashboard Editor', i18n:{en:'Dashboard Editor',nl:'Dashboard Bewerker'},
+  app:'dashboard', level:'editor', icon:'EditOutlined',
+  description:{en:'Edit devices, rules, and energy settings',nl:'Bewerk apparaten, regels en energie-instellingen'},
+  privilege_keys: PrivilegeCatalogStore.getByApp('dashboard').filter(p=>['view','create','edit'].includes(p.action)).map(p=>p.key),
+});
+PrivilegeCatalogStore.putGroup({
+  key:'dashboard.manager', name:'Dashboard Manager', i18n:{en:'Dashboard Manager',nl:'Dashboard Beheerder'},
+  app:'dashboard', level:'manager', icon:'SettingOutlined',
+  description:{en:'Full dashboard access including delete and manage',nl:'Volledige dashboard-toegang inclusief verwijderen en beheren'},
+  privilege_keys: PrivilegeCatalogStore.getByApp('dashboard').map(p=>p.key),
+});
+
+// Configuration groups
+PrivilegeCatalogStore.putGroup({
+  key:'config.viewer', name:'Config Viewer', i18n:{en:'Config Viewer',nl:'Configuratie Kijker'},
+  app:'configuration', level:'viewer', icon:'EyeOutlined',
+  description:{en:'View entity configuration and settings',nl:'Bekijk entiteitconfiguratie en instellingen'},
+  privilege_keys: PrivilegeCatalogStore.getByApp('configuration').filter(p=>p.action==='view').map(p=>p.key),
+});
+PrivilegeCatalogStore.putGroup({
+  key:'config.editor', name:'Config Editor', i18n:{en:'Config Editor',nl:'Configuratie Bewerker'},
+  app:'configuration', level:'editor', icon:'EditOutlined',
+  description:{en:'Create and edit entities and settings',nl:'Maak en bewerk entiteiten en instellingen'},
+  privilege_keys: PrivilegeCatalogStore.getByApp('configuration').filter(p=>['view','create','edit'].includes(p.action)).map(p=>p.key),
+});
+PrivilegeCatalogStore.putGroup({
+  key:'config.admin', name:'Config Admin', i18n:{en:'Config Admin',nl:'Configuratie Beheerder'},
+  app:'configuration', level:'admin', icon:'SettingOutlined',
+  description:{en:'Full configuration access including user management',nl:'Volledige configuratie-toegang inclusief gebruikersbeheer'},
+  privilege_keys: PrivilegeCatalogStore.getByApp('configuration').map(p=>p.key),
+});
+
+// Alarm groups
+PrivilegeCatalogStore.putGroup({
+  key:'alarms.viewer', name:'Alarm Viewer', i18n:{en:'Alarm Viewer',nl:'Alarm Kijker'},
+  app:'alarms', level:'viewer', icon:'EyeOutlined',
+  description:{en:'View alerts and history',nl:'Bekijk meldingen en geschiedenis'},
+  privilege_keys: PrivilegeCatalogStore.getByApp('alarms').filter(p=>p.action==='view').map(p=>p.key),
+});
+PrivilegeCatalogStore.putGroup({
+  key:'alarms.manager', name:'Alarm Manager', i18n:{en:'Alarm Manager',nl:'Alarm Beheerder'},
+  app:'alarms', level:'manager', icon:'SettingOutlined',
+  description:{en:'Full alarm management including rules',nl:'Volledig alarmbeheer inclusief regels'},
+  privilege_keys: PrivilegeCatalogStore.getByApp('alarms').map(p=>p.key),
+});
+
+// Map groups
+PrivilegeCatalogStore.putGroup({
+  key:'map.viewer', name:'Map Viewer', i18n:{en:'Map Viewer',nl:'Kaart Kijker'},
+  app:'map', level:'viewer', icon:'EyeOutlined',
+  description:{en:'View site map and layers',nl:'Bekijk locatiekaart en lagen'},
+  privilege_keys: PrivilegeCatalogStore.getByApp('map').filter(p=>p.action==='view').map(p=>p.key),
+});
+PrivilegeCatalogStore.putGroup({
+  key:'map.editor', name:'Map Editor', i18n:{en:'Map Editor',nl:'Kaart Bewerker'},
+  app:'map', level:'editor', icon:'EditOutlined',
+  description:{en:'Edit map layers',nl:'Bewerk kaartlagen'},
+  privilege_keys: PrivilegeCatalogStore.getByApp('map').map(p=>p.key),
+});
+
+// Marketplace groups
+PrivilegeCatalogStore.putGroup({
+  key:'marketplace.viewer', name:'Marketplace Viewer', i18n:{en:'Marketplace Viewer',nl:'Marktplaats Kijker'},
+  app:'marketplace', level:'viewer', icon:'EyeOutlined',
+  description:{en:'View marketplace apps and integrations',nl:'Bekijk marktplaats-apps en integraties'},
+  privilege_keys: PrivilegeCatalogStore.getByApp('marketplace').filter(p=>p.action==='view').map(p=>p.key),
+});
+PrivilegeCatalogStore.putGroup({
+  key:'marketplace.admin', name:'Marketplace Admin', i18n:{en:'Marketplace Admin',nl:'Marktplaats Beheerder'},
+  app:'marketplace', level:'admin', icon:'SettingOutlined',
+  description:{en:'Full marketplace access',nl:'Volledige marktplaats-toegang'},
+  privilege_keys: PrivilegeCatalogStore.getByApp('marketplace').map(p=>p.key),
+});
+
+// Developer Studio groups
+PrivilegeCatalogStore.putGroup({
+  key:'devstudio.viewer', name:'Studio Viewer', i18n:{en:'Studio Viewer',nl:'Studio Kijker'},
+  app:'developerStudio', level:'viewer', icon:'EyeOutlined',
+  description:{en:'View templates and properties',nl:'Bekijk templates en eigenschappen'},
+  privilege_keys: PrivilegeCatalogStore.getByApp('developerStudio').filter(p=>p.action==='view').map(p=>p.key),
+});
+PrivilegeCatalogStore.putGroup({
+  key:'devstudio.admin', name:'Studio Admin', i18n:{en:'Studio Admin',nl:'Studio Beheerder'},
+  app:'developerStudio', level:'admin', icon:'SettingOutlined',
+  description:{en:'Full Developer Studio access',nl:'Volledige Developer Studio-toegang'},
+  privilege_keys: PrivilegeCatalogStore.getByApp('developerStudio').map(p=>p.key),
+});
+
+// System groups (from SysPermStore)
+PrivilegeCatalogStore.putGroup({
+  key:'system.api', name:'API Access', i18n:{en:'API Access',nl:'API Toegang'},
+  app:'system', level:'api', icon:'ApiOutlined',
+  description:{en:'REST API read/write access',nl:'REST API lees/schrijf-toegang'},
+  privilege_keys: ['sys.api.read','sys.api.write'],
+});
+PrivilegeCatalogStore.putGroup({
+  key:'system.messaging', name:'Messaging Access', i18n:{en:'Messaging Access',nl:'Berichttoegang'},
+  app:'system', level:'messaging', icon:'MessageOutlined',
+  description:{en:'MQTT and WebSocket access',nl:'MQTT en WebSocket-toegang'},
+  privilege_keys: ['sys.mqtt.subscribe','sys.mqtt.publish','sys.ws.connect'],
+});
+PrivilegeCatalogStore.putGroup({
+  key:'system.automation', name:'Automation Access', i18n:{en:'Automation Access',nl:'Automatiseringstoegang'},
+  app:'system', level:'automation', icon:'ThunderboltOutlined',
+  description:{en:'Execute MCP tools and flows',nl:'Voer MCP-tools en stromen uit'},
+  privilege_keys: ['sys.mcp.execute','sys.flows.execute','sys.flows.deploy'],
+});
+PrivilegeCatalogStore.putGroup({
+  key:'system.admin', name:'System Admin', i18n:{en:'System Admin',nl:'Systeembeheerder'},
+  app:'system', level:'admin', icon:'SettingOutlined',
+  description:{en:'Full system administration',nl:'Volledig systeembeheer'},
+  privilege_keys: SysPermStore.getAll().map(s=>s.id),
+});
+
+// ── Assign group_key back to definitions ──
+PrivilegeCatalogStore.getGroups().forEach(g => {
+  (g.privilege_keys||[]).forEach(pk => {
+    const def = PrivilegeCatalogStore.getDefinition(pk);
+    if (def && !def.group_key) { def.group_key = g.key; }
+  });
+});
+
+// ── Add privilege_groups to existing roles ──
+RoleStore.getAll().forEach(r => {
+  if (r.id === 'role-platform-admin') {
+    r.privilege_groups = PrivilegeCatalogStore.getGroups().map(g => g.key);
+  } else if (r.id === 'role-account-admin') {
+    r.privilege_groups = ['dashboard.manager','config.admin','alarms.manager','map.editor','marketplace.admin','devstudio.viewer','system.api','system.messaging'];
+  } else if (r.id === 'role-regional-admin') {
+    r.privilege_groups = ['dashboard.editor','config.editor','alarms.viewer','map.editor','system.api'];
+  } else if (r.id === 'role-site-admin') {
+    r.privilege_groups = ['dashboard.manager','config.editor','alarms.manager','system.api','system.messaging'];
+  } else if (r.id === 'role-operator') {
+    r.privilege_groups = ['dashboard.viewer','config.viewer','alarms.viewer','map.viewer','system.api'];
+  } else if (r.id === 'role-installer') {
+    r.privilege_groups = ['dashboard.editor','config.editor','system.api','system.messaging'];
+  } else if (r.id === 'role-viewer') {
+    r.privilege_groups = ['dashboard.viewer','config.viewer','alarms.viewer','map.viewer'];
+  } else if (r.id === 'role-api-user') {
+    r.privilege_groups = ['dashboard.editor','alarms.viewer','system.api','system.automation'];
+  } else {
+    r.privilege_groups = [];
+  }
+});
+
+console.log(`PrivilegeCatalogStore: ${PrivilegeCatalogStore.getDefinitions().length} definitions, ${PrivilegeCatalogStore.getGroups().length} groups`);
+
 // ─── Seed: Users ───
 const USER_SEEDS = [
   { id:'user-jan', name:'Jan de Vries', email:'jan@orbiteos.com', password:'orbit2026', role:'Platform Admin', accountId:null,
@@ -8318,6 +8520,27 @@ function RolePrivilegePanel({ role, apps, lang, togglePriv, toggleSysPerm, scope
   scopeUsers.forEach(su => { roleCounts[su.role] = (roleCounts[su.role] || 0) + 1; });
   return (
     <div>
+      {/* Privilege Groups (from PrivilegeCatalogStore) */}
+      {(role.privilege_groups||[]).length > 0 && (
+        <div style={{marginBottom:10,paddingBottom:8,borderBottom:'1px solid var(--border)'}}>
+          <div style={{fontSize:10,fontWeight:600,color:'var(--text-secondary)',textTransform:'uppercase',letterSpacing:'0.05em',marginBottom:6}}>
+            {lang==='nl'?'Rechtengroepen':'Privilege Groups'}
+          </div>
+          <div style={{display:'flex',gap:4,flexWrap:'wrap'}}>
+            {(role.privilege_groups||[]).map(gk => {
+              const grp = PrivilegeCatalogStore.getGroup(gk);
+              if (!grp) return React.createElement(Tag,{key:gk,color:'red',style:{margin:0,fontSize:9}},gk);
+              const Icon = window[grp.icon]||LockOutlined;
+              return React.createElement(Tooltip,{key:gk,title:(resolveI18n(grp.description,lang)||'')+'  ('+((grp.privilege_keys||[]).length)+' privileges)'},
+                React.createElement(Tag,{color:grp.level==='viewer'?'green':grp.level==='editor'?'blue':grp.level==='manager'||grp.level==='admin'?'orange':'default',
+                  style:{margin:0,fontSize:9,display:'inline-flex',alignItems:'center',gap:3}},
+                  React.createElement(Icon,{style:{fontSize:9}}),
+                  resolveI18n(grp.i18n,lang)||grp.name)
+              );
+            })}
+          </div>
+        </div>
+      )}
       {apps.map(app => {
         const appPrivs = PrivilegeStore.getByApp(app.id);
         if (appPrivs.length === 0) return null;
@@ -10147,7 +10370,7 @@ function DeveloperStudioPage({t, lang, tab, dsRoute, updateHash}) {
     { key:'org', name:{en:'Organization',nl:'Organisatie',de:'Organisation'}, icon:'TeamOutlined', items:['account','subAccount'] },
     { key:'infra', name:{en:'Infrastructure',nl:'Infrastructuur',de:'Infrastruktur'}, icon:'HomeOutlined', items:['site','deviceGroup'] },
     { key:'devices', name:{en:'Devices',nl:'Apparaten',de:'Geraete'}, icon:'HddOutlined', items:['device','sensor','actuator'] },
-    { key:'access', name:{en:'Access Control',nl:'Toegangsbeheer',de:'Zugriffskontrolle'}, icon:'LockOutlined', items:['role'] },
+    { key:'access', name:{en:'Access Control',nl:'Toegangsbeheer',de:'Zugriffskontrolle'}, icon:'LockOutlined', items:['_privileges','_privilegeGroups','_roleTemplates','role'] },
   ]);
   const [expandedGroups, setExpandedGroups] = useState(new Set(['org','infra','devices','access']));
   // Collapsed subtypes by default — expand per entity type
@@ -10186,6 +10409,9 @@ function DeveloperStudioPage({t, lang, tab, dsRoute, updateHash}) {
     else if (node.type === 'block') updateHash('/developer-studio/block/' + node.groupKey);
     else if (node.type === 'property') updateHash('/developer-studio/props/' + (node.groupKey || 'misc') + '/' + node.propKey);
     else if (node.type === 'dsGroup') updateHash('/developer-studio/group/' + node.groupKey);
+    else if (node.type === '_privileges') updateHash('/developer-studio/privileges');
+    else if (node.type === '_privilegeGroups') updateHash('/developer-studio/privilege-groups');
+    else if (node.type === '_roleTemplates') updateHash('/developer-studio/role-templates');
   };
 
   // Template edit modal save handler
@@ -10491,7 +10717,9 @@ function DeveloperStudioPage({t, lang, tab, dsRoute, updateHash}) {
       if (treeSearch) {
         const q = treeSearch.toLowerCase();
         const groupNameMatch = (resolveI18n(group.name,lang)||'').toLowerCase().includes(q);
+        const specialLabels = {_privileges:'privileges rechten',_privilegeGroups:'privilege groups rechtengroepen',_roleTemplates:'role templates rolsjablonen'};
         const anyItemMatch = group.items.some(et => {
+          if (specialLabels[et]) return et.toLowerCase().includes(q) || specialLabels[et].includes(q);
           const reg = ENTITY_TYPE_REGISTRY[et];
           return et.toLowerCase().includes(q) || (resolveI18n(reg?.label,lang)||'').toLowerCase().includes(q);
         });
@@ -10529,7 +10757,43 @@ function DeveloperStudioPage({t, lang, tab, dsRoute, updateHash}) {
             )
           ),
           // Group children (entity types)
-          isGroupExpanded && group.items.map(entityType => renderEntityNode(entityType, 2))
+          isGroupExpanded && group.items.map(entityType => {
+            // Handle special privilege/role catalog items (prefixed with _)
+            if (entityType === '_privileges') {
+              const count = PrivilegeCatalogStore.getDefinitions().length;
+              const isActive = selectedNode.type === '_privileges';
+              return React.createElement('div', {key:'_privileges', className:`ds-tree-item ${isActive?'active':''}`,
+                style:{paddingLeft:32,cursor:'pointer'},
+                onClick:()=>dsNavigate({type:'_privileges'})},
+                React.createElement(KeyOutlined||LockOutlined, {style:{fontSize:11,color:'var(--warning)'}}),
+                resolveI18n({en:'Privileges',nl:'Rechten'},lang),
+                React.createElement('span', {className:'ds-count'}, count)
+              );
+            }
+            if (entityType === '_privilegeGroups') {
+              const count = PrivilegeCatalogStore.getGroups().length;
+              const isActive = selectedNode.type === '_privilegeGroups';
+              return React.createElement('div', {key:'_privilegeGroups', className:`ds-tree-item ${isActive?'active':''}`,
+                style:{paddingLeft:32,cursor:'pointer'},
+                onClick:()=>dsNavigate({type:'_privilegeGroups'})},
+                React.createElement(KeyOutlined||LockOutlined, {style:{fontSize:11,color:'var(--info)'}}),
+                resolveI18n({en:'Privilege Groups',nl:'Rechtengroepen'},lang),
+                React.createElement('span', {className:'ds-count'}, count)
+              );
+            }
+            if (entityType === '_roleTemplates') {
+              const count = RoleStore.getAll().length;
+              const isActive = selectedNode.type === '_roleTemplates';
+              return React.createElement('div', {key:'_roleTemplates', className:`ds-tree-item ${isActive?'active':''}`,
+                style:{paddingLeft:32,cursor:'pointer'},
+                onClick:()=>dsNavigate({type:'_roleTemplates'})},
+                React.createElement(SafetyCertificateOutlined, {style:{fontSize:11,color:'var(--success)'}}),
+                resolveI18n({en:'Role Templates',nl:'Rolsjablonen'},lang),
+                React.createElement('span', {className:'ds-count'}, count)
+              );
+            }
+            return renderEntityNode(entityType, 2);
+          })
         )
       );
     });
@@ -10687,6 +10951,27 @@ function DeveloperStudioPage({t, lang, tab, dsRoute, updateHash}) {
         React.createElement(GroupIcon,{style:{fontSize:14,color:'var(--text-tertiary)'}}),
         React.createElement('span',{style:{fontWeight:600,fontSize:13}},resolveI18n(group?.name,lang)||selectedNode.groupKey),
         React.createElement('span',{style:{fontSize:10,color:'var(--text-tertiary)'}},'('+resolveI18n({en:'group',nl:'groep'},lang)+')')
+      );
+    }
+    if (selectedNode.type === '_privileges') {
+      return React.createElement(React.Fragment,null,
+        React.createElement(KeyOutlined||LockOutlined,{style:{fontSize:14,color:'var(--warning)'}}),
+        React.createElement('span',{style:{fontWeight:600,fontSize:13}},resolveI18n({en:'Privileges',nl:'Rechten'},lang)),
+        React.createElement('span',{style:{fontSize:10,color:'var(--text-tertiary)'}},'('+PrivilegeCatalogStore.getDefinitions().length+')')
+      );
+    }
+    if (selectedNode.type === '_privilegeGroups') {
+      return React.createElement(React.Fragment,null,
+        React.createElement(KeyOutlined||LockOutlined,{style:{fontSize:14,color:'var(--info)'}}),
+        React.createElement('span',{style:{fontWeight:600,fontSize:13}},resolveI18n({en:'Privilege Groups',nl:'Rechtengroepen'},lang)),
+        React.createElement('span',{style:{fontSize:10,color:'var(--text-tertiary)'}},'('+PrivilegeCatalogStore.getGroups().length+')')
+      );
+    }
+    if (selectedNode.type === '_roleTemplates') {
+      return React.createElement(React.Fragment,null,
+        React.createElement(SafetyCertificateOutlined,{style:{fontSize:14,color:'var(--success)'}}),
+        React.createElement('span',{style:{fontWeight:600,fontSize:13}},resolveI18n({en:'Role Templates',nl:'Rolsjablonen'},lang)),
+        React.createElement('span',{style:{fontSize:10,color:'var(--text-tertiary)'}},'('+RoleStore.getAll().length+')')
       );
     }
     return null;
@@ -11373,6 +11658,15 @@ function DeveloperStudioPage({t, lang, tab, dsRoute, updateHash}) {
       const def = PropertyCatalogStore.getDefinition(selectedNode.propKey);
       return React.createElement(CodeViewer, { value:def, title:{en:'Property Definition',nl:'Eigenschap Definitie'}, lang, collapsible:false });
     }
+    if (selectedNode.type === '_privileges') {
+      return React.createElement(CodeViewer, { value:PrivilegeCatalogStore.getDefinitions(), title:{en:'All Privilege Definitions',nl:'Alle Rechtdefinities'}, lang, collapsible:false });
+    }
+    if (selectedNode.type === '_privilegeGroups') {
+      return React.createElement(CodeViewer, { value:PrivilegeCatalogStore.getGroups(), title:{en:'All Privilege Groups',nl:'Alle Rechtengroepen'}, lang, collapsible:false });
+    }
+    if (selectedNode.type === '_roleTemplates') {
+      return React.createElement(CodeViewer, { value:RoleStore.getAll().map(r=>({...r,privilege_groups:r.privilege_groups||[]})), title:{en:'All Role Templates',nl:'Alle Rolsjablonen'}, lang, collapsible:false });
+    }
     return null;
   }
 
@@ -11407,6 +11701,18 @@ function DeveloperStudioPage({t, lang, tab, dsRoute, updateHash}) {
     if (selectedNode.type === 'dsGroup') {
       const group = dsTreeOrder.find(g => g.key === selectedNode.groupKey);
       crumbs.push({ label: resolveI18n(group?.name,lang) || selectedNode.groupKey });
+    }
+    if (selectedNode.type === '_privileges') {
+      crumbs.push({ label: resolveI18n({en:'Access Control',nl:'Toegangsbeheer'},lang) });
+      crumbs.push({ label: resolveI18n({en:'Privileges',nl:'Rechten'},lang) });
+    }
+    if (selectedNode.type === '_privilegeGroups') {
+      crumbs.push({ label: resolveI18n({en:'Access Control',nl:'Toegangsbeheer'},lang) });
+      crumbs.push({ label: resolveI18n({en:'Privilege Groups',nl:'Rechtengroepen'},lang) });
+    }
+    if (selectedNode.type === '_roleTemplates') {
+      crumbs.push({ label: resolveI18n({en:'Access Control',nl:'Toegangsbeheer'},lang) });
+      crumbs.push({ label: resolveI18n({en:'Role Templates',nl:'Rolsjablonen'},lang) });
     }
     return React.createElement('div', {className:'config-breadcrumb'},
       crumbs.map((c,i) => React.createElement(React.Fragment, {key:i},
@@ -11541,6 +11847,48 @@ function DeveloperStudioPage({t, lang, tab, dsRoute, updateHash}) {
         )
       );
     }
+    if (selectedNode.type === '_privileges') {
+      return React.createElement('div', {className:'config-detail-header'},
+        React.createElement('div', {className:'config-entity-icon'}, React.createElement(KeyOutlined||LockOutlined, {style:{fontSize:16,color:'var(--warning)'}})),
+        React.createElement('div', {style:{flex:1,minWidth:0}},
+          React.createElement('div', {style:{display:'flex',alignItems:'center',gap:8}},
+            React.createElement('span', {className:'config-entity-name'}, resolveI18n({en:'Privileges',nl:'Rechten'},lang)),
+            React.createElement('span', {className:'config-entity-type'}, resolveI18n({en:'catalog',nl:'catalogus'},lang)),
+            React.createElement('span', {style:{fontSize:10,color:'var(--text-tertiary)'}}, PrivilegeCatalogStore.getDefinitions().length+' '+resolveI18n({en:'definitions',nl:'definities'},lang))
+          ),
+          React.createElement('div', {style:{fontSize:10,color:'var(--text-tertiary)',marginTop:2}},
+            resolveI18n({en:'Atomic privilege definitions — the smallest unit of access control',nl:'Atomaire rechtdefinities — de kleinste eenheid van toegangsbeheer'},lang))
+        )
+      );
+    }
+    if (selectedNode.type === '_privilegeGroups') {
+      return React.createElement('div', {className:'config-detail-header'},
+        React.createElement('div', {className:'config-entity-icon'}, React.createElement(KeyOutlined||LockOutlined, {style:{fontSize:16,color:'var(--info)'}})),
+        React.createElement('div', {style:{flex:1,minWidth:0}},
+          React.createElement('div', {style:{display:'flex',alignItems:'center',gap:8}},
+            React.createElement('span', {className:'config-entity-name'}, resolveI18n({en:'Privilege Groups',nl:'Rechtengroepen'},lang)),
+            React.createElement('span', {className:'config-entity-type'}, resolveI18n({en:'catalog',nl:'catalogus'},lang)),
+            React.createElement('span', {style:{fontSize:10,color:'var(--text-tertiary)'}}, PrivilegeCatalogStore.getGroups().length+' '+resolveI18n({en:'groups',nl:'groepen'},lang))
+          ),
+          React.createElement('div', {style:{fontSize:10,color:'var(--text-tertiary)',marginTop:2}},
+            resolveI18n({en:'Hybrid privilege bundles grouped by app and action level',nl:'Hybride rechtenbundels gegroepeerd per app en actieniveau'},lang))
+        )
+      );
+    }
+    if (selectedNode.type === '_roleTemplates') {
+      return React.createElement('div', {className:'config-detail-header'},
+        React.createElement('div', {className:'config-entity-icon'}, React.createElement(SafetyCertificateOutlined, {style:{fontSize:16,color:'var(--success)'}})),
+        React.createElement('div', {style:{flex:1,minWidth:0}},
+          React.createElement('div', {style:{display:'flex',alignItems:'center',gap:8}},
+            React.createElement('span', {className:'config-entity-name'}, resolveI18n({en:'Role Templates',nl:'Rolsjablonen'},lang)),
+            React.createElement('span', {className:'config-entity-type'}, resolveI18n({en:'catalog',nl:'catalogus'},lang)),
+            React.createElement('span', {style:{fontSize:10,color:'var(--text-tertiary)'}}, RoleStore.getAll().length+' '+resolveI18n({en:'roles',nl:'rollen'},lang))
+          ),
+          React.createElement('div', {style:{fontSize:10,color:'var(--text-tertiary)',marginTop:2}},
+            resolveI18n({en:'Role definitions composed from privilege groups — assigned to users',nl:'Roldefinities samengesteld uit rechtengroepen — toegewezen aan gebruikers'},lang))
+        )
+      );
+    }
     return null;
   }
 
@@ -11623,6 +11971,319 @@ function DeveloperStudioPage({t, lang, tab, dsRoute, updateHash}) {
         emptyText:{en:'No form groups defined',nl:'Geen formuliergroepen gedefinieerd'},
       })
     );
+  }
+
+  // ══════════════════════════════════════════════════════════
+  // Privilege Catalog Views (parallel to Property Catalog)
+  // ══════════════════════════════════════════════════════════
+
+  // ── 6. Privilege Catalog View ──
+  function renderPrivilegeCatalogView() {
+    const allPrivDefs = PrivilegeCatalogStore.getDefinitions();
+    const allPrivGroups = PrivilegeCatalogStore.getGroups();
+    const privTabs = [
+      { key:'overview', label:resolveI18n({en:'Overview',nl:'Overzicht'},lang), desc:resolveI18n({en:'Privilege catalog summary and stats',nl:'Rechtencatalogus samenvatting en statistieken'},lang) },
+      { key:'allPrivileges', label:`${resolveI18n({en:'All Privileges',nl:'Alle Rechten'},lang)} (${allPrivDefs.length})`, desc:resolveI18n({en:'Every privilege definition in the catalog',nl:'Elke rechtdefinitie in de catalogus'},lang) },
+    ];
+    return React.createElement(Tabs, {
+      activeKey:entityDetailTab==='general'||entityDetailTab==='preview'?'overview':entityDetailTab, onChange:setEntityDetailTab,
+      style:{padding:'0 20px'}, size:'small',
+      items: privTabs.map(tab => ({
+        key:tab.key,
+        label: React.createElement('div', {style:{lineHeight:1.2}},
+          React.createElement('span', null, tab.label),
+          React.createElement('div', {style:{fontSize:9,color:'var(--text-tertiary)',fontWeight:400,marginTop:1}}, tab.desc)
+        ),
+        children: tab.key === 'overview'
+          ? React.createElement('div', {style:{padding:16,display:'grid',gap:16}},
+              React.createElement('div', {style:{display:'flex',gap:16,flexWrap:'wrap'}},
+                React.createElement(StatCard, {label:resolveI18n({en:'Privileges',nl:'Rechten'},lang),value:allPrivDefs.length,color:'var(--warning)'}),
+                React.createElement(StatCard, {label:resolveI18n({en:'Groups',nl:'Groepen'},lang),value:allPrivGroups.length,color:'var(--info)'}),
+                React.createElement(StatCard, {label:resolveI18n({en:'Apps',nl:'Apps'},lang),value:[...new Set(allPrivDefs.map(d=>d.app))].length,color:'var(--brand)'}),
+                React.createElement(StatCard, {label:resolveI18n({en:'Roles using groups',nl:'Rollen met groepen'},lang),value:RoleStore.getAll().filter(r=>(r.privilege_groups||[]).length>0).length,color:'var(--success)'})
+              ),
+              // Per-app breakdown
+              React.createElement('div', {style:{fontSize:12,fontWeight:600,color:'var(--text-primary)',marginTop:8}}, resolveI18n({en:'Privileges by App',nl:'Rechten per App'},lang)),
+              React.createElement('div', {style:{display:'grid',gap:8}},
+                [...new Set(allPrivDefs.map(d=>d.app))].map(app => {
+                  const appDefs = allPrivDefs.filter(d=>d.app===app);
+                  const appGroups = allPrivGroups.filter(g=>g.app===app);
+                  return React.createElement('div', {key:app, style:{padding:'8px 12px',background:'var(--bg-secondary)',borderRadius:6,border:'1px solid var(--border)',display:'flex',alignItems:'center',gap:12}},
+                    React.createElement('span', {style:{fontWeight:600,fontSize:11,color:'var(--text-primary)',minWidth:120,textTransform:'capitalize'}}, app),
+                    React.createElement(Tag, {color:'orange',style:{margin:0,fontSize:9}}, appDefs.length+' '+resolveI18n({en:'privileges',nl:'rechten'},lang)),
+                    React.createElement(Tag, {color:'blue',style:{margin:0,fontSize:9}}, appGroups.length+' '+resolveI18n({en:'groups',nl:'groepen'},lang)),
+                    React.createElement('span', {style:{fontSize:10,color:'var(--text-tertiary)',marginLeft:'auto'}},
+                      [...new Set(appDefs.map(d=>d.resource))].join(', '))
+                  );
+                })
+              )
+            )
+          : React.createElement('div', {style:{padding:16}},
+              React.createElement(EntityList, {
+                columns: [
+                  {key:'key', label:{en:'Key',nl:'Sleutel'}, sortable:true, render:(_,r)=>React.createElement('span',{style:{fontFamily:'monospace',color:'var(--warning)',fontWeight:600,fontSize:11}},r.key)},
+                  {key:'app', label:{en:'App',nl:'App'}, sortable:true, filterable:true, getValue:r=>r.app},
+                  {key:'resource', label:{en:'Resource',nl:'Bron'}, sortable:true, getValue:r=>r.resource},
+                  {key:'action', label:{en:'Action',nl:'Actie'}, sortable:true, filterable:true, getValue:r=>r.action,
+                    render:(_,r)=>React.createElement(ActionBadge,{action:r.action,active:true})},
+                  {key:'group', label:{en:'Group',nl:'Groep'}, sortable:true, getValue:r=>r.group_key||'\u2014',
+                    render:(_,r)=>r.group_key?React.createElement(Tag,{color:'blue',style:{margin:0,fontSize:9}},r.group_key):'\u2014'},
+                  {key:'lifecycle', label:{en:'Status',nl:'Status'}, getValue:r=>r.lifecycle_status,
+                    render:(_,r)=>React.createElement(Tag,{color:lifecycleColor(r.lifecycle_status),style:{margin:0,fontSize:9}},lifecycleI18n(r.lifecycle_status||'active'))},
+                ],
+                dataSource: allPrivDefs, rowKey:'key', lang,
+                title: resolveI18n({en:'All Privileges',nl:'Alle Rechten'},lang),
+                searchable:true, emptyIcon:React.createElement(InboxOutlined),
+                emptyText:{en:'No privileges defined',nl:'Geen rechten gedefinieerd'},
+                addButton:{label:'',onClick:()=>{
+                  const key = prompt(resolveI18n({en:'Privilege key (e.g. dashboard.reports.view):',nl:'Rechtsleutel (bijv. dashboard.reports.view):'},lang));
+                  if (!key) return;
+                  const parts = key.split('.');
+                  if (parts.length < 3) { message.error('Key must be app.resource.action'); return; }
+                  const action = parts.pop();
+                  const resource = parts.pop();
+                  const app = parts.join('.');
+                  PrivilegeCatalogStore.putDefinition({key, name:`${resource} ${action}`, i18n:{en:`${resource} — ${action}`}, description:'', app, resource, action, group_key:null, lifecycle_status:'active'});
+                  PrivilegeStore.put({id:key, appId:app, resource, action});
+                  rerender();
+                }},
+                rowActions:[
+                  {key:'delete',icon:React.createElement(DeleteOutlined,{style:{fontSize:12}}),danger:true,onClick:row=>{
+                    PrivilegeCatalogStore.removeDefinition(row.key);
+                    PrivilegeStore.remove(row.key);
+                    rerender();
+                  }}
+                ],
+              })
+            )
+      }))
+    });
+  }
+
+  // ── 7. Privilege Groups View ──
+  function renderPrivilegeGroupsView() {
+    const allPrivGroups = PrivilegeCatalogStore.getGroups();
+    const [expandedGroupKey, setExpandedGroupKey] = useState(null);
+    const groupTabs = [
+      { key:'overview', label:resolveI18n({en:'Overview',nl:'Overzicht'},lang), desc:resolveI18n({en:'Group summary and stats',nl:'Groepssamenvatting en statistieken'},lang) },
+      { key:'allGroups', label:`${resolveI18n({en:'All Groups',nl:'Alle Groepen'},lang)} (${allPrivGroups.length})`, desc:resolveI18n({en:'Every privilege group in the catalog',nl:'Elke rechtengroep in de catalogus'},lang) },
+    ];
+    return React.createElement(Tabs, {
+      activeKey:entityDetailTab==='general'||entityDetailTab==='preview'?'overview':entityDetailTab, onChange:setEntityDetailTab,
+      style:{padding:'0 20px'}, size:'small',
+      items: groupTabs.map(tab => ({
+        key:tab.key,
+        label: React.createElement('div', {style:{lineHeight:1.2}},
+          React.createElement('span', null, tab.label),
+          React.createElement('div', {style:{fontSize:9,color:'var(--text-tertiary)',fontWeight:400,marginTop:1}}, tab.desc)
+        ),
+        children: tab.key === 'overview'
+          ? React.createElement('div', {style:{padding:16,display:'grid',gap:16}},
+              React.createElement('div', {style:{display:'flex',gap:16,flexWrap:'wrap'}},
+                React.createElement(StatCard, {label:resolveI18n({en:'Groups',nl:'Groepen'},lang),value:allPrivGroups.length,color:'var(--info)'}),
+                React.createElement(StatCard, {label:resolveI18n({en:'Total privileges',nl:'Totaal rechten'},lang),value:allPrivGroups.reduce((s,g)=>(s+(g.privilege_keys||[]).length),0),color:'var(--warning)'}),
+                React.createElement(StatCard, {label:resolveI18n({en:'Apps covered',nl:'Gedekte apps'},lang),value:[...new Set(allPrivGroups.map(g=>g.app))].length,color:'var(--brand)'})
+              ),
+              // Level breakdown
+              React.createElement('div', {style:{fontSize:12,fontWeight:600,color:'var(--text-primary)',marginTop:8}}, resolveI18n({en:'Groups by Level',nl:'Groepen per Niveau'},lang)),
+              React.createElement('div', {style:{display:'flex',gap:8,flexWrap:'wrap'}},
+                [...new Set(allPrivGroups.map(g=>g.level))].map(level =>
+                  React.createElement(Tag, {key:level,color:level==='viewer'?'green':level==='editor'?'blue':level==='manager'||level==='admin'?'orange':'default',
+                    style:{fontSize:10}}, level+': '+allPrivGroups.filter(g=>g.level===level).length)
+                )
+              )
+            )
+          : React.createElement('div', {style:{padding:16}},
+              React.createElement(EntityList, {
+                columns: [
+                  {key:'name', label:{en:'Name',nl:'Naam'}, sortable:true, render:(_,r)=>{
+                    const Icon = window[r.icon]||LockOutlined;
+                    return React.createElement('span',{style:{display:'flex',alignItems:'center',gap:6}},
+                      React.createElement(Icon,{style:{fontSize:11,color:'var(--info)'}}),
+                      React.createElement('span',{style:{fontWeight:600,fontSize:11}},resolveI18n(r.i18n,lang)||r.name));
+                  }},
+                  {key:'app', label:{en:'App',nl:'App'}, sortable:true, filterable:true, getValue:r=>r.app},
+                  {key:'level', label:{en:'Level',nl:'Niveau'}, sortable:true, filterable:true, getValue:r=>r.level,
+                    render:(_,r)=>React.createElement(Tag,{color:r.level==='viewer'?'green':r.level==='editor'?'blue':r.level==='manager'||r.level==='admin'?'orange':'default',style:{margin:0,fontSize:9}},r.level)},
+                  {key:'privCount', label:{en:'Privileges',nl:'Rechten'}, sortable:true, getValue:r=>(r.privilege_keys||[]).length,
+                    render:(_,r)=>React.createElement('span',{style:{fontSize:10,color:'var(--text-tertiary)'}},`${(r.privilege_keys||[]).length} privileges`)},
+                  {key:'roles', label:{en:'Used by roles',nl:'Gebruikt door rollen'}, getValue:r=>RoleStore.getAll().filter(rl=>(rl.privilege_groups||[]).includes(r.key)).length,
+                    render:(_,r)=>{const c=RoleStore.getAll().filter(rl=>(rl.privilege_groups||[]).includes(r.key)).length;return c>0?React.createElement(Tag,{color:'green',style:{margin:0,fontSize:9}},c+' roles'):'\u2014';}},
+                ],
+                dataSource: allPrivGroups, rowKey:'key', lang,
+                title: resolveI18n({en:'All Privilege Groups',nl:'Alle Rechtengroepen'},lang),
+                searchable:true, emptyIcon:React.createElement(InboxOutlined),
+                emptyText:{en:'No privilege groups defined',nl:'Geen rechtengroepen gedefinieerd'},
+                addButton:{label:'',onClick:()=>{
+                  const key = prompt(resolveI18n({en:'Group key (e.g. reports.viewer):',nl:'Groepsleutel (bijv. reports.viewer):'},lang));
+                  if (!key) return;
+                  const name = prompt(resolveI18n({en:'Group name:',nl:'Groepnaam:'},lang),'');
+                  if (!name) return;
+                  PrivilegeCatalogStore.putGroup({key, name, i18n:{en:name}, app:key.split('.')[0]||'custom', level:key.split('.')[1]||'custom', icon:'LockOutlined', description:{en:''}, privilege_keys:[]});
+                  rerender();
+                }},
+                expandable:{
+                  expandedRowKeys: expandedGroupKey ? [expandedGroupKey] : [],
+                  onExpand: (id) => setExpandedGroupKey(expandedGroupKey === id ? null : id),
+                  expandedRowRender: (grp) => {
+                    const privKeys = grp.privilege_keys||[];
+                    return React.createElement('div', {style:{padding:'8px 12px',display:'grid',gap:4}},
+                      React.createElement('div', {style:{fontSize:10,fontWeight:600,color:'var(--text-secondary)',marginBottom:4}},
+                        resolveI18n({en:'Description',nl:'Beschrijving'},lang),': ',resolveI18n(grp.description,lang)||'\u2014'),
+                      React.createElement('div', {style:{fontSize:10,fontWeight:600,color:'var(--text-secondary)',marginBottom:2}},
+                        resolveI18n({en:'Privileges in this group',nl:'Rechten in deze groep'},lang),' (',privKeys.length,')'),
+                      privKeys.length === 0
+                        ? React.createElement('div', {style:{fontSize:10,color:'var(--text-tertiary)',fontStyle:'italic'}}, resolveI18n({en:'No privileges assigned',nl:'Geen rechten toegewezen'},lang))
+                        : React.createElement('div', {style:{display:'flex',flexWrap:'wrap',gap:4}},
+                            privKeys.map(pk => {
+                              const def = PrivilegeCatalogStore.getDefinition(pk);
+                              return React.createElement(Tag, {key:pk, style:{margin:0,fontSize:9,fontFamily:'monospace'},
+                                color:def?'default':'red'}, pk);
+                            })
+                          ),
+                      // Roles using this group
+                      React.createElement('div', {style:{fontSize:10,fontWeight:600,color:'var(--text-secondary)',marginTop:8,marginBottom:2}},
+                        resolveI18n({en:'Roles using this group',nl:'Rollen die deze groep gebruiken'},lang)),
+                      React.createElement('div', {style:{display:'flex',flexWrap:'wrap',gap:4}},
+                        RoleStore.getAll().filter(r=>(r.privilege_groups||[]).includes(grp.key)).map(r =>
+                          React.createElement(Tag, {key:r.id, color:ROLE_STYLING[r.name]?.color||'default', style:{margin:0,fontSize:9}}, r.name)
+                        )
+                      )
+                    );
+                  }
+                },
+                rowActions:[
+                  {key:'delete',icon:React.createElement(DeleteOutlined,{style:{fontSize:12}}),danger:true,onClick:row=>{
+                    PrivilegeCatalogStore.removeGroup(row.key);
+                    rerender();
+                  }}
+                ],
+              })
+            )
+      }))
+    });
+  }
+
+  // ── 8. Role Templates View ──
+  function renderRoleTemplatesView() {
+    const roles = RoleStore.getAll();
+    const [expandedRoleKey, setExpandedRoleKey] = useState(null);
+    const roleTabs = [
+      { key:'overview', label:resolveI18n({en:'Overview',nl:'Overzicht'},lang), desc:resolveI18n({en:'Role template summary',nl:'Rolsjabloon samenvatting'},lang) },
+      { key:'allRoles', label:`${resolveI18n({en:'All Roles',nl:'Alle Rollen'},lang)} (${roles.length})`, desc:resolveI18n({en:'Role definitions composed from privilege groups',nl:'Roldefinities samengesteld uit rechtengroepen'},lang) },
+    ];
+    return React.createElement(Tabs, {
+      activeKey:entityDetailTab==='general'||entityDetailTab==='preview'?'overview':entityDetailTab, onChange:setEntityDetailTab,
+      style:{padding:'0 20px'}, size:'small',
+      items: roleTabs.map(tab => ({
+        key:tab.key,
+        label: React.createElement('div', {style:{lineHeight:1.2}},
+          React.createElement('span', null, tab.label),
+          React.createElement('div', {style:{fontSize:9,color:'var(--text-tertiary)',fontWeight:400,marginTop:1}}, tab.desc)
+        ),
+        children: tab.key === 'overview'
+          ? React.createElement('div', {style:{padding:16,display:'grid',gap:16}},
+              React.createElement('div', {style:{display:'flex',gap:16,flexWrap:'wrap'}},
+                React.createElement(StatCard, {label:resolveI18n({en:'Roles',nl:'Rollen'},lang),value:roles.length,color:'var(--success)'}),
+                React.createElement(StatCard, {label:resolveI18n({en:'With privilege groups',nl:'Met rechtengroepen'},lang),value:roles.filter(r=>(r.privilege_groups||[]).length>0).length,color:'var(--info)'}),
+                React.createElement(StatCard, {label:resolveI18n({en:'Scope levels',nl:'Bereikniveaus'},lang),value:[...new Set(roles.map(r=>r.level))].length,color:'var(--brand)'})
+              ),
+              // Roles by level
+              React.createElement('div', {style:{fontSize:12,fontWeight:600,color:'var(--text-primary)',marginTop:8}}, resolveI18n({en:'Roles by Scope Level',nl:'Rollen per Bereikniveau'},lang)),
+              React.createElement('div', {style:{display:'grid',gap:8}},
+                [...new Set(roles.map(r=>r.level))].map(level => {
+                  const levelRoles = roles.filter(r=>r.level===level);
+                  return React.createElement('div', {key:level, style:{padding:'8px 12px',background:'var(--bg-secondary)',borderRadius:6,border:'1px solid var(--border)',display:'flex',alignItems:'center',gap:12}},
+                    React.createElement(Tag, {color:'purple',style:{margin:0,fontSize:10,fontWeight:600}}, level),
+                    React.createElement('div', {style:{display:'flex',gap:4,flexWrap:'wrap'}},
+                      levelRoles.map(r => React.createElement(Tag, {key:r.id,color:ROLE_STYLING[r.name]?.color||'default',style:{margin:0,fontSize:9}}, r.name))
+                    )
+                  );
+                })
+              ),
+              // Analogy table
+              React.createElement('div', {style:{fontSize:12,fontWeight:600,color:'var(--text-primary)',marginTop:16}}, resolveI18n({en:'Privilege System Analogy',nl:'Rechten Systeem Analogie'},lang)),
+              React.createElement('div', {style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:1,background:'var(--border)',borderRadius:6,overflow:'hidden',fontSize:11,marginTop:8}},
+                ...[
+                  [{en:'Properties',nl:'Eigenschappen'},{en:'Privileges',nl:'Rechten'}],
+                  [{en:'Property Groups',nl:'Eigenschap Groepen'},{en:'Privilege Groups',nl:'Rechtengroepen'}],
+                  [{en:'Entity Templates',nl:'Entiteitsjablonen'},{en:'Role Templates',nl:'Rolsjablonen'}],
+                  [{en:'Entity Instances',nl:'Entiteitinstanties'},{en:'Role Instances (users)',nl:'Rolinstanties (gebruikers)'}],
+                ].map((pair,i) => [
+                  React.createElement('div',{key:`a${i}`,style:{padding:'6px 10px',background:i===0?'var(--bg-card-hover)':'var(--bg-card)',fontWeight:i===0?600:400,color:'var(--brand)'}},resolveI18n(pair[0],lang)),
+                  React.createElement('div',{key:`b${i}`,style:{padding:'6px 10px',background:i===0?'var(--bg-card-hover)':'var(--bg-card)',fontWeight:i===0?600:400,color:'var(--success)'}},resolveI18n(pair[1],lang)),
+                ]).flat()
+              )
+            )
+          : React.createElement('div', {style:{padding:16}},
+              React.createElement(EntityList, {
+                columns: [
+                  {key:'name', label:{en:'Role',nl:'Rol'}, sortable:true,
+                    render:(_,r)=>React.createElement(Tag,{color:ROLE_STYLING[r.name]?.color||'default',style:{margin:0,fontWeight:600,fontSize:11}},r.name)},
+                  {key:'level', label:{en:'Scope',nl:'Bereik'}, sortable:true, filterable:true, getValue:r=>r.level,
+                    render:(_,r)=>React.createElement(Tag,{color:'purple',style:{margin:0,fontSize:9}},r.level)},
+                  {key:'description', label:{en:'Description',nl:'Beschrijving'}, getValue:r=>r.description||''},
+                  {key:'groups', label:{en:'Privilege Groups',nl:'Rechtengroepen'}, sortable:true, getValue:r=>(r.privilege_groups||[]).length,
+                    render:(_,r)=>React.createElement('span',{style:{fontSize:10,color:'var(--text-tertiary)'}},`${(r.privilege_groups||[]).length} groups`)},
+                  {key:'privCount', label:{en:'Privileges',nl:'Rechten'}, sortable:true, getValue:r=>r.privileges?.length||0,
+                    render:(_,r)=>React.createElement('span',{style:{fontSize:10,color:'var(--text-tertiary)'}},`${r.privileges?.length||0} app + ${r.systemPerms?.length||0} sys`)},
+                ],
+                dataSource: roles, rowKey:'id', lang,
+                title: resolveI18n({en:'All Role Templates',nl:'Alle Rolsjablonen'},lang),
+                searchable:true, emptyIcon:React.createElement(SafetyCertificateOutlined),
+                emptyText:{en:'No role templates defined',nl:'Geen rolsjablonen gedefinieerd'},
+                expandable:{
+                  expandedRowKeys: expandedRoleKey ? [expandedRoleKey] : [],
+                  onExpand: (id) => setExpandedRoleKey(expandedRoleKey === id ? null : id),
+                  expandedRowRender: (role) => {
+                    const groups = (role.privilege_groups||[]);
+                    return React.createElement('div', {style:{padding:'8px 12px',display:'grid',gap:8}},
+                      // Privilege groups section
+                      React.createElement('div', {style:{fontSize:10,fontWeight:600,color:'var(--text-secondary)',textTransform:'uppercase',letterSpacing:'0.05em'}},
+                        resolveI18n({en:'Privilege Groups',nl:'Rechtengroepen'},lang),' (',groups.length,')'),
+                      groups.length === 0
+                        ? React.createElement('div', {style:{fontSize:10,color:'var(--text-tertiary)',fontStyle:'italic'}}, resolveI18n({en:'No privilege groups assigned',nl:'Geen rechtengroepen toegewezen'},lang))
+                        : React.createElement('div', {style:{display:'grid',gap:6}},
+                            groups.map(gk => {
+                              const grp = PrivilegeCatalogStore.getGroup(gk);
+                              if (!grp) return React.createElement(Tag,{key:gk,color:'red',style:{margin:0,fontSize:9}},gk+' (missing)');
+                              const Icon = window[grp.icon]||LockOutlined;
+                              return React.createElement('div', {key:gk, style:{padding:'6px 10px',background:'var(--bg-secondary)',borderRadius:4,border:'1px solid var(--border)',display:'flex',alignItems:'flex-start',gap:8}},
+                                React.createElement(Icon, {style:{fontSize:11,color:'var(--info)',marginTop:1}}),
+                                React.createElement('div', {style:{flex:1,minWidth:0}},
+                                  React.createElement('div', {style:{display:'flex',alignItems:'center',gap:6}},
+                                    React.createElement('span', {style:{fontWeight:600,fontSize:11}}, resolveI18n(grp.i18n,lang)||grp.name),
+                                    React.createElement(Tag, {color:grp.level==='viewer'?'green':grp.level==='editor'?'blue':'orange',style:{margin:0,fontSize:8}}, grp.level),
+                                    React.createElement('span', {style:{fontSize:9,color:'var(--text-tertiary)',fontFamily:'monospace'}}, grp.app)
+                                  ),
+                                  React.createElement('div', {style:{display:'flex',flexWrap:'wrap',gap:3,marginTop:4}},
+                                    (grp.privilege_keys||[]).map(pk =>
+                                      React.createElement('span', {key:pk, style:{fontSize:8,fontFamily:'monospace',padding:'1px 4px',background:'var(--bg-card)',border:'1px solid var(--border)',borderRadius:3,color:'var(--text-tertiary)'}}, pk)
+                                    )
+                                  )
+                                )
+                              );
+                            })
+                          ),
+                      // System permissions section
+                      (role.systemPerms||[]).length > 0 && React.createElement('div', {style:{marginTop:8,paddingTop:8,borderTop:'1px solid var(--border)'}},
+                        React.createElement('div', {style:{fontSize:10,fontWeight:600,color:'var(--text-secondary)',textTransform:'uppercase',letterSpacing:'0.05em',marginBottom:4}},
+                          resolveI18n({en:'System Permissions',nl:'Systeemrechten'},lang)),
+                        React.createElement('div', {style:{display:'flex',gap:4,flexWrap:'wrap'}},
+                          (role.systemPerms||[]).map(sp => {
+                            const perm = SysPermStore.getAll().find(s=>s.id===sp);
+                            return React.createElement(Tooltip,{key:sp,title:perm?.description||sp},
+                              React.createElement(Tag, {style:{margin:0,fontSize:9}}, perm?.label||sp));
+                          })
+                        )
+                      )
+                    );
+                  }
+                },
+              })
+            )
+      }))
+    });
   }
 
   // ── Property group tabs with descriptions ──
@@ -12046,6 +12707,9 @@ function DeveloperStudioPage({t, lang, tab, dsRoute, updateHash}) {
     if (selectedNode.type === 'propGroup') return renderPropertyGroupWithTabs(selectedNode.groupKey);
     if (selectedNode.type === 'property') return renderPropertyDetail(selectedNode.propKey);
     if (selectedNode.type === 'dsGroup') return renderGroupDetail(selectedNode.groupKey);
+    if (selectedNode.type === '_privileges') return renderPrivilegeCatalogView();
+    if (selectedNode.type === '_privilegeGroups') return renderPrivilegeGroupsView();
+    if (selectedNode.type === '_roleTemplates') return renderRoleTemplatesView();
     return null;
   })();
 
@@ -12108,7 +12772,7 @@ function DeveloperStudioPage({t, lang, tab, dsRoute, updateHash}) {
           </div>
 
           {/* Code Panel — slides in from right when toggled */}
-          {showCodePanel && (selectedNode.type === 'entity' || selectedNode.type === 'subtype' || selectedNode.type === 'block' || selectedNode.type === 'propGroup' || selectedNode.type === 'property' || selectedNode.type === 'dsGroup') && (
+          {showCodePanel && (selectedNode.type === 'entity' || selectedNode.type === 'subtype' || selectedNode.type === 'block' || selectedNode.type === 'propGroup' || selectedNode.type === 'property' || selectedNode.type === 'dsGroup' || selectedNode.type === '_privileges' || selectedNode.type === '_privilegeGroups' || selectedNode.type === '_roleTemplates') && (
             <div className="ds-code" style={{width:280,minWidth:200,borderLeft:'1px solid var(--border)',borderRadius:0}}>
               <div className="ds-code-header">
                 <span>JSON</span>
