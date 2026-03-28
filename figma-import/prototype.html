@@ -2409,6 +2409,64 @@ const PropertyCatalogStore = (() => {
     enum_values_i18n:{light:{en:'Light',nl:'Licht'},dark:{en:'Dark',nl:'Donker'},system:{en:'System',nl:'Systeem'}} },
 ].forEach(d => PropertyCatalogStore.putDefinition(d));
 
+// ── Operator properties ──
+PropertyCatalogStore.putDefinition({
+  key:'shift_schedule', name:'Shift Schedule', i18n:{en:'Shift Schedule',nl:'Dienstrooster'},
+  group_key:'user_profile', category:'fixed', data_type:'enum', ui_representation:'dropdown',
+  enum_values:['day','night','rotating','on-call'],
+  enum_values_i18n:{day:{en:'Day Shift'},night:{en:'Night Shift'},rotating:{en:'Rotating'},['on-call']:{en:'On-call'}},
+  applies_to:['user'], is_required:false, is_readonly:false, entity_path:'properties.shiftSchedule', lifecycle_status:'active'
+});
+PropertyCatalogStore.putDefinition({
+  key:'certification', name:'Certification', i18n:{en:'Certification',nl:'Certificering'},
+  group_key:'user_profile', category:'fixed', data_type:'string', ui_representation:'text',
+  applies_to:['user'], is_required:false, is_readonly:false, entity_path:'properties.certification', lifecycle_status:'active'
+});
+PropertyCatalogStore.putDefinition({
+  key:'site_access_level', name:'Site Access Level', i18n:{en:'Site Access Level',nl:'Locatie Toegangsniveau'},
+  group_key:'user_profile', category:'fixed', data_type:'enum', ui_representation:'dropdown',
+  enum_values:['full','restricted','supervised','emergency-only'],
+  applies_to:['user'], is_required:false, is_readonly:false, entity_path:'properties.siteAccessLevel', lifecycle_status:'active'
+});
+
+// ── API Service properties ──
+PropertyCatalogStore.putDefinition({
+  key:'api_scope', name:'API Scope', i18n:{en:'API Scope',nl:'API Bereik'},
+  group_key:'user_profile', category:'fixed', data_type:'enum', ui_representation:'dropdown',
+  enum_values:['read-only','read-write','admin'],
+  applies_to:['user'], is_required:true, is_readonly:false, entity_path:'properties.apiScope', lifecycle_status:'active'
+});
+PropertyCatalogStore.putDefinition({
+  key:'rate_limit', name:'Rate Limit', i18n:{en:'Rate Limit (req/min)',nl:'Snelheidslimiet (verz/min)'},
+  group_key:'user_profile', category:'fixed', data_type:'number', ui_representation:'number',
+  validation:{min:1,max:10000}, unit:'req/min',
+  applies_to:['user'], is_required:false, is_readonly:false, entity_path:'properties.rateLimit', lifecycle_status:'active'
+});
+PropertyCatalogStore.putDefinition({
+  key:'webhook_url', name:'Webhook URL', i18n:{en:'Webhook URL',nl:'Webhook URL'},
+  group_key:'user_profile', category:'fixed', data_type:'string', ui_representation:'text',
+  validation:{pattern:'^https?://'},
+  applies_to:['user'], is_required:false, is_readonly:false, entity_path:'properties.webhookUrl', lifecycle_status:'active'
+});
+
+// ── Installer properties ──
+PropertyCatalogStore.putDefinition({
+  key:'company', name:'Company', i18n:{en:'Company',nl:'Bedrijf'},
+  group_key:'user_profile', category:'fixed', data_type:'string', ui_representation:'text',
+  applies_to:['user'], is_required:false, is_readonly:false, entity_path:'properties.company', lifecycle_status:'active'
+});
+PropertyCatalogStore.putDefinition({
+  key:'license_number', name:'License Number', i18n:{en:'License Number',nl:'Licentienummer'},
+  group_key:'user_profile', category:'fixed', data_type:'string', ui_representation:'text',
+  applies_to:['user'], is_required:false, is_readonly:false, entity_path:'properties.licenseNumber', lifecycle_status:'active'
+});
+PropertyCatalogStore.putDefinition({
+  key:'specialization', name:'Specialization', i18n:{en:'Specialization',nl:'Specialisatie'},
+  group_key:'user_profile', category:'fixed', data_type:'enum', ui_representation:'dropdown',
+  enum_values:['solar','battery','ev-charging','hvac','electrical','general'],
+  applies_to:['user'], is_required:false, is_readonly:false, entity_path:'properties.specialization', lifecycle_status:'active'
+});
+
 // ── Zone as tag/property (not a hierarchy entity) ──
 PropertyCatalogStore.putDefinition({
   key:'zone', name:'Zone', i18n:{en:'Zone',nl:'Zone'},
@@ -3131,6 +3189,61 @@ const EntityTemplateStore = (() => {
     },
   },
 ].forEach(t => EntityTemplateStore.putTemplate(t));
+
+// ── User subtypes (operator, api_service, installer) ──
+EntityTemplateStore.putTemplate({
+  entity_type:'user', type_key:'operator', name:'Operator',
+  description:{en:'A site operator who monitors and manages energy systems on-site',nl:'Een locatie-operator die energiesystemen ter plaatse bewaakt en beheert'},
+  icon:'ToolOutlined', lifecycle_status:'active', version:1,
+  extends_key:'user:default',
+  properties:[
+    {property_key:'shift_schedule',sort_order:20},
+    {property_key:'certification',sort_order:21},
+    {property_key:'site_access_level',sort_order:22},
+  ],
+  form_groups:[
+    {key:'operations',label:{en:'Operations',nl:'Operaties'},icon:'ToolOutlined',
+     property_keys:['shift_schedule','certification','site_access_level']}
+  ],
+  columns:[], detail_tabs:[], overview:{properties:[],kpis:[],show_map:false,show_alarms:false},
+  children_types:[]
+});
+
+EntityTemplateStore.putTemplate({
+  entity_type:'user', type_key:'api_service', name:'API Service Account',
+  description:{en:'A programmatic service account for API integrations and webhooks',nl:'Een programmatisch serviceaccount voor API-integraties en webhooks'},
+  icon:'ApiOutlined', lifecycle_status:'active', version:1,
+  extends_key:'user:default',
+  properties:[
+    {property_key:'api_scope',required:true,sort_order:20},
+    {property_key:'rate_limit',sort_order:21},
+    {property_key:'webhook_url',sort_order:22},
+  ],
+  form_groups:[
+    {key:'apiConfig',label:{en:'API Configuration',nl:'API Configuratie'},icon:'ApiOutlined',
+     property_keys:['api_scope','rate_limit','webhook_url']}
+  ],
+  columns:[], detail_tabs:[], overview:{properties:[],kpis:[],show_map:false,show_alarms:false},
+  children_types:[]
+});
+
+EntityTemplateStore.putTemplate({
+  entity_type:'user', type_key:'installer', name:'Installer',
+  description:{en:'A field technician who installs, configures, and maintains devices',nl:'Een veldtechnicus die apparaten installeert, configureert en onderhoudt'},
+  icon:'BuildOutlined', lifecycle_status:'active', version:1,
+  extends_key:'user:default',
+  properties:[
+    {property_key:'company',sort_order:20},
+    {property_key:'license_number',sort_order:21},
+    {property_key:'specialization',sort_order:22},
+  ],
+  form_groups:[
+    {key:'installer',label:{en:'Installer Details',nl:'Installateur Details'},icon:'BuildOutlined',
+     property_keys:['company','license_number','specialization']}
+  ],
+  columns:[], detail_tabs:[], overview:{properties:[],kpis:[],show_map:false,show_alarms:false},
+  children_types:[]
+});
 
 // ── Role template (template-driven, backed by RoleStore) ──
 EntityTemplateStore.putTemplate({
@@ -4803,6 +4916,7 @@ const ICON_MAP = {
   HddOutlined, AlertOutlined, LineChartOutlined, ClusterOutlined, HistoryOutlined, SafetyCertificateOutlined,
   CheckCircleFilled, CloseCircleFilled, ExclamationCircleFilled, InfoCircleFilled,
   WarningFilled, RocketFilled, DisconnectOutlined,
+  SettingOutlined, UserOutlined, ToolOutlined, BuildOutlined,
 };
 function resolveIcon(name) { return ICON_MAP[name] || DashboardOutlined; }
 
@@ -7557,8 +7671,14 @@ function EntityEditModal({ visible, mode, entityType, entityId, parentId, onSave
   const [values, setValues] = useState({});
   const [errors, setErrors] = useState({});
   const [dirty, setDirty] = useState(false);
+  const [selectedTypeKey, setSelectedTypeKey] = useState(null);
 
   const isRelationship = RELATIONSHIP_TYPES.includes(entityType);
+
+  // Reset selectedTypeKey when modal closes or entityType changes
+  useEffect(() => {
+    if (!visible) setSelectedTypeKey(null);
+  }, [visible, entityType]);
 
   useEffect(() => {
     if (!visible) return;
@@ -7568,8 +7688,15 @@ function EntityEditModal({ visible, mode, entityType, entityId, parentId, onSave
       // Users live in UserStore, not EntityStore
       if (mode === 'edit' && entityId) {
         const user = UserStore.getUser(entityId);
-        if (user) setValues({ name:user.name, entityType:'user', properties:{ email:user.email, phone:user.phone||'', avatar_url:user.avatar||'', user_language:user.lang||'en', user_theme:user.theme||'dark' } });
-        else setValues({ name:'', entityType:'user', properties:{email:'',phone:'',avatar_url:'',user_language:'en',user_theme:'dark'} });
+        if (user) {
+          setSelectedTypeKey(user.templateKey || 'default');
+          setValues({ name:user.name, entityType:'user', properties:{
+            email:user.email, phone:user.phone||'', avatar_url:user.avatar||'', user_language:user.lang||'en', user_theme:user.theme||'dark',
+            shiftSchedule:user.shiftSchedule||'', certification:user.certification||'', siteAccessLevel:user.siteAccessLevel||'',
+            apiScope:user.apiScope||'', rateLimit:user.rateLimit||'', webhookUrl:user.webhookUrl||'',
+            company:user.company||'', licenseNumber:user.licenseNumber||'', specialization:user.specialization||''
+          }});
+        } else setValues({ name:'', entityType:'user', properties:{email:'',phone:'',avatar_url:'',user_language:'en',user_theme:'dark'} });
       } else {
         setValues({ name:'', entityType:'user', properties:{email:'',phone:'',avatar_url:'',user_language:'en',user_theme:'dark'} });
       }
@@ -7596,7 +7723,10 @@ function EntityEditModal({ visible, mode, entityType, entityId, parentId, onSave
   }, [visible, entityId, mode, entityType, parentId]);
 
   // Phase 3: Template-driven sub-tabs with fallback to old schemas
-  const resolvedTemplate = !RELATIONSHIP_TYPES.includes(entityType) ? EntityTemplateStore.resolveTemplate(entityType) : null;
+  const typeKeyToUse = selectedTypeKey || (mode === 'edit' && entityId ? (entityType === 'user' ? (UserStore.getUser(entityId)?.templateKey || 'default') : 'default') : 'default');
+  const resolvedTemplate = !RELATIONSHIP_TYPES.includes(entityType) ? EntityTemplateStore.resolveTemplate(entityType, typeKeyToUse) : null;
+  const allTypeTemplates = EntityTemplateStore.getByEntityType(entityType);
+  const hasSubtypes = allTypeTemplates.length > 1;
 
   const subTabs = isRelationship
     ? getRelationshipSubTabs(entityType)
@@ -7654,10 +7784,25 @@ function EntityEditModal({ visible, mode, entityType, entityId, parentId, onSave
       // Save to UserStore
       if (mode === 'create') {
         const newId = `user-${Date.now()}`;
-        UserStore.register({ id:newId, name:values.name, email:values.properties?.email||'', phone:values.properties?.phone||'',
+        const userProps = { id:newId, name:values.name, email:values.properties?.email||'', phone:values.properties?.phone||'',
           avatar:values.properties?.avatar_url||'', lang:values.properties?.user_language||'en', theme:values.properties?.user_theme||'dark',
           password:'orbit2026', role:'Viewer', accountId:null, initials:(values.name||'').split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2),
-          permissions:[], lastLogin:'Never', status:'offline' });
+          permissions:[], lastLogin:'Never', status:'offline', templateKey: selectedTypeKey || 'default' };
+        // Store subtype-specific properties
+        if (selectedTypeKey === 'operator') {
+          userProps.shiftSchedule = values.properties?.shiftSchedule || '';
+          userProps.certification = values.properties?.certification || '';
+          userProps.siteAccessLevel = values.properties?.siteAccessLevel || '';
+        } else if (selectedTypeKey === 'api_service') {
+          userProps.apiScope = values.properties?.apiScope || '';
+          userProps.rateLimit = values.properties?.rateLimit || '';
+          userProps.webhookUrl = values.properties?.webhookUrl || '';
+        } else if (selectedTypeKey === 'installer') {
+          userProps.company = values.properties?.company || '';
+          userProps.licenseNumber = values.properties?.licenseNumber || '';
+          userProps.specialization = values.properties?.specialization || '';
+        }
+        UserStore.register(userProps);
         // Auto-assign to parent scope if provided
         if (parentId) AccessStore.add({ userId:newId, scopeId:parentId, role:'Viewer', permissions:[] });
         onSave(newId);
@@ -7715,8 +7860,11 @@ function EntityEditModal({ visible, mode, entityType, entityId, parentId, onSave
   const regEntry = ENTITY_TYPE_REGISTRY[entityType];
   const typeLabel = isRelationship ? resolveI18n(RELATIONSHIP_LABELS[entityType] || {en:entityType}, lang)
     : (regEntry ? resolveI18n(regEntry.label, lang) : entityType);
+  const selectedTemplateName = selectedTypeKey && resolvedTemplate ? resolvedTemplate.name : null;
   const title = mode === 'create'
-    ? resolveI18n({en:`Create ${typeLabel}`,nl:`${typeLabel} aanmaken`}, lang)
+    ? (selectedTypeKey && hasSubtypes && !selectedTypeKey ? resolveI18n({en:`Create ${typeLabel}`,nl:`${typeLabel} aanmaken`}, lang)
+      : selectedTemplateName ? resolveI18n({en:`Create ${selectedTemplateName}`,nl:`${selectedTemplateName} aanmaken`}, lang)
+      : resolveI18n({en:`Create ${typeLabel}`,nl:`${typeLabel} aanmaken`}, lang))
     : (isRelationship ? (values.name || values.label || values.userId || typeLabel) : (values.name || ''));
 
   return ReactDOM.createPortal(
@@ -7735,8 +7883,34 @@ function EntityEditModal({ visible, mode, entityType, entityId, parentId, onSave
           React.createElement('span', {className:'eem-header-badge'}, typeLabel),
           React.createElement('span', {className:'eem-header-close', onClick:handleCancel}, React.createElement(CloseOutlined))
         ),
-        // Body
-        React.createElement('div', {className:'eem-body'},
+        // Body — template picker or form
+        mode === 'create' && hasSubtypes && !selectedTypeKey
+        ? React.createElement('div', {className:'eem-body', style:{flexDirection:'column',padding:20}},
+            React.createElement('div', {style:{fontSize:13,fontWeight:600,color:'var(--text-primary)',marginBottom:4}},
+              resolveI18n({en:'Choose type',nl:'Kies type'}, lang)),
+            React.createElement('div', {style:{fontSize:11,color:'var(--text-tertiary)',marginBottom:12}},
+              resolveI18n({en:'Select the type to create. Each type has different fields and capabilities.',nl:'Selecteer het type. Elk type heeft andere velden en mogelijkheden.'}, lang)),
+            React.createElement('div', {style:{display:'grid',gap:10}},
+              allTypeTemplates.map(tmpl => {
+                const TIcon = resolveIcon(tmpl.icon);
+                const desc = resolveI18n(tmpl.description, lang);
+                return React.createElement('div', {key:tmpl.type_key,
+                  style:{padding:'12px 16px',background:'var(--bg-secondary)',borderRadius:8,border:'1px solid var(--border)',
+                    cursor:'pointer',transition:'all 0.12s',display:'flex',alignItems:'center',gap:12},
+                  onMouseEnter:e=>{e.currentTarget.style.borderColor='var(--brand)';e.currentTarget.style.background='var(--bg-tertiary)'},
+                  onMouseLeave:e=>{e.currentTarget.style.borderColor='var(--border)';e.currentTarget.style.background='var(--bg-secondary)'},
+                  onClick:()=>setSelectedTypeKey(tmpl.type_key)},
+                  React.createElement('div', {style:{width:36,height:36,borderRadius:8,background:'var(--brand-bg)',display:'flex',alignItems:'center',justifyContent:'center'}},
+                    React.createElement(TIcon, {style:{fontSize:16,color:'var(--brand)'}})),
+                  React.createElement('div', {style:{flex:1}},
+                    React.createElement('div', {style:{fontSize:13,fontWeight:600,color:'var(--text-primary)'}}, tmpl.name),
+                    desc && React.createElement('div', {style:{fontSize:10,color:'var(--text-tertiary)',marginTop:2}}, desc)),
+                  React.createElement(RightOutlined, {style:{fontSize:10,color:'var(--text-tertiary)'}})
+                );
+              })
+            )
+          )
+        : React.createElement('div', {className:'eem-body'},
           // Left tabs (hide tab rail for single-tab non-entity types)
           subTabs.length > 1 && React.createElement('div', {className:'eem-tabs'},
             subTabs.map(tab => {
@@ -7759,13 +7933,22 @@ function EntityEditModal({ visible, mode, entityType, entityId, parentId, onSave
         ),
         // Footer
         React.createElement('div', {className:'eem-footer'},
-          dirty ? React.createElement('span', {className:'eem-dirty'}, React.createElement(ExclamationCircleOutlined,{style:{fontSize:12}}), resolveI18n({en:'Unsaved changes',nl:'Niet-opgeslagen'}, lang))
-            : React.createElement('span'),
-          React.createElement('div', {style:{display:'flex',gap:8}},
-            React.createElement(Button, {size:'small', onClick:handleCancel}, resolveI18n({en:'Cancel',nl:'Annuleren'}, lang)),
-            React.createElement(Button, {size:'small', type:'primary', onClick:handleSave},
-              resolveI18n(mode === 'create' ? {en:'Create',nl:'Aanmaken'} : {en:'Save',nl:'Opslaan'}, lang))
-          )
+          mode === 'create' && hasSubtypes && !selectedTypeKey
+          ? React.createElement(React.Fragment, null,
+              React.createElement('span'),
+              React.createElement(Button, {size:'small', onClick:handleCancel}, resolveI18n({en:'Cancel',nl:'Annuleren'}, lang))
+            )
+          : React.createElement(React.Fragment, null,
+              dirty ? React.createElement('span', {className:'eem-dirty'}, React.createElement(ExclamationCircleOutlined,{style:{fontSize:12}}), resolveI18n({en:'Unsaved changes',nl:'Niet-opgeslagen'}, lang))
+                : React.createElement('span'),
+              React.createElement('div', {style:{display:'flex',gap:8}},
+                mode === 'create' && hasSubtypes && selectedTypeKey && React.createElement(Button, {size:'small', onClick:()=>setSelectedTypeKey(null)},
+                  React.createElement(LeftOutlined, {style:{fontSize:10}}), ' ', resolveI18n({en:'Back',nl:'Terug'}, lang)),
+                React.createElement(Button, {size:'small', onClick:handleCancel}, resolveI18n({en:'Cancel',nl:'Annuleren'}, lang)),
+                React.createElement(Button, {size:'small', type:'primary', onClick:handleSave},
+                  resolveI18n(mode === 'create' ? {en:'Create',nl:'Aanmaken'} : {en:'Save',nl:'Opslaan'}, lang))
+              )
+            )
         )
       )
     ),
