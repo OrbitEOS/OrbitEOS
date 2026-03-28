@@ -10719,14 +10719,13 @@ function DeveloperStudioPage({t, lang, tab, dsRoute, updateHash}) {
           React.createElement('div', {
             className:`ds-group-node ${isGroupActive?'active':''} ${dragOverGroup===group.key?'ds-drop-target':''}`,
             style:{paddingLeft:20},
-            onClick:()=>{ dsNavigate({type:'dsGroup', groupKey:group.key}); },
+            onClick:()=>{ setExpandedGroups(prev=>{const next=new Set(prev);if(!next.has(group.key))next.add(group.key);else next.delete(group.key);return next;}); dsNavigate({type:'dsGroup', groupKey:group.key}); },
             onDragOver:e=>{e.preventDefault();e.dataTransfer.dropEffect='move';setDragOverGroup(group.key);},
             onDragLeave:()=>{setDragOverGroup(null);},
             onDrop:e=>{e.preventDefault();const et=e.dataTransfer.getData('text/plain');if(et){setDsTreeOrder(prev=>{const next=prev.map(g=>({...g,items:g.items.filter(i=>i!==et)}));const tg=next.find(g=>g.key===group.key);if(tg&&!tg.items.includes(et))tg.items.push(et);return next;});}setDragOverGroup(null);}
           },
             React.createElement('span', {
               className:`ds-group-chevron ${isGroupExpanded?'expanded':''}`,
-              onClick:e=>{e.stopPropagation();setExpandedGroups(prev=>{const next=new Set(prev);if(next.has(group.key))next.delete(group.key);else next.add(group.key);return next;});}
             }, React.createElement(RightOutlined, {style:{fontSize:8}})),
             React.createElement(GroupIcon, {style:{fontSize:11,color:'var(--text-tertiary)'}}),
             resolveI18n(group.name,lang) || group.key,
@@ -11677,40 +11676,50 @@ function DeveloperStudioPage({t, lang, tab, dsRoute, updateHash}) {
       EntityTemplateStore.putTemplate({...tmpl, form_groups:fgs});
       setFgEditModal({visible:false,fg:null,tmpl:null}); rerender();
     };
-    return React.createElement('div', {className:'eem-overlay', onClick:()=>setFgEditModal({visible:false,fg:null,tmpl:null})},
+    return ReactDOM.createPortal(React.createElement('div', {className:'eem-overlay', onClick:()=>setFgEditModal({visible:false,fg:null,tmpl:null})},
       React.createElement('div', {className:'eem-modal', style:{width:480,maxWidth:480,height:'auto',maxHeight:'70vh'}, onClick:e=>e.stopPropagation()},
-        React.createElement('div', {style:{padding:'12px 16px',borderBottom:'1px solid var(--border)',fontSize:13,fontWeight:600}},
-          isEdit ? resolveI18n({en:'Edit Form Group',nl:'Formuliergroep Bewerken'},lang) : resolveI18n({en:'New Form Group',nl:'Nieuwe Formuliergroep'},lang)),
-        React.createElement('div', {style:{padding:16,display:'grid',gap:12,overflowY:'auto'}},
-          React.createElement('div', null,
-            React.createElement('label',{style:{fontSize:10,fontWeight:600,color:'var(--text-secondary)',display:'block',marginBottom:3}},resolveI18n({en:'Key',nl:'Sleutel'},lang)),
-            React.createElement(Input,{size:'small',value:fgKey,onChange:e=>setFgKey(e.target.value),disabled:isEdit,placeholder:'general_info'})),
-          React.createElement('div', null,
-            React.createElement('label',{style:{fontSize:10,fontWeight:600,color:'var(--text-secondary)',display:'block',marginBottom:3}},resolveI18n({en:'Label',nl:'Label'},lang)),
-            React.createElement(Input,{size:'small',value:fgLabel,onChange:e=>setFgLabel(e.target.value),placeholder:'General Information'})),
-          React.createElement('div', null,
-            React.createElement('label',{style:{fontSize:10,fontWeight:600,color:'var(--text-secondary)',display:'block',marginBottom:3}},resolveI18n({en:'Icon',nl:'Icoon'},lang)),
-            React.createElement(Input,{size:'small',value:fgIcon,onChange:e=>setFgIcon(e.target.value),placeholder:'InfoCircleOutlined'})),
-          React.createElement('div', null,
-            React.createElement('label',{style:{fontSize:10,fontWeight:600,color:'var(--text-secondary)',display:'block',marginBottom:3}},resolveI18n({en:'Rendering Mode',nl:'Render Modus'},lang)),
-            React.createElement(Segmented,{size:'small',options:[{value:'auto',label:'Auto'},{value:'shared',label:'Shared Block'},{value:'mfe',label:'Custom MFE'}],value:fgRenderMode,onChange:setFgRenderMode})),
-          fgRenderMode==='auto' && React.createElement('div', null,
-            React.createElement('label',{style:{fontSize:10,fontWeight:600,color:'var(--text-secondary)',display:'block',marginBottom:3}},resolveI18n({en:'Property Keys',nl:'Eigenschap Sleutels'},lang)),
-            React.createElement(Select,{mode:'multiple',size:'small',style:{width:'100%'},value:fgPropKeys,onChange:setFgPropKeys,
-              options:availProps.map(k=>({value:k,label:k}))})),
-          fgRenderMode==='shared' && React.createElement('div', null,
-            React.createElement('label',{style:{fontSize:10,fontWeight:600,color:'var(--text-secondary)',display:'block',marginBottom:3}},resolveI18n({en:'From Group',nl:'Van Groep'},lang)),
-            React.createElement(Select,{size:'small',style:{width:'100%'},value:fgFromGroup,onChange:setFgFromGroup,
-              options:allGroups.map(g=>({value:g.key,label:resolveI18n(g.i18n,lang)||g.name||g.key}))})),
-          fgRenderMode==='mfe' && React.createElement('div', null,
-            React.createElement('label',{style:{fontSize:10,fontWeight:600,color:'var(--text-secondary)',display:'block',marginBottom:3}},resolveI18n({en:'MFE Key',nl:'MFE Sleutel'},lang)),
-            React.createElement(Input,{size:'small',value:fgMfe,onChange:e=>setFgMfe(e.target.value),placeholder:'@domain/my-form'}))
+        React.createElement('div', {className:'eem-header'},
+          React.createElement('div', {className:'eem-header-icon'}, React.createElement(AppstoreOutlined, {style:{fontSize:16,color:'var(--brand)'}})),
+          React.createElement('div', {className:'eem-header-title'},
+            isEdit ? resolveI18n({en:'Edit Form Group',nl:'Formuliergroep Bewerken'},lang) : resolveI18n({en:'New Form Group',nl:'Nieuwe Formuliergroep'},lang)),
+          React.createElement('span', {className:'eem-header-close', onClick:()=>setFgEditModal({visible:false,fg:null,tmpl:null})}, React.createElement(CloseOutlined))
         ),
-        React.createElement('div', {style:{padding:'8px 16px',borderTop:'1px solid var(--border)',display:'flex',justifyContent:'flex-end',gap:8}},
-          React.createElement('button',{className:'header-btn',onClick:()=>setFgEditModal({visible:false,fg:null,tmpl:null})},resolveI18n({en:'Cancel',nl:'Annuleren'},lang)),
-          React.createElement('button',{className:'header-btn primary',onClick:handleSave},resolveI18n({en:'Save',nl:'Opslaan'},lang)))
+        React.createElement('div', {className:'eem-body'},
+          React.createElement('div', {className:'eem-content'},
+            React.createElement('div', {style:{display:'grid',gap:12}},
+              React.createElement('div', null,
+                React.createElement('label',{style:{fontSize:10,fontWeight:600,color:'var(--text-secondary)',display:'block',marginBottom:3}},resolveI18n({en:'Key',nl:'Sleutel'},lang)),
+                React.createElement(Input,{size:'small',value:fgKey,onChange:e=>setFgKey(e.target.value),disabled:isEdit,placeholder:'general_info'})),
+              React.createElement('div', null,
+                React.createElement('label',{style:{fontSize:10,fontWeight:600,color:'var(--text-secondary)',display:'block',marginBottom:3}},resolveI18n({en:'Label',nl:'Label'},lang)),
+                React.createElement(Input,{size:'small',value:fgLabel,onChange:e=>setFgLabel(e.target.value),placeholder:'General Information'})),
+              React.createElement('div', null,
+                React.createElement('label',{style:{fontSize:10,fontWeight:600,color:'var(--text-secondary)',display:'block',marginBottom:3}},resolveI18n({en:'Icon',nl:'Icoon'},lang)),
+                React.createElement(Input,{size:'small',value:fgIcon,onChange:e=>setFgIcon(e.target.value),placeholder:'InfoCircleOutlined'})),
+              React.createElement('div', null,
+                React.createElement('label',{style:{fontSize:10,fontWeight:600,color:'var(--text-secondary)',display:'block',marginBottom:3}},resolveI18n({en:'Rendering Mode',nl:'Render Modus'},lang)),
+                React.createElement(Segmented,{size:'small',options:[{value:'auto',label:'Auto'},{value:'shared',label:'Shared Block'},{value:'mfe',label:'Custom MFE'}],value:fgRenderMode,onChange:setFgRenderMode})),
+              fgRenderMode==='auto' && React.createElement('div', null,
+                React.createElement('label',{style:{fontSize:10,fontWeight:600,color:'var(--text-secondary)',display:'block',marginBottom:3}},resolveI18n({en:'Property Keys',nl:'Eigenschap Sleutels'},lang)),
+                React.createElement(Select,{mode:'multiple',size:'small',style:{width:'100%'},value:fgPropKeys,onChange:setFgPropKeys,
+                  options:availProps.map(k=>({value:k,label:k}))})),
+              fgRenderMode==='shared' && React.createElement('div', null,
+                React.createElement('label',{style:{fontSize:10,fontWeight:600,color:'var(--text-secondary)',display:'block',marginBottom:3}},resolveI18n({en:'From Group',nl:'Van Groep'},lang)),
+                React.createElement(Select,{size:'small',style:{width:'100%'},value:fgFromGroup,onChange:setFgFromGroup,
+                  options:allGroups.map(g=>({value:g.key,label:resolveI18n(g.i18n,lang)||g.name||g.key}))})),
+              fgRenderMode==='mfe' && React.createElement('div', null,
+                React.createElement('label',{style:{fontSize:10,fontWeight:600,color:'var(--text-secondary)',display:'block',marginBottom:3}},resolveI18n({en:'MFE Key',nl:'MFE Sleutel'},lang)),
+                React.createElement(Input,{size:'small',value:fgMfe,onChange:e=>setFgMfe(e.target.value),placeholder:'@domain/my-form'}))
+            )
+          )
+        ),
+        React.createElement('div', {className:'eem-footer'},
+          React.createElement('span'),
+          React.createElement('div', {style:{display:'flex',gap:8}},
+            React.createElement(Button,{size:'small',onClick:()=>setFgEditModal({visible:false,fg:null,tmpl:null})},resolveI18n({en:'Cancel',nl:'Annuleren'},lang)),
+            React.createElement(Button,{size:'small',type:'primary',onClick:handleSave},resolveI18n({en:'Save',nl:'Opslaan'},lang))))
       )
-    );
+    ), document.body);
   }
 
   // ── Phase 3: TabEditModal ──
@@ -11736,38 +11745,48 @@ function DeveloperStudioPage({t, lang, tab, dsRoute, updateHash}) {
       EntityTemplateStore.putTemplate({...tmpl, detail_tabs:tabs});
       setTabEditModal({visible:false,tab:null,tmpl:null}); rerender();
     };
-    return React.createElement('div', {className:'eem-overlay', onClick:()=>setTabEditModal({visible:false,tab:null,tmpl:null})},
+    return ReactDOM.createPortal(React.createElement('div', {className:'eem-overlay', onClick:()=>setTabEditModal({visible:false,tab:null,tmpl:null})},
       React.createElement('div', {className:'eem-modal', style:{width:440,maxWidth:440,height:'auto',maxHeight:'60vh'}, onClick:e=>e.stopPropagation()},
-        React.createElement('div', {style:{padding:'12px 16px',borderBottom:'1px solid var(--border)',fontSize:13,fontWeight:600}},
-          isEdit ? resolveI18n({en:'Edit Tab',nl:'Tab Bewerken'},lang) : resolveI18n({en:'New Tab',nl:'Nieuwe Tab'},lang)),
-        React.createElement('div', {style:{padding:16,display:'grid',gap:12,overflowY:'auto'}},
-          React.createElement('div', null,
-            React.createElement('label',{style:{fontSize:10,fontWeight:600,color:'var(--text-secondary)',display:'block',marginBottom:3}},resolveI18n({en:'Key',nl:'Sleutel'},lang)),
-            React.createElement(Input,{size:'small',value:tKey,onChange:e=>setTKey(e.target.value),disabled:isEdit,placeholder:'devices'})),
-          React.createElement('div', null,
-            React.createElement('label',{style:{fontSize:10,fontWeight:600,color:'var(--text-secondary)',display:'block',marginBottom:3}},resolveI18n({en:'Label',nl:'Label'},lang)),
-            React.createElement(Input,{size:'small',value:tLabel,onChange:e=>setTLabel(e.target.value),placeholder:'Devices'})),
-          React.createElement('div', null,
-            React.createElement('label',{style:{fontSize:10,fontWeight:600,color:'var(--text-secondary)',display:'block',marginBottom:3}},resolveI18n({en:'Type',nl:'Type'},lang)),
-            React.createElement(Select,{size:'small',style:{width:'100%'},value:tType,onChange:setTType,
-              options:[{value:'overview',label:'Overview'},{value:'children',label:'Children'},{value:'action',label:'Action'},{value:'form',label:'Form'},{value:'custom',label:'Custom'}]})),
-          tType==='children' && React.createElement('div', null,
-            React.createElement('label',{style:{fontSize:10,fontWeight:600,color:'var(--text-secondary)',display:'block',marginBottom:3}},resolveI18n({en:'Child Type',nl:'Kindtype'},lang)),
-            React.createElement(Select,{size:'small',style:{width:'100%'},value:tChildType,onChange:setTChildType,
-              options:(tmpl?.children_types||[]).map(ct=>({value:ct.entity_type,label:resolveI18n(ENTITY_TYPE_REGISTRY[ct.entity_type]?.label,lang)||ct.entity_type}))})),
-          (tType==='action'||tType==='custom') && React.createElement('div', null,
-            React.createElement('label',{style:{fontSize:10,fontWeight:600,color:'var(--text-secondary)',display:'block',marginBottom:3}},resolveI18n({en:'MFE Key',nl:'MFE Sleutel'},lang)),
-            React.createElement(Input,{size:'small',value:tMfeKey,onChange:e=>setTMfeKey(e.target.value),placeholder:'@domain/my-tab'})),
-          tType==='form' && React.createElement('div', null,
-            React.createElement('label',{style:{fontSize:10,fontWeight:600,color:'var(--text-secondary)',display:'block',marginBottom:3}},resolveI18n({en:'Form Group',nl:'Formuliergroep'},lang)),
-            React.createElement(Select,{size:'small',style:{width:'100%'},value:tFormGroupKey,onChange:setTFormGroupKey,
-              options:(tmpl?.form_groups||[]).map(fg=>({value:fg.key,label:resolveI18n(fg.label,lang)||fg.key}))}))
+        React.createElement('div', {className:'eem-header'},
+          React.createElement('div', {className:'eem-header-icon'}, React.createElement(AppstoreOutlined, {style:{fontSize:16,color:'var(--brand)'}})),
+          React.createElement('div', {className:'eem-header-title'},
+            isEdit ? resolveI18n({en:'Edit Tab',nl:'Tab Bewerken'},lang) : resolveI18n({en:'New Tab',nl:'Nieuwe Tab'},lang)),
+          React.createElement('span', {className:'eem-header-close', onClick:()=>setTabEditModal({visible:false,tab:null,tmpl:null})}, React.createElement(CloseOutlined))
         ),
-        React.createElement('div', {style:{padding:'8px 16px',borderTop:'1px solid var(--border)',display:'flex',justifyContent:'flex-end',gap:8}},
-          React.createElement('button',{className:'header-btn',onClick:()=>setTabEditModal({visible:false,tab:null,tmpl:null})},resolveI18n({en:'Cancel',nl:'Annuleren'},lang)),
-          React.createElement('button',{className:'header-btn primary',onClick:handleSave},resolveI18n({en:'Save',nl:'Opslaan'},lang)))
+        React.createElement('div', {className:'eem-body'},
+          React.createElement('div', {className:'eem-content'},
+            React.createElement('div', {style:{display:'grid',gap:12}},
+              React.createElement('div', null,
+                React.createElement('label',{style:{fontSize:10,fontWeight:600,color:'var(--text-secondary)',display:'block',marginBottom:3}},resolveI18n({en:'Key',nl:'Sleutel'},lang)),
+                React.createElement(Input,{size:'small',value:tKey,onChange:e=>setTKey(e.target.value),disabled:isEdit,placeholder:'devices'})),
+              React.createElement('div', null,
+                React.createElement('label',{style:{fontSize:10,fontWeight:600,color:'var(--text-secondary)',display:'block',marginBottom:3}},resolveI18n({en:'Label',nl:'Label'},lang)),
+                React.createElement(Input,{size:'small',value:tLabel,onChange:e=>setTLabel(e.target.value),placeholder:'Devices'})),
+              React.createElement('div', null,
+                React.createElement('label',{style:{fontSize:10,fontWeight:600,color:'var(--text-secondary)',display:'block',marginBottom:3}},resolveI18n({en:'Type',nl:'Type'},lang)),
+                React.createElement(Select,{size:'small',style:{width:'100%'},value:tType,onChange:setTType,
+                  options:[{value:'overview',label:'Overview'},{value:'children',label:'Children'},{value:'action',label:'Action'},{value:'form',label:'Form'},{value:'custom',label:'Custom'}]})),
+              tType==='children' && React.createElement('div', null,
+                React.createElement('label',{style:{fontSize:10,fontWeight:600,color:'var(--text-secondary)',display:'block',marginBottom:3}},resolveI18n({en:'Child Type',nl:'Kindtype'},lang)),
+                React.createElement(Select,{size:'small',style:{width:'100%'},value:tChildType,onChange:setTChildType,
+                  options:(tmpl?.children_types||[]).map(ct=>({value:ct.entity_type,label:resolveI18n(ENTITY_TYPE_REGISTRY[ct.entity_type]?.label,lang)||ct.entity_type}))})),
+              (tType==='action'||tType==='custom') && React.createElement('div', null,
+                React.createElement('label',{style:{fontSize:10,fontWeight:600,color:'var(--text-secondary)',display:'block',marginBottom:3}},resolveI18n({en:'MFE Key',nl:'MFE Sleutel'},lang)),
+                React.createElement(Input,{size:'small',value:tMfeKey,onChange:e=>setTMfeKey(e.target.value),placeholder:'@domain/my-tab'})),
+              tType==='form' && React.createElement('div', null,
+                React.createElement('label',{style:{fontSize:10,fontWeight:600,color:'var(--text-secondary)',display:'block',marginBottom:3}},resolveI18n({en:'Form Group',nl:'Formuliergroep'},lang)),
+                React.createElement(Select,{size:'small',style:{width:'100%'},value:tFormGroupKey,onChange:setTFormGroupKey,
+                  options:(tmpl?.form_groups||[]).map(fg=>({value:fg.key,label:resolveI18n(fg.label,lang)||fg.key}))}))
+            )
+          )
+        ),
+        React.createElement('div', {className:'eem-footer'},
+          React.createElement('span'),
+          React.createElement('div', {style:{display:'flex',gap:8}},
+            React.createElement(Button,{size:'small',onClick:()=>setTabEditModal({visible:false,tab:null,tmpl:null})},resolveI18n({en:'Cancel',nl:'Annuleren'},lang)),
+            React.createElement(Button,{size:'small',type:'primary',onClick:handleSave},resolveI18n({en:'Save',nl:'Opslaan'},lang))))
       )
-    );
+    ), document.body);
   }
 
   // ── Phase 3: PrivilegeEditModal ──
@@ -11787,35 +11806,45 @@ function DeveloperStudioPage({t, lang, tab, dsRoute, updateHash}) {
       PrivilegeStore.put({id:key, appId:pApp, resource:pResource, action:pAction});
       setPrivEditModal({visible:false,priv:null}); rerender();
     };
-    return React.createElement('div', {className:'eem-overlay', onClick:()=>setPrivEditModal({visible:false,priv:null})},
+    return ReactDOM.createPortal(React.createElement('div', {className:'eem-overlay', onClick:()=>setPrivEditModal({visible:false,priv:null})},
       React.createElement('div', {className:'eem-modal', style:{width:440,maxWidth:440,height:'auto',maxHeight:'60vh'}, onClick:e=>e.stopPropagation()},
-        React.createElement('div', {style:{padding:'12px 16px',borderBottom:'1px solid var(--border)',fontSize:13,fontWeight:600}},
-          isEdit ? resolveI18n({en:'Edit Privilege',nl:'Recht Bewerken'},lang) : resolveI18n({en:'New Privilege',nl:'Nieuw Recht'},lang)),
-        React.createElement('div', {style:{padding:16,display:'grid',gap:12,overflowY:'auto'}},
-          React.createElement('div', null,
-            React.createElement('label',{style:{fontSize:10,fontWeight:600,color:'var(--text-secondary)',display:'block',marginBottom:3}},resolveI18n({en:'Key (auto: app.resource.action)',nl:'Sleutel (auto: app.bron.actie)'},lang)),
-            React.createElement(Input,{size:'small',value:pKey,onChange:e=>setPKey(e.target.value),disabled:isEdit,placeholder:'dashboard.reports.view'})),
-          React.createElement('div', null,
-            React.createElement('label',{style:{fontSize:10,fontWeight:600,color:'var(--text-secondary)',display:'block',marginBottom:3}},resolveI18n({en:'App',nl:'App'},lang)),
-            React.createElement(Select,{size:'small',style:{width:'100%'},value:pApp,onChange:setPApp,showSearch:true,
-              options:[...apps.map(a=>({value:a,label:a})),{value:'__new__',label:'+ New app'}],
-              onSelect:v=>{ if (v==='__new__') { const a=prompt('App name:'); if(a) setPApp(a); }}})),
-          React.createElement('div', null,
-            React.createElement('label',{style:{fontSize:10,fontWeight:600,color:'var(--text-secondary)',display:'block',marginBottom:3}},resolveI18n({en:'Resource',nl:'Bron'},lang)),
-            React.createElement(Input,{size:'small',value:pResource,onChange:e=>setPResource(e.target.value),placeholder:'reports'})),
-          React.createElement('div', null,
-            React.createElement('label',{style:{fontSize:10,fontWeight:600,color:'var(--text-secondary)',display:'block',marginBottom:3}},resolveI18n({en:'Action',nl:'Actie'},lang)),
-            React.createElement(Select,{size:'small',style:{width:'100%'},value:pAction,onChange:setPAction,
-              options:[{value:'view',label:'view'},{value:'create',label:'create'},{value:'edit',label:'edit'},{value:'delete',label:'delete'},{value:'manage',label:'manage'}]})),
-          React.createElement('div', null,
-            React.createElement('label',{style:{fontSize:10,fontWeight:600,color:'var(--text-secondary)',display:'block',marginBottom:3}},resolveI18n({en:'Description',nl:'Beschrijving'},lang)),
-            React.createElement(Input.TextArea,{size:'small',rows:2,value:pDesc,onChange:e=>setPDesc(e.target.value),placeholder:'Can view reports in the dashboard'}))
+        React.createElement('div', {className:'eem-header'},
+          React.createElement('div', {className:'eem-header-icon'}, React.createElement(KeyOutlined||LockOutlined, {style:{fontSize:16,color:'var(--warning)'}})),
+          React.createElement('div', {className:'eem-header-title'},
+            isEdit ? resolveI18n({en:'Edit Privilege',nl:'Recht Bewerken'},lang) : resolveI18n({en:'New Privilege',nl:'Nieuw Recht'},lang)),
+          React.createElement('span', {className:'eem-header-close', onClick:()=>setPrivEditModal({visible:false,priv:null})}, React.createElement(CloseOutlined))
         ),
-        React.createElement('div', {style:{padding:'8px 16px',borderTop:'1px solid var(--border)',display:'flex',justifyContent:'flex-end',gap:8}},
-          React.createElement('button',{className:'header-btn',onClick:()=>setPrivEditModal({visible:false,priv:null})},resolveI18n({en:'Cancel',nl:'Annuleren'},lang)),
-          React.createElement('button',{className:'header-btn primary',onClick:handleSave},resolveI18n({en:'Save',nl:'Opslaan'},lang)))
+        React.createElement('div', {className:'eem-body'},
+          React.createElement('div', {className:'eem-content'},
+            React.createElement('div', {style:{display:'grid',gap:12}},
+              React.createElement('div', null,
+                React.createElement('label',{style:{fontSize:10,fontWeight:600,color:'var(--text-secondary)',display:'block',marginBottom:3}},resolveI18n({en:'Key (auto: app.resource.action)',nl:'Sleutel (auto: app.bron.actie)'},lang)),
+                React.createElement(Input,{size:'small',value:pKey,onChange:e=>setPKey(e.target.value),disabled:isEdit,placeholder:'dashboard.reports.view'})),
+              React.createElement('div', null,
+                React.createElement('label',{style:{fontSize:10,fontWeight:600,color:'var(--text-secondary)',display:'block',marginBottom:3}},resolveI18n({en:'App',nl:'App'},lang)),
+                React.createElement(Select,{size:'small',style:{width:'100%'},value:pApp,onChange:setPApp,showSearch:true,
+                  options:[...apps.map(a=>({value:a,label:a})),{value:'__new__',label:'+ New app'}],
+                  onSelect:v=>{ if (v==='__new__') { const a=prompt('App name:'); if(a) setPApp(a); }}})),
+              React.createElement('div', null,
+                React.createElement('label',{style:{fontSize:10,fontWeight:600,color:'var(--text-secondary)',display:'block',marginBottom:3}},resolveI18n({en:'Resource',nl:'Bron'},lang)),
+                React.createElement(Input,{size:'small',value:pResource,onChange:e=>setPResource(e.target.value),placeholder:'reports'})),
+              React.createElement('div', null,
+                React.createElement('label',{style:{fontSize:10,fontWeight:600,color:'var(--text-secondary)',display:'block',marginBottom:3}},resolveI18n({en:'Action',nl:'Actie'},lang)),
+                React.createElement(Select,{size:'small',style:{width:'100%'},value:pAction,onChange:setPAction,
+                  options:[{value:'view',label:'view'},{value:'create',label:'create'},{value:'edit',label:'edit'},{value:'delete',label:'delete'},{value:'manage',label:'manage'}]})),
+              React.createElement('div', null,
+                React.createElement('label',{style:{fontSize:10,fontWeight:600,color:'var(--text-secondary)',display:'block',marginBottom:3}},resolveI18n({en:'Description',nl:'Beschrijving'},lang)),
+                React.createElement(Input.TextArea,{size:'small',rows:2,value:pDesc,onChange:e=>setPDesc(e.target.value),placeholder:'Can view reports in the dashboard'}))
+            )
+          )
+        ),
+        React.createElement('div', {className:'eem-footer'},
+          React.createElement('span'),
+          React.createElement('div', {style:{display:'flex',gap:8}},
+            React.createElement(Button,{size:'small',onClick:()=>setPrivEditModal({visible:false,priv:null})},resolveI18n({en:'Cancel',nl:'Annuleren'},lang)),
+            React.createElement(Button,{size:'small',type:'primary',onClick:handleSave},resolveI18n({en:'Save',nl:'Opslaan'},lang))))
       )
-    );
+    ), document.body);
   }
 
   // ── Phase 3: PrivilegeGroupEditModal ──
@@ -11834,35 +11863,45 @@ function DeveloperStudioPage({t, lang, tab, dsRoute, updateHash}) {
       PrivilegeCatalogStore.putGroup({key:gKey, name:gName, i18n:{[lang]:gName}, app:gApp, level:gLevel, privilege_keys:gPrivKeys, icon:'LockOutlined'});
       setPrivGroupEditModal({visible:false,group:null}); rerender();
     };
-    return React.createElement('div', {className:'eem-overlay', onClick:()=>setPrivGroupEditModal({visible:false,group:null})},
+    return ReactDOM.createPortal(React.createElement('div', {className:'eem-overlay', onClick:()=>setPrivGroupEditModal({visible:false,group:null})},
       React.createElement('div', {className:'eem-modal', style:{width:480,maxWidth:480,height:'auto',maxHeight:'70vh'}, onClick:e=>e.stopPropagation()},
-        React.createElement('div', {style:{padding:'12px 16px',borderBottom:'1px solid var(--border)',fontSize:13,fontWeight:600}},
-          isEdit ? resolveI18n({en:'Edit Privilege Group',nl:'Rechtengroep Bewerken'},lang) : resolveI18n({en:'New Privilege Group',nl:'Nieuwe Rechtengroep'},lang)),
-        React.createElement('div', {style:{padding:16,display:'grid',gap:12,overflowY:'auto'}},
-          React.createElement('div', null,
-            React.createElement('label',{style:{fontSize:10,fontWeight:600,color:'var(--text-secondary)',display:'block',marginBottom:3}},resolveI18n({en:'Key',nl:'Sleutel'},lang)),
-            React.createElement(Input,{size:'small',value:gKey,onChange:e=>setGKey(e.target.value),disabled:isEdit,placeholder:'config_viewer'})),
-          React.createElement('div', null,
-            React.createElement('label',{style:{fontSize:10,fontWeight:600,color:'var(--text-secondary)',display:'block',marginBottom:3}},resolveI18n({en:'Name',nl:'Naam'},lang)),
-            React.createElement(Input,{size:'small',value:gName,onChange:e=>setGName(e.target.value),placeholder:'Configuration Viewer'})),
-          React.createElement('div', null,
-            React.createElement('label',{style:{fontSize:10,fontWeight:600,color:'var(--text-secondary)',display:'block',marginBottom:3}},resolveI18n({en:'App',nl:'App'},lang)),
-            React.createElement(Select,{size:'small',style:{width:'100%'},value:gApp,onChange:setGApp,showSearch:true,
-              options:apps.map(a=>({value:a,label:a}))})),
-          React.createElement('div', null,
-            React.createElement('label',{style:{fontSize:10,fontWeight:600,color:'var(--text-secondary)',display:'block',marginBottom:3}},resolveI18n({en:'Level',nl:'Niveau'},lang)),
-            React.createElement(Select,{size:'small',style:{width:'100%'},value:gLevel,onChange:setGLevel,
-              options:[{value:'viewer',label:'Viewer'},{value:'editor',label:'Editor'},{value:'manager',label:'Manager'},{value:'admin',label:'Admin'}]})),
-          React.createElement('div', null,
-            React.createElement('label',{style:{fontSize:10,fontWeight:600,color:'var(--text-secondary)',display:'block',marginBottom:3}},resolveI18n({en:'Privilege Keys',nl:'Recht Sleutels'},lang)),
-            React.createElement(Select,{mode:'multiple',size:'small',style:{width:'100%'},value:gPrivKeys,onChange:setGPrivKeys,
-              options:allPrivDefs.filter(d=>!gApp||d.app===gApp).map(d=>({value:d.key,label:d.key}))}))
+        React.createElement('div', {className:'eem-header'},
+          React.createElement('div', {className:'eem-header-icon'}, React.createElement(LockOutlined, {style:{fontSize:16,color:'var(--info)'}})),
+          React.createElement('div', {className:'eem-header-title'},
+            isEdit ? resolveI18n({en:'Edit Privilege Group',nl:'Rechtengroep Bewerken'},lang) : resolveI18n({en:'New Privilege Group',nl:'Nieuwe Rechtengroep'},lang)),
+          React.createElement('span', {className:'eem-header-close', onClick:()=>setPrivGroupEditModal({visible:false,group:null})}, React.createElement(CloseOutlined))
         ),
-        React.createElement('div', {style:{padding:'8px 16px',borderTop:'1px solid var(--border)',display:'flex',justifyContent:'flex-end',gap:8}},
-          React.createElement('button',{className:'header-btn',onClick:()=>setPrivGroupEditModal({visible:false,group:null})},resolveI18n({en:'Cancel',nl:'Annuleren'},lang)),
-          React.createElement('button',{className:'header-btn primary',onClick:handleSave},resolveI18n({en:'Save',nl:'Opslaan'},lang)))
+        React.createElement('div', {className:'eem-body'},
+          React.createElement('div', {className:'eem-content'},
+            React.createElement('div', {style:{display:'grid',gap:12}},
+              React.createElement('div', null,
+                React.createElement('label',{style:{fontSize:10,fontWeight:600,color:'var(--text-secondary)',display:'block',marginBottom:3}},resolveI18n({en:'Key',nl:'Sleutel'},lang)),
+                React.createElement(Input,{size:'small',value:gKey,onChange:e=>setGKey(e.target.value),disabled:isEdit,placeholder:'config_viewer'})),
+              React.createElement('div', null,
+                React.createElement('label',{style:{fontSize:10,fontWeight:600,color:'var(--text-secondary)',display:'block',marginBottom:3}},resolveI18n({en:'Name',nl:'Naam'},lang)),
+                React.createElement(Input,{size:'small',value:gName,onChange:e=>setGName(e.target.value),placeholder:'Configuration Viewer'})),
+              React.createElement('div', null,
+                React.createElement('label',{style:{fontSize:10,fontWeight:600,color:'var(--text-secondary)',display:'block',marginBottom:3}},resolveI18n({en:'App',nl:'App'},lang)),
+                React.createElement(Select,{size:'small',style:{width:'100%'},value:gApp,onChange:setGApp,showSearch:true,
+                  options:apps.map(a=>({value:a,label:a}))})),
+              React.createElement('div', null,
+                React.createElement('label',{style:{fontSize:10,fontWeight:600,color:'var(--text-secondary)',display:'block',marginBottom:3}},resolveI18n({en:'Level',nl:'Niveau'},lang)),
+                React.createElement(Select,{size:'small',style:{width:'100%'},value:gLevel,onChange:setGLevel,
+                  options:[{value:'viewer',label:'Viewer'},{value:'editor',label:'Editor'},{value:'manager',label:'Manager'},{value:'admin',label:'Admin'}]})),
+              React.createElement('div', null,
+                React.createElement('label',{style:{fontSize:10,fontWeight:600,color:'var(--text-secondary)',display:'block',marginBottom:3}},resolveI18n({en:'Privilege Keys',nl:'Recht Sleutels'},lang)),
+                React.createElement(Select,{mode:'multiple',size:'small',style:{width:'100%'},value:gPrivKeys,onChange:setGPrivKeys,
+                  options:allPrivDefs.filter(d=>!gApp||d.app===gApp).map(d=>({value:d.key,label:d.key}))}))
+            )
+          )
+        ),
+        React.createElement('div', {className:'eem-footer'},
+          React.createElement('span'),
+          React.createElement('div', {style:{display:'flex',gap:8}},
+            React.createElement(Button,{size:'small',onClick:()=>setPrivGroupEditModal({visible:false,group:null})},resolveI18n({en:'Cancel',nl:'Annuleren'},lang)),
+            React.createElement(Button,{size:'small',type:'primary',onClick:handleSave},resolveI18n({en:'Save',nl:'Opslaan'},lang))))
       )
-    );
+    ), document.body);
   }
 
   // ── Block Detail (Phase 4: property group content) ──
@@ -12596,51 +12635,125 @@ function DeveloperStudioPage({t, lang, tab, dsRoute, updateHash}) {
     });
   }
 
-  // ── Template Edit Modal (Phase 4a) ──
+  // ── Template Edit Modal (Phase 4a) — eem-* pattern with sub-tabs ──
   function renderTemplateEditModal() {
     if (!tmplEditModal.visible || !tmplEditModal.tmpl) return null;
     const tmpl = tmplEditModal.tmpl;
-    const [localName, setLocalName] = [tmpl.name, (v) => { tmplEditModal.tmpl.name = v; rerender(); }];
-    const [localDesc, setLocalDesc] = [typeof tmpl.description === 'string' ? tmpl.description : '', (v) => { tmplEditModal.tmpl.description = v; rerender(); }];
-    const [localIcon, setLocalIcon] = [tmpl.icon || '', (v) => { tmplEditModal.tmpl.icon = v; rerender(); }];
-    return React.createElement(Modal, {
-      open: true,
-      title: resolveI18n({en:'Edit Entity Type',nl:'Entiteitstype Bewerken'},lang),
-      onCancel: () => setTmplEditModal({visible:false, tmpl:null}),
-      onOk: () => {
-        EntityTemplateStore.putTemplate(tmplEditModal.tmpl);
-        setTmplEditModal({visible:false, tmpl:null});
-        rerender();
-      },
-      okText: resolveI18n({en:'Save',nl:'Opslaan'},lang),
-      cancelText: resolveI18n({en:'Cancel',nl:'Annuleren'},lang),
-    },
-      React.createElement('div', {style:{display:'grid',gap:12}},
-        React.createElement('div', null,
-          React.createElement('div', {style:{fontSize:11,fontWeight:500,color:'var(--text-secondary)',marginBottom:4}}, resolveI18n({en:'Name',nl:'Naam'},lang)),
-          React.createElement(Input, {size:'small', value:tmpl.name, onChange:e=>{tmplEditModal.tmpl.name=e.target.value;rerender();}})
-        ),
-        React.createElement('div', null,
-          React.createElement('div', {style:{fontSize:11,fontWeight:500,color:'var(--text-secondary)',marginBottom:4}}, resolveI18n({en:'Description',nl:'Beschrijving'},lang)),
-          React.createElement(Input, {size:'small', value:typeof tmpl.description === 'string' ? tmpl.description : '', onChange:e=>{tmplEditModal.tmpl.description=e.target.value;rerender();}})
-        ),
-        React.createElement('div', null,
-          React.createElement('div', {style:{fontSize:11,fontWeight:500,color:'var(--text-secondary)',marginBottom:4}}, resolveI18n({en:'Icon',nl:'Icoon'},lang)),
-          React.createElement(Input, {size:'small', value:tmpl.icon||'', onChange:e=>{tmplEditModal.tmpl.icon=e.target.value;rerender();}, placeholder:'e.g. ThunderboltOutlined'})
-        ),
-        React.createElement('div', null,
-          React.createElement('div', {style:{fontSize:11,fontWeight:500,color:'var(--text-secondary)',marginBottom:4}}, resolveI18n({en:'Lifecycle Status',nl:'Levenscyclus Status'},lang)),
-          React.createElement(Select, {size:'small', style:{width:'100%'}, value:tmpl.lifecycle_status||'draft',
-            onChange:v=>{tmplEditModal.tmpl.lifecycle_status=v;rerender();},
-            options:[
-              {value:'draft',label:resolveI18n({en:'Draft',nl:'Concept'},lang)},
-              {value:'active',label:resolveI18n({en:'Active',nl:'Actief'},lang)},
-              {value:'deprecated',label:resolveI18n({en:'Deprecated',nl:'Verouderd'},lang)},
-              {value:'archived',label:resolveI18n({en:'Archived',nl:'Gearchiveerd'},lang)},
-            ]
-          })
+    const [tmplEditTab, setTmplEditTab] = useState('general');
+    const reg = ENTITY_TYPE_REGISTRY[tmpl.entity_type];
+    const TmplIcon = window[tmpl.icon || reg?.icon] || BlockOutlined;
+    const typeLabel = resolveI18n(reg?.label,lang) || tmpl.entity_type;
+    const handleClose = () => setTmplEditModal({visible:false, tmpl:null});
+    const handleSave = () => {
+      EntityTemplateStore.putTemplate(tmplEditModal.tmpl);
+      setTmplEditModal({visible:false, tmpl:null});
+      rerender();
+    };
+    const tmplEditSubTabs = [
+      { key:'general', label:resolveI18n({en:'General',nl:'Algemeen'},lang), icon:'SettingOutlined' },
+      { key:'appearance', label:resolveI18n({en:'Appearance',nl:'Uiterlijk'},lang), icon:'PictureOutlined' },
+      { key:'lifecycle', label:resolveI18n({en:'Lifecycle',nl:'Levenscyclus'},lang), icon:'HistoryOutlined' },
+    ];
+    const iconOptions = ['ThunderboltOutlined','HomeOutlined','HddOutlined','UserOutlined','TeamOutlined','AlertOutlined',
+      'ControlOutlined','DashboardOutlined','SettingOutlined','ApiOutlined','CloudOutlined','DatabaseOutlined',
+      'SafetyCertificateOutlined','CarOutlined','BulbOutlined','ExperimentOutlined','BlockOutlined','AppstoreOutlined',
+      'BuildOutlined','FundOutlined','SwapOutlined','PieChartOutlined','EuroCircleOutlined','KeyOutlined','LockOutlined'];
+    return ReactDOM.createPortal(
+      React.createElement('div', {className:'eem-overlay', onClick:handleClose},
+        React.createElement('div', {className:'eem-modal', style:{width:640,maxWidth:640,height:'auto',maxHeight:'70vh'}, onClick:e=>e.stopPropagation()},
+          // Header
+          React.createElement('div', {className:'eem-header'},
+            React.createElement('div', {className:'eem-header-icon'}, React.createElement(TmplIcon, {style:{fontSize:16,color:'var(--brand)'}})),
+            React.createElement('div', null,
+              React.createElement('div', {className:'eem-header-title'}, tmpl.name || typeLabel),
+              React.createElement('div', {style:{fontSize:11,color:'var(--text-tertiary)',marginTop:2}}, resolveI18n({en:'Edit Entity Type',nl:'Entiteitstype Bewerken'},lang))
+            ),
+            React.createElement('span', {className:'eem-header-badge'}, typeLabel),
+            React.createElement('span', {className:'eem-header-close', onClick:handleClose}, React.createElement(CloseOutlined))
+          ),
+          // Body — left tabs + right content
+          React.createElement('div', {className:'eem-body'},
+            React.createElement('div', {className:'eem-tabs'},
+              tmplEditSubTabs.map(tab => {
+                const TabIcon = window[tab.icon] || SettingOutlined;
+                return React.createElement('div', {
+                  key:tab.key, className:`eem-tab ${tmplEditTab===tab.key?'active':''}`,
+                  onClick:()=>setTmplEditTab(tab.key)
+                },
+                  React.createElement('span', {className:'eem-tab-icon'}, React.createElement(TabIcon, {style:{fontSize:13}})),
+                  React.createElement('span', null, tab.label)
+                );
+              })
+            ),
+            React.createElement('div', {className:'eem-content'},
+              // General tab
+              tmplEditTab === 'general' && React.createElement('div', {style:{display:'grid',gap:12}},
+                React.createElement('div', null,
+                  React.createElement('label',{style:{fontSize:10,fontWeight:600,color:'var(--text-secondary)',display:'block',marginBottom:3}},resolveI18n({en:'Entity Type',nl:'Entiteitstype'},lang)),
+                  React.createElement(Input, {size:'small', value:tmpl.entity_type, disabled:true})),
+                React.createElement('div', null,
+                  React.createElement('label',{style:{fontSize:10,fontWeight:600,color:'var(--text-secondary)',display:'block',marginBottom:3}},resolveI18n({en:'Type Key',nl:'Type Sleutel'},lang)),
+                  React.createElement(Input, {size:'small', value:tmpl.type_key, disabled:true})),
+                React.createElement('div', null,
+                  React.createElement('label',{style:{fontSize:10,fontWeight:600,color:'var(--text-secondary)',display:'block',marginBottom:3}},resolveI18n({en:'Name',nl:'Naam'},lang)),
+                  React.createElement(Input, {size:'small', value:tmpl.name, onChange:e=>{tmplEditModal.tmpl.name=e.target.value;rerender();}})),
+                React.createElement('div', null,
+                  React.createElement('label',{style:{fontSize:10,fontWeight:600,color:'var(--text-secondary)',display:'block',marginBottom:3}},resolveI18n({en:'Description',nl:'Beschrijving'},lang)),
+                  React.createElement(Input.TextArea, {size:'small', rows:3, value:typeof tmpl.description === 'string' ? tmpl.description : '', onChange:e=>{tmplEditModal.tmpl.description=e.target.value;rerender();}}))
+              ),
+              // Appearance tab
+              tmplEditTab === 'appearance' && React.createElement('div', {style:{display:'grid',gap:12}},
+                React.createElement('div', null,
+                  React.createElement('label',{style:{fontSize:10,fontWeight:600,color:'var(--text-secondary)',display:'block',marginBottom:3}},resolveI18n({en:'Icon',nl:'Icoon'},lang)),
+                  React.createElement(Select, {size:'small', style:{width:'100%'}, value:tmpl.icon||'', showSearch:true,
+                    onChange:v=>{tmplEditModal.tmpl.icon=v;rerender();}, allowClear:true,
+                    placeholder:resolveI18n({en:'Select icon...',nl:'Selecteer icoon...'},lang),
+                    options:iconOptions.map(ic=>({value:ic,label:React.createElement('span',{style:{display:'flex',alignItems:'center',gap:6}},
+                      React.createElement(window[ic]||BlockOutlined,{style:{fontSize:13}}),ic)}))
+                  })),
+                React.createElement('div', {style:{padding:'12px 0'}},
+                  React.createElement('label',{style:{fontSize:10,fontWeight:600,color:'var(--text-secondary)',display:'block',marginBottom:8}},resolveI18n({en:'Preview',nl:'Voorbeeld'},lang)),
+                  React.createElement('div', {style:{display:'flex',alignItems:'center',gap:12,padding:'12px 16px',background:'var(--bg-secondary)',borderRadius:8,border:'1px solid var(--border)'}},
+                    React.createElement('div', {style:{width:36,height:36,borderRadius:8,background:'var(--brand-bg)',display:'flex',alignItems:'center',justifyContent:'center'}},
+                      React.createElement(window[tmpl.icon]||TmplIcon, {style:{fontSize:18,color:'var(--brand)'}})),
+                    React.createElement('div', null,
+                      React.createElement('div', {style:{fontSize:13,fontWeight:600,color:'var(--text-primary)'}}, tmpl.name || typeLabel),
+                      React.createElement('div', {style:{fontSize:10,color:'var(--text-tertiary)'}}, tmpl.entity_type + ':' + tmpl.type_key))
+                  ))
+              ),
+              // Lifecycle tab
+              tmplEditTab === 'lifecycle' && React.createElement('div', {style:{display:'grid',gap:12}},
+                React.createElement('div', null,
+                  React.createElement('label',{style:{fontSize:10,fontWeight:600,color:'var(--text-secondary)',display:'block',marginBottom:3}},resolveI18n({en:'Lifecycle Status',nl:'Levenscyclus Status'},lang)),
+                  React.createElement(Select, {size:'small', style:{width:'100%'}, value:tmpl.lifecycle_status||'draft',
+                    onChange:v=>{tmplEditModal.tmpl.lifecycle_status=v;rerender();},
+                    options:[
+                      {value:'draft',label:resolveI18n({en:'Draft',nl:'Concept'},lang)},
+                      {value:'active',label:resolveI18n({en:'Active',nl:'Actief'},lang)},
+                      {value:'deprecated',label:resolveI18n({en:'Deprecated',nl:'Verouderd'},lang)},
+                      {value:'archived',label:resolveI18n({en:'Archived',nl:'Gearchiveerd'},lang)},
+                    ]
+                  })),
+                React.createElement('div', null,
+                  React.createElement('label',{style:{fontSize:10,fontWeight:600,color:'var(--text-secondary)',display:'block',marginBottom:3}},resolveI18n({en:'Version',nl:'Versie'},lang)),
+                  React.createElement(Input, {size:'small', value:'v'+(tmpl.version||1), disabled:true})),
+                React.createElement('div', {style:{padding:'8px 0'}},
+                  React.createElement('div',{style:{fontSize:10,fontWeight:600,color:'var(--text-secondary)',marginBottom:6}},resolveI18n({en:'History',nl:'Geschiedenis'},lang)),
+                  React.createElement('div',{style:{fontSize:11,color:'var(--text-tertiary)',padding:'8px 12px',background:'var(--bg-secondary)',borderRadius:6,border:'1px solid var(--border)'}},
+                    resolveI18n({en:'Template version history will appear here once versioning is active.',nl:'Template versiegeschiedenis verschijnt hier zodra versiebeheer actief is.'},lang)))
+              )
+            )
+          ),
+          // Footer
+          React.createElement('div', {className:'eem-footer'},
+            React.createElement('span'),
+            React.createElement('div', {style:{display:'flex',gap:8}},
+              React.createElement(Button, {size:'small', onClick:handleClose}, resolveI18n({en:'Cancel',nl:'Annuleren'},lang)),
+              React.createElement(Button, {size:'small', type:'primary', onClick:handleSave}, resolveI18n({en:'Save',nl:'Opslaan'},lang)))
+          )
         )
-      )
+      ),
+      document.body
     );
   }
 
@@ -12697,7 +12810,7 @@ function DeveloperStudioPage({t, lang, tab, dsRoute, updateHash}) {
       };
 
       return (
-        <div style={{display:'grid',gap:16,padding:16}}>
+        <div className="config-tab-content mfe-wrap" style={{display:'grid',gap:16}}>
           {/* Stat cards row */}
           <div className="stat-grid stat-grid-4">
             {React.createElement(StatCard,{label:resolveI18n({en:'Total Properties',nl:'Totaal Eigenschappen'},lang),value:allDefs.length,color:'var(--brand)'})}
@@ -12774,117 +12887,92 @@ function DeveloperStudioPage({t, lang, tab, dsRoute, updateHash}) {
           </div>
 
           {/* ═══ Phase 5a: All Entities Matrix ═══ */}
-          <div className="card" style={{padding:0}}>
-            <div style={{padding:'16px 20px'}}>
-              <div className="card-title">{resolveI18n({en:'All Entities Matrix',nl:'Alle Entiteiten Matrix'},lang)}</div>
-              <div className="card-subtitle">{resolveI18n({en:'Entity types overview with template, property, and instance statistics',nl:'Overzicht entiteitstypen met template-, eigenschap- en instantiestatistieken'},lang)}</div>
-            </div>
-            <div style={{overflowX:'auto'}}>
-              <table className="data-table" style={{fontSize:11}}>
-                <thead><tr>
-                  <th>{resolveI18n({en:'Entity',nl:'Entiteit'},lang)}</th>
-                  <th style={{textAlign:'center'}}>{resolveI18n({en:'Templates',nl:'Templates'},lang)}</th>
-                  <th style={{textAlign:'center'}}>{resolveI18n({en:'Properties',nl:'Eigenschappen'},lang)}</th>
-                  <th style={{textAlign:'center'}}>{resolveI18n({en:'Form Groups',nl:'Formuliergroepen'},lang)}</th>
-                  <th style={{textAlign:'center'}}>{resolveI18n({en:'Children',nl:'Kinderen'},lang)}</th>
-                  <th style={{textAlign:'center'}}>{resolveI18n({en:'Instances',nl:'Instanties'},lang)}</th>
-                  <th style={{textAlign:'center'}}>{resolveI18n({en:'Status',nl:'Status'},lang)}</th>
-                </tr></thead>
-                <tbody>{Object.keys(ENTITY_TYPE_REGISTRY).filter(et=>et!=='role').map(et => {
-                  const reg = ENTITY_TYPE_REGISTRY[et];
-                  const IconC = window[reg?.icon]||BlockOutlined;
-                  const etTemplates = allTemplates.filter(t=>t.entity_type===et);
-                  const baseTmpl = EntityTemplateStore.getTemplate(et,'default');
-                  const resolvedTmpl = EntityTemplateStore.resolveTemplate(et,'default');
-                  const propCount = (resolvedTmpl?.resolved?.properties||resolvedTmpl?.properties||[]).length;
-                  const fgCount = (resolvedTmpl?.form_groups||[]).length;
-                  const childCount = (baseTmpl?.children_types||[]).length;
-                  const instCount = EntityStore.getByType(et).length;
-                  const status = baseTmpl?.lifecycle_status||'draft';
-                  return <tr key={et} style={{cursor:'pointer'}} onClick={()=>{dsNavigate({type:'entity',entityType:et});setEntityDetailTab('preview');}}>
-                    <td style={{display:'flex',alignItems:'center',gap:6}}>
-                      {React.createElement(IconC,{style:{fontSize:12,color:reg?.color}})}
-                      <span style={{fontWeight:500}}>{resolveI18n(reg?.label,lang)||et}</span>
-                    </td>
-                    <td style={{textAlign:'center'}}><span style={{fontWeight:600,color:'var(--info)'}}>{etTemplates.length}</span></td>
-                    <td style={{textAlign:'center'}}><span style={{fontWeight:600,color:'var(--brand)'}}>{propCount}</span></td>
-                    <td style={{textAlign:'center'}}><span style={{fontWeight:600,color:'var(--purple)'}}>{fgCount}</span></td>
-                    <td style={{textAlign:'center'}}><span style={{fontWeight:600,color:'var(--warning)'}}>{childCount}</span></td>
-                    <td style={{textAlign:'center'}}><span style={{fontWeight:600,color:'var(--text-primary)'}}>{instCount}</span></td>
-                    <td style={{textAlign:'center'}}>{React.createElement(Tag,{color:lifecycleColor(status),style:{margin:0,fontSize:9}},lifecycleI18n(status))}</td>
-                  </tr>;
-                })}</tbody>
-              </table>
-            </div>
-          </div>
+          {React.createElement(EntityList, {
+            columns: [
+              {key:'entity', label:{en:'Entity',nl:'Entiteit'}, sortable:true, render:(_,r)=>{
+                const reg = ENTITY_TYPE_REGISTRY[r._et];
+                const IconC = window[reg?.icon]||BlockOutlined;
+                return React.createElement('span',{style:{display:'flex',alignItems:'center',gap:6}},
+                  React.createElement(IconC,{style:{fontSize:12,color:reg?.color}}),
+                  React.createElement('span',{style:{fontWeight:500}},resolveI18n(reg?.label,lang)||r._et));
+              }, getValue:r=>resolveI18n(ENTITY_TYPE_REGISTRY[r._et]?.label,lang)||r._et},
+              {key:'templates', label:{en:'Templates',nl:'Templates'}, sortable:true, getValue:r=>r._tmplCount,
+                render:(_,r)=>React.createElement('span',{style:{fontWeight:600,color:'var(--info)'}},r._tmplCount)},
+              {key:'properties', label:{en:'Properties',nl:'Eigenschappen'}, sortable:true, getValue:r=>r._propCount,
+                render:(_,r)=>React.createElement('span',{style:{fontWeight:600,color:'var(--brand)'}},r._propCount)},
+              {key:'formGroups', label:{en:'Form Groups',nl:'Formuliergroepen'}, sortable:true, getValue:r=>r._fgCount,
+                render:(_,r)=>React.createElement('span',{style:{fontWeight:600,color:'var(--purple)'}},r._fgCount)},
+              {key:'children', label:{en:'Children',nl:'Kinderen'}, sortable:true, getValue:r=>r._childCount,
+                render:(_,r)=>React.createElement('span',{style:{fontWeight:600,color:'var(--warning)'}},r._childCount)},
+              {key:'instances', label:{en:'Instances',nl:'Instanties'}, sortable:true, getValue:r=>r._instCount,
+                render:(_,r)=>React.createElement('span',{style:{fontWeight:600,color:'var(--text-primary)'}},r._instCount)},
+              {key:'status', label:{en:'Status',nl:'Status'}, sortable:true, filterable:true, getValue:r=>r._status,
+                render:(_,r)=>React.createElement(Tag,{color:lifecycleColor(r._status),style:{margin:0,fontSize:9}},lifecycleI18n(r._status))},
+            ],
+            dataSource: Object.keys(ENTITY_TYPE_REGISTRY).filter(et=>et!=='role').map(et => {
+              const baseTmpl = EntityTemplateStore.getTemplate(et,'default');
+              const resolvedTmpl = EntityTemplateStore.resolveTemplate(et,'default');
+              return { _et:et, _tmplCount:allTemplates.filter(t=>t.entity_type===et).length,
+                _propCount:(resolvedTmpl?.resolved?.properties||resolvedTmpl?.properties||[]).length,
+                _fgCount:(resolvedTmpl?.form_groups||[]).length,
+                _childCount:(baseTmpl?.children_types||[]).length,
+                _instCount:EntityStore.getByType(et).length,
+                _status:baseTmpl?.lifecycle_status||'draft' };
+            }),
+            rowKey:'_et', lang,
+            title: resolveI18n({en:'All Entities Matrix',nl:'Alle Entiteiten Matrix'},lang),
+            subtitle: resolveI18n({en:'Entity types overview with template, property, and instance statistics',nl:'Overzicht entiteitstypen met template-, eigenschap- en instantiestatistieken'},lang),
+            searchable:true, emptyIcon:React.createElement(InboxOutlined),
+            emptyText:{en:'No entity types',nl:'Geen entiteitstypen'},
+            onRowClick: r => { dsNavigate({type:'entity',entityType:r._et}); setEntityDetailTab('preview'); },
+          })}
 
           {/* ═══ Phase 5b: All Tabs View ═══ */}
-          <div className="card" style={{padding:0}}>
-            <div style={{padding:'16px 20px'}}>
-              <div className="card-title">{resolveI18n({en:'All Tabs View',nl:'Alle Tabs Overzicht'},lang)}</div>
-              <div className="card-subtitle">{resolveI18n({en:'Every detail tab across all entity templates',nl:'Alle detail tabs over alle entiteitstemplates'},lang)}</div>
-            </div>
-            <div style={{overflowX:'auto'}}>
-              <table className="data-table" style={{fontSize:11}}>
-                <thead><tr>
-                  <th>{resolveI18n({en:'Entity Type',nl:'Entiteitstype'},lang)}</th>
-                  <th>{resolveI18n({en:'Tab Key',nl:'Tab Sleutel'},lang)}</th>
-                  <th>{resolveI18n({en:'Tab Label',nl:'Tab Label'},lang)}</th>
-                  <th>{resolveI18n({en:'Type',nl:'Type'},lang)}</th>
-                  <th>{resolveI18n({en:'MFE Key',nl:'MFE Sleutel'},lang)}</th>
-                </tr></thead>
-                <tbody>{allTemplates.flatMap(tmpl => (tmpl.detail_tabs||[]).map(dt => ({...dt,_entityType:tmpl.entity_type,_typeKey:tmpl.type_key}))).map((dt,i) => {
-                  const reg = ENTITY_TYPE_REGISTRY[dt._entityType];
-                  return <tr key={`${dt._entityType}-${dt._typeKey}-${dt.key}-${i}`}>
-                    <td style={{display:'flex',alignItems:'center',gap:4}}>
-                      {React.createElement(window[reg?.icon]||BlockOutlined,{style:{fontSize:10,color:reg?.color}})}
-                      <span>{resolveI18n(reg?.label,lang)||dt._entityType}</span>
-                      {dt._typeKey!=='default'&&<span style={{fontSize:9,color:'var(--text-tertiary)',fontFamily:'monospace'}}>{dt._typeKey}</span>}
-                    </td>
-                    <td><span style={{fontFamily:'monospace',color:'var(--brand)',fontSize:10}}>{dt.key}</span></td>
-                    <td>{resolveI18n(dt.label,lang)||dt.key}</td>
-                    <td>{React.createElement(Tag,{color:dt.type==='overview'?'cyan':dt.type==='children'?'green':dt.type==='mfe'?'purple':'default',style:{margin:0,fontSize:9}},dt.type||'custom')}</td>
-                    <td><span style={{fontFamily:'monospace',fontSize:10,color:'var(--text-tertiary)'}}>{dt.mfe_key||'\u2014'}</span></td>
-                  </tr>;
-                })}</tbody>
-              </table>
-            </div>
-          </div>
+          {React.createElement(EntityList, {
+            columns: [
+              {key:'entity', label:{en:'Entity Type',nl:'Entiteitstype'}, sortable:true, getValue:r=>(resolveI18n(ENTITY_TYPE_REGISTRY[r._entityType]?.label,lang)||r._entityType)+(r._typeKey!=='default'?' / '+r._typeKey:''),
+                render:(_,r)=>{const reg=ENTITY_TYPE_REGISTRY[r._entityType];return React.createElement('span',{style:{display:'flex',alignItems:'center',gap:4}},
+                  React.createElement(window[reg?.icon]||BlockOutlined,{style:{fontSize:10,color:reg?.color}}),
+                  React.createElement('span',null,resolveI18n(reg?.label,lang)||r._entityType),
+                  r._typeKey!=='default'&&React.createElement('span',{style:{fontSize:9,color:'var(--text-tertiary)',fontFamily:'monospace'}},r._typeKey));}},
+              {key:'key', label:{en:'Tab Key',nl:'Tab Sleutel'}, sortable:true, render:(_,r)=>React.createElement('span',{style:{fontFamily:'monospace',color:'var(--brand)',fontSize:10}},r.key)},
+              {key:'label', label:{en:'Tab Label',nl:'Tab Label'}, getValue:r=>resolveI18n(r.label,lang)||r.key},
+              {key:'type', label:{en:'Type',nl:'Type'}, sortable:true, filterable:true, getValue:r=>r.type||'custom',
+                render:(_,r)=>React.createElement(Tag,{color:r.type==='overview'?'cyan':r.type==='children'?'green':r.type==='mfe'?'purple':'default',style:{margin:0,fontSize:9}},r.type||'custom')},
+              {key:'mfe', label:{en:'MFE Key',nl:'MFE Sleutel'}, getValue:r=>r.mfe_key||'\u2014',
+                render:(_,r)=>React.createElement('span',{style:{fontFamily:'monospace',fontSize:10,color:'var(--text-tertiary)'}},r.mfe_key||'\u2014')},
+            ],
+            dataSource: allTemplates.flatMap(tmpl => (tmpl.detail_tabs||[]).map(dt => ({...dt,_entityType:tmpl.entity_type,_typeKey:tmpl.type_key}))),
+            rowKey:(_,i)=>'ov-tab-'+i, lang,
+            title: resolveI18n({en:'All Tabs View',nl:'Alle Tabs Overzicht'},lang),
+            subtitle: resolveI18n({en:'Every detail tab across all entity templates',nl:'Alle detail tabs over alle entiteitstemplates'},lang),
+            searchable:true, emptyIcon:React.createElement(InboxOutlined),
+            emptyText:{en:'No tabs defined',nl:'Geen tabs gedefinieerd'},
+          })}
 
           {/* ═══ Phase 5c: All Form Groups View ═══ */}
-          <div className="card" style={{padding:0}}>
-            <div style={{padding:'16px 20px'}}>
-              <div className="card-title">{resolveI18n({en:'All Form Groups View',nl:'Alle Formuliergroepen Overzicht'},lang)}</div>
-              <div className="card-subtitle">{resolveI18n({en:'Every form group across all entity templates',nl:'Alle formuliergroepen over alle entiteitstemplates'},lang)}</div>
-            </div>
-            <div style={{overflowX:'auto'}}>
-              <table className="data-table" style={{fontSize:11}}>
-                <thead><tr>
-                  <th>{resolveI18n({en:'Entity Type',nl:'Entiteitstype'},lang)}</th>
-                  <th>{resolveI18n({en:'Group Key',nl:'Groep Sleutel'},lang)}</th>
-                  <th>{resolveI18n({en:'Label',nl:'Label'},lang)}</th>
-                  <th style={{textAlign:'center'}}>{resolveI18n({en:'Properties',nl:'Eigenschappen'},lang)}</th>
-                  <th style={{textAlign:'center'}}>{resolveI18n({en:'Shared Block?',nl:'Gedeeld Blok?'},lang)}</th>
-                  <th style={{textAlign:'center'}}>{resolveI18n({en:'MFE Override?',nl:'MFE Override?'},lang)}</th>
-                </tr></thead>
-                <tbody>{allTemplates.flatMap(tmpl => (tmpl.form_groups||[]).map(fg => ({...fg,_entityType:tmpl.entity_type,_typeKey:tmpl.type_key}))).map((fg,i) => {
-                  const reg = ENTITY_TYPE_REGISTRY[fg._entityType];
-                  const propCount = (fg.resolvedProperties||fg.property_keys||[]).length;
-                  return <tr key={`${fg._entityType}-${fg._typeKey}-${fg.key}-${i}`}>
-                    <td style={{display:'flex',alignItems:'center',gap:4}}>
-                      {React.createElement(window[reg?.icon]||BlockOutlined,{style:{fontSize:10,color:reg?.color}})}
-                      <span>{resolveI18n(reg?.label,lang)||fg._entityType}</span>
-                    </td>
-                    <td><span style={{fontFamily:'monospace',color:'var(--brand)',fontSize:10}}>{fg.key}</span></td>
-                    <td>{resolveI18n(fg.label,lang)||fg.key}</td>
-                    <td style={{textAlign:'center'}}><span style={{fontWeight:600}}>{propCount}</span></td>
-                    <td style={{textAlign:'center'}}>{fg.from_group?React.createElement(Tag,{color:'cyan',style:{margin:0,fontSize:9}},fg.from_group):<span style={{color:'var(--text-tertiary)'}}>{'\u2014'}</span>}</td>
-                    <td style={{textAlign:'center'}}>{fg.mfe_key?React.createElement(Tag,{color:'purple',style:{margin:0,fontSize:9}},fg.mfe_key):<span style={{color:'var(--text-tertiary)'}}>{'\u2014'}</span>}</td>
-                  </tr>;
-                })}</tbody>
-              </table>
-            </div>
-          </div>
+          {React.createElement(EntityList, {
+            columns: [
+              {key:'entity', label:{en:'Entity Type',nl:'Entiteitstype'}, sortable:true, getValue:r=>resolveI18n(ENTITY_TYPE_REGISTRY[r._entityType]?.label,lang)||r._entityType,
+                render:(_,r)=>{const reg=ENTITY_TYPE_REGISTRY[r._entityType];return React.createElement('span',{style:{display:'flex',alignItems:'center',gap:4}},
+                  React.createElement(window[reg?.icon]||BlockOutlined,{style:{fontSize:10,color:reg?.color}}),
+                  React.createElement('span',null,resolveI18n(reg?.label,lang)||r._entityType));}},
+              {key:'key', label:{en:'Group Key',nl:'Groep Sleutel'}, sortable:true, render:(_,r)=>React.createElement('span',{style:{fontFamily:'monospace',color:'var(--brand)',fontSize:10}},r.key)},
+              {key:'label', label:{en:'Label',nl:'Label'}, getValue:r=>resolveI18n(r.label,lang)||r.key},
+              {key:'props', label:{en:'Properties',nl:'Eigenschappen'}, sortable:true, getValue:r=>(r.resolvedProperties||r.property_keys||[]).length,
+                render:(_,r)=>React.createElement('span',{style:{fontWeight:600}},(r.resolvedProperties||r.property_keys||[]).length)},
+              {key:'shared', label:{en:'Shared Block?',nl:'Gedeeld Blok?'}, getValue:r=>r.from_group||'\u2014',
+                render:(_,r)=>r.from_group?React.createElement(Tag,{color:'cyan',style:{margin:0,fontSize:9}},r.from_group):React.createElement('span',{style:{color:'var(--text-tertiary)'}},'\u2014')},
+              {key:'mfe', label:{en:'MFE Override?',nl:'MFE Override?'}, getValue:r=>r.mfe_key||'\u2014',
+                render:(_,r)=>r.mfe_key?React.createElement(Tag,{color:'purple',style:{margin:0,fontSize:9}},r.mfe_key):React.createElement('span',{style:{color:'var(--text-tertiary)'}},'\u2014')},
+            ],
+            dataSource: allTemplates.flatMap(tmpl => (tmpl.form_groups||[]).map(fg => ({...fg,_entityType:tmpl.entity_type,_typeKey:tmpl.type_key}))),
+            rowKey:(_,i)=>'ov-fg-'+i, lang,
+            title: resolveI18n({en:'All Form Groups View',nl:'Alle Formuliergroepen Overzicht'},lang),
+            subtitle: resolveI18n({en:'Every form group across all entity templates',nl:'Alle formuliergroepen over alle entiteitstemplates'},lang),
+            searchable:true, emptyIcon:React.createElement(InboxOutlined),
+            emptyText:{en:'No form groups defined',nl:'Geen formuliergroepen gedefinieerd'},
+          })}
 
           {/* ═══ Phase 5d: Completeness Checker ═══ */}
           <div className="card">
