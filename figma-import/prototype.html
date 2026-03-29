@@ -2868,7 +2868,7 @@ const EntityTemplateStore = (() => {
   { entity_type:'site', type_key:'default', name:'Site',
     description:{en:'A physical location with energy devices — a building, farm, or industrial facility',nl:'Een fysieke locatie met energieapparaten — een gebouw, boerderij of industriele faciliteit'},
     icon:'HomeOutlined', lifecycle_status:'active', version:1,
-    children_types:[{entity_type:'deviceGroup'}],
+    children_types:[{entity_type:'site'},{entity_type:'deviceGroup'}],
     properties: [
       { property_key:'name', required:true, sort_order:1 },
       { property_key:'site_type', required:true, sort_order:2 },
@@ -2900,6 +2900,7 @@ const EntityTemplateStore = (() => {
     ],
     detail_tabs: [
       { key:'overview', label:{en:'Overview',nl:'Overzicht'}, type:'overview' },
+      { key:'subSites', label:{en:'Sub-sites',nl:'Sublocaties'}, type:'children', child_type:'site' },
       { key:'deviceGroups', label:{en:'Device Groups',nl:'Apparaatgroepen'}, type:'children', child_type:'deviceGroup' },
       { key:'allDevices', label:{en:'All Devices',nl:'Alle Apparaten'}, type:'action', mfe_key:'AllDevicesTab' },
       { key:'users', label:{en:'Users',nl:'Gebruikers'}, type:'action', mfe_key:'UsersTab' },
