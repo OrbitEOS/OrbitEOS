@@ -8307,8 +8307,7 @@ function CodeViewer({ value, title, collapsible, lang, onSave, collapsed: collap
       cursorStyle: editing ? 'line' : 'line-thin',
       cursorBlinking: editing ? 'blink' : 'solid',
     });
-    // Auto-fold all after creation
-    setTimeout(() => { ed.getAction('editor.foldAll')?.run(); }, 50);
+    // JSON shown fully expanded — user can fold manually if needed
     editorRef.current = ed;
     return () => { if (editorRef.current) { editorRef.current.dispose(); editorRef.current = null; } };
   }, [isCollapsed, monacoReady, editing]);
