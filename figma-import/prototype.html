@@ -13157,7 +13157,7 @@ function EntityStudioPage({t, lang, tab, dsRoute, updateHash}) {
               {(() => {
                 const userReg = {label:{en:'User',nl:'Gebruiker'},icon:'UserOutlined',color:'var(--info)'};
                 const roleReg = ENTITY_TYPE_REGISTRY.role;
-                const userCount = (UserStore.getUsers ? UserStore.getUsers() : []).length;
+                const userCount = UserStore.getAllUsers().length;
                 const roleCount = (RoleStore && RoleStore.getAll ? RoleStore.getAll() : []).length;
                 return React.createElement(React.Fragment, null,
                   React.createElement('div',{style:{display:'flex',alignItems:'center',gap:8,padding:'5px 8px',borderRadius:4}},
