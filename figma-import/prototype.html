@@ -11983,7 +11983,7 @@ function DeveloperStudioPage({t, lang, tab, dsRoute, updateHash}) {
   }
 
   // ── Phase 3: FormGroupEditModal ──
-  function renderFormGroupEditModal() {
+  function FormGroupEditModalInner({ lang, fgEditModal, setFgEditModal, rerender, allGroups }) {
     if (!fgEditModal.visible) return null;
     const isEdit = !!fgEditModal.fg;
     const [fgKey, setFgKey] = useState(fgEditModal.fg?.key || '');
@@ -12051,7 +12051,7 @@ function DeveloperStudioPage({t, lang, tab, dsRoute, updateHash}) {
   }
 
   // ── Phase 3: TabEditModal ──
-  function renderTabEditModal() {
+  function TabEditModalInner({ lang, tabEditModal, setTabEditModal, rerender }) {
     if (!tabEditModal.visible) return null;
     const isEdit = !!tabEditModal.tab;
     const [tKey, setTKey] = useState(tabEditModal.tab?.key || '');
@@ -12118,7 +12118,7 @@ function DeveloperStudioPage({t, lang, tab, dsRoute, updateHash}) {
   }
 
   // ── Phase 3: PrivilegeEditModal ──
-  function renderPrivilegeEditModal() {
+  function PrivilegeEditModalInner({ lang, privEditModal, setPrivEditModal, rerender }) {
     if (!privEditModal.visible) return null;
     const isEdit = !!privEditModal.priv;
     const [pKey, setPKey] = useState(privEditModal.priv?.key || '');
@@ -12176,7 +12176,7 @@ function DeveloperStudioPage({t, lang, tab, dsRoute, updateHash}) {
   }
 
   // ── Phase 3: PrivilegeGroupEditModal ──
-  function renderPrivilegeGroupEditModal() {
+  function PrivilegeGroupEditModalInner({ lang, privGroupEditModal, setPrivGroupEditModal, rerender }) {
     if (!privGroupEditModal.visible) return null;
     const isEdit = !!privGroupEditModal.group;
     const [gKey, setGKey] = useState(privGroupEditModal.group?.key || '');
@@ -12683,7 +12683,7 @@ function DeveloperStudioPage({t, lang, tab, dsRoute, updateHash}) {
   }
 
   // ── 7. Privilege Groups View ──
-  function renderPrivilegeGroupsView() {
+  function PrivilegeGroupsView({ lang, entityDetailTab, setEntityDetailTab, rerender, setPrivGroupEditModal }) {
     const allPrivGroups = PrivilegeCatalogStore.getGroups();
     const [expandedGroupKey, setExpandedGroupKey] = useState(null);
     const groupTabs = [
@@ -12781,7 +12781,7 @@ function DeveloperStudioPage({t, lang, tab, dsRoute, updateHash}) {
   }
 
   // ── 8. Role Templates View (Phase 6: EntityList with CRUD) ──
-  function renderRoleTemplatesView() {
+  function RoleTemplatesView({ lang, entityDetailTab, setEntityDetailTab, rerender }) {
     const roles = RoleStore.getAll();
     const [expandedRoleKey, setExpandedRoleKey] = useState(null);
     const roleTabs = [
@@ -12964,7 +12964,7 @@ function DeveloperStudioPage({t, lang, tab, dsRoute, updateHash}) {
   }
 
   // ── Template Edit Modal (Phase 4a) — eem-* pattern with sub-tabs ──
-  function renderTemplateEditModal() {
+  function TemplateEditModalInner({ lang, tmplEditModal, setTmplEditModal, rerender }) {
     if (!tmplEditModal.visible || !tmplEditModal.tmpl) return null;
     const tmpl = tmplEditModal.tmpl;
     const [tmplEditTab, setTmplEditTab] = useState('general');
@@ -13372,8 +13372,8 @@ function DeveloperStudioPage({t, lang, tab, dsRoute, updateHash}) {
     if (selectedNode.type === 'property') return renderPropertyDetail(selectedNode.propKey);
     if (selectedNode.type === 'dsGroup') return renderGroupDetail(selectedNode.groupKey);
     if (selectedNode.type === '_privileges') return renderPrivilegeCatalogView();
-    if (selectedNode.type === '_privilegeGroups') return renderPrivilegeGroupsView();
-    if (selectedNode.type === '_roleTemplates') return renderRoleTemplatesView();
+    if (selectedNode.type === '_privilegeGroups') return React.createElement(PrivilegeGroupsView, { lang, entityDetailTab, setEntityDetailTab, rerender, setPrivGroupEditModal });
+    if (selectedNode.type === '_roleTemplates') return React.createElement(RoleTemplatesView, { lang, entityDetailTab, setEntityDetailTab, rerender });
     return null;
   })();
 
@@ -13454,12 +13454,12 @@ function DeveloperStudioPage({t, lang, tab, dsRoute, updateHash}) {
         onCancel: () => setDsEditModal({visible:false, mode:'edit', entityType:null, entityId:null, parentId:null}),
       })}
       {/* Template Edit Modal (Phase 4a) */}
-      {renderTemplateEditModal()}
+      {React.createElement(TemplateEditModalInner, { lang, tmplEditModal, setTmplEditModal, rerender })}
       {/* Phase 3: CRUD Modals */}
-      {renderFormGroupEditModal()}
-      {renderTabEditModal()}
-      {renderPrivilegeEditModal()}
-      {renderPrivilegeGroupEditModal()}
+      {React.createElement(FormGroupEditModalInner, { lang, fgEditModal, setFgEditModal, rerender, allGroups })}
+      {React.createElement(TabEditModalInner, { lang, tabEditModal, setTabEditModal, rerender })}
+      {React.createElement(PrivilegeEditModalInner, { lang, privEditModal, setPrivEditModal, rerender })}
+      {React.createElement(PrivilegeGroupEditModalInner, { lang, privGroupEditModal, setPrivGroupEditModal, rerender })}
     </div>
   );
 }
