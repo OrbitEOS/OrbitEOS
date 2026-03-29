@@ -11498,20 +11498,9 @@ function EntityStudioPage({t, lang, tab, dsRoute, updateHash}) {
     const tabCount = (resolved?.detail_tabs||[]).length;
 
     const entityTypeTabs = [
-      { key:'preview', label:resolveI18n({en:'Preview',nl:'Voorbeeld'},lang),
-        desc:resolveI18n({en:'See how this entity renders to end users',nl:'Bekijk hoe deze entiteit eruitziet'},lang) },
-      { key:'properties', label:`${resolveI18n({en:'Properties',nl:'Eigenschappen'},lang)} (${propCount})`,
-        desc:resolveI18n({en:'Define what data fields this entity carries',nl:'Definieer welke gegevensvelden deze entiteit heeft'},lang) },
-      { key:'formGroups', label:`${resolveI18n({en:'Form Groups',nl:'Formuliergroepen'},lang)} (${fgCount})`,
-        desc:resolveI18n({en:'Organize fields into edit modal sub-tabs',nl:'Organiseer velden in bewerkingsmodal sub-tabs'},lang) },
-      { key:'columns', label:`${resolveI18n({en:'Columns',nl:'Kolommen'},lang)} (${colCount})`,
-        desc:resolveI18n({en:'Choose which fields appear in list views',nl:'Kies welke velden in lijstweergaven verschijnen'},lang) },
-      { key:'tabs', label:`${resolveI18n({en:'Tabs',nl:'Tabs'},lang)} (${tabCount})`,
-        desc:resolveI18n({en:'Configure the tab bar for instance detail views',nl:'Configureer de tabbalk voor instantie-detailweergaven'},lang) },
-      { key:'relations', label:resolveI18n({en:'Relationships',nl:'Relaties'},lang),
-        desc:resolveI18n({en:'Define what child entity types are allowed',nl:'Definieer welke kind-entiteittypes zijn toegestaan'},lang) },
-      { key:'settings', label:resolveI18n({en:'Settings',nl:'Instellingen'},lang),
-        desc:resolveI18n({en:'Entity type metadata, lifecycle, and instances',nl:'Entiteittype metadata, levenscyclus en instanties'},lang) },
+      { key:'preview', label:resolveI18n({en:'Preview',nl:'Voorbeeld'},lang) },
+      { key:'properties', label:`${resolveI18n({en:'Properties',nl:'Eigenschappen'},lang)} (${propCount})` },
+      { key:'settings', label:resolveI18n({en:'Settings',nl:'Instellingen'},lang) },
     ];
 
     return React.createElement(Tabs, {
@@ -11519,9 +11508,7 @@ function EntityStudioPage({t, lang, tab, dsRoute, updateHash}) {
       style:{padding:'0 20px'}, size:'small',
       items: entityTypeTabs.map(tab => ({
         key:tab.key,
-        label: React.createElement('div', {style:{lineHeight:1.2}},
-          React.createElement('span', null, tab.label),
-          React.createElement('div', {style:{fontSize:9,color:'var(--text-tertiary)',fontWeight:400,marginTop:1}}, tab.desc)
+        label: React.createElement('span', null, tab.label
         ),
         children: tab.key === 'preview'
           ? renderEntityTabContent(entityType, typeKey, 'overview', tmpl, resolved)
@@ -11532,11 +11519,38 @@ function EntityStudioPage({t, lang, tab, dsRoute, updateHash}) {
     });
   }
 
-  // ── Settings tab (merges General + Subtypes + Instances) ──
+  // ── Settings tab (merges all configuration: general, form groups, columns, tabs, relationships, subtypes, instances) ──
   function renderSettingsTab(entityType, typeKey, tmpl, resolved, isSubtype) {
     return React.createElement('div', {style:{display:'grid',gap:16,padding:'12px 0'}},
+      // General info + lifecycle
       renderEntityTabContent(entityType, typeKey, 'general', tmpl, resolved),
+      // Form Groups (how properties group into edit modal sub-tabs)
+      React.createElement('div', {className:'mfe-section'},
+        React.createElement('div', {className:'mfe-section-title'}, resolveI18n({en:'Form Groups',nl:'Formuliergroepen'},lang),
+          React.createElement('span', {style:{fontSize:9,color:'var(--text-tertiary)',fontWeight:400,marginLeft:6}},
+            resolveI18n({en:'How fields organize into edit modal sub-tabs',nl:'Hoe velden zijn georganiseerd in bewerkings sub-tabs'},lang))),
+        renderEntityTabContent(entityType, typeKey, 'formGroups', tmpl, resolved)),
+      // Columns
+      React.createElement('div', {className:'mfe-section'},
+        React.createElement('div', {className:'mfe-section-title'}, resolveI18n({en:'List Columns',nl:'Lijstkolommen'},lang),
+          React.createElement('span', {style:{fontSize:9,color:'var(--text-tertiary)',fontWeight:400,marginLeft:6}},
+            resolveI18n({en:'Which fields appear in list/table views',nl:'Welke velden in lijstweergaven verschijnen'},lang))),
+        renderEntityTabContent(entityType, typeKey, 'columns', tmpl, resolved)),
+      // Detail Tabs
+      React.createElement('div', {className:'mfe-section'},
+        React.createElement('div', {className:'mfe-section-title'}, resolveI18n({en:'Detail Tabs',nl:'Detail Tabs'},lang),
+          React.createElement('span', {style:{fontSize:9,color:'var(--text-tertiary)',fontWeight:400,marginLeft:6}},
+            resolveI18n({en:'Tab bar for instance detail views',nl:'Tabbalk voor instantie-detailweergaven'},lang))),
+        renderEntityTabContent(entityType, typeKey, 'tabs', tmpl, resolved)),
+      // Relationships
+      React.createElement('div', {className:'mfe-section'},
+        React.createElement('div', {className:'mfe-section-title'}, resolveI18n({en:'Relationships',nl:'Relaties'},lang),
+          React.createElement('span', {style:{fontSize:9,color:'var(--text-tertiary)',fontWeight:400,marginLeft:6}},
+            resolveI18n({en:'What child entity types are allowed',nl:'Welke kind-entiteittypes zijn toegestaan'},lang))),
+        renderEntityTabContent(entityType, typeKey, 'relations', tmpl, resolved)),
+      // Subtypes
       !isSubtype && renderEntityTabContent(entityType, typeKey, 'subtypes', tmpl, resolved),
+      // Instances
       renderEntityTabContent(entityType, typeKey, 'instances', tmpl, resolved),
     );
   }
