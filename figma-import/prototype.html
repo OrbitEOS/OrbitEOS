@@ -11529,7 +11529,7 @@ function EntityStudioPage({t, lang, tab, dsRoute, updateHash}) {
         key:tab.key,
         label: React.createElement('span', null, tab.label),
         children: tab.key === 'identity'
-          ? renderIdentityTab(entityType, typeKey, tmpl, resolved, isSubtype)
+          ? React.createElement(IdentityTabInner, {entityType, typeKey, tmpl, isSubtype, lang, rerender, handleLifecycleTransition, lifecycleColor, lifecycleI18n})
           : tab.key === 'properties'
           ? React.createElement(PropertiesPickerTab, {entityType, typeKey, tmpl, resolved, isSubtype, lang, rerender, allDefs})
           : tab.key === 'preview'
@@ -11542,48 +11542,55 @@ function EntityStudioPage({t, lang, tab, dsRoute, updateHash}) {
   }
 
   // ── Identity tab (name, description, icon, extends, lifecycle) ──
-  function renderIdentityTab(entityType, typeKey, tmpl, resolved, isSubtype) {
+  // IdentityTab — proper React component (hooks-compliant, inline editing)
+  function IdentityTabInner({ entityType, typeKey, tmpl, isSubtype, lang, rerender, handleLifecycleTransition, lifecycleColor, lifecycleI18n }) {
     const etReg = ENTITY_TYPE_REGISTRY[entityType];
+    const [name, setName] = useState(tmpl.name||'');
+    const [description, setDescription] = useState(typeof tmpl.description==='object'?resolveI18n(tmpl.description,'en'):tmpl.description||'');
+    const [icon, setIcon] = useState(tmpl.icon||'BlockOutlined');
+    const [dirty, setDirty] = useState(false);
+    const [showIconPicker, setShowIconPicker] = useState(false);
+
+    const handleSave = () => {
+      EntityTemplateStore.putTemplate({...tmpl, name, description:{en:description}, icon});
+      setDirty(false);
+      rerender();
+    };
+
     return React.createElement('div', {className:'config-tab-content', style:{padding:'12px 0'}},
-      // Description
       React.createElement('div', {style:{fontSize:11,color:'var(--text-tertiary)',marginBottom:16}},
-        resolveI18n({en:'Define the identity of this template \u2014 its name, description, and visual icon.',
-          nl:'Definieer de identiteit van dit template \u2014 naam, beschrijving en visueel icoon.'}, lang)),
+        resolveI18n({en:'Define the identity of this template — name, description, and icon.',nl:'Definieer naam, beschrijving en icoon.'}, lang)),
 
-      // Fields grid
-      React.createElement('div', {style:{display:'grid',gap:12}},
+      React.createElement('div', {style:{display:'grid',gap:14,maxWidth:480}},
         // Name
-        React.createElement('div', {className:'prop-card'},
-          React.createElement('div', null,
-            React.createElement('div', {className:'prop-card-label'}, resolveI18n({en:'Name',nl:'Naam'},lang)),
-            React.createElement('div', {className:'prop-card-value'}, tmpl.name))),
+        React.createElement('div', null,
+          React.createElement(FormLabel, {text:resolveI18n({en:'Name',nl:'Naam'},lang), required:true, hint:{en:'Display name for this template'}, lang}),
+          React.createElement(Input, {size:'small', value:name, onChange:e=>{setName(e.target.value);setDirty(true);}})),
         // Description
-        React.createElement('div', {className:'prop-card'},
-          React.createElement('div', null,
-            React.createElement('div', {className:'prop-card-label'}, resolveI18n({en:'Description',nl:'Beschrijving'},lang)),
-            React.createElement('div', {className:'prop-card-value', style:{fontSize:12}},
-              (typeof tmpl.description === 'object' ? resolveI18n(tmpl.description,lang) : tmpl.description) || '\u2014'))),
+        React.createElement('div', null,
+          React.createElement(FormLabel, {text:resolveI18n({en:'Description',nl:'Beschrijving'},lang), hint:{en:'What makes this template different'}, lang}),
+          React.createElement(Input.TextArea, {size:'small', rows:2, value:description, onChange:e=>{setDescription(e.target.value);setDirty(true);}})),
         // Icon
-        React.createElement('div', {className:'prop-card'},
-          React.createElement('div', null,
-            React.createElement('div', {className:'prop-card-label'}, resolveI18n({en:'Icon',nl:'Icoon'},lang)),
-            React.createElement('div', {style:{display:'flex',alignItems:'center',gap:8}},
-              React.createElement(resolveIcon(tmpl.icon)||BlockOutlined, {style:{fontSize:20,color:etReg?.color||'var(--brand)'}}),
-              React.createElement('span', {style:{fontFamily:'monospace',fontSize:11,color:'var(--text-tertiary)'}}, tmpl.icon)))),
-        // Extends (only for subtypes)
-        isSubtype && React.createElement('div', {className:'prop-card'},
-          React.createElement('div', null,
-            React.createElement('div', {className:'prop-card-label'}, resolveI18n({en:'Extends',nl:'Erft van'},lang)),
-            React.createElement('div', {className:'prop-card-value'}, tmpl.extends_key || '\u2014'))),
-
-        // Lifecycle controls
-        React.createElement('div', {style:{display:'flex',alignItems:'center',gap:8,padding:'10px 0',borderTop:'1px solid var(--border)',marginTop:8}},
-          React.createElement('span', {style:{fontSize:11,fontWeight:600,color:'var(--text-secondary)'}}, resolveI18n({en:'Status',nl:'Status'},lang), ':'),
+        React.createElement('div', null,
+          React.createElement(FormLabel, {text:resolveI18n({en:'Icon',nl:'Icoon'},lang), hint:{en:'Visual icon from Ant Design library'}, lang}),
+          React.createElement('div', {style:{display:'flex',alignItems:'center',gap:8,marginBottom:4}},
+            React.createElement('div', {style:{width:36,height:36,borderRadius:8,background:'var(--brand-bg)',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',border:'1px solid var(--brand)'},
+              onClick:()=>setShowIconPicker(!showIconPicker)},
+              React.createElement(window.icons?.[icon]||resolveIcon(icon)||BlockOutlined, {style:{fontSize:18,color:'var(--brand)'}})),
+            React.createElement('span', {style:{fontSize:11,color:'var(--text-secondary)'}}, iconFriendlyName(icon)),
+            React.createElement('span', {style:{fontSize:11,color:'var(--brand)',cursor:'pointer',marginLeft:8},onClick:()=>setShowIconPicker(!showIconPicker)},
+              showIconPicker ? resolveI18n({en:'Close',nl:'Sluiten'},lang) : resolveI18n({en:'Change',nl:'Wijzigen'},lang))),
+          showIconPicker && React.createElement(IconPicker, {value:icon, onChange:v=>{setIcon(v);setDirty(true);setShowIconPicker(false);}})),
+        // Extends (read-only for subtypes)
+        isSubtype && React.createElement('div', null,
+          React.createElement(FormLabel, {text:resolveI18n({en:'Extends',nl:'Erft van'},lang), hint:{en:'Parent template this inherits from'}, lang}),
+          React.createElement('div', {style:{fontSize:12,color:'var(--text-secondary)',padding:'4px 0'}}, tmpl.extends_key||'—')),
+        // Lifecycle
+        React.createElement('div', {style:{display:'flex',alignItems:'center',gap:8,padding:'10px 0',borderTop:'1px solid var(--border)',marginTop:4}},
           React.createElement(Tag, {color:lifecycleColor(tmpl.lifecycle_status),style:{fontSize:11,fontWeight:600}},
             lifecycleI18n(tmpl.lifecycle_status || 'draft')),
           React.createElement('span', {style:{fontSize:10,color:'var(--text-tertiary)'}}, 'v'+(tmpl.version||1)),
           React.createElement('span', {style:{flex:1}}),
-          // Lifecycle transition buttons
           (tmpl.lifecycle_status==='draft'||!tmpl.lifecycle_status) && React.createElement('button', {className:'header-btn',style:{fontSize:11,color:'var(--success)',borderColor:'var(--success)'},
             onClick:()=>handleLifecycleTransition(tmpl,'active')},
             React.createElement(CheckCircleFilled,{style:{fontSize:10,marginRight:4}}),resolveI18n({en:'Activate',nl:'Activeren'},lang)),
@@ -11596,11 +11603,11 @@ function EntityStudioPage({t, lang, tab, dsRoute, updateHash}) {
           tmpl.lifecycle_status && tmpl.lifecycle_status!=='draft' && React.createElement('button', {className:'header-btn',style:{fontSize:11,color:'var(--info)',borderColor:'var(--info)'},
             onClick:()=>handleLifecycleTransition(tmpl,'draft')},
             React.createElement(RollbackOutlined,{style:{fontSize:10,marginRight:4}}),resolveI18n({en:'Rollback to Draft',nl:'Terugzetten naar Concept'},lang)),
-          // Edit button
-          React.createElement(Button, {size:'small', icon:React.createElement(EditOutlined),
-            onClick:()=>setDsEditModal({visible:true,mode:'edit',entityType:'entityTemplate',entityId:`${entityType}:${typeKey}`,parentId:null})},
-            resolveI18n({en:'Edit',nl:'Bewerken'},lang)),
         ),
+        // Save button
+        dirty && React.createElement('div', {style:{display:'flex',justifyContent:'flex-end',paddingTop:8}},
+          React.createElement(Button, {size:'small', type:'primary', onClick:handleSave},
+            resolveI18n({en:'Save Changes',nl:'Wijzigingen Opslaan'},lang))),
       )
     );
   }
@@ -12748,10 +12755,8 @@ function EntityStudioPage({t, lang, tab, dsRoute, updateHash}) {
           ),
           desc && React.createElement('div', {style:{fontSize:10,color:'var(--text-tertiary)',marginTop:2}}, desc)
         ),
-        // Edit + Delete buttons (matching Config pattern)
+        // Delete button only (editing is inline on Identity tab)
         React.createElement('div', {style:{display:'flex',gap:4,flexShrink:0}},
-          React.createElement('span', {className:'crud-btn crud-btn-edit', onClick:()=>setDsEditModal({visible:true,mode:'edit',entityType:'entityTemplate',entityId:`${tmpl.entity_type}:${tmpl.type_key}`,parentId:null})},
-            React.createElement(EditOutlined, {style:{fontSize:12}})),
           isSubtype && React.createElement('span', {className:'crud-btn crud-btn-delete', onClick:()=>{
             Modal.confirm({
               title: resolveI18n({en:`Delete "${tmpl?.name}"?`,nl:`"${tmpl?.name}" verwijderen?`},lang),
