@@ -1961,24 +1961,24 @@ const USER_SEEDS = [
     lastLogin:'10 min ago', status:'online' },
   { id:'user-maria', name:'Maria van Dijk', email:'maria@acme-energy.nl', password:'orbit2026', role:'Operator', accountId:'acme',
     avatar:'https://i.pravatar.cc/150?u=maria-vandijk', initials:'MV', phone:'+31 6 3456 7890', lang:'nl', theme:'light',
-    permissions:['devices.view','flows.view','alerts.manage'],
-    lastLogin:'1 hour ago', status:'online' },
+    permissions:['devices.view','flows.view','alerts.manage'], templateKey:'operator',
+    lastLogin:'1 hour ago', status:'online', shiftSchedule:'day' },
   { id:'user-lisa', name:'Lisa Vermeer', email:'lisa@greengrid.nl', password:'orbit2026', role:'Site Admin', accountId:'greengrid',
     avatar:'https://i.pravatar.cc/150?u=lisa-vermeer', initials:'LV', phone:'+31 6 4567 8901', lang:'en', theme:'dark',
     permissions:['sites.manage','devices.manage','flows.manage'],
     lastLogin:'30 min ago', status:'online' },
   { id:'user-kees', name:'Kees van den Berg', email:'kees@greengrid.nl', password:'orbit2026', role:'Operator', accountId:'greengrid',
     avatar:'https://i.pravatar.cc/150?u=kees-vandenberg', initials:'KB', phone:'+31 6 5678 9012', lang:'nl', theme:'dark',
-    permissions:['devices.view','flows.view','alerts.manage'],
-    lastLogin:'5 hours ago', status:'away' },
+    permissions:['devices.view','flows.view','alerts.manage'], templateKey:'operator',
+    lastLogin:'5 hours ago', status:'away', shiftSchedule:'night' },
   { id:'user-pieter', name:'Pieter Smit', email:'pieter@greengrid.nl', password:'orbit2026', role:'Installer', accountId:'greengrid',
     avatar:'https://i.pravatar.cc/150?u=pieter-smit', initials:'PS', phone:'+31 6 6789 0123', lang:'nl', theme:'dark',
-    permissions:['devices.configure','devices.create'],
-    lastLogin:'1 week ago', status:'offline' },
+    permissions:['devices.configure','devices.create'], templateKey:'installer',
+    lastLogin:'1 week ago', status:'offline', company:'GreenGrid Installaties BV', licenseNumber:'NL-INS-2024-0042', specialization:'solar' },
   { id:'user-sophie', name:'Sophie Jansen', email:'sophie@acme-energy.nl', password:'orbit2026', role:'Installer', accountId:'acme',
     avatar:'https://i.pravatar.cc/150?u=sophie-jansen', initials:'SJ', phone:'+31 6 7890 1234', lang:'en', theme:'dark',
-    permissions:['devices.configure','devices.create'],
-    lastLogin:'2 days ago', status:'online' },
+    permissions:['devices.configure','devices.create'], templateKey:'installer',
+    lastLogin:'2 days ago', status:'online', company:'Acme Solar Services', licenseNumber:'NL-INS-2024-0089', specialization:'ev-charging' },
 ];
 USER_SEEDS.forEach(u => UserStore.register(u));
 UserStore.login('user-jan'); // Default logged-in user
@@ -7740,6 +7740,7 @@ const StoreAdapter = (() => {
             user.company = sp.company || user.company || '';
             user.licenseNumber = sp.licenseNumber || user.licenseNumber || '';
             user.specialization = sp.specialization || user.specialization || '';
+            if (values.metadata?.templateKey) user.templateKey = values.metadata.templateKey;
           }
           return entityId;
         }
@@ -11526,26 +11527,42 @@ function EntityStudioPage({t, lang, tab, dsRoute, updateHash}) {
     const tabCount = (resolved?.detail_tabs||[]).length;
 
     const entityTypeTabs = [
-      { key:'identity', label:resolveI18n({en:'Identity',nl:'Identiteit'},lang) },
-      { key:'properties', label:`${resolveI18n({en:'Properties',nl:'Eigenschappen'},lang)} (${propCount})` },
-      { key:'preview', label:resolveI18n({en:'Preview',nl:'Voorbeeld'},lang) },
-      { key:'advanced', label:'\u2699' },
+      { key:'identity', step:1, icon:'IdcardOutlined', label:resolveI18n({en:'Identity',nl:'Identiteit'},lang),
+        hint:{en:'What is this template?',nl:'Wat is dit template?'} },
+      { key:'properties', step:2, icon:'DatabaseOutlined', label:`${resolveI18n({en:'Data',nl:'Data'},lang)} (${propCount})`,
+        hint:{en:'What data does it carry?',nl:'Welke data draagt het?'} },
+      { key:'structure', step:3, icon:'LayoutOutlined', label:resolveI18n({en:'Structure',nl:'Structuur'},lang),
+        hint:{en:'How is it organized?',nl:'Hoe is het georganiseerd?'} },
+      { key:'preview', step:4, icon:'EyeOutlined', label:resolveI18n({en:'Preview',nl:'Voorbeeld'},lang),
+        hint:{en:'What will users see?',nl:'Wat zien gebruikers?'} },
     ];
+
+    const stepDot = (step, isActive) => React.createElement('span', {style:{
+      display:'inline-flex',alignItems:'center',justifyContent:'center',
+      width:16,height:16,borderRadius:'50%',fontSize:9,fontWeight:700,marginRight:5,flexShrink:0,
+      background:isActive?'var(--brand)':'var(--bg-secondary)',
+      color:isActive?'var(--bg-primary)':'var(--text-tertiary)',
+      border:isActive?'none':'1px solid var(--border)',
+      transition:'all 0.15s ease',
+    }}, step);
 
     return React.createElement(Tabs, {
       activeKey:entityDetailTab, onChange:setEntityDetailTab,
       style:{padding:'0 20px'}, size:'small',
       items: entityTypeTabs.map(tab => ({
         key:tab.key,
-        label: React.createElement('span', null, tab.label),
+        label: React.createElement(Tooltip, {title:resolveI18n(tab.hint,lang), placement:'bottom', mouseEnterDelay:0.5},
+          React.createElement('span', {style:{display:'inline-flex',alignItems:'center'}},
+            stepDot(tab.step, entityDetailTab===tab.key),
+            tab.label)),
         children: tab.key === 'identity'
-          ? React.createElement(IdentityTabInner, {entityType, typeKey, tmpl, isSubtype, lang, rerender, handleLifecycleTransition, lifecycleColor, lifecycleI18n})
+          ? React.createElement(IdentityTabInner, {key:`${entityType}:${typeKey}`, entityType, typeKey, tmpl, isSubtype, lang, rerender, handleLifecycleTransition, lifecycleColor, lifecycleI18n})
           : tab.key === 'properties'
-          ? React.createElement(PropertiesPickerTab, {entityType, typeKey, tmpl, resolved, isSubtype, lang, rerender, allDefs})
+          ? React.createElement(PropertiesPickerTab, {key:`${entityType}:${typeKey}`, entityType, typeKey, tmpl, resolved, isSubtype, lang, rerender, allDefs})
+          : tab.key === 'structure'
+          ? renderSettingsTab(entityType, typeKey, tmpl, resolved, isSubtype)
           : tab.key === 'preview'
           ? renderEntityTabContent(entityType, typeKey, 'overview', tmpl, resolved)
-          : tab.key === 'advanced'
-          ? renderSettingsTab(entityType, typeKey, tmpl, resolved, isSubtype)
           : null
       }))
     });
@@ -11567,8 +11584,13 @@ function EntityStudioPage({t, lang, tab, dsRoute, updateHash}) {
     };
 
     return React.createElement('div', {className:'config-tab-content', style:{padding:'12px 0'}},
-      React.createElement('div', {style:{fontSize:11,color:'var(--text-tertiary)',marginBottom:16}},
-        resolveI18n({en:'Define the identity of this template — name, description, and icon.',nl:'Definieer naam, beschrijving en icoon.'}, lang)),
+      React.createElement('div', {style:{fontSize:11,color:'var(--text-tertiary)',marginBottom:16,display:'flex',alignItems:'flex-start',gap:8,padding:'8px 12px',background:'var(--bg-secondary)',borderRadius:6,border:'1px solid var(--border)'}},
+        React.createElement(resolveIcon('IdcardOutlined')||UserOutlined, {style:{fontSize:13,color:'var(--brand)',marginTop:1,flexShrink:0}}),
+        React.createElement('div', null,
+          React.createElement('div', {style:{fontWeight:600,color:'var(--text-secondary)',marginBottom:2}},
+            resolveI18n({en:'Step 1: Identity',nl:'Stap 1: Identiteit'}, lang)),
+          resolveI18n({en:'The birth certificate of this template. Define its name, description, icon, and lifecycle state. This is how it appears in the Entity Studio tree and template lists.',
+            nl:'Het geboorteakte van dit template. Definieer naam, beschrijving, icoon en levenscyclusstatus. Zo verschijnt het in de Entity Studio boom en templatelijsten.'}, lang))),
 
       React.createElement('div', {style:{display:'grid',gap:14,maxWidth:480}},
         // Name
@@ -11698,9 +11720,13 @@ function EntityStudioPage({t, lang, tab, dsRoute, updateHash}) {
 
     return React.createElement('div', {className:'config-tab-content', style:{padding:'12px 0'}},
       // Description
-      React.createElement('div', {style:{fontSize:11,color:'var(--text-tertiary)',marginBottom:12}},
-        resolveI18n({en:'Choose which data fields this entity carries. Pick from existing properties or create new ones.',
-          nl:'Kies welke gegevensvelden deze entiteit heeft. Kies uit bestaande eigenschappen of maak nieuwe aan.'}, lang)),
+      React.createElement('div', {style:{fontSize:11,color:'var(--text-tertiary)',marginBottom:12,display:'flex',alignItems:'flex-start',gap:8,padding:'8px 12px',background:'var(--bg-secondary)',borderRadius:6,border:'1px solid var(--border)'}},
+        React.createElement(DatabaseOutlined, {style:{fontSize:13,color:'var(--brand)',marginTop:1,flexShrink:0}}),
+        React.createElement('div', null,
+          React.createElement('div', {style:{fontWeight:600,color:'var(--text-secondary)',marginBottom:2}},
+            resolveI18n({en:'Step 2: Data Schema',nl:'Stap 2: Data Schema'}, lang)),
+          resolveI18n({en:'The data blueprint. Choose which fields entities of this type will carry. Pick from the Property Dictionary or create new ones. For subtypes, inherited properties can be toggled on/off individually.',
+            nl:'De data blauwdruk. Kies welke velden entiteiten van dit type dragen. Kies uit het Woordenboek of maak nieuwe aan. Bij subtypes kun je overgenomen eigenschappen individueel aan/uit schakelen.'}, lang))),
 
       // Inherited properties (with toggle on/off)
       inherited.length > 0 && React.createElement('div', {style:{marginBottom:16}},
@@ -11806,50 +11832,76 @@ function EntityStudioPage({t, lang, tab, dsRoute, updateHash}) {
     );
   }
 
-  // ── Advanced tab (gear icon: form groups, columns, tabs, relationships, subtypes, instances, version history) ──
+  // ── Structure tab (form groups, columns, tabs, relationships, subtypes, instances, version history) ──
   function renderSettingsTab(entityType, typeKey, tmpl, resolved, isSubtype) {
     return React.createElement('div', {style:{display:'grid',gap:16,padding:'12px 0'}},
+      // Description banner
+      React.createElement('div', {style:{fontSize:11,color:'var(--text-tertiary)',display:'flex',alignItems:'flex-start',gap:8,padding:'8px 12px',background:'var(--bg-secondary)',borderRadius:6,border:'1px solid var(--border)'}},
+        React.createElement(resolveIcon('LayoutOutlined')||ApartmentOutlined, {style:{fontSize:13,color:'var(--brand)',marginTop:1,flexShrink:0}}),
+        React.createElement('div', null,
+          React.createElement('div', {style:{fontWeight:600,color:'var(--text-secondary)',marginBottom:2}},
+            resolveI18n({en:'Step 3: Structure & Layout',nl:'Stap 3: Structuur & Indeling'}, lang)),
+          resolveI18n({en:'Controls how properties are presented to users. Form Groups organize the edit modal, Columns define table views, Detail Tabs configure the instance page, and Relationships specify which child entities are allowed.',
+            nl:'Bepaalt hoe eigenschappen aan gebruikers worden getoond. Formuliergroepen organiseren het bewerkingsvenster, Kolommen defini\u00EBren tabelweergaven, Detail Tabs configureren de instantiepagina, en Relaties specificeren welke kindentiteiten zijn toegestaan.'}, lang))),
+      // ── Presentation section header ──
+      React.createElement('div', {style:{fontSize:10,fontWeight:700,color:'var(--text-tertiary)',textTransform:'uppercase',letterSpacing:'0.06em',
+        borderBottom:'1px solid var(--border)',paddingBottom:6,display:'flex',alignItems:'center',gap:6}},
+        React.createElement(resolveIcon('FormOutlined')||EditOutlined, {style:{fontSize:11}}),
+        resolveI18n({en:'Presentation — how data is shown to users',nl:'Presentatie — hoe data aan gebruikers wordt getoond'},lang)),
       // Form Groups
       React.createElement('div', {className:'mfe-section'},
-        React.createElement('div', {className:'mfe-section-title'}, resolveI18n({en:'Form Groups',nl:'Formuliergroepen'},lang),
+        React.createElement('div', {className:'mfe-section-title'},
+          React.createElement('span', {style:{display:'inline-flex',alignItems:'center',justifyContent:'center',width:18,height:18,borderRadius:'50%',fontSize:9,fontWeight:700,background:'var(--brand-bg)',color:'var(--brand)',marginRight:6,flexShrink:0}},'a'),
+          resolveI18n({en:'Form Groups',nl:'Formuliergroepen'},lang),
           React.createElement('span', {style:{fontSize:9,color:'var(--text-tertiary)',fontWeight:400,marginLeft:6}},
-            resolveI18n({en:'Controls how properties are organized into sub-tabs in the edit modal. Each group becomes a separate section.',
-              nl:'Bepaalt hoe eigenschappen worden gegroepeerd in sub-tabs in het bewerkingsvenster. Elke groep wordt een aparte sectie.'},lang))),
+            resolveI18n({en:'How properties are grouped into sections in the create/edit modal',
+              nl:'Hoe eigenschappen worden gegroepeerd in secties in het bewerkingsvenster'},lang))),
         renderEntityTabContent(entityType, typeKey, 'formGroups', tmpl, resolved)),
       // List Columns
       React.createElement('div', {className:'mfe-section'},
-        React.createElement('div', {className:'mfe-section-title'}, resolveI18n({en:'List Columns',nl:'Lijstkolommen'},lang),
+        React.createElement('div', {className:'mfe-section-title'},
+          React.createElement('span', {style:{display:'inline-flex',alignItems:'center',justifyContent:'center',width:18,height:18,borderRadius:'50%',fontSize:9,fontWeight:700,background:'var(--brand-bg)',color:'var(--brand)',marginRight:6,flexShrink:0}},'b'),
+          resolveI18n({en:'List Columns',nl:'Lijstkolommen'},lang),
           React.createElement('span', {style:{fontSize:9,color:'var(--text-tertiary)',fontWeight:400,marginLeft:6}},
-            resolveI18n({en:'Defines which properties appear as columns in list/table views and their sort/filter behavior.',
-              nl:'Bepaalt welke eigenschappen als kolommen verschijnen in lijstweergaven en hun sorteer/filtergedrag.'},lang))),
+            resolveI18n({en:'Which properties appear as table columns with sort/filter options',
+              nl:'Welke eigenschappen als tabelkolommen verschijnen met sorteer/filteropties'},lang))),
         renderEntityTabContent(entityType, typeKey, 'columns', tmpl, resolved)),
       // Detail Tabs
       React.createElement('div', {className:'mfe-section'},
-        React.createElement('div', {className:'mfe-section-title'}, resolveI18n({en:'Detail Tabs',nl:'Detail Tabs'},lang),
+        React.createElement('div', {className:'mfe-section-title'},
+          React.createElement('span', {style:{display:'inline-flex',alignItems:'center',justifyContent:'center',width:18,height:18,borderRadius:'50%',fontSize:9,fontWeight:700,background:'var(--brand-bg)',color:'var(--brand)',marginRight:6,flexShrink:0}},'c'),
+          resolveI18n({en:'Detail Tabs',nl:'Detail Tabs'},lang),
           React.createElement('span', {style:{fontSize:9,color:'var(--text-tertiary)',fontWeight:400,marginLeft:6}},
-            resolveI18n({en:'Configures the tab bar shown on instance detail views. Includes overview, children lists, and custom MFE tabs.',
-              nl:'Configureert de tabbalk op instantie-detailweergaven. Inclusief overzicht, kindlijsten en aangepaste MFE-tabs.'},lang))),
+            resolveI18n({en:'The tab bar on instance detail views (overview, children, custom)',
+              nl:'De tabbalk op instantie-detailweergaven (overzicht, kinderen, aangepast)'},lang))),
         renderEntityTabContent(entityType, typeKey, 'tabs', tmpl, resolved)),
       // Relationships
       React.createElement('div', {className:'mfe-section'},
-        React.createElement('div', {className:'mfe-section-title'}, resolveI18n({en:'Relationships',nl:'Relaties'},lang),
+        React.createElement('div', {className:'mfe-section-title'},
+          React.createElement('span', {style:{display:'inline-flex',alignItems:'center',justifyContent:'center',width:18,height:18,borderRadius:'50%',fontSize:9,fontWeight:700,background:'var(--brand-bg)',color:'var(--brand)',marginRight:6,flexShrink:0}},'d'),
+          resolveI18n({en:'Relationships',nl:'Relaties'},lang),
           React.createElement('span', {style:{fontSize:9,color:'var(--text-tertiary)',fontWeight:400,marginLeft:6}},
-            resolveI18n({en:'Specifies which child entity types can be created under instances of this template.',
-              nl:'Specificeert welke kind-entiteittypes onder instanties van dit template kunnen worden aangemaakt.'},lang))),
+            resolveI18n({en:'Which child entity types can be created under this template',
+              nl:'Welke kindentiteittypes onder dit template aangemaakt kunnen worden'},lang))),
         renderEntityTabContent(entityType, typeKey, 'relations', tmpl, resolved)),
+      // ── Management section header ──
+      React.createElement('div', {style:{fontSize:10,fontWeight:700,color:'var(--text-tertiary)',textTransform:'uppercase',letterSpacing:'0.06em',
+        borderBottom:'1px solid var(--border)',paddingBottom:6,marginTop:8,display:'flex',alignItems:'center',gap:6}},
+        React.createElement(SettingOutlined, {style:{fontSize:11}}),
+        resolveI18n({en:'Management — variants, usage, and history',nl:'Beheer — varianten, gebruik en geschiedenis'},lang)),
       // Subtypes (only for base templates)
       !isSubtype && React.createElement('div', {className:'mfe-section'},
         React.createElement('div', {className:'mfe-section-title'}, resolveI18n({en:'Subtypes',nl:'Subtypes'},lang),
           React.createElement('span', {style:{fontSize:9,color:'var(--text-tertiary)',fontWeight:400,marginLeft:6}},
-            resolveI18n({en:'Specialized variants of this base template that inherit its properties and add their own.',
-              nl:'Gespecialiseerde varianten van dit basistemplate die eigenschappen erven en eigen toevoegen.'},lang))),
+            resolveI18n({en:'Specialized variants that inherit properties and add their own',
+              nl:'Gespecialiseerde varianten die eigenschappen erven en eigen toevoegen'},lang))),
         renderEntityTabContent(entityType, typeKey, 'subtypes', tmpl, resolved)),
       // Instances
       React.createElement('div', {className:'mfe-section'},
         React.createElement('div', {className:'mfe-section-title'}, resolveI18n({en:'Instances',nl:'Instanties'},lang),
           React.createElement('span', {style:{fontSize:9,color:'var(--text-tertiary)',fontWeight:400,marginLeft:6}},
-            resolveI18n({en:'Live count and list of entities created from this template.',
-              nl:'Actueel aantal en lijst van entiteiten die van dit template zijn aangemaakt.'},lang))),
+            resolveI18n({en:'Live entities created from this template',
+              nl:'Bestaande entiteiten aangemaakt van dit template'},lang))),
         renderEntityTabContent(entityType, typeKey, 'instances', tmpl, resolved)),
       // Version History
       (() => {
@@ -12160,9 +12212,13 @@ function EntityStudioPage({t, lang, tab, dsRoute, updateHash}) {
       ];
       return React.createElement('div', {style:{padding:'12px 0',display:'grid',gap:12}},
         // Preview description
-        React.createElement('div', {style:{fontSize:11,color:'var(--text-tertiary)',fontStyle:'italic',marginBottom:4}},
-          resolveI18n({en:'This is how a '+tmpl.name+' will appear to users in the Configuration app.',
-            nl:'Zo zal een '+tmpl.name+' eruitzien voor gebruikers in de Configuratie-app.'}, lang)),
+        React.createElement('div', {style:{fontSize:11,color:'var(--text-tertiary)',display:'flex',alignItems:'flex-start',gap:8,padding:'8px 12px',background:'var(--bg-secondary)',borderRadius:6,border:'1px solid var(--border)',marginBottom:4}},
+          React.createElement(EyeOutlined, {style:{fontSize:13,color:'var(--brand)',marginTop:1,flexShrink:0}}),
+          React.createElement('div', null,
+            React.createElement('div', {style:{fontWeight:600,color:'var(--text-secondary)',marginBottom:2}},
+              resolveI18n({en:'Step 4: Preview',nl:'Stap 4: Voorbeeld'}, lang)),
+            resolveI18n({en:'Live simulation of how a '+tmpl.name+' will appear in the Configuration app. Switch between Overview, Form, List, and Full Entity views to verify your template design before activating it.',
+              nl:'Live simulatie van hoe een '+tmpl.name+' er uit zal zien in de Configuratie-app. Schakel tussen Overzicht, Formulier, Lijst en Volledige Entiteit om je template-ontwerp te controleren.'}, lang))),
         // Stats bar
         React.createElement('div', {style:{display:'flex',gap:12,flexWrap:'wrap',fontSize:10,color:'var(--text-tertiary)',padding:'6px 12px',background:'var(--bg-secondary)',borderRadius:6,border:'1px solid var(--border)'}},
           React.createElement('span',null,resolveI18n({en:'Properties',nl:'Eigenschappen'},lang),': ',(ov.properties||[]).length),
