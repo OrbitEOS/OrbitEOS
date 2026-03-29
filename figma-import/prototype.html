@@ -11498,9 +11498,10 @@ function EntityStudioPage({t, lang, tab, dsRoute, updateHash}) {
     const tabCount = (resolved?.detail_tabs||[]).length;
 
     const entityTypeTabs = [
-      { key:'preview', label:resolveI18n({en:'Preview',nl:'Voorbeeld'},lang) },
+      { key:'identity', label:resolveI18n({en:'Identity',nl:'Identiteit'},lang) },
       { key:'properties', label:`${resolveI18n({en:'Properties',nl:'Eigenschappen'},lang)} (${propCount})` },
-      { key:'settings', label:resolveI18n({en:'Settings',nl:'Instellingen'},lang) },
+      { key:'preview', label:resolveI18n({en:'Preview',nl:'Voorbeeld'},lang) },
+      { key:'advanced', label:'\u2699' },
     ];
 
     return React.createElement(Tabs, {
@@ -11508,50 +11509,337 @@ function EntityStudioPage({t, lang, tab, dsRoute, updateHash}) {
       style:{padding:'0 20px'}, size:'small',
       items: entityTypeTabs.map(tab => ({
         key:tab.key,
-        label: React.createElement('span', null, tab.label
-        ),
-        children: tab.key === 'preview'
+        label: React.createElement('span', null, tab.label),
+        children: tab.key === 'identity'
+          ? renderIdentityTab(entityType, typeKey, tmpl, resolved, isSubtype)
+          : tab.key === 'properties'
+          ? React.createElement(PropertiesPickerTab, {entityType, typeKey, tmpl, resolved, isSubtype, lang, rerender, allDefs})
+          : tab.key === 'preview'
           ? renderEntityTabContent(entityType, typeKey, 'overview', tmpl, resolved)
-          : tab.key === 'settings'
-            ? renderSettingsTab(entityType, typeKey, tmpl, resolved, isSubtype)
-            : renderEntityTabContent(entityType, typeKey, tab.key, tmpl, resolved)
+          : tab.key === 'advanced'
+          ? renderSettingsTab(entityType, typeKey, tmpl, resolved, isSubtype)
+          : null
       }))
     });
   }
 
-  // ── Settings tab (merges all configuration: general, form groups, columns, tabs, relationships, subtypes, instances) ──
+  // ── Identity tab (name, description, icon, extends, lifecycle) ──
+  function renderIdentityTab(entityType, typeKey, tmpl, resolved, isSubtype) {
+    const etReg = ENTITY_TYPE_REGISTRY[entityType];
+    return React.createElement('div', {className:'config-tab-content', style:{padding:'12px 0'}},
+      // Description
+      React.createElement('div', {style:{fontSize:11,color:'var(--text-tertiary)',marginBottom:16}},
+        resolveI18n({en:'Define the identity of this template \u2014 its name, description, and visual icon.',
+          nl:'Definieer de identiteit van dit template \u2014 naam, beschrijving en visueel icoon.'}, lang)),
+
+      // Fields grid
+      React.createElement('div', {style:{display:'grid',gap:12}},
+        // Name
+        React.createElement('div', {className:'prop-card'},
+          React.createElement('div', null,
+            React.createElement('div', {className:'prop-card-label'}, resolveI18n({en:'Name',nl:'Naam'},lang)),
+            React.createElement('div', {className:'prop-card-value'}, tmpl.name))),
+        // Description
+        React.createElement('div', {className:'prop-card'},
+          React.createElement('div', null,
+            React.createElement('div', {className:'prop-card-label'}, resolveI18n({en:'Description',nl:'Beschrijving'},lang)),
+            React.createElement('div', {className:'prop-card-value', style:{fontSize:12}},
+              (typeof tmpl.description === 'object' ? resolveI18n(tmpl.description,lang) : tmpl.description) || '\u2014'))),
+        // Icon
+        React.createElement('div', {className:'prop-card'},
+          React.createElement('div', null,
+            React.createElement('div', {className:'prop-card-label'}, resolveI18n({en:'Icon',nl:'Icoon'},lang)),
+            React.createElement('div', {style:{display:'flex',alignItems:'center',gap:8}},
+              React.createElement(resolveIcon(tmpl.icon)||BlockOutlined, {style:{fontSize:20,color:etReg?.color||'var(--brand)'}}),
+              React.createElement('span', {style:{fontFamily:'monospace',fontSize:11,color:'var(--text-tertiary)'}}, tmpl.icon)))),
+        // Extends (only for subtypes)
+        isSubtype && React.createElement('div', {className:'prop-card'},
+          React.createElement('div', null,
+            React.createElement('div', {className:'prop-card-label'}, resolveI18n({en:'Extends',nl:'Erft van'},lang)),
+            React.createElement('div', {className:'prop-card-value'}, tmpl.extends_key || '\u2014'))),
+
+        // Lifecycle controls
+        React.createElement('div', {style:{display:'flex',alignItems:'center',gap:8,padding:'10px 0',borderTop:'1px solid var(--border)',marginTop:8}},
+          React.createElement('span', {style:{fontSize:11,fontWeight:600,color:'var(--text-secondary)'}}, resolveI18n({en:'Status',nl:'Status'},lang), ':'),
+          React.createElement(Tag, {color:lifecycleColor(tmpl.lifecycle_status),style:{fontSize:11,fontWeight:600}},
+            lifecycleI18n(tmpl.lifecycle_status || 'draft')),
+          React.createElement('span', {style:{fontSize:10,color:'var(--text-tertiary)'}}, 'v'+(tmpl.version||1)),
+          React.createElement('span', {style:{flex:1}}),
+          // Lifecycle transition buttons
+          (tmpl.lifecycle_status==='draft'||!tmpl.lifecycle_status) && React.createElement('button', {className:'header-btn',style:{fontSize:11,color:'var(--success)',borderColor:'var(--success)'},
+            onClick:()=>handleLifecycleTransition(tmpl,'active')},
+            React.createElement(CheckCircleFilled,{style:{fontSize:10,marginRight:4}}),resolveI18n({en:'Activate',nl:'Activeren'},lang)),
+          tmpl.lifecycle_status==='active' && React.createElement('button', {className:'header-btn',style:{fontSize:11,color:'var(--warning)',borderColor:'var(--warning)'},
+            onClick:()=>handleLifecycleTransition(tmpl,'deprecated')},
+            React.createElement(WarningOutlined,{style:{fontSize:10,marginRight:4}}),resolveI18n({en:'Deprecate',nl:'Verouderen'},lang)),
+          tmpl.lifecycle_status==='deprecated' && React.createElement('button', {className:'header-btn',style:{fontSize:11,color:'var(--error)',borderColor:'var(--error)'},
+            onClick:()=>handleLifecycleTransition(tmpl,'archived')},
+            React.createElement(StopOutlined,{style:{fontSize:10,marginRight:4}}),resolveI18n({en:'Archive',nl:'Archiveren'},lang)),
+          tmpl.lifecycle_status && tmpl.lifecycle_status!=='draft' && React.createElement('button', {className:'header-btn',style:{fontSize:11,color:'var(--info)',borderColor:'var(--info)'},
+            onClick:()=>handleLifecycleTransition(tmpl,'draft')},
+            React.createElement(RollbackOutlined,{style:{fontSize:10,marginRight:4}}),resolveI18n({en:'Rollback to Draft',nl:'Terugzetten naar Concept'},lang)),
+          // Edit button
+          React.createElement(Button, {size:'small', icon:React.createElement(EditOutlined),
+            onClick:()=>setDsEditModal({visible:true,mode:'edit',entityType:'entityTemplate',entityId:`${entityType}:${typeKey}`,parentId:null})},
+            resolveI18n({en:'Edit',nl:'Bewerken'},lang)),
+        ),
+      )
+    );
+  }
+
+  // ── PropertiesPickerTab component (proper React component for hooks) ──
+  function PropertiesPickerTab({entityType, typeKey, tmpl, resolved, isSubtype, lang, rerender, allDefs}) {
+    const [creating, setCreating] = React.useState(false);
+    const [newPropName, setNewPropName] = React.useState('');
+    const [newPropType, setNewPropType] = React.useState('string');
+
+    // Split properties into inherited vs own
+    const allResolved = resolved?.resolved?.properties || resolved?.properties || [];
+    const inherited = allResolved.filter(p => p.inherited);
+    const own = allResolved.filter(p => !p.inherited);
+
+    // Available properties to add (applies_to this entityType, not already in template)
+    const currentKeys = (tmpl.properties||[]).map(p => p.property_key);
+    const parentKeys = inherited.map(p => p.property_key || p.key);
+    const allKeys = new Set([...currentKeys, ...parentKeys]);
+    const available = PropertyCatalogStore.getDefinitions()
+      .filter(d => (d.applies_to||[]).includes(entityType) && !allKeys.has(d.key));
+
+    // Add property handler with auto form_group generation
+    const addProperty = (propKey) => {
+      const existing = (tmpl.properties || []).map(p => p.property_key);
+      if (existing.includes(propKey)) return;
+      const tmplCopy = {...tmpl, properties:[...(tmpl.properties||[]), {property_key:propKey, sort_order:(tmpl.properties||[]).length+20}]};
+      // Auto-create form group if needed
+      if (!tmplCopy.form_groups || tmplCopy.form_groups.length === 0) {
+        tmplCopy.form_groups = [{key:typeKey, label:{en:tmpl.name}, icon:tmpl.icon||'SettingOutlined', property_keys:[propKey]}];
+      } else {
+        // Add to last own form group (not inherited)
+        const ownGroups = tmplCopy.form_groups.filter(fg => !fg.inherited);
+        if (ownGroups.length > 0) {
+          const lastGroup = ownGroups[ownGroups.length-1];
+          lastGroup.property_keys = [...(lastGroup.property_keys||[]), propKey];
+        } else {
+          tmplCopy.form_groups.push({key:typeKey, label:{en:tmpl.name}, icon:tmpl.icon||'SettingOutlined', property_keys:[propKey]});
+        }
+      }
+      EntityTemplateStore.putTemplate(tmplCopy);
+      rerender();
+    };
+
+    // Remove property handler
+    const removeProperty = (propKey) => {
+      const tmplCopy = {...tmpl, properties:(tmpl.properties||[]).filter(p => p.property_key !== propKey)};
+      // Also remove from form_groups
+      tmplCopy.form_groups = (tmplCopy.form_groups||[]).map(fg => ({
+        ...fg, property_keys:(fg.property_keys||[]).filter(k => k !== propKey)
+      }));
+      EntityTemplateStore.putTemplate(tmplCopy);
+      rerender();
+    };
+
+    const handleCreateProperty = () => {
+      if (!newPropName.trim()) return;
+      const key = newPropName.trim().toLowerCase().replace(/[^a-z0-9]+/g,'_');
+      PropertyCatalogStore.putDefinition({
+        key, name:newPropName.trim(), i18n:{en:newPropName.trim()},
+        hint:{en:'Custom property for '+tmpl.name},
+        group_key:'user_profile', category:'fixed',
+        data_type:newPropType, ui_representation:newPropType==='enum'?'dropdown':newPropType==='boolean'?'toggle':newPropType==='number'?'number':newPropType==='datetime'?'date':'text',
+        applies_to:[entityType], is_required:false, is_readonly:false,
+        entity_path:'properties.'+key, lifecycle_status:'active'
+      });
+      addProperty(key);
+      setCreating(false); setNewPropName(''); setNewPropType('string');
+    };
+
+    return React.createElement('div', {className:'config-tab-content', style:{padding:'12px 0'}},
+      // Description
+      React.createElement('div', {style:{fontSize:11,color:'var(--text-tertiary)',marginBottom:12}},
+        resolveI18n({en:'Choose which data fields this entity carries. Pick from existing properties or create new ones.',
+          nl:'Kies welke gegevensvelden deze entiteit heeft. Kies uit bestaande eigenschappen of maak nieuwe aan.'}, lang)),
+
+      // Inherited properties (if any)
+      inherited.length > 0 && React.createElement('div', {style:{marginBottom:16}},
+        React.createElement('div', {style:{fontSize:11,fontWeight:600,color:'var(--text-secondary)',marginBottom:6,display:'flex',alignItems:'center',gap:6}},
+          React.createElement(LockOutlined, {style:{fontSize:10}}),
+          resolveI18n({en:'Inherited from '+(tmpl.extends_key?.split(':')[1]||'parent'),nl:'Ge\u00ebrfd van '+(tmpl.extends_key?.split(':')[1]||'ouder')}, lang),
+          React.createElement('span', {style:{fontWeight:400,color:'var(--text-tertiary)'}}, '('+inherited.length+')')),
+        React.createElement('div', {style:{display:'grid',gap:4}},
+          inherited.map(function(p) {
+            var def = PropertyCatalogStore.getDefinition(p.property_key || p.key);
+            return React.createElement('div', {key:p.property_key||p.key,
+              style:{display:'flex',alignItems:'center',gap:8,padding:'5px 10px',background:'var(--bg-secondary)',
+                borderRadius:6,border:'1px solid var(--border)',opacity:0.6}},
+              React.createElement(LockOutlined, {style:{fontSize:9,color:'var(--text-tertiary)'}}),
+              React.createElement('span', {style:{fontFamily:'monospace',fontSize:11,color:'var(--text-tertiary)',minWidth:120}}, p.property_key||p.key),
+              React.createElement('span', {style:{fontSize:10,color:'var(--text-tertiary)'}}, def?.data_type||''),
+              (def?.is_required) && React.createElement('span', {style:{fontSize:9,color:'var(--error)'}}, '*'),
+              def?.hint && React.createElement(Tooltip, {title:resolveI18n(def.hint,lang)},
+                React.createElement(InfoCircleFilled, {style:{fontSize:9,color:'var(--text-tertiary)',marginLeft:'auto'}}))
+            );
+          })
+        )
+      ),
+
+      // Own properties
+      React.createElement('div', {style:{marginBottom:16}},
+        React.createElement('div', {style:{fontSize:11,fontWeight:600,color:'var(--text-primary)',marginBottom:6}},
+          resolveI18n({en:'Your properties',nl:'Jouw eigenschappen'}, lang),
+          React.createElement('span', {style:{fontWeight:400,color:'var(--text-tertiary)',marginLeft:4}}, '('+own.length+')')),
+        own.length === 0
+          ? React.createElement('div', {style:{fontSize:11,color:'var(--text-tertiary)',fontStyle:'italic',padding:'12px 0'}},
+              resolveI18n({en:'No properties added yet. Pick from below or create new.',nl:'Nog geen eigenschappen. Kies hieronder of maak nieuwe aan.'}, lang))
+          : React.createElement('div', {style:{display:'grid',gap:4}},
+              own.map(function(p) {
+                var def = PropertyCatalogStore.getDefinition(p.property_key || p.key);
+                return React.createElement('div', {key:p.property_key||p.key,
+                  style:{display:'flex',alignItems:'center',gap:8,padding:'5px 10px',background:'var(--bg-secondary)',
+                    borderRadius:6,border:'1px solid var(--border)'}},
+                  React.createElement('span', {style:{fontFamily:'monospace',fontSize:11,color:'var(--brand)',minWidth:120}}, p.property_key||p.key),
+                  React.createElement('span', {style:{fontSize:11,color:'var(--text-primary)'}}, resolveI18n(def?.i18n,lang)||def?.name||''),
+                  React.createElement('span', {style:{fontSize:10,color:'var(--text-tertiary)'}}, def?.data_type||''),
+                  def?.hint && React.createElement(Tooltip, {title:resolveI18n(def.hint,lang)},
+                    React.createElement(InfoCircleFilled, {style:{fontSize:9,color:'var(--text-tertiary)'}})),
+                  React.createElement('span', {style:{marginLeft:'auto',cursor:'pointer',color:'var(--error)',opacity:0.5,fontSize:12},
+                    onClick:function(){removeProperty(p.property_key||p.key);}},
+                    React.createElement(DeleteOutlined))
+                );
+              })
+            )
+      ),
+
+      // Add property section
+      React.createElement('div', {style:{padding:12,background:'var(--bg-secondary)',borderRadius:8,border:'1px dashed var(--border)'}},
+        React.createElement('div', {style:{fontSize:11,fontWeight:600,color:'var(--text-secondary)',marginBottom:8}},
+          resolveI18n({en:'Add property',nl:'Eigenschap toevoegen'}, lang)),
+
+        // Search picker
+        React.createElement(Select, {
+          showSearch:true, style:{width:'100%',marginBottom:8}, size:'small',
+          placeholder:resolveI18n({en:'Search properties...',nl:'Zoek eigenschappen...'}, lang),
+          filterOption:function(input,opt) { return (opt?.label||'').toLowerCase().includes(input.toLowerCase()); },
+          value:undefined,
+          onChange:function(val) { if(val) addProperty(val); },
+          options: available.map(function(d) { return {
+            value: d.key,
+            label: (resolveI18n(d.i18n,lang)||d.name)+' ('+d.key+') \u2014 '+d.data_type
+          };})
+        }),
+
+        // Suggestions (first 6 available)
+        available.length > 0 && React.createElement('div', {style:{display:'flex',flexWrap:'wrap',gap:4,marginBottom:8}},
+          React.createElement('span', {style:{fontSize:10,color:'var(--text-tertiary)',marginRight:4}},
+            resolveI18n({en:'Suggested:',nl:'Voorgesteld:'}, lang)),
+          available.slice(0,6).map(function(d) { return React.createElement('span', {key:d.key,
+            style:{fontSize:10,padding:'2px 8px',borderRadius:10,background:'var(--brand-bg)',color:'var(--brand)',
+              cursor:'pointer',border:'1px solid var(--brand)',transition:'all 0.12s'},
+            onClick:function(){addProperty(d.key);}},
+            resolveI18n(d.i18n,lang)||d.name);
+          })
+        ),
+
+        // Create new property
+        React.createElement('div', {style:{borderTop:'1px solid var(--border)',paddingTop:8,marginTop:4}},
+          !creating
+            ? React.createElement('span', {style:{fontSize:11,color:'var(--brand)',cursor:'pointer',display:'flex',alignItems:'center',gap:4},
+                onClick:function(){setCreating(true);}},
+                React.createElement(PlusOutlined, {style:{fontSize:10}}),
+                resolveI18n({en:'Create new property',nl:'Nieuwe eigenschap aanmaken'}, lang))
+            : React.createElement('div', {style:{display:'flex',gap:6,alignItems:'center'}},
+                React.createElement(Input, {size:'small', placeholder:resolveI18n({en:'Property name',nl:'Naam'},lang),
+                  value:newPropName, onChange:function(e){setNewPropName(e.target.value);}, autoFocus:true,
+                  onPressEnter:handleCreateProperty, style:{flex:1}}),
+                React.createElement(Select, {size:'small', value:newPropType, onChange:setNewPropType, style:{width:100},
+                  options:['string','number','boolean','enum','datetime'].map(function(v){return {value:v,label:v};})}),
+                React.createElement(CheckOutlined, {style:{fontSize:12,color:'var(--success)',cursor:'pointer'}, onClick:handleCreateProperty}),
+                React.createElement(CloseOutlined, {style:{fontSize:12,color:'var(--text-tertiary)',cursor:'pointer'}, onClick:function(){setCreating(false);setNewPropName('');}}))
+        )
+      )
+    );
+  }
+
+  // ── Advanced tab (gear icon: form groups, columns, tabs, relationships, subtypes, instances, version history) ──
   function renderSettingsTab(entityType, typeKey, tmpl, resolved, isSubtype) {
     return React.createElement('div', {style:{display:'grid',gap:16,padding:'12px 0'}},
-      // General info + lifecycle
-      renderEntityTabContent(entityType, typeKey, 'general', tmpl, resolved),
-      // Form Groups (how properties group into edit modal sub-tabs)
+      // Form Groups
       React.createElement('div', {className:'mfe-section'},
         React.createElement('div', {className:'mfe-section-title'}, resolveI18n({en:'Form Groups',nl:'Formuliergroepen'},lang),
           React.createElement('span', {style:{fontSize:9,color:'var(--text-tertiary)',fontWeight:400,marginLeft:6}},
-            resolveI18n({en:'How fields organize into edit modal sub-tabs',nl:'Hoe velden zijn georganiseerd in bewerkings sub-tabs'},lang))),
+            resolveI18n({en:'Controls how properties are organized into sub-tabs in the edit modal. Each group becomes a separate section.',
+              nl:'Bepaalt hoe eigenschappen worden gegroepeerd in sub-tabs in het bewerkingsvenster. Elke groep wordt een aparte sectie.'},lang))),
         renderEntityTabContent(entityType, typeKey, 'formGroups', tmpl, resolved)),
-      // Columns
+      // List Columns
       React.createElement('div', {className:'mfe-section'},
         React.createElement('div', {className:'mfe-section-title'}, resolveI18n({en:'List Columns',nl:'Lijstkolommen'},lang),
           React.createElement('span', {style:{fontSize:9,color:'var(--text-tertiary)',fontWeight:400,marginLeft:6}},
-            resolveI18n({en:'Which fields appear in list/table views',nl:'Welke velden in lijstweergaven verschijnen'},lang))),
+            resolveI18n({en:'Defines which properties appear as columns in list/table views and their sort/filter behavior.',
+              nl:'Bepaalt welke eigenschappen als kolommen verschijnen in lijstweergaven en hun sorteer/filtergedrag.'},lang))),
         renderEntityTabContent(entityType, typeKey, 'columns', tmpl, resolved)),
       // Detail Tabs
       React.createElement('div', {className:'mfe-section'},
         React.createElement('div', {className:'mfe-section-title'}, resolveI18n({en:'Detail Tabs',nl:'Detail Tabs'},lang),
           React.createElement('span', {style:{fontSize:9,color:'var(--text-tertiary)',fontWeight:400,marginLeft:6}},
-            resolveI18n({en:'Tab bar for instance detail views',nl:'Tabbalk voor instantie-detailweergaven'},lang))),
+            resolveI18n({en:'Configures the tab bar shown on instance detail views. Includes overview, children lists, and custom MFE tabs.',
+              nl:'Configureert de tabbalk op instantie-detailweergaven. Inclusief overzicht, kindlijsten en aangepaste MFE-tabs.'},lang))),
         renderEntityTabContent(entityType, typeKey, 'tabs', tmpl, resolved)),
       // Relationships
       React.createElement('div', {className:'mfe-section'},
         React.createElement('div', {className:'mfe-section-title'}, resolveI18n({en:'Relationships',nl:'Relaties'},lang),
           React.createElement('span', {style:{fontSize:9,color:'var(--text-tertiary)',fontWeight:400,marginLeft:6}},
-            resolveI18n({en:'What child entity types are allowed',nl:'Welke kind-entiteittypes zijn toegestaan'},lang))),
+            resolveI18n({en:'Specifies which child entity types can be created under instances of this template.',
+              nl:'Specificeert welke kind-entiteittypes onder instanties van dit template kunnen worden aangemaakt.'},lang))),
         renderEntityTabContent(entityType, typeKey, 'relations', tmpl, resolved)),
-      // Subtypes
-      !isSubtype && renderEntityTabContent(entityType, typeKey, 'subtypes', tmpl, resolved),
+      // Subtypes (only for base templates)
+      !isSubtype && React.createElement('div', {className:'mfe-section'},
+        React.createElement('div', {className:'mfe-section-title'}, resolveI18n({en:'Subtypes',nl:'Subtypes'},lang),
+          React.createElement('span', {style:{fontSize:9,color:'var(--text-tertiary)',fontWeight:400,marginLeft:6}},
+            resolveI18n({en:'Specialized variants of this base template that inherit its properties and add their own.',
+              nl:'Gespecialiseerde varianten van dit basistemplate die eigenschappen erven en eigen toevoegen.'},lang))),
+        renderEntityTabContent(entityType, typeKey, 'subtypes', tmpl, resolved)),
       // Instances
-      renderEntityTabContent(entityType, typeKey, 'instances', tmpl, resolved),
+      React.createElement('div', {className:'mfe-section'},
+        React.createElement('div', {className:'mfe-section-title'}, resolveI18n({en:'Instances',nl:'Instanties'},lang),
+          React.createElement('span', {style:{fontSize:9,color:'var(--text-tertiary)',fontWeight:400,marginLeft:6}},
+            resolveI18n({en:'Live count and list of entities created from this template.',
+              nl:'Actueel aantal en lijst van entiteiten die van dit template zijn aangemaakt.'},lang))),
+        renderEntityTabContent(entityType, typeKey, 'instances', tmpl, resolved)),
+      // Version History
+      (() => {
+        const versions = EntityTemplateStore.getVersions(tmpl.entity_type, tmpl.type_key);
+        const displayVersions = versions.slice().reverse().slice(0, 5);
+        return React.createElement('div', {className:'mfe-section'},
+          React.createElement('div', {className:'mfe-section-title'}, resolveI18n({en:'Version History',nl:'Versiegeschiedenis'},lang),
+            React.createElement('span', {style:{fontSize:9,color:'var(--text-tertiary)',fontWeight:400,marginLeft:6}},
+              resolveI18n({en:'Previous versions of this template. Rollback to restore an earlier configuration.',
+                nl:'Eerdere versies van dit template. Rollback om een eerdere configuratie te herstellen.'},lang))),
+          React.createElement('div', {style:{padding:'10px 14px',background:'var(--bg-secondary)',borderRadius:8,border:'1px solid var(--border)'}},
+            React.createElement('div', {style:{fontSize:11,fontWeight:600,color:'var(--text-secondary)',marginBottom:versions.length>0?8:0,display:'flex',alignItems:'center',gap:6}},
+              React.createElement(HistoryOutlined, {style:{fontSize:12}}),
+              React.createElement('span', {style:{fontSize:10,color:'var(--text-tertiary)',fontWeight:400}}, '('+versions.length+')')
+            ),
+            versions.length === 0
+              ? React.createElement('div', {style:{fontSize:11,color:'var(--text-tertiary)',fontStyle:'italic'}},resolveI18n({en:'No previous versions',nl:'Geen eerdere versies'},lang))
+              : React.createElement('div', {style:{display:'grid',gap:4}},
+                  displayVersions.map(function(ver, idx) {
+                    var realIdx = versions.length - 1 - idx;
+                    return React.createElement('div', {key:idx, style:{display:'flex',alignItems:'center',gap:8,padding:'4px 8px',
+                      borderRadius:4,background:'var(--bg-card)',border:'1px solid var(--border)',fontSize:11}},
+                      React.createElement('span', {style:{fontWeight:600,color:'var(--brand)',minWidth:28}}, 'v'+(ver.version||1)),
+                      React.createElement('span', {style:{color:'var(--text-tertiary)',fontSize:10,flex:1}},
+                        ver._savedAt ? new Date(ver._savedAt).toLocaleString() : '\u2014'),
+                      React.createElement('button', {className:'header-btn',
+                        style:{padding:'1px 8px',fontSize:10,color:'var(--info)',borderColor:'var(--info)'},
+                        onClick:function() { EntityTemplateStore.rollback(tmpl.entity_type, tmpl.type_key, realIdx); rerender(); }},
+                        React.createElement(RollbackOutlined, {style:{fontSize:9,marginRight:3}}),
+                        resolveI18n({en:'Rollback',nl:'Terugzetten'},lang)
+                      )
+                    );
+                  })
+                )
+          )
+        );
+      })(),
     );
   }
 
@@ -11824,6 +12112,10 @@ function EntityStudioPage({t, lang, tab, dsRoute, updateHash}) {
         {key:'fullEntity',label:resolveI18n({en:'Full Entity',nl:'Volledige Entiteit'},lang)},
       ];
       return React.createElement('div', {style:{padding:'12px 0',display:'grid',gap:12}},
+        // Preview description
+        React.createElement('div', {style:{fontSize:11,color:'var(--text-tertiary)',fontStyle:'italic',marginBottom:4}},
+          resolveI18n({en:'This is how a '+tmpl.name+' will appear to users in the Configuration app.',
+            nl:'Zo zal een '+tmpl.name+' eruitzien voor gebruikers in de Configuratie-app.'}, lang)),
         // Stats bar
         React.createElement('div', {style:{display:'flex',gap:12,flexWrap:'wrap',fontSize:10,color:'var(--text-tertiary)',padding:'6px 12px',background:'var(--bg-secondary)',borderRadius:6,border:'1px solid var(--border)'}},
           React.createElement('span',null,resolveI18n({en:'Properties',nl:'Eigenschappen'},lang),': ',(ov.properties||[]).length),
@@ -13486,11 +13778,14 @@ function EntityStudioPage({t, lang, tab, dsRoute, updateHash}) {
         parentId: dsEditModal.parentId,
         lang,
         onSave: (id) => {
+          const wasCreate = dsEditModal.mode === 'create';
           setDsEditModal({visible:false, mode:'edit', entityType:null, entityId:null, parentId:null});
           rerender();
           if (dsEditModal.entityType === 'entityTemplate' && id) {
             const parts = id.split(':');
             if (parts.length === 2) dsNavigate({type:'subtype', entityType:parts[0], typeKey:parts[1]});
+            // New templates open on Identity tab; existing stay on current tab
+            if (wasCreate) setEntityDetailTab('identity');
           }
         },
         onCancel: () => setDsEditModal({visible:false, mode:'edit', entityType:null, entityId:null, parentId:null}),
