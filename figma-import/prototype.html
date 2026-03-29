@@ -8254,7 +8254,7 @@ function OverviewMicroFrontend({ entity, lang, onEdit }) {
 
 // ─── CodeViewer — Monaco-powered JSON viewer/editor ───
 // collapsed by default, edit pencil toggles editing, onSave propagates changes
-function CodeViewer({ value, title, collapsible, lang, onSave, collapsed: collapsedProp }) {
+function CodeViewer({ value, title, collapsible, lang, onSave, collapsed: collapsedProp, extraActions }) {
   const [isCollapsed, setIsCollapsed] = useState(collapsedProp !== undefined ? collapsedProp : true);
   const [editing, setEditing] = useState(false);
   const [monacoReady, setMonacoReady] = useState(!!window._monaco);
@@ -8406,6 +8406,8 @@ function CodeViewer({ value, title, collapsible, lang, onSave, collapsed: collap
         saveFlash && React.createElement('span', {style:{fontSize:10,color:'var(--success)',display:'flex',alignItems:'center',gap:3}},
           React.createElement(CheckCircleFilled, {style:{fontSize:10}}),
           resolveI18n({en:'Saved',nl:'Opgeslagen'},lang)),
+        // Extra actions (e.g. Regenerate button)
+        !isCollapsed && extraActions,
         // Edit pencil (only if onSave provided)
         onSave && !isCollapsed && React.createElement('span', {
           style:{cursor:'pointer',color:editing?'var(--warning)':'var(--text-tertiary)',fontSize:10,display:'flex',alignItems:'center',gap:3,
@@ -8433,6 +8435,32 @@ function CodeViewer({ value, title, collapsible, lang, onSave, collapsed: collap
     // Editor body
     !isCollapsed && React.createElement('div', {ref:containerRef, style:{height:editorHeight,width:'100%'}})
   );
+}
+
+// ─── DummyDataEditor — Monaco-based dummy entity data editor with regenerate ───
+function DummyDataEditor({ entityType, typeKey, resolved, lang, dummyJson, setDummyJson, generateDummyEntity }) {
+  const currentJson = dummyJson || JSON.stringify(generateDummyEntity(entityType, resolved), null, 2);
+
+  const handleRegenerate = () => {
+    const d = generateDummyEntity(entityType, resolved);
+    setDummyJson(JSON.stringify(d, null, 2));
+  };
+
+  return React.createElement(CodeViewer, {
+    value: currentJson,
+    title: {en:'Dummy Entity Data', nl:'Dummy Entiteit Data'},
+    lang,
+    onSave: (parsed) => { setDummyJson(JSON.stringify(parsed, null, 2)); },
+    extraActions: React.createElement(Tooltip, {
+      title: resolveI18n({en:'Generate new random sample data based on the current template properties and types. Useful for testing how the preview looks with different values.', nl:'Genereer nieuwe willekeurige testdata op basis van de huidige template-eigenschappen en typen. Handig om te testen hoe het voorbeeld eruitziet met verschillende waarden.'}, lang),
+      placement:'top'},
+      React.createElement('span', {
+        style:{cursor:'pointer',color:'var(--text-tertiary)',fontSize:10,display:'flex',alignItems:'center',gap:3,
+          padding:'2px 6px',borderRadius:4,transition:'all 0.15s'},
+        onClick: (e) => { e.stopPropagation(); handleRegenerate(); }},
+        React.createElement(ReloadOutlined, {style:{fontSize:11}}),
+        resolveI18n({en:'Regenerate',nl:'Regenereren'}, lang)))
+  });
 }
 
 // ─── ImportExportButtons — Reusable import/export file helper ───
@@ -12493,25 +12521,9 @@ function EntityStudioPage({t, lang, tab, dsRoute, updateHash}) {
             }))
           })
         ),
-        // Phase 8a: Dummy data editor
-        React.createElement('div', {style:{marginTop:4}},
-          React.createElement('div', {style:{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:4}},
-            React.createElement('span', {style:{fontSize:11,fontWeight:600,color:'var(--text-secondary)'}},resolveI18n({en:'Dummy Entity Data',nl:'Dummy Entiteit Data'},lang)),
-            React.createElement('button', {className:'header-btn',style:{fontSize:10,padding:'2px 8px'},
-              onClick:()=>{const d=generateDummyEntity(entityType,resolved);setDummyJson(JSON.stringify(d,null,2));}},
-              React.createElement(ReloadOutlined,{style:{fontSize:9,marginRight:3}}),resolveI18n({en:'Regenerate',nl:'Regenereren'},lang))
-          ),
-          React.createElement('textarea', {
-            style:{width:'100%',minHeight:120,maxHeight:240,padding:8,borderRadius:6,border:'1px solid var(--border)',
-              background:'var(--bg-input)',color:'var(--text-primary)',fontFamily:'JetBrains Mono, monospace',
-              fontSize:10,lineHeight:1.4,resize:'vertical'},
-            value:dummyJson || JSON.stringify(generateDummyEntity(entityType,resolved),null,2),
-            onChange:e=>{setDummyJson(e.target.value);},
-            onFocus:()=>initDummyJson(),
-            spellCheck:false
-          }),
-          dummyJson && (() => { try { JSON.parse(dummyJson); return null; } catch(e) { return React.createElement('div',{style:{fontSize:10,color:'var(--error)',marginTop:2}},resolveI18n({en:'Invalid JSON',nl:'Ongeldige JSON'},lang),': ',e.message); } })()
-        ),
+        // Phase 8a: Dummy data editor — Monaco-powered with regenerate
+        React.createElement(DummyDataEditor, { key:`dummy-${entityType}-${typeKey}`, entityType, typeKey, resolved, lang,
+          dummyJson, setDummyJson, generateDummyEntity }),
         // Phase 5: Inline CodeViewer for resolved template
         React.createElement(CodeViewer, { value:resolved, title:{en:'Resolved Template JSON',nl:'Opgelost Template JSON'}, lang,
           onSave: (parsed) => { EntityTemplateStore.putTemplate({...tmpl, ...parsed, entity_type:tmpl.entity_type, type_key:tmpl.type_key}); rerender(); } })
