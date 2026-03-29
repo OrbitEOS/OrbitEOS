@@ -309,7 +309,7 @@
     .code-viewer-body .json-boolean { color:var(--success); }
     .code-viewer-body .json-null { color:var(--text-tertiary); }
 
-    /* ─── Developer Studio 3-Panel Workspace ─── */
+    /* ─── Entity Studio 3-Panel Workspace ─── */
     .ds-workspace { display:flex; height:calc(100vh - var(--header-h) - 32px); gap:0; }
     .ds-tree { width:260px; min-width:260px; background:var(--bg-card); border:1px solid var(--border);
       border-radius:8px; display:flex; flex-direction:column; overflow:hidden; }
@@ -1646,7 +1646,7 @@ const PRIV_SEEDS = [
   // Marketplace
   {appId:'marketplace', resource:'apps',         actions:['view','create','delete']},
   {appId:'marketplace', resource:'integrations', actions:['view','create','edit','delete']},
-  // Developer Studio
+  // Entity Studio
   {appId:'developerStudio', resource:'templates',  actions:['view','create','edit','delete']},
   {appId:'developerStudio', resource:'properties', actions:['view','create','edit','delete']},
   {appId:'developerStudio', resource:'api-keys',   actions:['view','create','delete']},
@@ -1874,7 +1874,7 @@ PrivilegeCatalogStore.putGroup({
   privilege_keys: PrivilegeCatalogStore.getByApp('marketplace').map(p=>p.key),
 });
 
-// Developer Studio groups
+// Entity Studio groups
 PrivilegeCatalogStore.putGroup({
   key:'devstudio.viewer', name:'Studio Viewer', i18n:{en:'Studio Viewer',nl:'Studio Kijker'},
   app:'developerStudio', level:'viewer', icon:'EyeOutlined',
@@ -1884,7 +1884,7 @@ PrivilegeCatalogStore.putGroup({
 PrivilegeCatalogStore.putGroup({
   key:'devstudio.admin', name:'Studio Admin', i18n:{en:'Studio Admin',nl:'Studio Beheerder'},
   app:'developerStudio', level:'admin', icon:'SettingOutlined',
-  description:{en:'Full Developer Studio access',nl:'Volledige Developer Studio-toegang'},
+  description:{en:'Full Entity Studio access',nl:'Volledige Entity Studio-toegang'},
   privilege_keys: PrivilegeCatalogStore.getByApp('developerStudio').map(p=>p.key),
 });
 
@@ -2094,7 +2094,7 @@ const APP_SEEDS = [
       {key:'myApps',label:{en:'My Installations',nl:'Mijn Installaties'}},
     ]
   },
-  { id:'developerStudio', icon:'developerStudio', label:{en:'Developer Studio',nl:'Developer Studio'}, description:{en:'Entity templates, API keys & domain SDK',nl:'Entiteit templates, API sleutels & domein SDK'}, visible:true, order:5,
+  { id:'developerStudio', icon:'developerStudio', label:{en:'Entity Studio',nl:'Entity Studio'}, description:{en:'Entity templates, API keys & domain SDK',nl:'Entiteit templates, API sleutels & domein SDK'}, visible:true, order:5,
     pages: [
       {key:'entityTemplates',label:{en:'Entity Templates',nl:'Entiteit Templates'}},
       {key:'propertyDict',label:{en:'Property Dictionary',nl:'Eigenschap Woordenboek'}},
@@ -4915,7 +4915,7 @@ const MockAPI = {
     {name:'Modbus Driver Pack',desc:'Protocol drivers for 200+ manufacturers',rating:4.7,installs:'2.1k',price:'Free',color:'var(--text-secondary)',icon:'ApiOutlined'},
   ],
 
-  // ─── Developer Studio ───
+  // ─── Entity Studio ───
   getEntityTemplates: () => [
     {key:'solar_inverter',name:'Solar Inverter',category:'Generation',properties:12,sensors:8,actuators:3,version:'v1.3'},
     {key:'battery_storage',name:'Battery Storage',category:'Storage',properties:18,sensors:14,actuators:6,version:'v1.5'},
@@ -9342,7 +9342,7 @@ function AllDevicesTab({ entity, t, lang, onNavigate }) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════
-// ─── PropertyCatalogTab (Developer Studio → Properties flat table) ───
+// ─── PropertyCatalogTab (Entity Studio → Properties flat table) ───
 // ═══════════════════════════════════════════════════════════════════════
 function PropertyCatalogTab({ entity, lang, onOpenModal }) {
   const [, setTick] = useState(0);
@@ -9701,7 +9701,7 @@ MFERegistry.register('deviceGroup', 'metrics', MetricsTab);
 MFERegistry.register('account', 'billing', BillingTab);
 MFERegistry.register('account', 'apiKeys', ApiKeysTab);
 MFERegistry.register('platform', 'domains', DomainsTab);
-// PropertyCatalogTab moved to Developer Studio (Properties tab) — no longer a platform MFE
+// PropertyCatalogTab moved to Entity Studio (Properties tab) — no longer a platform MFE
 MFERegistry.register('user', 'security', UserSecurityMFE);
 MFERegistry.register('user', 'permissions', UserPermissionsMFE);
 MFERegistry.register('site', 'allDevices', AllDevicesTab);
@@ -10631,10 +10631,10 @@ function MarketplacePage({t, lang}) {
   );
 }
 
-// ─── Developer Studio Page ───
+// ─── Entity Studio Page ───
 // ── TemplateCreateModal REMOVED — replaced by EntityEditModal with entityTemplate relationship type ──
 
-function DeveloperStudioPage({t, lang, tab, dsRoute, updateHash}) {
+function EntityStudioPage({t, lang, tab, dsRoute, updateHash}) {
   const [, setTick] = useState(0);
   const rerender = () => setTick(tk => tk+1);
   const [expandedTmpl, setExpandedTmpl] = useState(null);
@@ -10700,7 +10700,7 @@ function DeveloperStudioPage({t, lang, tab, dsRoute, updateHash}) {
   const allDefs = PropertyCatalogStore.getDefinitions();
   const allGroups = PropertyCatalogStore.getGroups();
 
-  // URL update helper for Developer Studio navigation
+  // URL update helper for Entity Studio navigation
   const dsNavigate = (node) => {
     setSelectedNode(node);
     // Phase 1: Reset tab to preview on entity/subtype navigation, overview on root
@@ -10708,16 +10708,16 @@ function DeveloperStudioPage({t, lang, tab, dsRoute, updateHash}) {
     else if (node.type === 'overview') setEntityDetailTab('overview');
     else setEntityDetailTab('overview');
     if (!updateHash) return;
-    if (node.type === 'overview') updateHash('/developer-studio');
-    else if (node.type === 'entity') updateHash('/developer-studio/' + node.entityType);
-    else if (node.type === 'subtype') updateHash('/developer-studio/' + node.entityType + '/' + node.typeKey);
-    else if (node.type === 'propGroup') updateHash('/developer-studio/props/' + node.groupKey);
-    else if (node.type === 'block') updateHash('/developer-studio/block/' + node.groupKey);
-    else if (node.type === 'property') updateHash('/developer-studio/props/' + (node.groupKey || 'misc') + '/' + node.propKey);
-    else if (node.type === 'dsGroup') updateHash('/developer-studio/group/' + node.groupKey);
-    else if (node.type === '_privileges') updateHash('/developer-studio/privileges');
-    else if (node.type === '_privilegeGroups') updateHash('/developer-studio/privilege-groups');
-    else if (node.type === '_roleTemplates') updateHash('/developer-studio/role-templates');
+    if (node.type === 'overview') updateHash('/entity-studio');
+    else if (node.type === 'entity') updateHash('/entity-studio/' + node.entityType);
+    else if (node.type === 'subtype') updateHash('/entity-studio/' + node.entityType + '/' + node.typeKey);
+    else if (node.type === 'propGroup') updateHash('/entity-studio/props/' + node.groupKey);
+    else if (node.type === 'block') updateHash('/entity-studio/block/' + node.groupKey);
+    else if (node.type === 'property') updateHash('/entity-studio/props/' + (node.groupKey || 'misc') + '/' + node.propKey);
+    else if (node.type === 'dsGroup') updateHash('/entity-studio/group/' + node.groupKey);
+    else if (node.type === '_privileges') updateHash('/entity-studio/privileges');
+    else if (node.type === '_privilegeGroups') updateHash('/entity-studio/privilege-groups');
+    else if (node.type === '_roleTemplates') updateHash('/entity-studio/role-templates');
   };
 
   // Template edit modal save handler
@@ -11152,7 +11152,7 @@ function DeveloperStudioPage({t, lang, tab, dsRoute, updateHash}) {
   // ══════════════════════════════════════════════════════════
 
   function renderCenterHeader() {
-    if (selectedNode.type === 'overview') return React.createElement('span',{style:{fontWeight:600,fontSize:13}},resolveI18n({en:'Developer Studio Overview',nl:'Developer Studio Overzicht'},lang));
+    if (selectedNode.type === 'overview') return React.createElement('span',{style:{fontWeight:600,fontSize:13}},resolveI18n({en:'Entity Studio Overview',nl:'Entity Studio Overzicht'},lang));
     if (selectedNode.type === 'entity') {
       const reg = ENTITY_TYPE_REGISTRY[selectedNode.entityType];
       const Icon = window[reg?.icon]||BlockOutlined;
@@ -11303,7 +11303,7 @@ function DeveloperStudioPage({t, lang, tab, dsRoute, updateHash}) {
     return null;
   }
 
-  // ── Group Detail View (Developer Studio tree group) ──
+  // ── Group Detail View (Entity Studio tree group) ──
   function renderGroupDetail(groupKey) {
     const group = dsTreeOrder.find(g => g.key === groupKey);
     if (!group) return React.createElement('div',{style:{padding:20,color:'var(--text-tertiary)'}},resolveI18n({en:'Group not found',nl:'Groep niet gevonden'},lang));
@@ -11319,8 +11319,8 @@ function DeveloperStudioPage({t, lang, tab, dsRoute, updateHash}) {
           React.createElement(Tag, {style:{margin:0,fontSize:9}}, resolveI18n({en:'group',nl:'groep'},lang))
         ),
         React.createElement('div', {style:{fontSize:11,color:'var(--text-secondary)',marginBottom:12}},
-          resolveI18n({en:'This group organizes entity types in the Developer Studio tree. Drag entity types in or out, or use the controls below.',
-            nl:'Deze groep organiseert entiteittypes in de Developer Studio boom. Sleep entiteittypes erin of eruit, of gebruik de onderstaande besturingselementen.'},lang)
+          resolveI18n({en:'This group organizes entity types in the Entity Studio tree. Drag entity types in or out, or use the controls below.',
+            nl:'Deze groep organiseert entiteittypes in de Entity Studio boom. Sleep entiteittypes erin of eruit, of gebruik de onderstaande besturingselementen.'},lang)
         ),
         // Entity types in this group
         React.createElement('div', {style:{fontSize:11,fontWeight:600,color:'var(--text-tertiary)',marginBottom:6,textTransform:'uppercase',letterSpacing:'0.03em'}},
@@ -12461,7 +12461,7 @@ function DeveloperStudioPage({t, lang, tab, dsRoute, updateHash}) {
             React.createElement('span', {style:{fontSize:10,color:'var(--text-tertiary)'}}, group?.items?.length + ' ' + resolveI18n({en:'entity types',nl:'entiteittypes'},lang))
           ),
           React.createElement('div', {style:{fontSize:10,color:'var(--text-tertiary)',marginTop:2}},
-            resolveI18n({en:'Organizes entity types in the Developer Studio tree',nl:'Organiseert entiteittypes in de Developer Studio boom'},lang))
+            resolveI18n({en:'Organizes entity types in the Entity Studio tree',nl:'Organiseert entiteittypes in de Entity Studio boom'},lang))
         ),
         React.createElement('div', {style:{display:'flex',gap:4,flexShrink:0}},
           React.createElement('span', {className:'crud-btn crud-btn-edit', onClick:()=>{
@@ -13760,7 +13760,7 @@ function App() {
   useEffect(() => {
     const routeMap = {
       'dashboard':'dashboard','fleet':'fleet','devices':'devices','alerts':'alerts',
-      'configuration':'configuration','developer-studio':'entityTemplates',
+      'configuration':'configuration','entity-studio':'entityTemplates',
       'marketplace':'marketplace','rules':'rulesEngine','tariff':'tariffArbitrage',
       'peak-shaving':'peakShaving','battery':'batteryMgmt','ev-charging':'evCharging',
       'grid-congestion':'gridCongestion','compliance':'compliance','iot-fleet':'iotFleet',
@@ -13776,7 +13776,7 @@ function App() {
       if (pageKey !== pageRef2.current) setPage(pageKey);
 
       if (parts[0] === 'configuration' && parts[1]) setFocusedEntityId(parts[1]);
-      if (parts[0] === 'developer-studio') {
+      if (parts[0] === 'entity-studio') {
         if (parts[1] === 'props' && parts[2]) setDsRoute({ propGroup: parts[2] });
         else if (parts[1] && parts[2]) setDsRoute({ entityType: parts[1], typeKey: parts[2] });
         else if (parts[1]) setDsRoute({ entityType: parts[1] });
@@ -13839,8 +13839,8 @@ function App() {
     // Update URL hash
     const reverseMap = {
       'dashboard':'dashboard','fleet':'fleet','devices':'devices','alerts':'alerts',
-      'configuration':'configuration','entityTemplates':'developer-studio',
-      'propertyDict':'developer-studio','marketplace':'marketplace',
+      'configuration':'configuration','entityTemplates':'entity-studio',
+      'propertyDict':'entity-studio','marketplace':'marketplace',
       'rulesEngine':'rules','tariffArbitrage':'tariff','peakShaving':'peak-shaving',
       'batteryMgmt':'battery','evCharging':'ev-charging',
       'gridCongestion':'grid-congestion','compliance':'compliance','iotFleet':'iot-fleet',
@@ -13869,8 +13869,8 @@ function App() {
   useEffect(() => {
     const reverseMap = {
       'login':'login','dashboard':'dashboard','fleet':'fleet','devices':'devices','alerts':'alerts',
-      'configuration':'configuration','entityTemplates':'developer-studio',
-      'propertyDict':'developer-studio','marketplace':'marketplace',
+      'configuration':'configuration','entityTemplates':'entity-studio',
+      'propertyDict':'entity-studio','marketplace':'marketplace',
       'rulesEngine':'rules','tariffArbitrage':'tariff','peakShaving':'peak-shaving',
       'batteryMgmt':'battery','evCharging':'ev-charging',
       'gridCongestion':'grid-congestion','compliance':'compliance','iotFleet':'iot-fleet',
@@ -13908,13 +13908,13 @@ function App() {
     // Marketplace app
     marketplace: <MarketplacePage {...sp}/>,
     myApps: <MarketplacePage {...sp}/>,
-    // Developer Studio app
-    entityTemplates: <DeveloperStudioPage {...sp} tab="templates" dsRoute={dsRoute} updateHash={updateHash}/>,
-    propertyDict: <DeveloperStudioPage {...sp} tab="properties" dsRoute={dsRoute} updateHash={updateHash}/>,
-    apiKeys: <DeveloperStudioPage {...sp} tab="apikeys" dsRoute={dsRoute} updateHash={updateHash}/>,
-    domainPlugins: <DeveloperStudioPage {...sp} tab="domains" dsRoute={dsRoute} updateHash={updateHash}/>,
-    flowTemplates: <DeveloperStudioPage {...sp} tab="flows" dsRoute={dsRoute} updateHash={updateHash}/>,
-    mcpTools: <DeveloperStudioPage {...sp} tab="mcp" dsRoute={dsRoute} updateHash={updateHash}/>,
+    // Entity Studio app
+    entityTemplates: <EntityStudioPage {...sp} tab="templates" dsRoute={dsRoute} updateHash={updateHash}/>,
+    propertyDict: <EntityStudioPage {...sp} tab="properties" dsRoute={dsRoute} updateHash={updateHash}/>,
+    apiKeys: <EntityStudioPage {...sp} tab="apikeys" dsRoute={dsRoute} updateHash={updateHash}/>,
+    domainPlugins: <EntityStudioPage {...sp} tab="domains" dsRoute={dsRoute} updateHash={updateHash}/>,
+    flowTemplates: <EntityStudioPage {...sp} tab="flows" dsRoute={dsRoute} updateHash={updateHash}/>,
+    mcpTools: <EntityStudioPage {...sp} tab="mcp" dsRoute={dsRoute} updateHash={updateHash}/>,
     // Config app extras
     gridCongestion: <GridCongestionPage {...sp}/>,
     compliance: <CompliancePage {...sp}/>,
