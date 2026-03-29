@@ -7526,36 +7526,54 @@ function MetricCard({ value, label, color, pct, lang }) {
 }
 
 // ─── IconPicker — visual Ant Design icon grid for entity templates ───
+// Full Ant Design icon library picker — reads ALL icons from window.icons
+const ALL_ANT_ICONS = (() => {
+  if (!window.icons) return [];
+  return Object.keys(window.icons)
+    .filter(k => k.endsWith('Outlined'))
+    .sort();
+})();
+
+function iconFriendlyName(name) {
+  return (name||'').replace(/Outlined$|Filled$|TwoTone$/,'').replace(/([A-Z])/g,' $1').trim();
+}
+
 function IconPicker({ value, onChange }) {
   const [search, setSearch] = useState('');
-  const allIcons = [
-    'UserOutlined','TeamOutlined','HomeOutlined','HddOutlined','SettingOutlined',
-    'GlobalOutlined','BankOutlined','ApiOutlined','LockOutlined','SafetyCertificateOutlined',
-    'SunOutlined','DatabaseOutlined','CarOutlined','BuildOutlined','ToolOutlined',
-    'RadarChartOutlined','SlidersOutlined','AppstoreOutlined','BlockOutlined',
-    'ThunderboltOutlined','AlertOutlined','BookOutlined','CodeOutlined',
-    'BranchesOutlined','KeyOutlined','CloudServerOutlined','EnvironmentOutlined',
-    'FolderOutlined','EyeOutlined','EditOutlined','DashboardOutlined',
-    'ClockCircleOutlined','FireOutlined','RobotOutlined','ShopOutlined',
-    'FundOutlined','PieChartOutlined','BarChartOutlined','ExperimentOutlined',
+  const allIcons = ALL_ANT_ICONS.length > 0 ? ALL_ANT_ICONS : [
+    'UserOutlined','HomeOutlined','HddOutlined','SettingOutlined','GlobalOutlined',
+    'BankOutlined','ApiOutlined','LockOutlined','SunOutlined','DatabaseOutlined',
   ];
-  const filtered = search ? allIcons.filter(i => i.toLowerCase().includes(search.toLowerCase())) : allIcons;
+  const filtered = search
+    ? allIcons.filter(i => iconFriendlyName(i).toLowerCase().includes(search.toLowerCase()) || i.toLowerCase().includes(search.toLowerCase()))
+    : allIcons.slice(0, 80); // show first 80 when no search
 
   return React.createElement('div', null,
-    React.createElement(Input, {size:'small', placeholder:'Search icons...', value:search, onChange:e=>setSearch(e.target.value),
+    React.createElement(Input, {size:'small', value:search, onChange:e=>setSearch(e.target.value),
+      placeholder:`Search ${allIcons.length} icons...`,
       prefix:React.createElement(SearchOutlined,{style:{color:'var(--text-tertiary)'}}), allowClear:true,
       style:{marginBottom:8,borderRadius:6}}),
-    React.createElement('div', {style:{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(36px,1fr))',gap:4,maxHeight:200,overflowY:'auto'}},
+    // Selected icon preview
+    value && React.createElement('div', {style:{display:'flex',alignItems:'center',gap:8,marginBottom:8,padding:'6px 10px',
+      background:'var(--brand-bg)',borderRadius:6,border:'1px solid var(--brand)'}},
+      React.createElement(window.icons?.[value]||BlockOutlined, {style:{fontSize:18,color:'var(--brand)'}}),
+      React.createElement('span', {style:{fontSize:12,fontWeight:500,color:'var(--brand)'}}, iconFriendlyName(value)),
+      React.createElement('span', {style:{fontSize:9,color:'var(--text-tertiary)',fontFamily:'monospace'}}, value),
+    ),
+    React.createElement('div', {style:{fontSize:10,color:'var(--text-tertiary)',marginBottom:4}},
+      search ? `${filtered.length} results` : `Showing 80 of ${allIcons.length} — type to search`),
+    React.createElement('div', {style:{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(40px,1fr))',gap:3,maxHeight:240,overflowY:'auto'}},
       filtered.map(iconName => {
-        const Icon = window[iconName] || BlockOutlined;
+        const Icon = window.icons?.[iconName] || window[iconName] || BlockOutlined;
         const isSelected = value === iconName;
-        return React.createElement('div', {key:iconName, title:iconName,
-          style:{width:36,height:36,borderRadius:6,display:'flex',alignItems:'center',justifyContent:'center',
-            cursor:'pointer',border:`2px solid ${isSelected?'var(--brand)':'var(--border)'}`,
-            background:isSelected?'var(--brand-bg)':'transparent',transition:'all 0.12s'},
-          onClick:()=>onChange(iconName)},
-          React.createElement(Icon, {style:{fontSize:16,color:isSelected?'var(--brand)':'var(--text-secondary)'}})
-        );
+        return React.createElement(Tooltip, {key:iconName, title:iconFriendlyName(iconName), placement:'top', mouseEnterDelay:0.3},
+          React.createElement('div', {
+            style:{width:40,height:40,borderRadius:6,display:'flex',alignItems:'center',justifyContent:'center',
+              cursor:'pointer',border:`2px solid ${isSelected?'var(--brand)':'var(--border)'}`,
+              background:isSelected?'var(--brand-bg)':'transparent',transition:'all 0.12s'},
+            onClick:()=>onChange(iconName)},
+            React.createElement(Icon, {style:{fontSize:18,color:isSelected?'var(--brand)':'var(--text-secondary)'}})
+          ));
       })
     )
   );
