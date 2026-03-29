@@ -775,6 +775,8 @@
     .config-entity-type { font-size:10px; color:var(--brand); background:var(--brand-bg); padding:1px 8px; border-radius:8px; display:inline-block; }
     .crud-btn { width:26px; height:26px; border-radius:6px; display:inline-flex; align-items:center; justify-content:center;
       cursor:pointer; transition:all 0.15s; border:none; outline:none; }
+    .crud-btn-add { background:var(--brand); color:var(--bg-primary); border:none; }
+    .crud-btn-add:hover { filter:brightness(1.15); transform:scale(1.05); }
     .crud-btn-edit { background:var(--bg-secondary); color:var(--brand); border:1px solid var(--brand); }
     .crud-btn-edit:hover { background:var(--brand-bg); }
     .crud-btn-delete { background:transparent; color:var(--error); border:1px solid var(--error); opacity:0.6; }
@@ -2868,7 +2870,7 @@ const EntityTemplateStore = (() => {
   { entity_type:'site', type_key:'default', name:'Site',
     description:{en:'A physical location with energy devices — a building, farm, or industrial facility',nl:'Een fysieke locatie met energieapparaten — een gebouw, boerderij of industriele faciliteit'},
     icon:'HomeOutlined', lifecycle_status:'active', version:1,
-    children_types:[{entity_type:'site'},{entity_type:'deviceGroup'}],
+    children_types:[{entity_type:'site'},{entity_type:'deviceGroup'},{entity_type:'device'}],
     properties: [
       { property_key:'name', required:true, sort_order:1 },
       { property_key:'site_type', required:true, sort_order:2 },
@@ -2902,6 +2904,7 @@ const EntityTemplateStore = (() => {
       { key:'overview', label:{en:'Overview',nl:'Overzicht'}, type:'overview' },
       { key:'subSites', label:{en:'Sub-sites',nl:'Sublocaties'}, type:'children', child_type:'site' },
       { key:'deviceGroups', label:{en:'Device Groups',nl:'Apparaatgroepen'}, type:'children', child_type:'deviceGroup' },
+      { key:'devices', label:{en:'Devices',nl:'Apparaten'}, type:'children', child_type:'device' },
       { key:'allDevices', label:{en:'All Devices',nl:'Alle Apparaten'}, type:'action', mfe_key:'AllDevicesTab' },
       { key:'users', label:{en:'Users',nl:'Gebruikers'}, type:'action', mfe_key:'UsersTab' },
       { key:'roles', label:{en:'Roles',nl:'Rollen'}, type:'action', mfe_key:'RolesTab' },
@@ -9895,6 +9898,30 @@ function ConfigurationPage({ t, lang, navigateWithLoader, focusedEntityId, setFo
                   {(() => { const _td = _entityTemplate?.description; const _tdStr = _td ? (typeof _td === 'object' ? resolveI18n(_td,lang) : _td) : null; return _tdStr ? React.createElement('div', {style:{fontSize:10,color:'var(--text-tertiary)',marginTop:2}}, _tdStr) : null; })()}
                 </div>
                 <div style={{display:'flex',gap:4,flexShrink:0}}>
+                  {/* Quick-add child from children_types */}
+                  {(() => {
+                    const ct = _entityTemplate?.children_types || [];
+                    if (ct.length === 0) return null;
+                    if (ct.length === 1) {
+                      const childType = ct[0].entity_type || ct[0];
+                      return React.createElement('span', {className:'crud-btn crud-btn-add',
+                        style:{background:'var(--brand)',color:'var(--bg-primary)',border:'none'},
+                        onClick:() => openCreateModal(childType, selectedEntityId)},
+                        React.createElement(PlusOutlined, {style:{fontSize:12}}));
+                    }
+                    // Multiple children types — dropdown
+                    return React.createElement(Dropdown, {
+                      trigger:['click'],
+                      menu:{items:ct.map(c => {
+                        const cType = c.entity_type || c;
+                        const reg = ENTITY_TYPE_REGISTRY[cType];
+                        return {key:cType, label:resolveI18n(reg?.label,lang)||cType,
+                          icon:React.createElement(window[reg?.icon]||BlockOutlined,{style:{fontSize:12}})};
+                      }), onClick:({key}) => openCreateModal(key, selectedEntityId)}
+                    }, React.createElement('span', {className:'crud-btn crud-btn-add',
+                      style:{background:'var(--brand)',color:'var(--bg-primary)',border:'none'}},
+                      React.createElement(PlusOutlined, {style:{fontSize:12}})));
+                  })()}
                   <span className="crud-btn crud-btn-edit" onClick={() => openEditModal(selectedEntity)}><EditOutlined style={{fontSize:12}}/></span>
                   {selectedEntity.entityType !== 'platform' && (
                     <span className="crud-btn crud-btn-delete" onClick={() => {
