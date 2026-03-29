@@ -2643,10 +2643,20 @@ const EntityTemplateStore = (() => {
       else mergedProperties.push({...p, inherited: false});
     });
 
+    // Filter out excluded inherited properties
+    const excludedSet = new Set(tmpl.excluded_inherited || []);
+    if (excludedSet.size > 0) {
+      mergedProperties = mergedProperties.filter(p => !p.inherited || !excludedSet.has(p.property_key));
+    }
+
     // Merge form_groups: parent (inherited) + own (override or add)
     let mergedFormGroups = [];
     if (parentResolved?.form_groups) {
-      mergedFormGroups = [...parentResolved.form_groups.map(fg => ({...fg, inherited: true}))];
+      mergedFormGroups = [...parentResolved.form_groups.map(fg => {
+        // Filter excluded properties from inherited form groups
+        const filteredKeys = (fg.property_keys||[]).filter(pk => !excludedSet.has(pk));
+        return {...fg, inherited: true, property_keys: filteredKeys};
+      }).filter(fg => (fg.property_keys||[]).length > 0)]; // remove empty groups
     }
     (tmpl.form_groups || []).forEach(fg => {
       const existing = mergedFormGroups.findIndex(mfg => mfg.key === fg.key);
@@ -11620,8 +11630,17 @@ function EntityStudioPage({t, lang, tab, dsRoute, updateHash}) {
 
     // Split properties into inherited vs own
     const allResolved = resolved?.resolved?.properties || resolved?.properties || [];
+    const excludedInherited = new Set(tmpl.excluded_inherited || []);
     const inherited = allResolved.filter(p => p.inherited);
     const own = allResolved.filter(p => !p.inherited);
+
+    // Toggle inherited property on/off
+    const toggleInherited = (propKey) => {
+      const excluded = new Set(tmpl.excluded_inherited || []);
+      if (excluded.has(propKey)) excluded.delete(propKey); else excluded.add(propKey);
+      EntityTemplateStore.putTemplate({...tmpl, excluded_inherited: Array.from(excluded)});
+      rerender();
+    };
 
     // Available properties to add (applies_to this entityType, not already in template)
     const currentKeys = (tmpl.properties||[]).map(p => p.property_key);
@@ -11684,24 +11703,28 @@ function EntityStudioPage({t, lang, tab, dsRoute, updateHash}) {
         resolveI18n({en:'Choose which data fields this entity carries. Pick from existing properties or create new ones.',
           nl:'Kies welke gegevensvelden deze entiteit heeft. Kies uit bestaande eigenschappen of maak nieuwe aan.'}, lang)),
 
-      // Inherited properties (if any)
+      // Inherited properties (with toggle on/off)
       inherited.length > 0 && React.createElement('div', {style:{marginBottom:16}},
         React.createElement('div', {style:{fontSize:11,fontWeight:600,color:'var(--text-secondary)',marginBottom:6,display:'flex',alignItems:'center',gap:6}},
-          React.createElement(LockOutlined, {style:{fontSize:10}}),
           resolveI18n({en:'Inherited from '+(tmpl.extends_key?.split(':')[1]||'parent'),nl:'Ge\u00ebrfd van '+(tmpl.extends_key?.split(':')[1]||'ouder')}, lang),
-          React.createElement('span', {style:{fontWeight:400,color:'var(--text-tertiary)'}}, '('+inherited.length+')')),
+          React.createElement('span', {style:{fontWeight:400,color:'var(--text-tertiary)'}},
+            `(${inherited.filter(p => !excludedInherited.has(p.property_key||p.key)).length}/${inherited.length})`)),
         React.createElement('div', {style:{display:'grid',gap:4}},
           inherited.map(function(p) {
-            var def = PropertyCatalogStore.getDefinition(p.property_key || p.key);
-            return React.createElement('div', {key:p.property_key||p.key,
+            var pk = p.property_key || p.key;
+            var def = PropertyCatalogStore.getDefinition(pk);
+            var isExcluded = excludedInherited.has(pk);
+            return React.createElement('div', {key:pk,
               style:{display:'flex',alignItems:'center',gap:8,padding:'5px 10px',background:'var(--bg-secondary)',
-                borderRadius:6,border:'1px solid var(--border)',opacity:0.6}},
-              React.createElement(LockOutlined, {style:{fontSize:9,color:'var(--text-tertiary)'}}),
-              React.createElement('span', {style:{fontFamily:'monospace',fontSize:11,color:'var(--text-tertiary)',minWidth:120}}, p.property_key||p.key),
+                borderRadius:6,border:'1px solid var(--border)',opacity:isExcluded?0.35:0.7}},
+              React.createElement(Switch, {size:'small', checked:!isExcluded, onChange:()=>toggleInherited(pk)}),
+              React.createElement('span', {style:{fontFamily:'monospace',fontSize:11,color:isExcluded?'var(--text-tertiary)':'var(--text-secondary)',minWidth:120,
+                textDecoration:isExcluded?'line-through':'none'}}, pk),
+              React.createElement('span', {style:{fontSize:11,color:'var(--text-secondary)',flex:1}}, resolveI18n(def?.i18n,lang)||def?.name||''),
               React.createElement('span', {style:{fontSize:10,color:'var(--text-tertiary)'}}, def?.data_type||''),
-              (def?.is_required) && React.createElement('span', {style:{fontSize:9,color:'var(--error)'}}, '*'),
+              def?.is_required && !isExcluded && React.createElement('span', {style:{fontSize:9,color:'var(--error)'}}, '*'),
               def?.hint && React.createElement(Tooltip, {title:resolveI18n(def.hint,lang)},
-                React.createElement(InfoCircleFilled, {style:{fontSize:9,color:'var(--text-tertiary)',marginLeft:'auto'}}))
+                React.createElement(InfoCircleFilled, {style:{fontSize:9,color:'var(--text-tertiary)'}}))
             );
           })
         )
