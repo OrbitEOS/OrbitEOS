@@ -300,14 +300,11 @@
     .code-viewer { background:var(--bg-secondary); border:1px solid var(--border); border-radius:8px; overflow:hidden; }
     .code-viewer-header { display:flex; align-items:center; justify-content:space-between; padding:6px 12px;
       border-bottom:1px solid var(--border); font-size:11px; font-weight:600; color:var(--text-secondary); }
-    .code-viewer-body { padding:12px; overflow:auto; max-height:400px; }
-    .code-viewer-body pre { margin:0; font-family:'JetBrains Mono','Fira Code',monospace; font-size:11px; line-height:1.5;
-      color:var(--text-primary); white-space:pre-wrap; word-break:break-word; }
-    .code-viewer-body .json-key { color:var(--text-secondary); }
-    .code-viewer-body .json-string { color:var(--brand); }
-    .code-viewer-body .json-number { color:var(--solar); }
-    .code-viewer-body .json-boolean { color:var(--success); }
-    .code-viewer-body .json-null { color:var(--text-tertiary); }
+    .code-viewer-header:hover { background:var(--bg-card-hover); }
+    .code-viewer .monaco-editor { border-radius:0 0 8px 8px; }
+    .code-viewer .monaco-editor .margin { border-radius:0 0 0 8px; }
+    .code-viewer .monaco-editor, .code-viewer .monaco-editor-background,
+    .code-viewer .monaco-editor .inputarea.ime-input { background:var(--bg-secondary) !important; }
 
     /* ─── Entity Studio 3-Panel Workspace ─── */
     .ds-workspace { display:flex; height:calc(100vh - var(--header-h) - 32px); gap:0; }
@@ -822,6 +819,59 @@
 <script src="https://unpkg.com/antd@5.22.6/dist/antd.min.js"></script>
 <script src="https://unpkg.com/@ant-design/icons@5/dist/index.umd.min.js"></script>
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs/loader.min.js"></script>
+<script>
+  // Monaco Editor AMD loader setup
+  window._monacoReady = new Promise(resolve => {
+    require.config({ paths: { vs: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs' } });
+    require(['vs/editor/editor.main'], function() {
+      // Define OrbitEOS dark theme
+      monaco.editor.defineTheme('orbiteos-dark', {
+        base: 'vs-dark',
+        inherit: true,
+        rules: [
+          { token: 'string.key.json', foreground: '94a3b8' },
+          { token: 'string.value.json', foreground: '38bdf8' },
+          { token: 'number', foreground: 'fbbf24' },
+          { token: 'keyword.json', foreground: '4ade80' },
+        ],
+        colors: {
+          'editor.background': '#0f172a',
+          'editor.foreground': '#e2e8f0',
+          'editor.lineHighlightBackground': '#1e293b',
+          'editorLineNumber.foreground': '#475569',
+          'editorIndentGuide.background': '#1e293b',
+          'editor.selectionBackground': '#334155',
+          'editorBracketMatch.background': '#334155',
+          'editorBracketMatch.border': '#475569',
+          'scrollbarSlider.background': '#1e293b80',
+          'scrollbarSlider.hoverBackground': '#33415580',
+        }
+      });
+      // Light theme
+      monaco.editor.defineTheme('orbiteos-light', {
+        base: 'vs',
+        inherit: true,
+        rules: [
+          { token: 'string.key.json', foreground: '475569' },
+          { token: 'string.value.json', foreground: '0284c7' },
+          { token: 'number', foreground: 'd97706' },
+          { token: 'keyword.json', foreground: '16a34a' },
+        ],
+        colors: {
+          'editor.background': '#f8fafc',
+          'editor.foreground': '#1e293b',
+          'editor.lineHighlightBackground': '#f1f5f9',
+          'editorLineNumber.foreground': '#94a3b8',
+          'editorIndentGuide.background': '#e2e8f0',
+          'editor.selectionBackground': '#dbeafe',
+        }
+      });
+      window._monaco = monaco;
+      resolve(monaco);
+    });
+  });
+</script>
 
 <script type="text/babel">
 const { useState, useEffect, useRef, useCallback, useMemo } = React;
@@ -8202,36 +8252,187 @@ function OverviewMicroFrontend({ entity, lang, onEdit }) {
   );
 }
 
-// ─── CodeViewer — JSON syntax highlighting viewer ───
-function CodeViewer({ value, title, collapsible, lang }) {
-  const [collapsed, setCollapsed] = useState(false);
+// ─── CodeViewer — Monaco-powered JSON viewer/editor ───
+// collapsed by default, edit pencil toggles editing, onSave propagates changes
+function CodeViewer({ value, title, collapsible, lang, onSave, collapsed: collapsedProp }) {
+  const [isCollapsed, setIsCollapsed] = useState(collapsedProp !== undefined ? collapsedProp : true);
+  const [editing, setEditing] = useState(false);
+  const [monacoReady, setMonacoReady] = useState(!!window._monaco);
+  const [parseError, setParseError] = useState(null);
+  const [saveFlash, setSaveFlash] = useState(false);
+  const containerRef = useRef(null);
+  const editorRef = useRef(null);
+  const currentTheme = document.documentElement.getAttribute('data-theme');
 
-  const highlight = (json) => {
-    if (typeof json !== 'string') json = JSON.stringify(json, null, 2);
-    return json.replace(/("(?:[^"\\]|\\.)*")\s*:/g, '<span class="json-key">$1</span>:')
-      .replace(/:\s*("(?:[^"\\]|\\.)*")/g, ': <span class="json-string">$1</span>')
-      .replace(/:\s*(\d+\.?\d*)/g, ': <span class="json-number">$1</span>')
-      .replace(/:\s*(true|false)/g, ': <span class="json-boolean">$1</span>')
-      .replace(/:\s*(null)/g, ': <span class="json-null">$1</span>');
+  // Serialize value
+  const jsonText = typeof value === 'string' ? value : JSON.stringify(value, null, 2);
+  const lineCount = jsonText.split('\n').length;
+
+  // Load Monaco lazily
+  useEffect(() => {
+    if (!window._monaco && window._monacoReady) {
+      window._monacoReady.then(() => setMonacoReady(true));
+    }
+  }, []);
+
+  // Create/destroy Monaco editor when expanded
+  useEffect(() => {
+    if (isCollapsed || !monacoReady || !containerRef.current) return;
+    if (editorRef.current) { editorRef.current.dispose(); editorRef.current = null; }
+    const theme = (document.documentElement.getAttribute('data-theme') === 'light') ? 'orbiteos-light' : 'orbiteos-dark';
+    const ed = window._monaco.editor.create(containerRef.current, {
+      value: jsonText,
+      language: 'json',
+      theme,
+      readOnly: !editing,
+      minimap: { enabled: false },
+      lineNumbers: lineCount > 8 ? 'on' : 'off',
+      scrollBeyondLastLine: false,
+      folding: true,
+      foldingStrategy: 'indentation',
+      glyphMargin: false,
+      renderLineHighlight: editing ? 'line' : 'none',
+      overviewRulerLanes: 0,
+      hideCursorInOverviewRuler: true,
+      overviewRulerBorder: false,
+      scrollbar: { vertical: 'auto', horizontal: 'auto', verticalScrollbarSize: 6, horizontalScrollbarSize: 6 },
+      padding: { top: 8, bottom: 8 },
+      fontSize: 11,
+      fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
+      fontLigatures: true,
+      wordWrap: 'on',
+      automaticLayout: true,
+      contextmenu: editing,
+      domReadOnly: !editing,
+      cursorStyle: editing ? 'line' : 'line-thin',
+      cursorBlinking: editing ? 'blink' : 'solid',
+    });
+    // Auto-fold all after creation
+    setTimeout(() => { ed.getAction('editor.foldAll')?.run(); }, 50);
+    editorRef.current = ed;
+    return () => { if (editorRef.current) { editorRef.current.dispose(); editorRef.current = null; } };
+  }, [isCollapsed, monacoReady, editing]);
+
+  // Update content when value changes externally (and not editing)
+  useEffect(() => {
+    if (editorRef.current && !editing) {
+      const current = editorRef.current.getValue();
+      if (current !== jsonText) editorRef.current.setValue(jsonText);
+    }
+  }, [jsonText, editing]);
+
+  // Update readOnly when editing toggles
+  useEffect(() => {
+    if (editorRef.current) {
+      editorRef.current.updateOptions({
+        readOnly: !editing,
+        renderLineHighlight: editing ? 'line' : 'none',
+        contextmenu: editing,
+        domReadOnly: !editing,
+        cursorStyle: editing ? 'line' : 'line-thin',
+        cursorBlinking: editing ? 'blink' : 'solid',
+      });
+    }
+  }, [editing]);
+
+  // Update theme reactively
+  useEffect(() => {
+    if (window._monaco) {
+      const theme = (document.documentElement.getAttribute('data-theme') === 'light') ? 'orbiteos-light' : 'orbiteos-dark';
+      window._monaco.editor.setTheme(theme);
+    }
+  }, [currentTheme]);
+
+  const handleCopy = (e) => {
+    e.stopPropagation();
+    navigator.clipboard?.writeText(jsonText);
   };
 
-  const handleCopy = () => {
-    const text = typeof value === 'string' ? value : JSON.stringify(value, null, 2);
-    navigator.clipboard?.writeText(text);
+  const handleSave = (e) => {
+    e.stopPropagation();
+    if (!editorRef.current || !onSave) return;
+    const text = editorRef.current.getValue();
+    try {
+      const parsed = JSON.parse(text);
+      setParseError(null);
+      onSave(parsed);
+      setEditing(false);
+      setSaveFlash(true);
+      setTimeout(() => setSaveFlash(false), 1500);
+    } catch (err) {
+      setParseError(err.message);
+    }
   };
 
-  return React.createElement('div', {className:'code-viewer'},
-    React.createElement('div', {className:'code-viewer-header'},
-      React.createElement('span', {style:{display:'flex',alignItems:'center',gap:6,cursor:collapsible?'pointer':'default'},
-        onClick:collapsible?()=>setCollapsed(!collapsed):undefined},
-        collapsible && React.createElement(RightOutlined, {style:{fontSize:8,transform:collapsed?'none':'rotate(90deg)',transition:'transform 0.15s'}}),
-        resolveI18n(title, lang) || 'JSON'),
-      React.createElement('span', {style:{cursor:'pointer',color:'var(--text-tertiary)',fontSize:10},onClick:handleCopy},
-        React.createElement(CopyOutlined, {style:{fontSize:11,marginRight:3}}), 'Copy')
+  const handleCancel = (e) => {
+    e.stopPropagation();
+    setEditing(false);
+    setParseError(null);
+    if (editorRef.current) editorRef.current.setValue(jsonText);
+  };
+
+  const handleToggleEdit = (e) => {
+    e.stopPropagation();
+    if (editing) { handleCancel(e); } else { setEditing(true); }
+  };
+
+  // Compute collapsed summary
+  const summary = (() => {
+    if (!isCollapsed) return null;
+    try {
+      const obj = typeof value === 'string' ? JSON.parse(value) : value;
+      if (Array.isArray(obj)) return `[ ${obj.length} items ]`;
+      if (obj && typeof obj === 'object') {
+        const keys = Object.keys(obj);
+        return `{ ${keys.slice(0, 4).join(', ')}${keys.length > 4 ? ', ...' : ''} }`;
+      }
+      return String(obj).slice(0, 60);
+    } catch { return '{ ... }'; }
+  })();
+
+  const editorHeight = Math.min(Math.max(lineCount * 16 + 20, 80), 400);
+
+  return React.createElement('div', {className:'code-viewer', style:{overflow:'hidden'}},
+    // Header
+    React.createElement('div', {className:'code-viewer-header', style:{cursor:'pointer',userSelect:'none'},
+      onClick: () => setIsCollapsed(!isCollapsed)},
+      React.createElement('span', {style:{display:'flex',alignItems:'center',gap:6,flex:1,minWidth:0}},
+        React.createElement(RightOutlined, {style:{fontSize:8,transform:isCollapsed?'none':'rotate(90deg)',transition:'transform 0.15s',flexShrink:0}}),
+        React.createElement(CodeOutlined, {style:{fontSize:11,color:'var(--brand)',flexShrink:0}}),
+        resolveI18n(title, lang) || 'JSON',
+        isCollapsed && React.createElement('span', {style:{fontSize:10,color:'var(--text-tertiary)',fontFamily:"'JetBrains Mono',monospace",marginLeft:8,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}, summary),
+        React.createElement('span', {style:{fontSize:9,color:'var(--text-tertiary)',marginLeft:6,flexShrink:0}}, lineCount + ' lines')
+      ),
+      React.createElement('span', {style:{display:'flex',alignItems:'center',gap:6,flexShrink:0}},
+        saveFlash && React.createElement('span', {style:{fontSize:10,color:'var(--success)',display:'flex',alignItems:'center',gap:3}},
+          React.createElement(CheckCircleFilled, {style:{fontSize:10}}),
+          resolveI18n({en:'Saved',nl:'Opgeslagen'},lang)),
+        // Edit pencil (only if onSave provided)
+        onSave && !isCollapsed && React.createElement('span', {
+          style:{cursor:'pointer',color:editing?'var(--warning)':'var(--text-tertiary)',fontSize:10,display:'flex',alignItems:'center',gap:3,
+            padding:'2px 6px',borderRadius:4,background:editing?'var(--warning-bg, rgba(251,191,36,0.1))':'transparent',transition:'all 0.15s'},
+          onClick:handleToggleEdit,
+          title:editing?resolveI18n({en:'Cancel editing',nl:'Bewerken annuleren'},lang):resolveI18n({en:'Edit JSON',nl:'JSON bewerken'},lang)},
+          React.createElement(EditOutlined, {style:{fontSize:11}}),
+          editing ? resolveI18n({en:'Cancel',nl:'Annuleren'},lang) : resolveI18n({en:'Edit',nl:'Bewerken'},lang)),
+        // Save button (only when editing)
+        editing && React.createElement('span', {
+          style:{cursor:'pointer',color:'var(--success)',fontSize:10,display:'flex',alignItems:'center',gap:3,
+            padding:'2px 6px',borderRadius:4,background:'rgba(74,222,128,0.1)',transition:'all 0.15s'},
+          onClick:handleSave},
+          React.createElement(CheckOutlined, {style:{fontSize:11}}),
+          resolveI18n({en:'Apply',nl:'Toepassen'},lang)),
+        // Copy button
+        React.createElement('span', {style:{cursor:'pointer',color:'var(--text-tertiary)',fontSize:10,display:'flex',alignItems:'center',gap:3},
+          onClick:handleCopy},
+          React.createElement(CopyOutlined, {style:{fontSize:11}}),
+          resolveI18n({en:'Copy',nl:'Kopieer'},lang)))
     ),
-    !collapsed && React.createElement('div', {className:'code-viewer-body'},
-      React.createElement('pre', {dangerouslySetInnerHTML:{__html: highlight(value)}})
-    )
+    // Parse error
+    parseError && React.createElement('div', {style:{padding:'4px 12px',fontSize:10,color:'var(--error)',background:'var(--error-bg, rgba(239,68,68,0.1))',borderBottom:'1px solid var(--border)'}},
+      resolveI18n({en:'JSON Error',nl:'JSON Fout'},lang), ': ', parseError),
+    // Editor body
+    !isCollapsed && React.createElement('div', {ref:containerRef, style:{height:editorHeight,width:'100%'}})
   );
 }
 
@@ -9618,7 +9819,8 @@ function PropertyEditModal({ mode, def, lang, onSave, onCancel }) {
     );
 
     if (activeTab === 'json') return React.createElement(CodeViewer, {
-      value: values, title:{en:'Property Definition',nl:'Eigenschapsdefinitie'}, lang
+      value: values, title:{en:'Property Definition',nl:'Eigenschapsdefinitie'}, lang, collapsed:false,
+      onSave: (parsed) => { setValues(parsed); }
     });
 
     return null;
@@ -12312,7 +12514,8 @@ function EntityStudioPage({t, lang, tab, dsRoute, updateHash}) {
           dummyJson && (() => { try { JSON.parse(dummyJson); return null; } catch(e) { return React.createElement('div',{style:{fontSize:10,color:'var(--error)',marginTop:2}},resolveI18n({en:'Invalid JSON',nl:'Ongeldige JSON'},lang),': ',e.message); } })()
         ),
         // Phase 5: Inline CodeViewer for resolved template
-        React.createElement(CodeViewer, { value:resolved, title:{en:'Resolved Template JSON',nl:'Opgelost Template JSON'}, lang, collapsible:true })
+        React.createElement(CodeViewer, { value:resolved, title:{en:'Resolved Template JSON',nl:'Opgelost Template JSON'}, lang,
+          onSave: (parsed) => { EntityTemplateStore.putTemplate({...tmpl, ...parsed, entity_type:tmpl.entity_type, type_key:tmpl.type_key}); rerender(); } })
       );
     }
 
@@ -12711,32 +12914,36 @@ function EntityStudioPage({t, lang, tab, dsRoute, updateHash}) {
     );
   }
 
-  // ── Code Panel (Phase 4e) ──
+  // ── Code Panel (Phase 4e) — Monaco-powered, collapsed by default, editable ──
   function renderCodePanel() {
     if (selectedNode.type === 'entity' || selectedNode.type === 'subtype') {
-      const resolved = EntityTemplateStore.resolveTemplate(selectedNode.entityType, selectedNode.typeKey);
-      return React.createElement(CodeViewer, { value:resolved, title:{en:'Resolved Template',nl:'Opgelost Template'}, lang, collapsible:false });
+      const typeKey = selectedNode.typeKey || 'default';
+      const resolved = EntityTemplateStore.resolveTemplate(selectedNode.entityType, typeKey);
+      const tmpl = EntityTemplateStore.getTemplate(selectedNode.entityType, typeKey);
+      return React.createElement(CodeViewer, { value:resolved, title:{en:'Resolved Template',nl:'Opgelost Template'}, lang, collapsed:false,
+        onSave: tmpl ? (parsed) => { EntityTemplateStore.putTemplate({...tmpl, ...parsed, entity_type:tmpl.entity_type, type_key:tmpl.type_key}); rerender(); } : undefined });
     }
-    if (selectedNode.type === 'block') {
+    if (selectedNode.type === 'block' || selectedNode.type === 'propGroup') {
       const props = PropertyCatalogStore.getByGroup(selectedNode.groupKey);
-      return React.createElement(CodeViewer, { value:props, title:{en:'Block Properties',nl:'Blok Eigenschappen'}, lang, collapsible:false });
-    }
-    if (selectedNode.type === 'propGroup') {
-      const props = PropertyCatalogStore.getByGroup(selectedNode.groupKey);
-      return React.createElement(CodeViewer, { value:props, title:{en:'Property Group',nl:'Eigenschap Groep'}, lang, collapsible:false });
+      return React.createElement(CodeViewer, { value:props, title:{en:selectedNode.type==='block'?'Block Properties':'Property Group',nl:selectedNode.type==='block'?'Blok Eigenschappen':'Eigenschap Groep'}, lang, collapsed:false,
+        onSave: (parsed) => { if (Array.isArray(parsed)) parsed.forEach(d => PropertyCatalogStore.putDefinition(d)); rerender(); } });
     }
     if (selectedNode.type === 'property') {
       const def = PropertyCatalogStore.getDefinition(selectedNode.propKey);
-      return React.createElement(CodeViewer, { value:def, title:{en:'Property Definition',nl:'Eigenschap Definitie'}, lang, collapsible:false });
+      return React.createElement(CodeViewer, { value:def, title:{en:'Property Definition',nl:'Eigenschap Definitie'}, lang, collapsed:false,
+        onSave: (parsed) => { PropertyCatalogStore.putDefinition({...parsed, key:selectedNode.propKey}); rerender(); } });
     }
     if (selectedNode.type === '_privileges') {
-      return React.createElement(CodeViewer, { value:PrivilegeCatalogStore.getDefinitions(), title:{en:'All Privilege Definitions',nl:'Alle Rechtdefinities'}, lang, collapsible:false });
+      return React.createElement(CodeViewer, { value:PrivilegeCatalogStore.getDefinitions(), title:{en:'All Privilege Definitions',nl:'Alle Rechtdefinities'}, lang, collapsed:false,
+        onSave: (parsed) => { if (Array.isArray(parsed)) parsed.forEach(d => PrivilegeCatalogStore.putDefinition(d)); rerender(); } });
     }
     if (selectedNode.type === '_privilegeGroups') {
-      return React.createElement(CodeViewer, { value:PrivilegeCatalogStore.getGroups(), title:{en:'All Privilege Groups',nl:'Alle Rechtengroepen'}, lang, collapsible:false });
+      return React.createElement(CodeViewer, { value:PrivilegeCatalogStore.getGroups(), title:{en:'All Privilege Groups',nl:'Alle Rechtengroepen'}, lang, collapsed:false,
+        onSave: (parsed) => { if (Array.isArray(parsed)) parsed.forEach(g => PrivilegeCatalogStore.putGroup(g)); rerender(); } });
     }
     if (selectedNode.type === '_roleTemplates') {
-      return React.createElement(CodeViewer, { value:RoleStore.getAll().map(r=>({...r,privilege_groups:r.privilege_groups||[]})), title:{en:'All Role Templates',nl:'Alle Rolsjablonen'}, lang, collapsible:false });
+      return React.createElement(CodeViewer, { value:RoleStore.getAll().map(r=>({...r,privilege_groups:r.privilege_groups||[]})), title:{en:'All Role Templates',nl:'Alle Rolsjablonen'}, lang, collapsed:false,
+        onSave: (parsed) => { if (Array.isArray(parsed)) parsed.forEach(r => { const existing = RoleStore.get(r.id); if (existing) Object.assign(existing, r); }); rerender(); } });
     }
     return null;
   }
@@ -13367,7 +13574,8 @@ function EntityStudioPage({t, lang, tab, dsRoute, updateHash}) {
                 },
               }),
               // Phase 5: Inline CodeViewer for roles
-              React.createElement(CodeViewer, { value:roles.map(r=>({...r,privilege_groups:r.privilege_groups||[]})), title:{en:'Role Templates JSON',nl:'Rolsjablonen JSON'}, lang, collapsible:true })
+              React.createElement(CodeViewer, { value:roles.map(r=>({...r,privilege_groups:r.privilege_groups||[]})), title:{en:'Role Templates JSON',nl:'Rolsjablonen JSON'}, lang,
+                onSave: (parsed) => { if (Array.isArray(parsed)) parsed.forEach(r => { const existing = RoleStore.get(r.id); if (existing) Object.assign(existing, r); }); rerender(); } })
             )
       }))
     });
