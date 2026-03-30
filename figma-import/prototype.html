@@ -824,15 +824,15 @@
     @keyframes spotScaleIn { from { transform:scale(0.98); opacity:0; } to { transform:scale(1); opacity:1; } }
 
     /* ─── Configuration Page ─── */
-    .config-page { display:flex; gap:0; height:calc(100vh - var(--header-h) - 32px); }
-    .config-tree-panel { width:290px; min-width:290px; background:var(--bg-card); border:1px solid var(--border);
-      border-radius:8px; display:flex; flex-direction:column; overflow:hidden; }
-    .config-tree-header { padding:10px 12px; border-bottom:1px solid var(--border); }
-    .config-tree-scroll { flex:1; overflow-y:auto; overflow-x:auto; }
+    .config-page { display:flex; gap:0; height:calc(100vh - var(--header-h) - 32px); align-items:stretch; }
+    .config-tree-panel { width:290px; min-width:290px; max-width:290px; background:var(--bg-card); border:1px solid var(--border);
+      border-radius:8px; display:flex; flex-direction:column; overflow:hidden; flex-shrink:0; }
+    .config-tree-header { padding:10px 12px; border-bottom:1px solid var(--border); flex-shrink:0; }
+    .config-tree-scroll { flex:1; overflow-y:auto; overflow-x:hidden; min-height:0; }
     .config-detail-panel { flex:1; margin-left:12px; background:var(--bg-card); border:1px solid var(--border);
-      border-radius:8px; display:flex; flex-direction:column; overflow:hidden; }
-    .config-detail-header { padding:8px 20px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:10px; }
-    .config-detail-body { flex:1; overflow-y:auto; padding:0; }
+      border-radius:8px; display:flex; flex-direction:column; overflow:hidden; min-width:0; }
+    .config-detail-header { padding:8px 20px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:10px; flex-shrink:0; }
+    .config-detail-body { flex:1; overflow-y:auto; padding:0; min-height:0; }
     .config-breadcrumb { display:flex; align-items:center; gap:4px; font-size:12px; color:var(--text-tertiary); padding:10px 20px;
       border-bottom:1px solid var(--border); flex-wrap:wrap; }
     .config-breadcrumb span { cursor:pointer; }
