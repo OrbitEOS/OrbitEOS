@@ -14478,6 +14478,7 @@ function App() {
   const [currentApp, setCurrentApp] = useState('dashboard');
   const prevPageRef = useRef('login');
   const [dsRoute, setDsRoute] = useState(null); // { entityType?, typeKey?, propGroup? }
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   const t = T[lang];
 
