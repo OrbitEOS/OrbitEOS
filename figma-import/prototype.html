@@ -281,7 +281,7 @@
     .eem-header-badge { font-size:10px; color:var(--text-tertiary); background:var(--bg-secondary); padding:2px 8px; border-radius:10px; }
     .eem-header-close { cursor:pointer; color:var(--text-tertiary); font-size:14px; padding:4px; border-radius:4px; transition:all 0.12s; }
     .eem-header-close:hover { background:var(--bg-card-hover); color:var(--text-primary); }
-    .eem-body { display:flex; flex:1; overflow:hidden; }
+    .eem-body { display:flex; flex:1; overflow:hidden; min-height:0; }
     .eem-tabs { width:180px; flex-shrink:0; border-right:1px solid var(--border); padding:8px 0; overflow-y:auto; }
     .eem-tab { padding:8px 16px; cursor:pointer; font-size:12px; color:var(--text-secondary); display:flex; align-items:center; gap:8px; transition:all 0.12s; border-left:3px solid transparent; }
     .eem-tab:hover { background:var(--bg-card-hover); color:var(--text-primary); }
@@ -588,9 +588,9 @@
     .charger-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 20px; }
     .battery-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 20px; }
     .marketplace-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
-    .entity-layout { display: grid; grid-template-columns: 400px 1fr; gap: 16px; }
+    .entity-layout { display: grid; grid-template-columns: minmax(280px, 400px) 1fr; gap: 16px; }
     .config-layout { display: grid; grid-template-columns: 240px 1fr; gap: 16px; }
-    .flow-rule { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+    .flow-rule { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
 
     @media (max-width: 1200px) {
       .stat-grid-4 { grid-template-columns: repeat(2, 1fr); }
@@ -614,8 +614,9 @@
       .flow-node-value { font-size: 14px; }
       .flow-icon-box { width: 44px; height: 44px; }
       .charger-card { padding: 12px; }
-      .entity-layout { grid-template-columns: 300px 1fr; }
+      .entity-layout { grid-template-columns: 260px 1fr; }
       .config-layout { grid-template-columns: 200px 1fr; }
+      .charger-grid { grid-template-columns: repeat(2, 1fr); }
       /* Config page — narrower tree */
       .config-tree-panel { width: 220px; min-width: 220px; }
       .config-detail-panel { margin-left: 8px; }
@@ -653,8 +654,8 @@
       .theme-toggle, .lang-toggle { font-size: 0; padding: 6px 8px; }
       .theme-toggle *, .lang-toggle * { font-size: 14px; margin: 0; }
       .content { padding: 12px; }
-      .alarm-dropdown { width: 300px; right: -40px; }
-      .login-card { padding: 20px 18px 14px; width: 320px; }
+      .alarm-dropdown { width: min(300px, calc(100vw - 48px)); right: -40px; }
+      .login-card { padding: 20px 18px 14px; width: min(320px, calc(100vw - 32px)); }
       .device-grid { grid-template-columns: repeat(2, 1fr); }
       .charger-grid { grid-template-columns: 1fr 1fr; }
       .battery-grid { grid-template-columns: 1fr; }
@@ -5273,7 +5274,7 @@ function HeaderUserProfile({ lang, setPage, setCurrentApp }) {
         }
       </div>
       {open && (
-        <div style={{position:'absolute',top:'100%',right:0,marginTop:4,width:260,background:'var(--bg-card)',
+        <div style={{position:'absolute',top:'100%',right:0,marginTop:4,width:'min(260px, calc(100vw - 32px))',background:'var(--bg-card)',
           border:'1px solid var(--border)',borderRadius:10,boxShadow:'var(--shadow)',zIndex:200,overflow:'hidden'}}>
           {/* Profile header */}
           <div style={{padding:'16px',borderBottom:'1px solid var(--border)',display:'flex',alignItems:'center',gap:12}}>
@@ -5397,7 +5398,7 @@ function EntityScopeSelector({ focusedEntityId, setFocusedEntityId, lang }) {
         <span style={{fontSize:10,color:'var(--text-tertiary)',transform:open?'rotate(180deg)':'rotate(0)',transition:'transform 0.15s'}}>▾</span>
       </div>
       {open && (
-        <div style={{position:'absolute',top:'100%',left:0,marginTop:4,width:280,background:'var(--bg-card)',
+        <div style={{position:'absolute',top:'100%',left:0,marginTop:4,width:'min(280px, calc(100vw - 32px))',background:'var(--bg-card)',
           border:'1px solid var(--border)',borderRadius:10,boxShadow:'var(--shadow)',zIndex:200,overflow:'hidden'}}>
           {/* Search input */}
           <div style={{padding:'8px 10px',borderBottom:'1px solid var(--border)'}}>
@@ -7129,7 +7130,7 @@ function TariffPage({t, lang, currentSite}) {
         <div className="card">
           <div className="card-title">EPEX SPOT Day-Ahead</div>
           <div className="card-subtitle">24-hour price visualization</div>
-          <div style={{display:'flex',alignItems:'flex-end',gap:3,height:200,paddingTop:20}}>
+          <div style={{display:'flex',alignItems:'flex-end',gap:3,height:'clamp(140px, 30vh, 200px)',paddingTop:20}}>
             {hours.map((h,i) => {
               const pct = h.price / maxP * 100;
               const color = h.price < 0.10 ? 'var(--success)' : h.price < 0.20 ? 'var(--warning)' : 'var(--error)';
@@ -7199,7 +7200,7 @@ function PeakShavingPage({t, lang, currentSite}) {
       <div className="card" style={{marginBottom:16}}>
         <div className="card-title">15-Minute Demand Profile</div>
         <div className="card-subtitle">Today — with peak limit overlay</div>
-        <div style={{position:'relative',height:200,marginTop:16}}>
+        <div style={{position:'relative',height:'clamp(140px, 30vh, 200px)',marginTop:16}}>
           {/* Limit line */}
           <div style={{position:'absolute',top:0,left:0,right:0,height:1,borderTop:'2px dashed var(--error)',opacity:0.5}}/>
           <div style={{position:'absolute',top:-8,right:0,fontSize:10,color:'var(--error)',background:'var(--error-bg)',padding:'2px 6px',borderRadius:4}}>{ps.contractLimit} kW</div>
@@ -7256,7 +7257,7 @@ function BatteryPage({t, lang, currentSite}) {
                 <div className="progress-bar-fill" style={{width:`${b.soc}%`,background:b.soc>60?'var(--success)':b.soc>30?'var(--warning)':'var(--error)'}}/>
               </div>
             </div>
-            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:8}}>
+            <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit, minmax(60px, 1fr))',gap:8}}>
               <div><div style={{fontSize:10,color:'var(--text-tertiary)'}}>{t.soh}</div><div style={{fontSize:16,fontWeight:700,color:'var(--text-primary)'}}>{b.soh}%</div></div>
               <div><div style={{fontSize:10,color:'var(--text-tertiary)'}}>{t.cycles}</div><div style={{fontSize:16,fontWeight:700,color:'var(--text-primary)'}}>{b.cycles}</div></div>
               <div><div style={{fontSize:10,color:'var(--text-tertiary)'}}>{t.temp}</div><div style={{fontSize:16,fontWeight:700,color:'var(--text-primary)'}}>{b.temp}°C</div></div>
@@ -10901,10 +10902,10 @@ function SiteMapPage({t}) {
         <StatCard label={t.totalCapacity} value={SITES.reduce((a,s)=>a+parseInt(s.capacity),0)+' kW'} color="var(--info)"/>
         <StatCard label="Total Devices" value={SITES.reduce((a,s)=>a+s.devices,0)} color="var(--purple)"/>
       </div>
-      <div className="card" style={{height:400,display:'flex',alignItems:'center',justifyContent:'center',position:'relative',overflow:'hidden'}}>
+      <div className="card" style={{minHeight:300,maxHeight:'60vh',display:'flex',alignItems:'center',justifyContent:'center',position:'relative',overflow:'hidden'}}>
         <div style={{position:'absolute',inset:0,background:'linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-card) 100%)',opacity:0.5}}/>
         {/* Simplified NL map outline */}
-        <svg viewBox="0 0 400 500" style={{width:300,height:400,position:'relative',zIndex:1}}>
+        <svg viewBox="0 0 400 500" style={{width:'min(300px, 70vw)',height:'min(400px, 55vh)',position:'relative',zIndex:1}}>
           <path d="M200 50 L280 100 L300 180 L320 200 L280 240 L300 280 L280 340 L260 380 L220 400 L180 420 L140 400 L100 360 L80 300 L100 240 L120 200 L140 160 L160 120 Z"
             fill="none" stroke="var(--border-active)" strokeWidth="2" opacity="0.5"/>
           {SITES.map((s,i) => {
@@ -14200,7 +14201,7 @@ function GridCongestionPage({t, lang, currentSite}) {
       {gc.signalActive && (
         <div style={{padding:'12px 16px',background:'var(--warning-bg)',border:'1px solid var(--warning)',borderRadius:8,marginBottom:16,display:'flex',alignItems:'center',gap:10,flexWrap:'wrap'}}>
           <span style={{fontSize:16,color:'var(--warning)'}}><WarningOutlined/></span>
-          <div style={{flex:1,minWidth:200}}>
+          <div style={{flex:1,minWidth:0}}>
             <div style={{fontSize:13,fontWeight:600,color:'var(--text-primary)'}}>DSO Congestion Signal Active</div>
             <div style={{fontSize:12,color:'var(--text-secondary)'}}>{gc.dso}: {gc.signal} — Max export {gc.maxExport} until {gc.until}</div>
           </div>
