@@ -617,7 +617,8 @@
       .entity-layout { grid-template-columns: 300px 1fr; }
       .config-layout { grid-template-columns: 200px 1fr; }
       /* Config page — narrower tree */
-      .config-tree-panel { width: 240px; min-width: 240px; }
+      .config-tree-panel { width: 220px; min-width: 220px; }
+      .config-detail-panel { margin-left: 8px; }
       /* Edit modal — narrower tabs */
       .eem-modal { width: 90vw; }
       .eem-tabs { width: 150px; }
@@ -626,10 +627,6 @@
       .ov-hero-props { grid-template-columns: 1fr; }
       /* Widget grid */
       .widget-grid { gap: 12px; }
-      /* Developer Studio — hide code panel, narrower tree */
-      .ds-workspace { gap: 0; }
-      .ds-tree { width: 220px; min-width: 220px; }
-      .ds-code { width: 260px; min-width: 180px; }
       /* Spotlight */
       .spotlight-panel { width: 480px; }
     }
@@ -669,11 +666,20 @@
       .customize-drawer { width: 100%; max-width: 100%; }
       .data-table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
       /* Config page — stack tree above detail */
-      .config-page { flex-direction: column; height: auto; }
-      .config-tree-panel { width: 100%; min-width: 100%; max-height: 200px; border-radius: 8px 8px 0 0; }
-      .config-detail-panel { margin-left: 0; border-radius: 0 0 8px 8px; flex: 1; min-height: calc(100vh - var(--header-h) - 248px); }
-      .config-detail-header { padding: 6px 12px; }
+      .config-page { flex-direction: column; height: auto; min-height: calc(100vh - var(--header-h) - 32px); }
+      .config-tree-panel { width: 100%; min-width: 100%; max-height: 180px; border-radius: 8px 8px 0 0; }
+      .config-detail-panel { margin-left: 0; border-radius: 0 0 8px 8px; flex: 1; min-height: calc(100vh - var(--header-h) - 240px); overflow-y: auto; }
+      .config-detail-header { padding: 6px 12px; flex-wrap: wrap; }
+      .config-detail-body { overflow-y: auto; }
       .config-breadcrumb { padding: 6px 12px; font-size: 11px; }
+      .config-entity-name { font-size: 14px; }
+      /* Entity Studio tabs — horizontal scroll for step dots */
+      .config-detail-body .ant-tabs-nav { padding: 0 8px; }
+      .config-detail-body .ant-tabs-tab { padding: 6px 10px; font-size: 11px; }
+      /* Collapsed tree rail — horizontal bar on tablet/mobile */
+      .config-tree-collapsed-rail { width: 100% !important; height: 32px !important; flex-direction: row !important;
+        padding: 0 12px !important; border-radius: 8px 8px 0 0 !important; gap: 8px; justify-content: center; }
+      .config-tree-collapsed-label { writing-mode: horizontal-tb !important; margin-top: 0 !important; }
       /* Edit modal — full width, tabs on top */
       .eem-modal { width: 95vw; max-width: none; height: 90vh; }
       .eem-body { flex-direction: column; }
@@ -692,13 +698,7 @@
       .el-header { flex-direction: column; align-items: stretch; gap: 6px; }
       .el-toolbar { justify-content: flex-end; }
       .el-scroll { max-height: calc(100vh - 400px); }
-      /* Developer Studio — collapse to 2-panel (tree hidden, toggle via button) */
-      .ds-workspace { flex-direction: column; height: auto; min-height: calc(100vh - var(--header-h) - 32px); }
-      .ds-tree { width: 100%; min-width: 100%; max-height: 200px; border-radius: 8px 8px 0 0; }
-      .ds-center { margin: 0; border-radius: 0; }
-      .ds-code { width: 100%; min-width: 100%; max-height: 300px; border-radius: 0 0 8px 8px; }
-      .ds-tree-item { padding: 3px 8px 3px 10px; font-size: 11px; }
-      .ds-tree-section { font-size: 8px; margin-top: 4px; }
+      /* Entity Studio detail panel — scrollable content */
       /* Code viewer */
       .code-viewer-header { padding: 5px 10px; font-size: 10px; }
       /* Spotlight */
@@ -730,9 +730,13 @@
       .header { padding: 0 8px; }
       .content { padding: 8px; }
       /* Config — full stack */
-      .config-tree-panel { max-height: 160px; }
+      .config-tree-panel { max-height: 140px; }
       .config-entity-name { font-size: 13px; }
-      .config-detail-header { gap: 8px; }
+      .config-detail-header { gap: 6px; padding: 6px 8px; }
+      .config-detail-body { padding: 0; }
+      .config-breadcrumb { padding: 4px 8px; font-size: 10px; }
+      .config-detail-body .ant-tabs-tab { padding: 4px 6px; font-size: 10px; }
+      .config-detail-body .ant-tabs-nav { padding: 0 4px; }
       /* Edit modal — full screen */
       .eem-modal { width: 100vw; height: 100vh; max-width: 100vw; max-height: 100vh; border-radius: 0; }
       .eem-tabs { padding: 2px 4px; }
@@ -745,14 +749,10 @@
       .prop-card { padding: 8px 10px; }
       .metric-card { padding: 8px 10px; }
       .metric-card-value { font-size: 16px; }
-      /* Developer Studio — full-stack single panel */
-      .ds-workspace { flex-direction: column; height: auto; min-height: calc(100vh - var(--header-h) - 16px); }
-      .ds-tree { width: 100%; min-width: 100%; max-height: 160px; border-radius: 8px 8px 0 0; }
-      .ds-center { margin: 0; border-radius: 0; min-height: 300px; }
-      .ds-center-header { padding: 6px 10px; gap: 4px; }
-      .ds-code { width: 100%; min-width: 100%; max-height: 250px; border-radius: 0 0 8px 8px; }
-      .ds-tree-item { padding: 3px 6px 3px 8px; font-size: 11px; }
-      .ds-tree-section { font-size: 8px; }
+      /* Entity Studio on small phones — tighter spacing */
+      .mfe-wrap { padding: 8px; }
+      .mfe-section { margin-bottom: 10px; }
+      .mfe-section-title { font-size: 10px; margin-bottom: 6px; }
       /* Code viewer mobile */
       .code-viewer-header { padding: 4px 8px; font-size: 10px; gap: 4px; }
       /* Spotlight full width */
@@ -14134,11 +14134,11 @@ function EntityStudioPage({t, lang, tab, dsRoute, updateHash}) {
             </div>
           </div>
         ) : (
-          <div style={{width:32,flexShrink:0,background:'var(--bg-card)',border:'1px solid var(--border)',borderRadius:8,
+          <div className="config-tree-collapsed-rail" style={{width:32,flexShrink:0,background:'var(--bg-card)',border:'1px solid var(--border)',borderRadius:8,
             display:'flex',flexDirection:'column',alignItems:'center',paddingTop:8,cursor:'pointer'}}
             onClick={()=>setDsTreeCollapsed(false)}>
             {React.createElement(RightOutlined, {style:{fontSize:10,color:'var(--text-tertiary)'}})}
-            <span style={{writingMode:'vertical-rl',fontSize:10,color:'var(--text-tertiary)',marginTop:8,letterSpacing:'0.05em'}}>
+            <span className="config-tree-collapsed-label" style={{writingMode:'vertical-rl',fontSize:10,color:'var(--text-tertiary)',marginTop:8,letterSpacing:'0.05em'}}>
               {resolveI18n({en:'Tree',nl:'Boom'},lang)}
             </span>
           </div>
