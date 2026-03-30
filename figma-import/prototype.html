@@ -631,6 +631,19 @@
       /* Spotlight */
       .spotlight-panel { width: 480px; }
     }
+    @media (max-width: 900px) {
+      /* iPad Air portrait (820px), iPad 10th gen (810px) */
+      :root { --sidebar-w: 56px; --sidebar-rail-w: 56px; }
+      .config-tree-panel { width: 200px; min-width: 200px; }
+      .config-detail-panel { margin-left: 6px; }
+      .entity-layout { grid-template-columns: 1fr; }
+      .stat-grid-3 { grid-template-columns: 1fr; }
+      .stat-grid-4 { grid-template-columns: 1fr 1fr; }
+      .eem-modal { width: 94vw; }
+      .eem-tabs { width: 130px; }
+      .spotlight-panel { width: min(440px, 90vw); }
+      .widget-grid { grid-template-columns: 1fr; }
+    }
     @media (max-width: 768px) {
       :root { --sidebar-w: 48px; --sidebar-rail-w: 48px; }
       .main-area { margin-left: 48px; }
@@ -650,9 +663,11 @@
       .el-table th, .el-table td { padding: 5px 8px; font-size: 11px; }
       .header { padding: 0 12px; }
       .header-breadcrumb { font-size: 12px; }
-      .header-right { gap: 8px; }
+      .header-right { gap: 6px; }
+      .header-right .ant-select { display: none; }
       .theme-toggle, .lang-toggle { font-size: 0; padding: 6px 8px; }
       .theme-toggle *, .lang-toggle * { font-size: 14px; margin: 0; }
+      .spotlight-kbd { display: none; }
       .content { padding: 12px; }
       .alarm-dropdown { width: min(300px, calc(100vw - 48px)); right: -40px; }
       .login-card { padding: 20px 18px 14px; width: min(320px, calc(100vw - 32px)); }
@@ -729,6 +744,8 @@
       .device-grid, .charger-grid { grid-template-columns: 1fr; }
       .marketplace-grid { grid-template-columns: 1fr; }
       .header { padding: 0 8px; }
+      .header-right { gap: 4px; }
+      .header-right .ant-select { display: none; }
       .content { padding: 8px; }
       /* Config — full stack */
       .config-tree-panel { max-height: 140px; }
