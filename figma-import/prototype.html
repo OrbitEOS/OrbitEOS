@@ -624,6 +624,12 @@
       /* Overview metrics */
       .ov-metrics { grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); }
       .ov-hero-props { grid-template-columns: 1fr; }
+      /* Developer Studio — hide code panel, narrower tree */
+      .ds-workspace { gap: 0; }
+      .ds-tree { width: 220px; min-width: 220px; }
+      .ds-code { width: 260px; min-width: 180px; }
+      /* Spotlight */
+      .spotlight-panel { width: 480px; }
     }
     @media (max-width: 768px) {
       :root { --sidebar-w: 48px; --sidebar-rail-w: 48px; }
@@ -683,6 +689,21 @@
       .el-header { flex-direction: column; align-items: stretch; gap: 6px; }
       .el-toolbar { justify-content: flex-end; }
       .el-scroll { max-height: calc(100vh - 400px); }
+      /* Developer Studio — collapse to 2-panel (tree hidden, toggle via button) */
+      .ds-workspace { flex-direction: column; height: auto; min-height: calc(100vh - var(--header-h) - 32px); }
+      .ds-tree { width: 100%; min-width: 100%; max-height: 200px; border-radius: 8px 8px 0 0; }
+      .ds-center { margin: 0; border-radius: 0; }
+      .ds-code { width: 100%; min-width: 100%; max-height: 300px; border-radius: 0 0 8px 8px; }
+      .ds-tree-item { padding: 3px 8px 3px 10px; font-size: 11px; }
+      .ds-tree-section { font-size: 8px; margin-top: 4px; }
+      /* Code viewer */
+      .code-viewer-header { padding: 5px 10px; font-size: 10px; }
+      /* Spotlight */
+      .spotlight-panel { width: 90vw; max-width: 480px; }
+      .spotlight-input { padding: 12px 16px; font-size: 15px; }
+      /* Toast */
+      .toast-container { right: 8px; left: 8px; }
+      .toast { max-width: 100%; }
     }
     @media (max-width: 480px) {
       :root { --sidebar-w: 0px; --sidebar-rail-w: 0px; }
@@ -721,6 +742,36 @@
       .prop-card { padding: 8px 10px; }
       .metric-card { padding: 8px 10px; }
       .metric-card-value { font-size: 16px; }
+      /* Developer Studio — full-stack single panel */
+      .ds-workspace { flex-direction: column; height: auto; min-height: calc(100vh - var(--header-h) - 16px); }
+      .ds-tree { width: 100%; min-width: 100%; max-height: 160px; border-radius: 8px 8px 0 0; }
+      .ds-center { margin: 0; border-radius: 0; min-height: 300px; }
+      .ds-center-header { padding: 6px 10px; gap: 4px; }
+      .ds-code { width: 100%; min-width: 100%; max-height: 250px; border-radius: 0 0 8px 8px; }
+      .ds-tree-item { padding: 3px 6px 3px 8px; font-size: 11px; }
+      .ds-tree-section { font-size: 8px; }
+      /* Code viewer mobile */
+      .code-viewer-header { padding: 4px 8px; font-size: 10px; gap: 4px; }
+      /* Spotlight full width */
+      .spotlight-panel { width: calc(100vw - 24px); max-width: none; max-height: 70vh; }
+      .spotlight-input { padding: 12px 14px; font-size: 14px; }
+      .spotlight-result { padding: 8px 14px; font-size: 12px; }
+      /* Toast full width */
+      .toast-container { right: 4px; left: 4px; top: calc(var(--header-h) + 4px); }
+    }
+
+    /* ─── Mobile sidebar ─── */
+    .sidebar-wrap { display:contents; }
+    .mobile-sidebar-backdrop { display:none; }
+    .mobile-menu-btn { display:none !important; }
+    @media (max-width: 480px) {
+      .mobile-menu-btn { display:flex !important; }
+      .sidebar-wrap { display:block; position:fixed; left:0; top:0; bottom:0; z-index:300;
+        transform:translateX(-100%); transition:transform 0.25s ease; pointer-events:none; }
+      .sidebar-wrap .sidebar { display:flex !important; width:260px !important; height:100vh; }
+      .sidebar-wrap.mobile-open { transform:translateX(0); pointer-events:auto; }
+      .mobile-sidebar-backdrop { display:block; position:fixed; inset:0; z-index:299;
+        background:rgba(0,0,0,0.5); backdrop-filter:blur(4px); animation:spotFadeIn 0.2s ease; }
     }
 
     /* ─── Spotlight Search ─── */
@@ -5389,12 +5440,13 @@ function EntityScopeSelector({ focusedEntityId, setFocusedEntityId, lang }) {
 }
 
 // ─── Header Component ───
-function Header({ page, t, lang, setLang, themeId, setThemeId, themeMode, setThemeMode, alarms, alarmCount, showAlarms, setShowAlarms, focusedEntityId, setFocusedEntityId, setPage, navigateWithLoader, setCurrentApp, currentApp }) {
+function Header({ page, t, lang, setLang, themeId, setThemeId, themeMode, setThemeMode, alarms, alarmCount, showAlarms, setShowAlarms, focusedEntityId, setFocusedEntityId, setPage, navigateWithLoader, setCurrentApp, currentApp, mobileSidebarOpen, setMobileSidebarOpen }) {
   const titles = { dashboard:t.dashboard, energyFlow:t.energyFlow, fleet:t.fleet, devices:t.devices,
     alerts:t.alerts, rulesEngine:t.rulesEngine, tariffArbitrage:t.tariffArbitrage, peakShaving:t.peakShaving,
     batteryMgmt:t.batteryMgmt, evCharging:t.evCharging, configuration:t.configuration };
   const [bellRing, setBellRing] = useState(false);
   const [spotlightOpen, setSpotlightOpen] = useState(false);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   useEffect(() => { if(alarmCount>0){setBellRing(true); setTimeout(()=>setBellRing(false),600);} }, [alarmCount]);
 
   // Ctrl+K / Cmd+K shortcut
@@ -5416,7 +5468,11 @@ function Header({ page, t, lang, setLang, themeId, setThemeId, themeMode, setThe
   const appLabel = appObj ? appObj.label[lang] : '';
   return (
     <div className="header">
-      <div className="header-left">
+      <div className="header-left" style={{display:'flex',alignItems:'center',gap:8}}>
+        <button className="header-btn mobile-menu-btn" onClick={() => setMobileSidebarOpen(!mobileSidebarOpen)}
+          style={{display:'none',padding:'4px 6px'}}>
+          {mobileSidebarOpen ? <CloseOutlined/> : <MenuOutlined/>}
+        </button>
         <div className="header-breadcrumb" style={{display:'flex',alignItems:'center',gap:6,flexWrap:'wrap'}}>
           <span style={{fontSize:13,color:'var(--text-tertiary)'}}>{appLabel}</span>
           <span style={{color:'var(--text-tertiary)'}}>/</span>
@@ -14589,14 +14645,19 @@ function App() {
   return (
     <ConfigProvider theme={antThemeConfig}>
       <div className={`app-layout${prevPageRef.current === 'login' ? ' shell-enter' : ''}`}>
-        <Sidebar page={page} setPage={setPage} navigateWithLoader={navigateWithLoader} t={t} lang={lang} focusedEntityId={focusedEntityId} setFocusedEntityId={setFocusedEntityId}
-          currentApp={currentApp} setCurrentApp={setCurrentApp}/>
+        {/* Mobile sidebar overlay */}
+        {mobileSidebarOpen && <div className="mobile-sidebar-backdrop" onClick={() => setMobileSidebarOpen(false)}/>}
+        <div className={`sidebar-wrap ${mobileSidebarOpen ? 'mobile-open' : ''}`}>
+          <Sidebar page={page} setPage={setPage} navigateWithLoader={(...args) => { setMobileSidebarOpen(false); navigateWithLoader(...args); }} t={t} lang={lang} focusedEntityId={focusedEntityId} setFocusedEntityId={setFocusedEntityId}
+            currentApp={currentApp} setCurrentApp={setCurrentApp}/>
+        </div>
         <div className="main-area" style={{position:'relative'}}>
           <Header page={page} t={t} lang={lang} setLang={setLang} themeId={themeId}
             setThemeId={setThemeId} themeMode={themeMode} setThemeMode={setThemeMode} alarms={alarms} alarmCount={alarmCount}
             showAlarms={showAlarms} setShowAlarms={setShowAlarms}
             focusedEntityId={focusedEntityId} setFocusedEntityId={setFocusedEntityId}
-            setPage={setPage} navigateWithLoader={navigateWithLoader} setCurrentApp={setCurrentApp} currentApp={currentApp}/>
+            setPage={setPage} navigateWithLoader={navigateWithLoader} setCurrentApp={setCurrentApp} currentApp={currentApp}
+            mobileSidebarOpen={mobileSidebarOpen} setMobileSidebarOpen={setMobileSidebarOpen}/>
           <div className={`content ${prevPageRef.current === 'loading' ? 'content-reveal' : ''}`} key={page}
             onAnimationEnd={() => { prevPageRef.current = page; }}>
             {pages[page] || <DashboardPage {...sp}/>}
