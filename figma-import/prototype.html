@@ -624,6 +624,8 @@
       /* Overview metrics */
       .ov-metrics { grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); }
       .ov-hero-props { grid-template-columns: 1fr; }
+      /* Widget grid */
+      .widget-grid { gap: 12px; }
       /* Developer Studio — hide code panel, narrower tree */
       .ds-workspace { gap: 0; }
       .ds-tree { width: 220px; min-width: 220px; }
@@ -637,7 +639,8 @@
       .sidebar-rail { width: 48px; padding: 4px 0; }
       .sidebar-rail-icon { width: 36px; height: 36px; font-size: 16px; }
       .flow-svg-layer { display: none; }
-      .stat-grid-4, .stat-grid-3 { grid-template-columns: 1fr 1fr; }
+      .stat-grid-4 { grid-template-columns: 1fr 1fr; }
+      .stat-grid-3 { grid-template-columns: 1fr; }
       .flow-hub { aspect-ratio: auto; min-height: auto; max-height: none; padding: 24px 16px 40px; }
       .flow-layout { flex-direction: column; gap: 16px; }
       .flow-col-left, .flow-col-right { flex-direction: row; gap: 20px; width: 100%; justify-content: center; text-align: left; }
@@ -5446,7 +5449,6 @@ function Header({ page, t, lang, setLang, themeId, setThemeId, themeMode, setThe
     batteryMgmt:t.batteryMgmt, evCharging:t.evCharging, configuration:t.configuration };
   const [bellRing, setBellRing] = useState(false);
   const [spotlightOpen, setSpotlightOpen] = useState(false);
-  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   useEffect(() => { if(alarmCount>0){setBellRing(true); setTimeout(()=>setBellRing(false),600);} }, [alarmCount]);
 
   // Ctrl+K / Cmd+K shortcut
@@ -8318,7 +8320,6 @@ function CodeViewer({ value, title, collapsible, lang, onSave, collapsed: collap
   const [saveFlash, setSaveFlash] = useState(false);
   const containerRef = useRef(null);
   const editorRef = useRef(null);
-  const currentTheme = document.documentElement.getAttribute('data-theme');
 
   // Serialize value
   const jsonText = typeof value === 'string' ? value : JSON.stringify(value, null, 2);
@@ -8390,13 +8391,19 @@ function CodeViewer({ value, title, collapsible, lang, onSave, collapsed: collap
     }
   }, [editing]);
 
-  // Update theme reactively
+  // Update Monaco theme reactively via MutationObserver on data-theme attribute
   useEffect(() => {
-    if (window._monaco) {
-      const theme = (document.documentElement.getAttribute('data-theme') === 'light') ? 'orbiteos-light' : 'orbiteos-dark';
-      window._monaco.editor.setTheme(theme);
-    }
-  }, [currentTheme]);
+    const applyTheme = () => {
+      if (window._monaco) {
+        const t = (document.documentElement.getAttribute('data-theme') === 'light') ? 'orbiteos-light' : 'orbiteos-dark';
+        window._monaco.editor.setTheme(t);
+      }
+    };
+    applyTheme();
+    const observer = new MutationObserver(applyTheme);
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+    return () => observer.disconnect();
+  }, [monacoReady]);
 
   const handleCopy = (e) => {
     e.stopPropagation();
