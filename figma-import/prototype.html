@@ -883,6 +883,8 @@
     .kiosk-active .widget-grid { gap:0 !important; }
     .kiosk-active .flow-footer { display:none !important; }
     .kiosk-active .page-enter { height:100vh !important; }
+    .kiosk-active .dashboard-tree-panel { display:none !important; }
+    .kiosk-active .dashboard-tree-toggle { display:none !important; }
     @keyframes tourPulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.4;transform:scale(1.6)} }
     @keyframes tourIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
     @media (max-width: 768px) {
@@ -5896,14 +5898,14 @@ const WidgetEnergyFlow = React.memo(function WidgetEnergyFlow({t, lang, currentS
         background: ambientOn ? 'var(--bg-secondary)' : 'var(--bg-card)',
         ...(isKiosk ? {maxHeight:'none',minHeight:'100vh',aspectRatio:'auto',borderRadius:0,border:'none'} : {})}}>
         <div style={{position:'absolute',top:10,right:12,zIndex:4,display:'flex',gap:4}}>
-          <Tooltip title={isKiosk ? (lang==='nl'?'Volledig scherm sluiten':'Exit fullscreen') : (lang==='nl'?'Volledig scherm':'Fullscreen')} placement="left">
-            <div className="flow-ambient-toggle" style={{position:'static'}} onClick={toggleKiosk}>
-              {React.createElement(isKiosk ? CompressOutlined : ExpandOutlined)}
-            </div>
-          </Tooltip>
           <Tooltip title={ambientOn ? 'Standard view' : 'Ambient view'} placement="left">
             <div className="flow-ambient-toggle" style={{position:'static'}} onClick={() => { const next = !ambientOn; setAmbientOn(next); localStorage.setItem('orbiteos-flow-ambient', next); }}>
               {React.createElement(ambientOn ? EyeOutlined : EyeInvisibleOutlined)}
+            </div>
+          </Tooltip>
+          <Tooltip title={isKiosk ? (lang==='nl'?'Volledig scherm sluiten':'Exit fullscreen') : (lang==='nl'?'Volledig scherm':'Fullscreen')} placement="left">
+            <div className="flow-ambient-toggle" style={{position:'static'}} onClick={toggleKiosk}>
+              {React.createElement(isKiosk ? CompressOutlined : ExpandOutlined)}
             </div>
           </Tooltip>
         </div>
@@ -6722,7 +6724,7 @@ function DashboardPage({t, lang, currentSite, focusedEntityId, setFocusedEntityI
     <div className={`page-enter ${gridCustomize ? 'customize-active' : ''}`} style={{display:'flex',gap:0,position:'relative',height:'calc(100vh - var(--header-h) - 48px)',minHeight:0}}>
       {/* Dashboard Tree Panel */}
       {treePinned ? (
-        <div style={{width:treeConfig.treeWidth,flexShrink:0,background:'var(--bg-card)',borderRadius:'8px',marginRight:8,
+        <div className="dashboard-tree-panel" style={{width:treeConfig.treeWidth,flexShrink:0,background:'var(--bg-card)',borderRadius:'8px',marginRight:8,
           border:'1px solid var(--border)',display:'flex',flexDirection:'column',minHeight:0}}>
           <div style={{padding:'6px 8px',borderBottom:'1px solid var(--border)',flexShrink:0}}>
             <div style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
@@ -6767,7 +6769,7 @@ function DashboardPage({t, lang, currentSite, focusedEntityId, setFocusedEntityI
         </div>
       ) : (
         <Tooltip placement="right" title={lang==='nl'?'Entiteitsboom':'Entity Tree'}>
-          <div style={{width:28,height:28,borderRadius:6,display:'flex',alignItems:'center',justifyContent:'center',
+          <div className="dashboard-tree-toggle" style={{width:28,height:28,borderRadius:6,display:'flex',alignItems:'center',justifyContent:'center',
             cursor:'pointer',fontSize:14,color:'var(--text-tertiary)',marginTop:4,flexShrink:0}}
             onClick={() => setTreePinned(true)}>
             <ApartmentOutlined/>
