@@ -391,7 +391,7 @@
       transition: box-shadow 1.2s ease, border-color 1.2s ease; }
     /* Ambient hue — blurred color blobs that melt together like liquid */
     .flow-hue { position: absolute; inset: 0; pointer-events: none; border-radius: 1rem; overflow: hidden; }
-    .flow-blob { position: absolute; border-radius: 50%; filter: blur(120px); transition: opacity 1.5s ease; }
+    .flow-blob { position: absolute; border-radius: 50%; filter: blur(120px); transition: opacity 1.5s ease; will-change: opacity; }
     .flow-svg-layer { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; }
     .flow-canvas-layer { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; }
     .flow-layout { position: relative; z-index: 2; width: 100%; display: flex; align-items: center;
@@ -605,6 +605,13 @@
     }
     @media (max-width: 1024px) {
       :root { --sidebar-w: 200px; }
+      /* Perf: reduce blur radius on tablet GPUs */
+      .flow-blob { filter: blur(80px); }
+      /* Perf: replace backdrop-filter with solid bg on tablet — each one creates a GPU compositing layer in Safari */
+      .flow-icon-box { backdrop-filter: none; -webkit-backdrop-filter: none; background: var(--bg-card); }
+      .flow-battery-circle { backdrop-filter: none; -webkit-backdrop-filter: none; background: var(--bg-card); }
+      .flow-footer { backdrop-filter: none; -webkit-backdrop-filter: none; background: var(--bg-secondary); }
+      .flow-ambient-toggle { backdrop-filter: none; -webkit-backdrop-filter: none; background: var(--bg-card); }
       .stat-grid-4 { grid-template-columns: repeat(2, 1fr); }
       .stat-grid-3 { grid-template-columns: repeat(2, 1fr); }
       .flow-layout { gap: 16px; }
@@ -646,6 +653,8 @@
     }
     @media (max-width: 768px) {
       :root { --sidebar-w: 48px; --sidebar-rail-w: 48px; }
+      /* Perf: aggressively reduce blur on tablet/mobile — Safari GPU bottleneck */
+      .flow-blob { filter: blur(50px); max-width: 400px; max-height: 400px; }
       .main-area { margin-left: 48px; }
       .sidebar-rail { width: 48px; padding: 4px 0; }
       .sidebar-rail-icon { width: 36px; height: 36px; font-size: 16px; }
@@ -4362,9 +4371,12 @@ const USERS = [
 ];
 
 // ─── Live Simulation — periodic jitter on energy flow data in EntityStore ───
-(function startLiveSimulation() {
+// Perf: only runs when dashboard/energy page is active — paused on other pages
+const LiveSimulation = (() => {
+  let _active = false;
+  let _iv = null;
   const jitter = (val, pct) => { const v = typeof val === 'string' ? parseFloat(val) : val; if (isNaN(v)) return val; const d = v * pct; return Math.max(0, +(v + (Math.random() - 0.5) * 2 * d).toFixed(1)); };
-  setInterval(() => {
+  function tick() {
     EntityStore.getByType('site').forEach(site => {
       if (!site.state?.energyFlow) return;
       const ef = site.state.energyFlow;
@@ -4375,27 +4387,29 @@ const USERS = [
       ef.gridPower = jitter(ef.gridPower, 0.10);
       ef.batteryPower = jitter(ef.batteryPower, 0.08);
       ef.essSoc = Math.max(0, Math.min(100, Math.round(ef.essSoc + (Math.random() - 0.48) * 0.5)));
-      // Update device power states too
       EntityStore.getDescendants(site.id, ['device']).forEach(dev => {
         if (dev.state?.power) {
           const p = parseFloat(dev.state.power);
           if (!isNaN(p)) dev.state.power = `${jitter(p, 0.08)} kW`;
         }
       });
-      // Update sensor values
       EntityStore.getDescendants(site.id, ['sensor']).forEach(sen => {
         if (sen.state?.value != null) {
           sen.state.value = jitter(sen.state.value, 0.05);
         }
       });
     });
-    // Update platform-level counts
     const platform = EntityStore.get('orbiteos');
     if (platform?.state) {
       platform.state.totalDevices = EntityStore.getByType('device').length;
       platform.state.totalSites = EntityStore.getByType('site').length;
     }
-  }, 5000);
+  }
+  return {
+    start() { if (!_active) { _active = true; _iv = setInterval(tick, 5000); tick(); } },
+    stop() { if (_active) { _active = false; clearInterval(_iv); _iv = null; } },
+    get active() { return _active; },
+  };
 })();
 
 // ─── Seed: AccessStore (scoped user/role assignments) ───
@@ -6485,10 +6499,12 @@ function DashboardPage({t, lang, currentSite, focusedEntityId, setFocusedEntityI
 
 // Extracted widget grid as its own component to enable per-widget memoization
 const WidgetGrid = React.memo(function WidgetGrid({visibleWidgets, entityId, t, lang, gridCustomize, gridDrag, visibleToFullIdx, toggleVisibility}) {
-  // Live data tick — simulates real-time refresh every 5s
+  // Live data tick — refresh rate adapts to device capability
   const [dataTick, setDataTick] = useState(0);
   useEffect(() => {
-    const iv = setInterval(() => setDataTick(t => t + 1), 5000);
+    // Perf: slower tick on tablet/touch devices (8s vs 5s) to reduce re-renders
+    const interval = (window.innerWidth <= 1024 || navigator.maxTouchPoints > 0) ? 8000 : 5000;
+    const iv = setInterval(() => setDataTick(t => t + 1), interval);
     return () => clearInterval(iv);
   }, []);
 
@@ -6576,7 +6592,10 @@ const WidgetGrid = React.memo(function WidgetGrid({visibleWidgets, entityId, t, 
 // They overlap and blur into each other creating a living, colored atmosphere.
 const EnergyAmbientHues = React.memo(function EnergyAmbientHues({ef}) {
   const colors = getFlowColors();
-  const sz = (pwr, min, max) => Math.round(Math.min(max, min + (pwr / 25) * (max - min)));
+  // Cap blob sizes on smaller screens to reduce GPU blur cost
+  const isTablet = window.innerWidth <= 1024;
+  const cap = isTablet ? 0.65 : 1;
+  const sz = (pwr, min, max) => Math.round(Math.min(max * cap, (min + (pwr / 25) * (max - min)) * cap));
   const blobs = [];
 
   const hasLeft = ef.solarPower > 0 || ef.windPower > 0;
@@ -6825,8 +6844,10 @@ function FlowCanvasLayer({ef}) {
       if (ef.gridImporting && ef.gridPower > 0)
         channels.push({path: paths.gridIn, color: colors.import, power: ef.gridPower});
 
+      // Perf: fewer particles on tablet/touch devices
+      const lpCap = (window.innerWidth <= 1024 || navigator.maxTouchPoints > 0) ? 2 : Infinity;
       channels.forEach(ch => {
-        const n = ch.power > 20 ? 4 : ch.power > 8 ? 3 : 2;
+        const n = Math.min(lpCap, ch.power > 20 ? 4 : ch.power > 8 ? 3 : 2);
         const dur = flowSpeed(ch.power);
         for (let i = 0; i < n; i++) {
           particles.push({ path: ch.path, color: ch.color, dur, offset: i / n });
@@ -6848,6 +6869,12 @@ function FlowCanvasLayer({ef}) {
     let animTime = 0; // accumulated animation time in ms
     let lastFrame = performance.now();
     let paused = document.hidden;
+    // Perf: cache guide color and parsed particle colors outside draw loop
+    let guideColor = getComputedStyle(document.body).getPropertyValue('--border-active').trim() || 'rgba(255,255,255,0.10)';
+    const parsedColorCache = {};
+    function getCachedColor(c) { if (!parsedColorCache[c]) parsedColorCache[c] = parseColor(c); return parsedColorCache[c]; }
+    // Perf: detect tablet — skip glow gradients, use simpler dots
+    const isLowPower = window.innerWidth <= 1024 || (navigator.maxTouchPoints > 0 && window.devicePixelRatio >= 2);
 
     // Pause animation when tab is hidden — prevents particle rush on restore
     function onVisChange() {
@@ -6867,6 +6894,8 @@ function FlowCanvasLayer({ef}) {
       if (Date.now() - lastRebuild > 2000) {
         particles = buildParticles();
         lastRebuild = Date.now();
+        // Refresh cached guide color on rebuild (covers theme changes)
+        guideColor = getComputedStyle(document.body).getPropertyValue('--border-active').trim() || 'rgba(255,255,255,0.10)';
       }
 
       const w = cssW.current;
@@ -6884,7 +6913,6 @@ function FlowCanvasLayer({ef}) {
       // Draw dashed guide paths
       ctx.save();
       ctx.setLineDash([4, 6]);
-      const guideColor = getComputedStyle(document.body).getPropertyValue('--border-active').trim() || 'rgba(255,255,255,0.10)';
       ctx.strokeStyle = guideColor;
       ctx.lineWidth = 1;
       Object.entries(paths).forEach(([key, pts]) => {
@@ -6903,20 +6931,29 @@ function FlowCanvasLayer({ef}) {
         const pt = bezierPoint(p.path[0], p.path[1], p.path[2], p.path[3], t);
         const sx = pt.x * scX;
         const sy = pt.y * scY;
-        const {r,g,b} = parseColor(p.color);
 
-        // Soft glow — small radius
-        const grad = ctx.createRadialGradient(sx, sy, 0, sx, sy, 6);
-        grad.addColorStop(0, `rgba(${r},${g},${b},0.3)`);
-        grad.addColorStop(1, `rgba(${r},${g},${b},0)`);
-        ctx.fillStyle = grad;
-        ctx.beginPath();
-        ctx.arc(sx, sy, 6, 0, Math.PI * 2);
-        ctx.fill();
+        const {r,g,b} = getCachedColor(p.color);
 
-        // Core dot — 1.5px radius
+        if (isLowPower) {
+          // Perf: simpler glow on tablet — single semi-transparent circle instead of radialGradient per frame
+          ctx.beginPath();
+          ctx.arc(sx, sy, 5, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(${r},${g},${b},0.18)`;
+          ctx.fill();
+        } else {
+          // Full glow — radial gradient
+          const grad = ctx.createRadialGradient(sx, sy, 0, sx, sy, 6);
+          grad.addColorStop(0, `rgba(${r},${g},${b},0.3)`);
+          grad.addColorStop(1, `rgba(${r},${g},${b},0)`);
+          ctx.fillStyle = grad;
+          ctx.beginPath();
+          ctx.arc(sx, sy, 6, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        // Core dot
         ctx.beginPath();
-        ctx.arc(sx, sy, 1.5, 0, Math.PI * 2);
+        ctx.arc(sx, sy, isLowPower ? 2 : 1.5, 0, Math.PI * 2);
         ctx.fillStyle = p.color;
         ctx.globalAlpha = 0.85;
         ctx.fill();
@@ -6929,7 +6966,9 @@ function FlowCanvasLayer({ef}) {
     function resize() {
       const parent = canvas.parentElement;
       if (!parent) return;
-      const dpr = window.devicePixelRatio || 1;
+      // Perf: cap DPR at 1.5 on tablets — canvas particles don't need Retina sharpness
+      const rawDpr = window.devicePixelRatio || 1;
+      const dpr = isLowPower ? Math.min(rawDpr, 1.5) : rawDpr;
       const cw = parent.clientWidth;
       const ch = parent.clientHeight;
       cssW.current = cw;
@@ -10595,6 +10634,7 @@ function LoginPage({t, setPage, setCurrentApp, lang, setLang, themeId, setThemeI
     setTimeout(() => setSuccessPhase(2), 600); // Card scales down + fades
     setTimeout(() => {
       setCurrentApp && setCurrentApp('dashboard');
+      LiveSimulation.start();
       LoaderStore.start({ mode: 'solid' });
       setPage('dashboard');
       setTimeout(() => LoaderStore.stop(), 4200);
@@ -14582,6 +14622,10 @@ function App() {
 
   const navigateWithLoader = useCallback((targetPage) => {
     if (targetPage === pageRef.current) return;
+    // Perf: start/stop live simulation based on whether dashboard needs live data
+    const livePages = ['dashboard','fleet','devices','alerts'];
+    if (livePages.includes(targetPage)) LiveSimulation.start();
+    else LiveSimulation.stop();
     setPage(targetPage);
     // Update URL hash
     const reverseMap = {
