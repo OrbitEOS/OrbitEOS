@@ -955,6 +955,7 @@
 </script>
 
 <script type="text/babel">
+const ORBITEOS_VERSION = '0.4.7';
 const { useState, useEffect, useRef, useCallback, useMemo } = React;
 const { ConfigProvider, theme: antTheme, Button, Table, Tag, Badge, Switch, Select, Input, Tabs, Segmented,
   Progress, Slider, Form, InputNumber, Tooltip, Dropdown, Space, Modal, Drawer, Menu } = antd;
@@ -5357,6 +5358,11 @@ function HeaderUserProfile({ lang, setPage, setCurrentApp }) {
               onClick={() => { UserStore.logout(); setPage('login'); setOpen(false); }}>
               <LockOutlined style={{fontSize:14}}/> {L.signOut}
             </div>
+          </div>
+          {/* Version tag */}
+          <div style={{borderTop:'1px solid var(--border)',padding:'6px 16px',fontSize:10,color:'var(--text-tertiary)',
+            textAlign:'center',letterSpacing:'0.03em'}}>
+            OrbitEOS v{ORBITEOS_VERSION}
           </div>
         </div>
       )}
@@ -10943,6 +10949,9 @@ function LoginPage({t, setPage, setCurrentApp, lang, setLang, themeId, setThemeI
           <span style={{width:1,height:10,background:'var(--border)'}}/>
           <Select value={lang} onChange={v=>setLang(v)} size="small" variant="borderless"
             style={{fontSize:10,minWidth:50}} popupMatchSelectWidth={false} options={[{value:'en',label:'en'},{value:'nl',label:'nl'}]}/>
+        </div>
+        <div style={{textAlign:'center',marginTop:6,fontSize:9,color:'var(--text-tertiary)',opacity:0.6,letterSpacing:'0.04em'}}>
+          v{ORBITEOS_VERSION}
         </div>
       </div>
     </div>
