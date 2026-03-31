@@ -874,6 +874,11 @@
     .tour-modal-wrap .ant-modal-mask { z-index:10000 !important; background:rgba(0,0,0,0.55) !important; }
     .tour-modal-wrap .ant-modal-wrap { z-index:10002 !important; }
     .tour-modal-wrap .ant-modal-content { background:var(--bg-card); border:1px solid var(--border); }
+    /* ─── Kiosk / Fullscreen Mode ─── */
+    .kiosk-active .sidebar-wrap, .kiosk-active .sidebar-rail,
+    .kiosk-active .header { display:none !important; }
+    .kiosk-active .main-area { margin-left:0 !important; }
+    .kiosk-active .content { padding:0 !important; height:100vh !important; }
     @keyframes tourPulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.4;transform:scale(1.6)} }
     @keyframes tourIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
     @media (max-width: 768px) {
@@ -1014,7 +1019,7 @@
 
 <script type="text/babel">
 // ─── Version ───
-const ORBITEOS_VERSION = '0.6.0';
+const ORBITEOS_VERSION = '0.6.1';
 const { useState, useEffect, useRef, useCallback, useMemo } = React;
 const { ConfigProvider, theme: antTheme, Button, Table, Tag, Badge, Switch, Select, Input, Tabs, Segmented,
   Progress, Slider, Form, InputNumber, Tooltip, Dropdown, Space, Modal, Drawer, Menu } = antd;
@@ -5809,17 +5814,55 @@ function StatCard({label, value, trend, trendDir, color}) {
 const WidgetEnergyFlow = React.memo(function WidgetEnergyFlow({t, lang, currentSite, data}) {
   const { energyFlow: ef, status, costSaved } = data;
   const [ambientOn, setAmbientOn] = React.useState(() => { const v = localStorage.getItem('orbiteos-flow-ambient'); return v !== null ? v === 'true' : true; });
+  const [isKiosk, setIsKiosk] = React.useState(false);
   const { solarActive, windActive, consumptionActive, gridExporting, gridImporting, essSoc } = ef;
+
+  // Fullscreen / Kiosk toggle
+  const toggleKiosk = React.useCallback(function() {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().then(function() {
+        document.body.classList.add('kiosk-active');
+        setIsKiosk(true);
+      }).catch(function() {});
+    } else {
+      document.exitFullscreen().then(function() {
+        document.body.classList.remove('kiosk-active');
+        setIsKiosk(false);
+      }).catch(function() {});
+    }
+  }, []);
+
+  // Sync state when user exits fullscreen via Escape
+  React.useEffect(function() {
+    function onFsChange() {
+      if (!document.fullscreenElement) {
+        document.body.classList.remove('kiosk-active');
+        setIsKiosk(false);
+      }
+    }
+    document.addEventListener('fullscreenchange', onFsChange);
+    return function() { document.removeEventListener('fullscreenchange', onFsChange); };
+  }, []);
+
   return (
-    <div style={{marginBottom:16}}>
-      <div className="flow-hub" style={{margin:0, borderColor: ambientOn ? `${status.color}30` : 'var(--border)',
-        boxShadow: ambientOn ? `0 0 24px ${status.color}25, 0 0 48px ${status.color}10` : 'none',
-        background: ambientOn ? 'var(--bg-secondary)' : 'var(--bg-card)'}}>
-        <Tooltip title={ambientOn ? 'Standard view' : 'Ambient view'} placement="left">
-          <div className="flow-ambient-toggle" onClick={() => { const next = !ambientOn; setAmbientOn(next); localStorage.setItem('orbiteos-flow-ambient', next); }}>
-            {React.createElement(ambientOn ? EyeOutlined : EyeInvisibleOutlined)}
-          </div>
-        </Tooltip>
+    <div style={{marginBottom: isKiosk ? 0 : 16}}>
+      <div className="flow-hub" style={{margin:0,
+        borderColor: ambientOn ? (status.color + '30') : 'var(--border)',
+        boxShadow: ambientOn ? ('0 0 24px ' + status.color + '25, 0 0 48px ' + status.color + '10') : 'none',
+        background: ambientOn ? 'var(--bg-secondary)' : 'var(--bg-card)',
+        ...(isKiosk ? {maxHeight:'none',minHeight:'100vh',aspectRatio:'auto',borderRadius:0,border:'none'} : {})}}>
+        <div style={{position:'absolute',top:10,right:12,zIndex:4,display:'flex',gap:6}}>
+          <Tooltip title={isKiosk ? 'Exit fullscreen' : 'Fullscreen kiosk'} placement="left">
+            <div className="flow-ambient-toggle" onClick={toggleKiosk}>
+              {React.createElement(isKiosk ? CompressOutlined : ExpandOutlined)}
+            </div>
+          </Tooltip>
+          <Tooltip title={ambientOn ? 'Standard view' : 'Ambient view'} placement="left">
+            <div className="flow-ambient-toggle" style={{position:'static'}} onClick={() => { const next = !ambientOn; setAmbientOn(next); localStorage.setItem('orbiteos-flow-ambient', next); }}>
+              {React.createElement(ambientOn ? EyeOutlined : EyeInvisibleOutlined)}
+            </div>
+          </Tooltip>
+        </div>
         {ambientOn && <EnergyAmbientHues ef={ef}/>}
         <FlowCanvasLayer ef={ef}/>
         <div className="flow-layout">
