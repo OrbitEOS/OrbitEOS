@@ -878,7 +878,11 @@
     .kiosk-active .sidebar-wrap, .kiosk-active .sidebar-rail,
     .kiosk-active .header { display:none !important; }
     .kiosk-active .main-area { margin-left:0 !important; }
-    .kiosk-active .content { padding:0 !important; height:100vh !important; }
+    .kiosk-active .content { padding:0 !important; height:100vh !important; overflow:hidden !important; }
+    .kiosk-active .widget-header { display:none !important; }
+    .kiosk-active .widget-grid { gap:0 !important; }
+    .kiosk-active .flow-footer { display:none !important; }
+    .kiosk-active .page-enter { height:100vh !important; }
     @keyframes tourPulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.4;transform:scale(1.6)} }
     @keyframes tourIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
     @media (max-width: 768px) {
@@ -5339,8 +5343,8 @@ function resolveIcon(name) { return ICON_MAP[name] || DashboardOutlined; }
 // ─── App Definitions (served from NavigationStore) ───
 
 // ─── Entity Tree Node (recursive) ───
-function EntityTreeNode({ entity, focusedEntityId, setFocusedEntityId, depth, expandedNodes, toggleExpand, maxEntityType }) {
-  // Stop rendering children beyond maxEntityType (e.g. 'site' = don't show deviceGroup/device/sensor)
+function EntityTreeNode({ entity, focusedEntityId, setFocusedEntityId, depth, expandedNodes, toggleExpand, maxEntityType, showStatus, lang }) {
+  // Stop rendering children beyond maxEntityType
   const STOP_TYPES = { site: true, deviceGroup: true, device: true, sensor: true, actuator: true };
   const atLeaf = maxEntityType && STOP_TYPES[entity.entityType] && entity.entityType !== maxEntityType
     ? true : (maxEntityType === entity.entityType);
@@ -5350,6 +5354,26 @@ function EntityTreeNode({ entity, focusedEntityId, setFocusedEntityId, depth, ex
   const isActive = entity.id === focusedEntityId;
   const childCount = atLeaf ? EntityStore.getChildren(entity.id).length : EntityStore.getDescendants(entity.id).length;
 
+  // Energy status for this node (computed from aggregated energy flow)
+  const status = useMemo(function() {
+    if (!showStatus) return null;
+    try { return MockAPI.getSiteStatus(entity.id); } catch(e) { return null; }
+  }, [showStatus, entity.id]);
+
+  const statusDot = status ? React.createElement(Tooltip, {
+    placement: 'right',
+    title: React.createElement('div', { style: { fontSize: 11 } },
+      React.createElement('div', { style: { fontWeight: 600, marginBottom: 2 } },
+        typeof status.label === 'object' ? (status.label[lang || 'en'] || status.label.en) : status.label),
+      React.createElement('div', { style: { opacity: 0.8 } },
+        typeof status.desc === 'object' ? (status.desc[lang || 'en'] || status.desc.en) : status.desc),
+      status.selfSufficiency != null ? React.createElement('div', { style: { marginTop: 2, opacity: 0.7 } },
+        '⚡ ' + status.selfSufficiency + '% self-sufficient') : null
+    ),
+  }, React.createElement('span', {
+    style: { width: 6, height: 6, borderRadius: '50%', background: status.color, flexShrink: 0, display: 'inline-block' }
+  })) : null;
+
   return (
     <div style={{marginLeft: depth > 0 ? 14 : 0}}>
       <div className={`sidebar-tree-node ${isActive?'active':''}`}
@@ -5358,6 +5382,7 @@ function EntityTreeNode({ entity, focusedEntityId, setFocusedEntityId, depth, ex
           style={{cursor: hasChildren?'pointer':'default', opacity: hasChildren?1:0.3}}>
           {hasChildren ? (isExpanded ? '▾' : '▸') : '·'}
         </span>
+        {statusDot}
         <EntityTypeIcon type={entity.entityType} style={{fontSize:13, color: isActive?'var(--brand)':'var(--text-tertiary)'}}/>
         <span className="tree-name">{entity.name}</span>
         {childCount > 0 && <span className="tree-badge">{childCount}</span>}
@@ -5365,7 +5390,8 @@ function EntityTreeNode({ entity, focusedEntityId, setFocusedEntityId, depth, ex
       {hasChildren && isExpanded && children.map(child => (
         <EntityTreeNode key={child.id} entity={child} focusedEntityId={focusedEntityId}
           setFocusedEntityId={setFocusedEntityId} depth={depth+1}
-          expandedNodes={expandedNodes} toggleExpand={toggleExpand} maxEntityType={maxEntityType}/>
+          expandedNodes={expandedNodes} toggleExpand={toggleExpand} maxEntityType={maxEntityType}
+          showStatus={showStatus} lang={lang}/>
       ))}
     </div>
   );
@@ -5851,9 +5877,9 @@ const WidgetEnergyFlow = React.memo(function WidgetEnergyFlow({t, lang, currentS
         boxShadow: ambientOn ? ('0 0 24px ' + status.color + '25, 0 0 48px ' + status.color + '10') : 'none',
         background: ambientOn ? 'var(--bg-secondary)' : 'var(--bg-card)',
         ...(isKiosk ? {maxHeight:'none',minHeight:'100vh',aspectRatio:'auto',borderRadius:0,border:'none'} : {})}}>
-        <div style={{position:'absolute',top:10,right:12,zIndex:4,display:'flex',gap:6}}>
-          <Tooltip title={isKiosk ? 'Exit fullscreen' : 'Fullscreen kiosk'} placement="left">
-            <div className="flow-ambient-toggle" onClick={toggleKiosk}>
+        <div style={{position:'absolute',top:10,right:12,zIndex:4,display:'flex',gap:4}}>
+          <Tooltip title={isKiosk ? (lang==='nl'?'Volledig scherm sluiten':'Exit fullscreen') : (lang==='nl'?'Volledig scherm':'Fullscreen')} placement="left">
+            <div className="flow-ambient-toggle" style={{position:'static'}} onClick={toggleKiosk}>
               {React.createElement(isKiosk ? CompressOutlined : ExpandOutlined)}
             </div>
           </Tooltip>
@@ -6690,7 +6716,8 @@ function DashboardPage({t, lang, currentSite, focusedEntityId, setFocusedEntityI
             {rootEntities.map(root => (
               <EntityTreeNode key={root.id} entity={root} focusedEntityId={focusedEntityId}
                 setFocusedEntityId={setFocusedEntityId} depth={0}
-                expandedNodes={treeExpandedNodes} toggleExpand={toggleTreeExpand} maxEntityType={treeConfig.maxEntityType}/>
+                expandedNodes={treeExpandedNodes} toggleExpand={toggleTreeExpand}
+                maxEntityType={treeConfig.maxEntityType} showStatus={true} lang={lang}/>
             ))}
           </div>
         </div>
