@@ -870,6 +870,10 @@
     .tour-center-body { font-size:14px; color:var(--text-secondary); line-height:1.6; margin-bottom:24px; }
     .tour-help-pulse { position:absolute; top:-1px; right:-1px; width:7px; height:7px;
       border-radius:50%; background:var(--brand); animation:tourPulse 2s infinite; }
+    .tour-modal-wrap { z-index:10002 !important; }
+    .tour-modal-wrap .ant-modal-mask { z-index:10000 !important; background:rgba(0,0,0,0.55) !important; }
+    .tour-modal-wrap .ant-modal-wrap { z-index:10002 !important; }
+    .tour-modal-wrap .ant-modal-content { background:var(--bg-card); border:1px solid var(--border); }
     @keyframes tourPulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.4;transform:scale(1.6)} }
     @keyframes tourIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
     @media (max-width: 768px) {
@@ -4777,6 +4781,13 @@ const ALARM_MESSAGES = {
 // Thin accessor over EntityStore. All data flows from the store.
 // To migrate to production: swap these with real API calls (fetch/WebSocket) + Zustand actions.
 const MockAPI = {
+  // ─── Dashboard Config ───
+  getDashboardTreeConfig: () => ({
+    maxEntityType: 'site',        // show tree nodes down to this level
+    defaultPinned: true,          // tree pinned by default on desktop
+    treeWidth: 240,               // panel width in px
+    autoExpandTypes: ['platform','account','subAccount','site'], // auto-expand these types
+  }),
   // ─── Core Entities (from EntityStore) ───
   getAccounts: () => ACCOUNTS,
   getSites: () => SITES,
@@ -5323,12 +5334,16 @@ function resolveIcon(name) { return ICON_MAP[name] || DashboardOutlined; }
 // ─── App Definitions (served from NavigationStore) ───
 
 // ─── Entity Tree Node (recursive) ───
-function EntityTreeNode({ entity, focusedEntityId, setFocusedEntityId, depth, expandedNodes, toggleExpand }) {
-  const children = EntityStore.getChildren(entity.id);
+function EntityTreeNode({ entity, focusedEntityId, setFocusedEntityId, depth, expandedNodes, toggleExpand, maxEntityType }) {
+  // Stop rendering children beyond maxEntityType (e.g. 'site' = don't show deviceGroup/device/sensor)
+  const STOP_TYPES = { site: true, deviceGroup: true, device: true, sensor: true, actuator: true };
+  const atLeaf = maxEntityType && STOP_TYPES[entity.entityType] && entity.entityType !== maxEntityType
+    ? true : (maxEntityType === entity.entityType);
+  const children = atLeaf ? [] : EntityStore.getChildren(entity.id);
   const hasChildren = children.length > 0;
   const isExpanded = expandedNodes.has(entity.id);
   const isActive = entity.id === focusedEntityId;
-  const childCount = EntityStore.getDescendants(entity.id).length;
+  const childCount = atLeaf ? EntityStore.getChildren(entity.id).length : EntityStore.getDescendants(entity.id).length;
 
   return (
     <div style={{marginLeft: depth > 0 ? 14 : 0}}>
@@ -5340,12 +5355,12 @@ function EntityTreeNode({ entity, focusedEntityId, setFocusedEntityId, depth, ex
         </span>
         <EntityTypeIcon type={entity.entityType} style={{fontSize:13, color: isActive?'var(--brand)':'var(--text-tertiary)'}}/>
         <span className="tree-name">{entity.name}</span>
-        {hasChildren && <span className="tree-badge">{childCount}</span>}
+        {childCount > 0 && <span className="tree-badge">{childCount}</span>}
       </div>
       {hasChildren && isExpanded && children.map(child => (
         <EntityTreeNode key={child.id} entity={child} focusedEntityId={focusedEntityId}
           setFocusedEntityId={setFocusedEntityId} depth={depth+1}
-          expandedNodes={expandedNodes} toggleExpand={toggleExpand}/>
+          expandedNodes={expandedNodes} toggleExpand={toggleExpand} maxEntityType={maxEntityType}/>
       ))}
     </div>
   );
@@ -6550,14 +6565,16 @@ function DashboardPage({t, lang, currentSite, focusedEntityId, setFocusedEntityI
   });
   const [gridCustomize, setGridCustomize] = useState(false);
   const [listDrawer, setListDrawer] = useState(false);
-  const [treePinned, setTreePinned] = useState(false);
+  const treeConfig = useMemo(() => MockAPI.getDashboardTreeConfig(), []);
+  const isMobile = typeof window !== 'undefined' && window.innerWidth <= 1024;
+  const [treePinned, setTreePinned] = useState(!isMobile && treeConfig.defaultPinned);
   const [treeHovered, setTreeHovered] = useState(false);
   const treeHoverTimer = useRef(null);
   const [treeExpandedNodes, setTreeExpandedNodes] = useState(() => {
     const expanded = new Set();
-    EntityStore.getByType('platform').forEach(p => expanded.add(p.id));
-    EntityStore.getByType('account').forEach(a => expanded.add(a.id));
-    EntityStore.getByType('subAccount').forEach(sa => expanded.add(sa.id));
+    (treeConfig.autoExpandTypes || []).forEach(type => {
+      EntityStore.getByType(type).forEach(e => expanded.add(e.id));
+    });
     const path = EntityStore.getPath(focusedEntityId);
     path.forEach(e => expanded.add(e.id));
     return expanded;
@@ -6614,62 +6631,38 @@ function DashboardPage({t, lang, currentSite, focusedEntityId, setFocusedEntityI
   };
 
   return (
-    <div className={`page-enter ${gridCustomize ? 'customize-active' : ''}`} style={{display:'flex',gap:0,position:'relative'}}>
-      {/* Dashboard Tree Panel — compact, no rail gap */}
-      <div style={{flexShrink:0,position:'relative',zIndex:50}}
-        onMouseEnter={onTreeMouseEnter} onMouseLeave={onTreeMouseLeave}>
-        {/* Collapsed state: just the tree icon */}
-        {!treeVisible && <Tooltip placement="right" title={lang==='nl'?'Entiteitsboom':'Entity Tree'}>
-          <div style={{width:28,height:28,borderRadius:6,display:'flex',alignItems:'center',justifyContent:'center',
-            cursor:'pointer',fontSize:14,color:'var(--text-tertiary)',marginTop:4,
-            transition:'all 0.15s'}}
-            onClick={() => { setTreePinned(true); }}>
-            <ApartmentOutlined/>
-          </div>
-        </Tooltip>}
-        {/* Tree panel — flyout or pinned */}
-        {treeVisible && <div style={{
-          width: 240, background:'var(--bg-card)', borderRadius:'8px', marginRight:8,
-          border:'1px solid var(--border)',
-          display:'flex', flexDirection:'column',
-          position: treePinned ? 'relative' : 'absolute', left: 0, top: 0, bottom: 0,
-          boxShadow: !treePinned ? '4px 0 16px rgba(0,0,0,0.3)' : 'none',
-          maxHeight: treePinned ? 'none' : 'calc(100vh - 120px)',
-        }}>
+    <div className={`page-enter ${gridCustomize ? 'customize-active' : ''}`} style={{display:'flex',gap:0,position:'relative',height:'calc(100vh - var(--header-h) - 48px)',minHeight:0}}>
+      {/* Dashboard Tree Panel */}
+      {treePinned ? (
+        <div style={{width:treeConfig.treeWidth,flexShrink:0,background:'var(--bg-card)',borderRadius:'8px',marginRight:8,
+          border:'1px solid var(--border)',display:'flex',flexDirection:'column',minHeight:0}}>
           <div style={{padding:'6px 8px',borderBottom:'1px solid var(--border)',display:'flex',alignItems:'center',justifyContent:'space-between',flexShrink:0}}>
             <span style={{fontSize:10,fontWeight:600,textTransform:'uppercase',color:'var(--text-tertiary)',letterSpacing:'0.04em',whiteSpace:'nowrap'}}>
               <ApartmentOutlined style={{marginRight:5,fontSize:11}}/>{lang==='nl'?'Entiteiten':'Entities'}
             </span>
-            <div style={{display:'flex',gap:4,alignItems:'center'}}>
-              <Tooltip title={treePinned?(lang==='nl'?'Losmaken':'Unpin'):(lang==='nl'?'Vastzetten':'Pin')}>
-                <div style={{width:20,height:20,borderRadius:4,display:'flex',alignItems:'center',justifyContent:'center',
-                  cursor:'pointer',fontSize:10,color:treePinned?'var(--brand)':'var(--text-tertiary)',
-                  background:treePinned?'var(--brand-bg)':'transparent',transition:'all 0.15s'}}
-                  onClick={() => { setTreePinned(!treePinned); if(!treePinned) setTreeHovered(false); }}>
-                  <svg viewBox="0 0 16 16" width="10" height="10" fill="currentColor" style={{transform:treePinned?'rotate(0deg)':'rotate(45deg)',transition:'transform 0.2s'}}>
-                    <path d="M9.828.722a.5.5 0 01.354.146l4.95 4.95a.5.5 0 010 .707c-.48.48-1.072.588-1.503.588-.177 0-.335-.018-.46-.039l-3.134 3.134a5.927 5.927 0 01.16 1.338c.018.55-.111 1.162-.548 1.6a.5.5 0 01-.708 0l-2.45-2.45-3.89 3.89a.5.5 0 01-.707-.708l3.89-3.889-2.45-2.45a.5.5 0 010-.707c.437-.437 1.05-.566 1.6-.548.376.012.742.063 1.338.16L9.48 2.64c-.021-.125-.039-.283-.039-.46 0-.431.108-1.022.589-1.503a.5.5 0 01.353-.146z"/>
-                  </svg>
-                </div>
-              </Tooltip>
-              <div style={{width:20,height:20,borderRadius:4,display:'flex',alignItems:'center',justifyContent:'center',
-                cursor:'pointer',fontSize:10,color:'var(--text-tertiary)',transition:'all 0.15s'}}
-                onClick={() => { setTreePinned(false); setTreeHovered(false); }}>
-                <CloseOutlined style={{fontSize:9}}/>
-              </div>
-            </div>
+            {isMobile && <div style={{cursor:'pointer',fontSize:10,color:'var(--text-tertiary)',padding:2}}
+              onClick={() => setTreePinned(false)}><CloseOutlined style={{fontSize:9}}/></div>}
           </div>
           <div style={{flex:1,overflowY:'auto',overflowX:'auto',minHeight:0,padding:'2px 0'}}>
             {rootEntities.map(root => (
               <EntityTreeNode key={root.id} entity={root} focusedEntityId={focusedEntityId}
                 setFocusedEntityId={setFocusedEntityId} depth={0}
-                expandedNodes={treeExpandedNodes} toggleExpand={toggleTreeExpand}/>
+                expandedNodes={treeExpandedNodes} toggleExpand={toggleTreeExpand} maxEntityType={treeConfig.maxEntityType}/>
             ))}
           </div>
-        </div>}
-      </div>
+        </div>
+      ) : (
+        <Tooltip placement="right" title={lang==='nl'?'Entiteitsboom':'Entity Tree'}>
+          <div style={{width:28,height:28,borderRadius:6,display:'flex',alignItems:'center',justifyContent:'center',
+            cursor:'pointer',fontSize:14,color:'var(--text-tertiary)',marginTop:4,flexShrink:0}}
+            onClick={() => setTreePinned(true)}>
+            <ApartmentOutlined/>
+          </div>
+        </Tooltip>
+      )}
 
       {/* Main dashboard content */}
-      <div style={{flex:1,minWidth:0}}>
+      <div style={{flex:1,minWidth:0,overflowY:'auto',minHeight:0}}>
       <div className="widget-header">
         <div className="widget-header-title" style={{display:'flex',alignItems:'center',gap:12}}>
           <span style={{display:'flex',alignItems:'center',gap:8}}>
@@ -7879,20 +7872,30 @@ function TourOverlay({ lang, navigateWithLoader, setCurrentApp, page }) {
   const [tipPos, setTipPos] = useState(null);
   const [navigating, setNavigating] = useState(false);
   const prevStepRef = useRef(null);
+  const pageRef = useRef(page);
+  pageRef.current = page;
 
-  const tour = tourState.active ? TourStore.getTour(tourState.tourId) : null;
-  const step = tourState.active ? TourStore.getCurrentStep() : null;
+  const active = tourState.active;
+  const tour = active ? TourStore.getTour(tourState.tourId) : null;
+  const step = active ? TourStore.getCurrentStep() : null;
   const stepIndex = tourState.stepIndex;
   const totalSteps = tour ? tour.steps.length : 0;
   const isLast = stepIndex === totalSteps - 1;
-  const isCenter = !step?.target || step?.placement === 'center';
+  const stepId = step ? step.id : null;
+  const isCenter = step && (!step.target || step.placement === 'center');
+
+  const rI = useCallback((label) => {
+    if (!label) return '';
+    if (typeof label === 'string') return label;
+    return label[lang] || label.en || label[Object.keys(label)[0]] || '';
+  }, [lang]);
 
   // Position tooltip relative to target rect
-  const positionTooltip = useCallback((targetRect, placement) => {
+  function positionTooltip(targetRect, placement) {
     if (!targetRect) return null;
     const GAP = 14;
     const TW = Math.min(340, window.innerWidth - 32);
-    const TH = 180; // estimate
+    const TH = 180;
     let top, left;
     switch (placement) {
       case 'right':  top = targetRect.top + targetRect.height / 2 - TH / 2; left = targetRect.right + GAP; break;
@@ -7901,143 +7904,160 @@ function TourOverlay({ lang, navigateWithLoader, setCurrentApp, page }) {
       case 'top':    top = targetRect.top - TH - GAP; left = targetRect.left + targetRect.width / 2 - TW / 2; break;
       default:       top = targetRect.bottom + GAP; left = targetRect.left;
     }
-    // Clamp to viewport
     left = Math.max(16, Math.min(window.innerWidth - TW - 16, left));
     top = Math.max(16, Math.min(window.innerHeight - TH - 16, top));
     return { top, left };
-  }, []);
+  }
 
-  // Find target and position
-  const findAndPosition = useCallback((s) => {
+  function findAndPosition(s) {
     if (!s || !s.target) { setRect(null); setTipPos(null); return; }
     const el = document.querySelector(s.target);
     if (!el) { setRect(null); setTipPos(null); return; }
     const r = el.getBoundingClientRect();
     if (r.width === 0 && r.height === 0) { setRect(null); setTipPos(null); return; }
     const pad = s.spotlightPadding || 8;
-    const spotRect = { top: r.top - pad, left: r.left - pad, width: r.width + pad * 2, height: r.height + pad * 2 };
-    setRect(spotRect);
-    setTipPos(positionTooltip(spotRect, s.placement || 'bottom'));
-  }, [positionTooltip]);
+    const sr = { top: r.top - pad, left: r.left - pad, width: r.width + pad * 2, height: r.height + pad * 2 };
+    setRect(sr);
+    setTipPos(positionTooltip(sr, s.placement || 'bottom'));
+  }
 
-  // Handle step changes — navigate if needed, then find target
+  // Handle step changes
   useEffect(() => {
-    if (!step || !tourState.active) { setRect(null); setTipPos(null); return; }
-    const stepId = step.id;
+    if (!active || !step) { setRect(null); setTipPos(null); setNavigating(false); return; }
     if (prevStepRef.current === stepId) return;
     prevStepRef.current = stepId;
 
-    if (isCenter) { setRect(null); setTipPos(null); setNavigating(false); return; }
+    // Center steps need no target
+    if (!step.target || step.placement === 'center') {
+      setRect(null); setTipPos(null); setNavigating(false);
+      return;
+    }
 
     // Navigate if needed
-    const needsNav = (step.appId && step.appId !== undefined) || (step.page && step.page !== page);
-    if (needsNav) {
-      setNavigating(true);
-      setRect(null); setTipPos(null);
+    const needsNav = step.page && step.page !== pageRef.current;
+    if (needsNav || step.appId) {
+      setNavigating(true); setRect(null); setTipPos(null);
       if (step.appId) setCurrentApp(step.appId);
       if (step.page) navigateWithLoader(step.page);
     }
 
-    // Poll for target element
+    // Poll for target
     const selector = step.waitForSelector || step.target;
-    const startTime = Date.now();
-    const minDelay = needsNav ? 400 : 50;
+    const t0 = Date.now();
+    const minDelay = needsNav ? 500 : 100;
     const poll = setInterval(() => {
-      const elapsed = Date.now() - startTime;
+      const elapsed = Date.now() - t0;
       if (elapsed < minDelay) return;
-      const el = selector ? document.querySelector(selector) : null;
-      if (el) {
-        const r = el.getBoundingClientRect();
-        if (r.width > 0 && r.height > 0) {
+      if (selector) {
+        const el = document.querySelector(selector);
+        if (el && el.getBoundingClientRect().width > 0) {
           clearInterval(poll);
           setNavigating(false);
           findAndPosition(step);
+          return;
         }
       }
       if (elapsed > 3000) { clearInterval(poll); setNavigating(false); findAndPosition(step); }
-    }, 80);
+    }, 100);
     return () => clearInterval(poll);
-  }, [step?.id, tourState.active]);
+  }, [active, stepId]);
 
-  // Reposition on resize/scroll
+  // Reposition on resize
   useEffect(() => {
-    if (!tourState.active || isCenter || !step?.target) return;
-    const reposition = () => findAndPosition(step);
-    window.addEventListener('resize', reposition);
-    window.addEventListener('scroll', reposition, true);
-    return () => { window.removeEventListener('resize', reposition); window.removeEventListener('scroll', reposition, true); };
-  }, [tourState.active, step?.id]);
+    if (!active || !step || !step.target || step.placement === 'center') return;
+    const h = () => findAndPosition(step);
+    window.addEventListener('resize', h);
+    window.addEventListener('scroll', h, true);
+    return () => { window.removeEventListener('resize', h); window.removeEventListener('scroll', h, true); };
+  }, [active, stepId]);
 
   // Keyboard
   useEffect(() => {
-    if (!tourState.active) return;
-    const handler = (e) => {
+    if (!active) return;
+    const h = (e) => {
       if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { e.preventDefault(); TourStore.next(); }
       else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault(); TourStore.prev(); }
       else if (e.key === 'Escape') TourStore.skip();
     };
-    document.addEventListener('keydown', handler);
-    return () => document.removeEventListener('keydown', handler);
-  }, [tourState.active]);
+    document.addEventListener('keydown', h);
+    return () => document.removeEventListener('keydown', h);
+  }, [active]);
 
-  if (!tourState.active || !step || navigating) return null;
+  if (!active || !step) return null;
 
-  const rI = (label) => resolveI18n(label, lang);
+  // Progress dots
+  const dots = tour ? tour.steps.map(function(_, i) {
+    return React.createElement('div', { key: i, className: 'tour-dot' + (i === stepIndex ? ' active' : '') });
+  }) : null;
 
-  // Center card (welcome / farewell)
+  // Center card (welcome / farewell) — Ant Modal with v5 API
   if (isCenter) {
+    return React.createElement(Modal, {
+      open: true,
+      centered: true,
+      footer: null,
+      closable: true,
+      width: 420,
+      zIndex: 10002,
+      styles: { mask: { background: 'rgba(0,0,0,0.55)' } },
+      onCancel: function() { TourStore.skip(); },
+    },
+      React.createElement('div', { style: { textAlign: 'center', padding: '8px 0' } },
+        React.createElement('div', { style: { fontSize: 36, marginBottom: 12 } }, stepIndex === 0 ? '👋' : '🎉'),
+        React.createElement('div', { style: { fontSize: 20, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 8 } },
+          rI(step.title)),
+        React.createElement('div', { style: { fontSize: 14, color: 'var(--text-secondary)', lineHeight: '1.6', marginBottom: 20, whiteSpace: 'pre-line' } },
+          rI(step.body)),
+        React.createElement(Space, { size: 8, wrap: true, style: { justifyContent: 'center' } },
+          stepIndex > 0 ? React.createElement(Button, { onClick: function() { TourStore.prev(); } }, rI({en:'Back',nl:'Terug'})) : null,
+          React.createElement(Button, { onClick: function() { TourStore.skip(); } }, rI({en:'Skip tour',nl:'Tour overslaan'})),
+          React.createElement(Button, { type: 'primary', onClick: function() { TourStore.next(); } },
+            isLast ? rI({en:'Done',nl:'Klaar'}) : rI({en:'Start Tour',nl:'Start Tour'}))
+        ),
+        React.createElement('div', { style: { marginTop: 16, display: 'flex', justifyContent: 'center', gap: 3 } }, dots)
+      )
+    );
+  }
+
+  // Navigating — show loading backdrop
+  if (navigating) {
     return ReactDOM.createPortal(
-      <div>
-        <div className="tour-backdrop" style={{background:'rgba(0,0,0,0.5)'}} onClick={() => TourStore.skip()}/>
-        <div className="tour-center">
-          <div style={{fontSize:32,marginBottom:12}}>{stepIndex === 0 ? '👋' : '🎉'}</div>
-          <div className="tour-center-title">{rI(step.title)}</div>
-          <div className="tour-center-body" style={{whiteSpace:'pre-line'}}>{rI(step.body)}</div>
-          <div style={{display:'flex',gap:8,justifyContent:'center'}}>
-            {stepIndex > 0 && <button className="header-btn" onClick={() => TourStore.prev()}>{rI({en:'Back',nl:'Terug'})}</button>}
-            <button className="header-btn" onClick={() => TourStore.skip()} style={{opacity:0.7}}>{rI({en:'Skip',nl:'Overslaan'})}</button>
-            <button className="header-btn primary" onClick={() => TourStore.next()}>
-              {isLast ? rI({en:'Done',nl:'Klaar'}) : rI({en:'Start Tour',nl:'Start Tour'})}
-            </button>
-          </div>
-          <div style={{marginTop:12}}>
-            <div className="tour-tooltip-progress" style={{justifyContent:'center',display:'flex'}}>
-              {tour.steps.map((_, i) => <div key={i} className={`tour-dot ${i === stepIndex ? 'active' : ''}`}/>)}
-            </div>
-          </div>
-        </div>
-      </div>,
+      React.createElement('div', { className: 'tour-backdrop', style: { background: 'rgba(0,0,0,0.3)' } }),
       document.body
     );
   }
 
-  // Targeted step with spotlight
+  // Targeted step with spotlight + tooltip
+  var spotlightEl = rect ? React.createElement('div', {
+    className: 'tour-spotlight',
+    style: { top: rect.top, left: rect.left, width: rect.width, height: rect.height }
+  }) : null;
+
+  var tooltipEl = tipPos ? React.createElement('div', {
+    className: 'tour-tooltip',
+    style: { top: tipPos.top, left: tipPos.left },
+    key: stepId
+  },
+    React.createElement('div', { className: 'tour-tooltip-title' }, rI(step.title)),
+    React.createElement('div', { className: 'tour-tooltip-body', style: { whiteSpace: 'pre-line' } }, rI(step.body)),
+    React.createElement('div', { className: 'tour-tooltip-footer' },
+      React.createElement('div', { className: 'tour-tooltip-progress' }, dots),
+      React.createElement('span', { className: 'tour-step-text' }, (stepIndex + 1) + ' / ' + totalSteps),
+      React.createElement(Space, { size: 4 },
+        React.createElement(Button, { size: 'small', onClick: function() { TourStore.skip(); } }, rI({en:'Skip',nl:'Overslaan'})),
+        stepIndex > 0 ? React.createElement(Button, { size: 'small', onClick: function() { TourStore.prev(); } }, rI({en:'Back',nl:'Terug'})) : null,
+        React.createElement(Button, { size: 'small', type: 'primary', onClick: function() { TourStore.next(); } },
+          isLast ? rI({en:'Done',nl:'Klaar'}) : rI({en:'Next →',nl:'Volgende →'}))
+      )
+    )
+  ) : null;
+
   return ReactDOM.createPortal(
-    <div>
-      <div className="tour-backdrop" onClick={() => TourStore.skip()}/>
-      {rect && <div className="tour-spotlight" style={{top:rect.top, left:rect.left, width:rect.width, height:rect.height}}/>}
-      {tipPos && <div className="tour-tooltip" style={{top:tipPos.top, left:tipPos.left}} key={step.id}>
-        <div className="tour-tooltip-title">{rI(step.title)}</div>
-        <div className="tour-tooltip-body" style={{whiteSpace:'pre-line'}}>{rI(step.body)}</div>
-        <div className="tour-tooltip-footer">
-          <div className="tour-tooltip-progress">
-            {tour.steps.map((_, i) => <div key={i} className={`tour-dot ${i === stepIndex ? 'active' : ''}`}/>)}
-          </div>
-          <span className="tour-step-text">{stepIndex + 1} / {totalSteps}</span>
-          <div className="tour-tooltip-actions">
-            <button className="header-btn" onClick={() => TourStore.skip()} style={{fontSize:11,padding:'4px 8px',opacity:0.7}}>
-              {rI({en:'Skip',nl:'Overslaan'})}
-            </button>
-            {stepIndex > 0 && <button className="header-btn" onClick={() => TourStore.prev()} style={{fontSize:11,padding:'4px 8px'}}>
-              {rI({en:'Back',nl:'Terug'})}
-            </button>}
-            <button className="header-btn primary" onClick={() => TourStore.next()} style={{fontSize:11,padding:'4px 10px'}}>
-              {isLast ? rI({en:'Done',nl:'Klaar'}) : rI({en:'Next',nl:'Volgende'})} {!isLast && '→'}
-            </button>
-          </div>
-        </div>
-      </div>}
-    </div>,
+    React.createElement('div', null,
+      React.createElement('div', { className: 'tour-backdrop', onClick: function() { TourStore.skip(); } }),
+      spotlightEl,
+      tooltipEl
+    ),
     document.body
   );
 }
