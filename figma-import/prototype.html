@@ -1023,7 +1023,7 @@
 
 <script type="text/babel">
 // ─── Version ───
-const ORBITEOS_VERSION = '0.6.2';
+const ORBITEOS_VERSION = '0.6.3';
 const { useState, useEffect, useRef, useCallback, useMemo } = React;
 const { ConfigProvider, theme: antTheme, Button, Table, Tag, Badge, Switch, Select, Input, Tabs, Segmented,
   Progress, Slider, Form, InputNumber, Tooltip, Dropdown, Space, Modal, Drawer, Menu } = antd;
@@ -5343,7 +5343,7 @@ function resolveIcon(name) { return ICON_MAP[name] || DashboardOutlined; }
 // ─── App Definitions (served from NavigationStore) ───
 
 // ─── Entity Tree Node (recursive) ───
-function EntityTreeNode({ entity, focusedEntityId, setFocusedEntityId, depth, expandedNodes, toggleExpand, maxEntityType, showStatus, lang }) {
+function EntityTreeNode({ entity, focusedEntityId, setFocusedEntityId, depth, expandedNodes, toggleExpand, maxEntityType, showStatus, lang, statusFilter }) {
   // Stop rendering children beyond maxEntityType
   const STOP_TYPES = { site: true, deviceGroup: true, device: true, sensor: true, actuator: true };
   const atLeaf = maxEntityType && STOP_TYPES[entity.entityType] && entity.entityType !== maxEntityType
@@ -5354,11 +5354,29 @@ function EntityTreeNode({ entity, focusedEntityId, setFocusedEntityId, depth, ex
   const isActive = entity.id === focusedEntityId;
   const childCount = atLeaf ? EntityStore.getChildren(entity.id).length : EntityStore.getDescendants(entity.id).length;
 
-  // Energy status for this node (computed from aggregated energy flow)
+  // Energy status for this node
   const status = useMemo(function() {
     if (!showStatus) return null;
     try { return MockAPI.getSiteStatus(entity.id); } catch(e) { return null; }
   }, [showStatus, entity.id]);
+
+  // Map status levels to filter categories
+  const statusCategory = useMemo(function() {
+    if (!status) return null;
+    var lv = status.level;
+    if (lv === 'island' || lv === 'peak' || lv === 'optimal') return 'success';
+    if (lv === 'importing' || lv === 'normal') return 'warning';
+    return 'error'; // grid-heavy, grid-dependent
+  }, [status]);
+
+  // Filter: if filter is set, only show this node if it or a descendant matches
+  if (statusFilter && !atLeaf && !hasChildren) {
+    // Leaf with no children — check own status
+    if (statusCategory !== statusFilter) return null;
+  }
+  if (statusFilter && atLeaf) {
+    if (statusCategory !== statusFilter) return null;
+  }
 
   const statusDot = status ? React.createElement(Tooltip, {
     placement: 'right',
@@ -5391,7 +5409,7 @@ function EntityTreeNode({ entity, focusedEntityId, setFocusedEntityId, depth, ex
         <EntityTreeNode key={child.id} entity={child} focusedEntityId={focusedEntityId}
           setFocusedEntityId={setFocusedEntityId} depth={depth+1}
           expandedNodes={expandedNodes} toggleExpand={toggleExpand} maxEntityType={maxEntityType}
-          showStatus={showStatus} lang={lang}/>
+          showStatus={showStatus} lang={lang} statusFilter={statusFilter}/>
       ))}
     </div>
   );
@@ -6639,6 +6657,7 @@ function DashboardPage({t, lang, currentSite, focusedEntityId, setFocusedEntityI
   const [treePinned, setTreePinned] = useState(!isMobile && treeConfig.defaultPinned);
   const [treeHovered, setTreeHovered] = useState(false);
   const treeHoverTimer = useRef(null);
+  const [treeStatusFilter, setTreeStatusFilter] = useState(null); // null = all, or status level string
   const [treeExpandedNodes, setTreeExpandedNodes] = useState(() => {
     const expanded = new Set();
     (treeConfig.autoExpandTypes || []).forEach(type => {
@@ -6705,19 +6724,44 @@ function DashboardPage({t, lang, currentSite, focusedEntityId, setFocusedEntityI
       {treePinned ? (
         <div style={{width:treeConfig.treeWidth,flexShrink:0,background:'var(--bg-card)',borderRadius:'8px',marginRight:8,
           border:'1px solid var(--border)',display:'flex',flexDirection:'column',minHeight:0}}>
-          <div style={{padding:'6px 8px',borderBottom:'1px solid var(--border)',display:'flex',alignItems:'center',justifyContent:'space-between',flexShrink:0}}>
-            <span style={{fontSize:10,fontWeight:600,textTransform:'uppercase',color:'var(--text-tertiary)',letterSpacing:'0.04em',whiteSpace:'nowrap'}}>
-              <ApartmentOutlined style={{marginRight:5,fontSize:11}}/>{lang==='nl'?'Entiteiten':'Entities'}
-            </span>
-            {isMobile && <div style={{cursor:'pointer',fontSize:10,color:'var(--text-tertiary)',padding:2}}
-              onClick={() => setTreePinned(false)}><CloseOutlined style={{fontSize:9}}/></div>}
+          <div style={{padding:'6px 8px',borderBottom:'1px solid var(--border)',flexShrink:0}}>
+            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+              <span style={{fontSize:10,fontWeight:600,textTransform:'uppercase',color:'var(--text-tertiary)',letterSpacing:'0.04em',whiteSpace:'nowrap'}}>
+                <ApartmentOutlined style={{marginRight:5,fontSize:11}}/>{lang==='nl'?'Entiteiten':'Entities'}
+              </span>
+              {isMobile && <div style={{cursor:'pointer',fontSize:10,color:'var(--text-tertiary)',padding:2}}
+                onClick={() => setTreePinned(false)}><CloseOutlined style={{fontSize:9}}/></div>}
+            </div>
+            <div style={{display:'flex',gap:4,marginTop:5,alignItems:'center'}}>
+              {[
+                {key:null,      label:{en:'All',nl:'Alle'},      color:'var(--text-tertiary)'},
+                {key:'success', label:{en:'Optimal',nl:'Optimaal'}, color:'var(--success)'},
+                {key:'warning', label:{en:'Warning',nl:'Waarschuwing'}, color:'var(--warning)'},
+                {key:'error',   label:{en:'Critical',nl:'Kritiek'},  color:'var(--error)'},
+              ].map(f => {
+                const active = treeStatusFilter === f.key;
+                return React.createElement(Tooltip, { key: f.key || 'all', title: f.label[lang] || f.label.en, placement: 'bottom' },
+                  React.createElement('div', {
+                    onClick: function() { setTreeStatusFilter(active ? null : f.key); },
+                    style: {
+                      padding: '2px 6px', borderRadius: 9, fontSize: 9, fontWeight: 600,
+                      cursor: 'pointer', transition: 'all 0.15s', whiteSpace: 'nowrap',
+                      background: active ? (f.key ? f.color : 'var(--brand)') : 'transparent',
+                      color: active ? (f.key ? '#fff' : 'var(--bg-primary)') : 'var(--text-tertiary)',
+                      border: '1px solid ' + (active ? 'transparent' : 'var(--border)'),
+                    }
+                  }, f.label[lang] || f.label.en)
+                );
+              })}
+            </div>
           </div>
           <div style={{flex:1,overflowY:'auto',overflowX:'auto',minHeight:0,padding:'2px 0'}}>
             {rootEntities.map(root => (
               <EntityTreeNode key={root.id} entity={root} focusedEntityId={focusedEntityId}
                 setFocusedEntityId={setFocusedEntityId} depth={0}
                 expandedNodes={treeExpandedNodes} toggleExpand={toggleTreeExpand}
-                maxEntityType={treeConfig.maxEntityType} showStatus={true} lang={lang}/>
+                maxEntityType={treeConfig.maxEntityType} showStatus={true} lang={lang}
+                statusFilter={treeStatusFilter}/>
             ))}
           </div>
         </div>
