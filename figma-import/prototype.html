@@ -72,14 +72,14 @@
     .sidebar-panel { width: 240px; background: var(--bg-sidebar); border-right: 1px solid var(--border);
       display: flex; flex-direction: column; overflow-y: auto; }
     .sidebar-panel-hidden { display: none; }
-    .sidebar-entity-tree { flex: 1; overflow-y: auto; }
-    .sidebar-tree-node { padding: 6px 12px; cursor: pointer; font-size: 12px; color: var(--text-secondary);
+    .sidebar-entity-tree { flex: 1; overflow-y: auto; overflow-x: auto; }
+    .sidebar-tree-node { padding: 5px 8px 5px 6px; cursor: pointer; font-size: 12px; color: var(--text-secondary); white-space: nowrap;
       display: flex; align-items: center; gap: 6px; transition: all 0.12s; }
     .sidebar-tree-node:hover { background: var(--bg-card-hover); color: var(--text-primary); }
     .sidebar-tree-node.active { color: var(--brand); background: var(--brand-bg); }
     .sidebar-tree-node .tree-expand { width: 14px; text-align: center; font-size: 8px; color: var(--text-tertiary); flex-shrink: 0; }
     .sidebar-tree-node .tree-icon { font-size: 13px; flex-shrink: 0; }
-    .sidebar-tree-node .tree-name { flex: 1; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .sidebar-tree-node .tree-name { flex: 0 0 auto; font-weight: 500; white-space: nowrap; }
     .sidebar-tree-node .tree-badge { font-size: 9px; color: var(--text-tertiary); background: var(--bg-secondary);
       padding: 1px 5px; border-radius: 6px; }
     .entity-context-bar { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px;
@@ -394,7 +394,7 @@
       transition: box-shadow 1.2s ease, border-color 1.2s ease; }
     /* Ambient hue — blurred color blobs that melt together like liquid */
     .flow-hue { position: absolute; inset: 0; pointer-events: none; border-radius: 1rem; overflow: hidden; }
-    .flow-blob { position: absolute; border-radius: 50%; filter: blur(120px); transition: opacity 1.5s ease; will-change: opacity; }
+    .flow-blob { position: absolute; border-radius: 50%; filter: blur(80px); transition: opacity 1.5s ease; will-change: opacity, transform; }
     .flow-svg-layer { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; }
     .flow-canvas-layer { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; }
     .flow-layout { position: relative; z-index: 2; width: 100%; display: flex; align-items: center;
@@ -617,6 +617,12 @@
       .flow-ambient-toggle { backdrop-filter: none; -webkit-backdrop-filter: none; background: var(--bg-card); }
       .stat-grid-4 { grid-template-columns: repeat(2, 1fr); }
       .stat-grid-3 { grid-template-columns: repeat(2, 1fr); }
+      /* Performance: reduce blur for iPad GPU */
+      .flow-blob { filter: blur(40px); }
+      .flow-icon-box { backdrop-filter: none; -webkit-backdrop-filter: none; background: var(--bg-card); }
+      .flow-battery-circle { backdrop-filter: none; -webkit-backdrop-filter: none; background: var(--bg-card); }
+      .flow-footer { backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+      .flow-ambient-toggle { backdrop-filter: none; -webkit-backdrop-filter: none; background: var(--bg-card); }
       .flow-layout { gap: 16px; }
       .flow-col-left, .flow-col-right { gap: 28px; }
       .flow-battery-circle { width: 88px; height: 88px; }
@@ -644,6 +650,11 @@
     @media (max-width: 900px) {
       /* iPad Air portrait (820px), iPad 10th gen (810px) */
       :root { --sidebar-w: 56px; --sidebar-rail-w: 56px; }
+      /* Performance: simplify animations on smaller tablets */
+      .solar-ring, .wind-ring { animation-duration: 4s; }
+      .building-glow { animation: none; opacity: 0.5; }
+      .grid-spark-dot { animation: none; opacity: 0.6; }
+      .flow-canvas-layer { image-rendering: optimizeSpeed; }
       .config-tree-panel { width: 200px; min-width: 200px; max-width: 200px; }
       .config-detail-panel { margin-left: 6px; }
       .entity-layout { grid-template-columns: 1fr; }
@@ -840,7 +851,7 @@
     .config-tree-panel { width:290px; min-width:290px; max-width:290px; background:var(--bg-card); border:1px solid var(--border);
       border-radius:8px; display:flex; flex-direction:column; overflow:hidden; flex-shrink:0; }
     .config-tree-header { padding:10px 12px; border-bottom:1px solid var(--border); flex-shrink:0; }
-    .config-tree-scroll { flex:1; overflow-y:auto; overflow-x:hidden; min-height:0; }
+    .config-tree-scroll { flex:1; overflow-y:auto; overflow-x:auto; min-height:0; }
     .config-detail-panel { flex:1; margin-left:12px; background:var(--bg-card); border:1px solid var(--border);
       border-radius:8px; display:flex; flex-direction:column; overflow:hidden; min-width:0; }
     .config-detail-header { padding:8px 20px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:10px; flex-shrink:0; }
@@ -872,11 +883,11 @@
     /* Config Nav List (accordion) */
     .config-nav-item { padding:5px 8px; cursor:pointer; font-size:12px; color:var(--text-secondary);
       display:flex; align-items:center; gap:6px; transition:all 0.12s; border-radius:5px; margin:1px 4px;
-      min-height:28px; }
+      min-height:28px; white-space:nowrap; width:fit-content; min-width:100%; }
     .config-nav-item:hover { background:var(--bg-card-hover); color:var(--text-primary); }
     .config-nav-item.active { color:var(--brand); background:var(--brand-bg); }
     .config-nav-item .nav-icon { font-size:12px; flex-shrink:0; display:flex; align-items:center; }
-    .config-nav-item .nav-name { flex:1; font-weight:500; white-space:nowrap; line-height:1.3; }
+    .config-nav-item .nav-name { flex:0 0 auto; font-weight:500; white-space:nowrap; line-height:1.3; }
     .config-nav-item .nav-arrow { font-size:9px; color:var(--text-tertiary); transition:transform 0.2s; flex-shrink:0;
       width:16px; height:16px; display:flex; align-items:center; justify-content:center; border-radius:3px; }
     .config-nav-item .nav-arrow:hover { background:var(--bg-card-hover); color:var(--text-primary); }
@@ -958,7 +969,8 @@
 </script>
 
 <script type="text/babel">
-const ORBITEOS_VERSION = '0.4.8';
+// ─── Version ───
+const ORBITEOS_VERSION = '0.5.0';
 const { useState, useEffect, useRef, useCallback, useMemo } = React;
 const { ConfigProvider, theme: antTheme, Button, Table, Tag, Badge, Switch, Select, Input, Tabs, Segmented,
   Progress, Slider, Form, InputNumber, Tooltip, Dropdown, Space, Modal, Drawer, Menu } = antd;
@@ -5156,9 +5168,8 @@ function EntityTreeNode({ entity, focusedEntityId, setFocusedEntityId, depth, ex
   const childCount = EntityStore.getDescendants(entity.id).length;
 
   return (
-    <div>
+    <div style={{marginLeft: depth > 0 ? 14 : 0}}>
       <div className={`sidebar-tree-node ${isActive?'active':''}`}
-        style={{paddingLeft: 12 + depth * 16}}
         onClick={() => setFocusedEntityId(entity.id)}>
         <span className="tree-expand" onClick={(e) => { e.stopPropagation(); if(hasChildren) toggleExpand(entity.id); }}
           style={{cursor: hasChildren?'pointer':'default', opacity: hasChildren?1:0.3}}>
@@ -5558,14 +5569,24 @@ function Header({ page, t, lang, setLang, themeId, setThemeId, themeMode, setThe
                   onClick={()=>{setShowAlarms(false);}}>Clear all</span>
               </div>
               {alarms.slice(0,5).map((a,i) => (
-                <div key={i} className="alarm-dropdown-item">
+                <div key={i} className="alarm-dropdown-item" style={{cursor:'pointer'}}
+                  onClick={() => {
+                    const match = EntityStore.getAll().find(e => e.name === a.dev || (e.name && a.dev && e.name.includes(a.dev)));
+                    if (match) { setFocusedEntityId(match.id); }
+                    setCurrentApp('configuration'); navigateWithLoader('configuration'); setShowAlarms(false);
+                  }}>
                   <div className="alarm-dot" style={{background: a.sev==='critical'?'var(--error)':a.sev==='warning'?'var(--warning)':'var(--info)'}}/>
-                  <div>
+                  <div style={{flex:1}}>
                     <div style={{fontSize:12,color:'var(--text-primary)'}}>{a.msg}</div>
                     <div style={{fontSize:11,color:'var(--text-tertiary)'}}>{a.dev} · {a.time}</div>
                   </div>
+                  <RightOutlined style={{fontSize:9,color:'var(--text-tertiary)',flexShrink:0}}/>
                 </div>
               ))}
+              <div style={{padding:'8px 16px',borderTop:'1px solid var(--border)',textAlign:'center',cursor:'pointer',fontSize:11,color:'var(--brand)',fontWeight:500}}
+                onClick={() => { setCurrentApp('dashboard'); navigateWithLoader('alerts'); setShowAlarms(false); }}>
+                {lang==='nl'?'Alle meldingen bekijken':'View all alerts'} →
+              </div>
             </div>
           )}
         </div>
@@ -6417,35 +6438,32 @@ function DashboardPage({t, lang, currentSite, focusedEntityId, setFocusedEntityI
 
   return (
     <div className={`page-enter ${gridCustomize ? 'customize-active' : ''}`} style={{display:'flex',gap:0,position:'relative'}}>
-      {/* Dashboard Tree Panel — collapsed rail + expandable tree */}
-      <div style={{display:'flex',flexShrink:0,position:'relative',zIndex:50}}
+      {/* Dashboard Tree Panel — compact, no rail gap */}
+      <div style={{flexShrink:0,position:'relative',zIndex:50}}
         onMouseEnter={onTreeMouseEnter} onMouseLeave={onTreeMouseLeave}>
-        {/* Rail toggle — always visible */}
-        <div style={{width:28,display:'flex',flexDirection:'column',alignItems:'center',paddingTop:8,gap:4,flexShrink:0}}>
-          <Tooltip placement="right" title={lang==='nl'?'Entiteitsboom':'Entity Tree'}>
-            <div style={{width:24,height:24,borderRadius:6,display:'flex',alignItems:'center',justifyContent:'center',
-              cursor:'pointer',fontSize:14,color: treeVisible?'var(--brand)':'var(--text-tertiary)',
-              background: treeVisible?'var(--brand-bg)':'transparent',transition:'all 0.15s'}}
-              onClick={() => { setTreePinned(!treePinned); if(!treePinned) setTreeHovered(false); }}>
-              <ApartmentOutlined/>
-            </div>
-          </Tooltip>
-        </div>
+        {/* Collapsed state: just the tree icon */}
+        {!treeVisible && <Tooltip placement="right" title={lang==='nl'?'Entiteitsboom':'Entity Tree'}>
+          <div style={{width:28,height:28,borderRadius:6,display:'flex',alignItems:'center',justifyContent:'center',
+            cursor:'pointer',fontSize:14,color:'var(--text-tertiary)',marginTop:4,
+            transition:'all 0.15s'}}
+            onClick={() => { setTreePinned(true); }}>
+            <ApartmentOutlined/>
+          </div>
+        </Tooltip>}
         {/* Tree panel — flyout or pinned */}
-        <div style={{
-          width: treeVisible ? 220 : 0, opacity: treeVisible ? 1 : 0, overflow: 'hidden',
-          background:'var(--bg-card)', borderRadius: treeVisible?'8px':'0', marginRight: treeVisible?8:0,
-          border: treeVisible?'1px solid var(--border)':'none',
-          display:'flex', flexDirection:'column', transition: 'width 0.2s ease, opacity 0.15s ease, margin 0.2s ease',
-          position: treePinned ? 'relative' : 'absolute', left: treePinned ? 0 : 28, top: 0, bottom: 0,
-          boxShadow: !treePinned && treeVisible ? '4px 0 16px rgba(0,0,0,0.3)' : 'none',
+        {treeVisible && <div style={{
+          width: 240, background:'var(--bg-card)', borderRadius:'8px', marginRight:8,
+          border:'1px solid var(--border)',
+          display:'flex', flexDirection:'column',
+          position: treePinned ? 'relative' : 'absolute', left: 0, top: 0, bottom: 0,
+          boxShadow: !treePinned ? '4px 0 16px rgba(0,0,0,0.3)' : 'none',
           maxHeight: treePinned ? 'none' : 'calc(100vh - 120px)',
         }}>
-          <div style={{minWidth:220}}>
-            <div style={{padding:'8px 10px',borderBottom:'1px solid var(--border)',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
-              <span style={{fontSize:10,fontWeight:600,textTransform:'uppercase',color:'var(--text-tertiary)',letterSpacing:'0.04em',whiteSpace:'nowrap'}}>
-                {lang==='nl'?'Entiteitsboom':'Entity Tree'}
-              </span>
+          <div style={{padding:'6px 8px',borderBottom:'1px solid var(--border)',display:'flex',alignItems:'center',justifyContent:'space-between',flexShrink:0}}>
+            <span style={{fontSize:10,fontWeight:600,textTransform:'uppercase',color:'var(--text-tertiary)',letterSpacing:'0.04em',whiteSpace:'nowrap'}}>
+              <ApartmentOutlined style={{marginRight:5,fontSize:11}}/>{lang==='nl'?'Entiteiten':'Entities'}
+            </span>
+            <div style={{display:'flex',gap:4,alignItems:'center'}}>
               <Tooltip title={treePinned?(lang==='nl'?'Losmaken':'Unpin'):(lang==='nl'?'Vastzetten':'Pin')}>
                 <div style={{width:20,height:20,borderRadius:4,display:'flex',alignItems:'center',justifyContent:'center',
                   cursor:'pointer',fontSize:10,color:treePinned?'var(--brand)':'var(--text-tertiary)',
@@ -6456,16 +6474,21 @@ function DashboardPage({t, lang, currentSite, focusedEntityId, setFocusedEntityI
                   </svg>
                 </div>
               </Tooltip>
-            </div>
-            <div style={{overflowY:'auto',maxHeight:'calc(100vh - 180px)',padding:'4px 0'}}>
-              {rootEntities.map(root => (
-                <EntityTreeNode key={root.id} entity={root} focusedEntityId={focusedEntityId}
-                  setFocusedEntityId={setFocusedEntityId} depth={0}
-                  expandedNodes={treeExpandedNodes} toggleExpand={toggleTreeExpand}/>
-              ))}
+              <div style={{width:20,height:20,borderRadius:4,display:'flex',alignItems:'center',justifyContent:'center',
+                cursor:'pointer',fontSize:10,color:'var(--text-tertiary)',transition:'all 0.15s'}}
+                onClick={() => { setTreePinned(false); setTreeHovered(false); }}>
+                <CloseOutlined style={{fontSize:9}}/>
+              </div>
             </div>
           </div>
-        </div>
+          <div style={{flex:1,overflowY:'auto',overflowX:'auto',minHeight:0,padding:'2px 0'}}>
+            {rootEntities.map(root => (
+              <EntityTreeNode key={root.id} entity={root} focusedEntityId={focusedEntityId}
+                setFocusedEntityId={setFocusedEntityId} depth={0}
+                expandedNodes={treeExpandedNodes} toggleExpand={toggleTreeExpand}/>
+            ))}
+          </div>
+        </div>}
       </div>
 
       {/* Main dashboard content */}
@@ -6476,8 +6499,13 @@ function DashboardPage({t, lang, currentSite, focusedEntityId, setFocusedEntityI
             <ThunderboltOutlined style={{color:'var(--brand)'}}/>
             {lang==='nl'?'Energie Dashboard':'Energy Dashboard'}
           </span>
-          <span style={{color:'var(--text-tertiary)',fontSize:11}}>—</span>
-          <EntityScopeSelector focusedEntityId={focusedEntityId} setFocusedEntityId={setFocusedEntityId} lang={lang}/>
+          {entity && <>
+            <span style={{color:'var(--text-tertiary)',fontSize:11}}>—</span>
+            <span style={{display:'flex',alignItems:'center',gap:6,fontSize:13,color:'var(--text-primary)',fontWeight:500}}>
+              <EntityTypeIcon type={entity.entityType} style={{fontSize:13,color:'var(--brand)'}}/>
+              {entity.name}
+            </span>
+          </>}
         </div>
         <div className="customize-header-controls">
           <Tooltip title={gridCustomize ? (lang==='nl'?'Klaar':'Done') : (lang==='nl'?'Widgets verplaatsen':'Rearrange widgets')}>
@@ -6858,8 +6886,9 @@ function FlowCanvasLayer({ef}) {
       channels.forEach(ch => {
         const n = Math.min(lpCap, ch.power > 20 ? 4 : ch.power > 8 ? 3 : 2);
         const dur = flowSpeed(ch.power);
+        const _rgb = parseColor(ch.color); // cache once per rebuild
         for (let i = 0; i < n; i++) {
-          particles.push({ path: ch.path, color: ch.color, dur, offset: i / n });
+          particles.push({ path: ch.path, color: ch.color, dur, offset: i / n, _rgb });
         }
       });
       return particles;
@@ -6884,6 +6913,9 @@ function FlowCanvasLayer({ef}) {
     function getCachedColor(c) { if (!parsedColorCache[c]) parsedColorCache[c] = parseColor(c); return parsedColorCache[c]; }
     // Perf: detect tablet — skip glow gradients, use simpler dots
     const isLowPower = window.innerWidth <= 1024 || (navigator.maxTouchPoints > 0 && window.devicePixelRatio >= 2);
+    // Throttle to ~30fps on touch devices for GPU savings
+    const isTouch = 'ontouchstart' in window;
+    const FRAME_BUDGET = isTouch ? 33 : 0; // 30fps on touch, uncapped on desktop
 
     // Pause animation when tab is hidden — prevents particle rush on restore
     function onVisChange() {
@@ -6897,13 +6929,14 @@ function FlowCanvasLayer({ef}) {
 
       // Cap delta to 50ms (20fps min) — prevents burst after minimize/maximize
       const delta = Math.min(now - lastFrame, 50);
+      // Throttle: skip frame if under budget (30fps on touch devices)
+      if (FRAME_BUDGET && delta < FRAME_BUDGET) { raf = requestAnimationFrame(draw); return; }
       lastFrame = now;
       animTime += delta;
 
       if (Date.now() - lastRebuild > 2000) {
         particles = buildParticles();
         lastRebuild = Date.now();
-        // Refresh cached guide color on rebuild (covers theme changes)
         guideColor = getComputedStyle(document.body).getPropertyValue('--border-active').trim() || 'rgba(255,255,255,0.10)';
       }
 
@@ -6940,7 +6973,6 @@ function FlowCanvasLayer({ef}) {
         const pt = bezierPoint(p.path[0], p.path[1], p.path[2], p.path[3], t);
         const sx = pt.x * scX;
         const sy = pt.y * scY;
-
         const {r,g,b} = getCachedColor(p.color);
 
         if (isLowPower) {
@@ -10420,20 +10452,25 @@ function OrbitLoader({ stopping = false, color, onDone, size = 'full', className
     const CYCLE = 2000;                 // ms per breath — slow, calm
     const ATK = 0.25;                   // gentle rise (25% = 500ms)
     let raf, paused = document.hidden;
+    const _isTouch = 'ontouchstart' in window;
+    const _frameBudget = _isTouch ? 33 : 0; // 30fps on touch
+    let _lastDraw = 0;
 
     function onVis() { paused = document.hidden; }
     document.addEventListener('visibilitychange', onVis);
 
-    // Single glow draw — one gradient, one arc
+    // Single glow draw — one gradient, one arc (optimized: pre-built color prefix)
+    const _corePrefix = isDark ? 'rgba(255,255,255,' : `rgba(${R},${G},${B},`;
+    const _colorPrefix = `rgba(${R},${G},${B},`;
+    const _colorZero = `rgba(${R},${G},${B},0)`;
     function glow(radius, alpha) {
       if (alpha < 0.005 || radius < 1) return;
       const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius);
-      const coreAlpha = alpha * 0.9;
-      g.addColorStop(0,    isDark ? `rgba(255,255,255,${coreAlpha})` : `rgba(${R},${G},${B},${coreAlpha})`);
-      g.addColorStop(0.05, `rgba(${R},${G},${B},${alpha * 0.75})`);
-      g.addColorStop(0.3,  `rgba(${R},${G},${B},${alpha * 0.22})`);
-      g.addColorStop(0.65, `rgba(${R},${G},${B},${alpha * 0.05})`);
-      g.addColorStop(1,    `rgba(${R},${G},${B},0)`);
+      g.addColorStop(0,    _corePrefix + (alpha * 0.9) + ')');
+      g.addColorStop(0.05, _colorPrefix + (alpha * 0.75) + ')');
+      g.addColorStop(0.3,  _colorPrefix + (alpha * 0.22) + ')');
+      g.addColorStop(0.65, _colorPrefix + (alpha * 0.05) + ')');
+      g.addColorStop(1,    _colorZero);
       ctx.fillStyle = g;
       ctx.beginPath(); ctx.arc(cx, cy, radius, 0, Math.PI * 2); ctx.fill();
     }
@@ -10452,6 +10489,9 @@ function OrbitLoader({ stopping = false, color, onDone, size = 'full', className
 
     function draw(now) {
       if (paused) { raf = requestAnimationFrame(draw); return; }
+      // Throttle to 30fps on touch devices
+      if (_frameBudget && now - _lastDraw < _frameBudget) { raf = requestAnimationFrame(draw); return; }
+      _lastDraw = now;
       const elapsed = now - t0;
       ctx.clearRect(0, 0, W, H);
 
@@ -10646,7 +10686,7 @@ function LoginPage({t, setPage, setCurrentApp, lang, setLang, themeId, setThemeI
       LiveSimulation.start();
       LoaderStore.start({ mode: 'solid' });
       setPage('dashboard');
-      setTimeout(() => LoaderStore.stop(), 4200);
+      setTimeout(() => LoaderStore.stop(), 2000);
     }, 1100); // Transition to shell after card fully exits
   }, [emailVal, passwordVal, submitting, mapError, setPage, setCurrentApp]);
 
@@ -10957,6 +10997,9 @@ function LoginPage({t, setPage, setCurrentApp, lang, setLang, themeId, setThemeI
           v{ORBITEOS_VERSION}
         </div>
       </div>
+      {/* Discrete version label */}
+      <div style={{position:'absolute',bottom:10,right:14,zIndex:1,fontSize:9,color:'var(--text-tertiary)',opacity:0.35,
+        fontVariantNumeric:'tabular-nums',letterSpacing:'0.04em',userSelect:'none'}}>v{ORBITEOS_VERSION}</div>
     </div>
   );
 }
