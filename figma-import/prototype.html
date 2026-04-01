@@ -1034,7 +1034,7 @@
 
 <script type="text/babel">
 // ─── Version ───
-const ORBITEOS_VERSION = '0.7.0.3';
+const ORBITEOS_VERSION = '0.7.0.4';
 const { useState, useEffect, useRef, useCallback, useMemo } = React;
 const { ConfigProvider, theme: antTheme, Button, Table, Tag, Badge, Switch, Select, Input, Tabs, Segmented,
   Progress, Slider, Form, InputNumber, Tooltip, Dropdown, Space, Modal, Drawer, Menu } = antd;
@@ -4802,6 +4802,9 @@ const ALARM_MESSAGES = {
 // To migrate to production: swap these with real API calls (fetch/WebSocket) + Zustand actions.
 const MockAPI = {
   // ─── Dashboard Config ───
+  // Site navigation — ordered list for prev/next cycling
+  getSiteList: () => EntityStore.getByType('site').map(function(s) { return { id: s.id, name: s.name }; }),
+
   getDashboardTreeConfig: () => ({
     maxEntityType: 'site',        // show tree nodes down to this level
     defaultPinned: true,          // tree pinned by default on desktop
@@ -5948,10 +5951,11 @@ function StatCard({label, value, trend, trendDir, color}) {
 // All widgets follow the same interface: ({t, lang, currentSite, data}) => JSX
 // `data` is provided by the widget's own dataProvider in WidgetRegistry — widgets never fetch their own data.
 
-const WidgetEnergyFlow = React.memo(function WidgetEnergyFlow({t, lang, currentSite, data}) {
+const WidgetEnergyFlow = React.memo(function WidgetEnergyFlow({t, lang, currentSite, data, onNavigateSite}) {
   const { energyFlow: ef, status, costSaved } = data;
   const [ambientOn, setAmbientOn] = React.useState(() => { const v = localStorage.getItem('orbiteos-flow-ambient'); return v !== null ? v === 'true' : true; });
   const [isKiosk, setIsKiosk] = React.useState(false);
+  const touchRef = React.useRef(null);
   const { solarActive, windActive, consumptionActive, gridExporting, gridImporting, essSoc } = ef;
 
   // Fullscreen / Kiosk toggle
@@ -5981,25 +5985,52 @@ const WidgetEnergyFlow = React.memo(function WidgetEnergyFlow({t, lang, currentS
     return function() { document.removeEventListener('fullscreenchange', onFsChange); };
   }, []);
 
+  // Swipe support for touch
+  var onTouchStart = function(e) { touchRef.current = e.touches[0].clientX; };
+  var onTouchEnd = function(e) {
+    if (touchRef.current == null || !onNavigateSite) return;
+    var dx = e.changedTouches[0].clientX - touchRef.current;
+    touchRef.current = null;
+    if (Math.abs(dx) > 60) onNavigateSite(dx < 0 ? 1 : -1);
+  };
+
+  // Current site name for kiosk header
+  var siteEntity = EntityStore.get(currentSite);
+  var siteName = siteEntity ? siteEntity.name : '';
+
   return (
-    <div style={{marginBottom: isKiosk ? 0 : 16}}>
+    <div style={{marginBottom: isKiosk ? 0 : 16}}
+      onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
       <div className="flow-hub" style={{margin:0,
         borderColor: ambientOn ? (status.color + '30') : 'var(--border)',
         boxShadow: ambientOn ? ('0 0 24px ' + status.color + '25, 0 0 48px ' + status.color + '10') : 'none',
         background: ambientOn ? 'var(--bg-secondary)' : 'var(--bg-card)',
         ...(isKiosk ? {maxHeight:'none',minHeight:'100vh',aspectRatio:'auto',borderRadius:0,border:'none'} : {})}}>
-        <div style={{position:'absolute',top:10,right:12,zIndex:4,display:'flex',gap:4}}>
+        <div style={{position:'absolute',top:10,right:12,zIndex:4,display:'flex',gap:6}}>
           <Tooltip title={ambientOn ? 'Standard view' : 'Ambient view'} placement="left">
             <div className="flow-ambient-toggle" style={{position:'static'}} onClick={() => { const next = !ambientOn; setAmbientOn(next); localStorage.setItem('orbiteos-flow-ambient', next); }}>
               {React.createElement(ambientOn ? EyeOutlined : EyeInvisibleOutlined)}
             </div>
           </Tooltip>
-          <Tooltip title={isKiosk ? (lang==='nl'?'Volledig scherm sluiten':'Exit fullscreen') : (lang==='nl'?'Volledig scherm':'Fullscreen')} placement="left">
-            <div className="flow-ambient-toggle" style={{position:'static'}} onClick={toggleKiosk}>
-              {React.createElement(isKiosk ? CompressOutlined : ExpandOutlined)}
-            </div>
-          </Tooltip>
+          <div className="flow-ambient-toggle" style={{position:'static'}} onClick={toggleKiosk}>
+            {React.createElement(isKiosk ? CompressOutlined : ExpandOutlined)}
+          </div>
         </div>
+        {/* Kiosk site name */}
+        {isKiosk && <div style={{position:'absolute',top:12,left:'50%',transform:'translateX(-50%)',zIndex:4,
+          fontSize:13,fontWeight:600,color:'var(--text-primary)',opacity:0.7,whiteSpace:'nowrap',
+          textShadow:'0 0 12px var(--bg-primary)'}}>
+          {siteName}
+        </div>}
+        {/* Prev/Next site arrows */}
+        {onNavigateSite && <div className="flow-ambient-toggle" style={{position:'absolute',left:12,top:'50%',transform:'translateY(-50%)',opacity:0.5}}
+          onClick={function(){onNavigateSite(-1);}}>
+          <LeftOutlined style={{fontSize:11}}/>
+        </div>}
+        {onNavigateSite && <div className="flow-ambient-toggle" style={{position:'absolute',right:12,top:'50%',transform:'translateY(-50%)',opacity:0.5}}
+          onClick={function(){onNavigateSite(1);}}>
+          <RightOutlined style={{fontSize:11}}/>
+        </div>}
         {ambientOn && <EnergyAmbientHues ef={ef}/>}
         <FlowCanvasLayer ef={ef}/>
         <div className="flow-layout">
@@ -6778,6 +6809,15 @@ function DashboardPage({t, lang, currentSite, focusedEntityId, setFocusedEntityI
   const rootEntities = EntityStore.getByType('platform');
   const treeVisible = treePinned || treeHovered;
 
+  // Site navigation — prev/next cycling for energy flow swipe
+  const siteList = useMemo(function() { return MockAPI.getSiteList(); }, []);
+  const navigateSite = useCallback(function(direction) {
+    var currentIdx = siteList.findIndex(function(s) { return s.id === focusedEntityId; });
+    if (currentIdx < 0) currentIdx = 0;
+    var nextIdx = (currentIdx + direction + siteList.length) % siteList.length;
+    setFocusedEntityId(siteList[nextIdx].id);
+  }, [focusedEntityId, siteList, setFocusedEntityId]);
+
   const onTreeMouseEnter = useCallback(() => {
     if (treePinned) return;
     clearTimeout(treeHoverTimer.current);
@@ -6914,7 +6954,7 @@ function DashboardPage({t, lang, currentSite, focusedEntityId, setFocusedEntityI
       {/* Memoize widget data per entityId to avoid re-creating objects on unrelated re-renders (e.g. alarms) */}
       <WidgetGrid visibleWidgets={visibleWidgets} entityId={entityId} t={t} lang={lang}
         gridCustomize={gridCustomize} gridDrag={gridDrag} visibleToFullIdx={visibleToFullIdx}
-        toggleVisibility={toggleVisibility}/>
+        toggleVisibility={toggleVisibility} onNavigateSite={navigateSite}/>
 
       {listDrawer && <CustomizeDrawer widgets={widgets} setWidgets={setWidgets} onClose={()=>setListDrawer(false)} lang={lang}/>}
       </div>{/* end main dashboard content */}
@@ -6923,7 +6963,7 @@ function DashboardPage({t, lang, currentSite, focusedEntityId, setFocusedEntityI
 }
 
 // Extracted widget grid as its own component to enable per-widget memoization
-const WidgetGrid = React.memo(function WidgetGrid({visibleWidgets, entityId, t, lang, gridCustomize, gridDrag, visibleToFullIdx, toggleVisibility}) {
+const WidgetGrid = React.memo(function WidgetGrid({visibleWidgets, entityId, t, lang, gridCustomize, gridDrag, visibleToFullIdx, toggleVisibility, onNavigateSite}) {
   // Live data tick — refresh rate adapts to device capability
   const [dataTick, setDataTick] = useState(0);
   useEffect(() => {
@@ -6964,7 +7004,7 @@ const WidgetGrid = React.memo(function WidgetGrid({visibleWidgets, entityId, t, 
                 onDragLeave={gridCustomize ? gridDrag.onDragLeave : undefined}
                 onDrop={gridCustomize ? gridDrag.onDrop(fullIdx) : undefined}
                 className={gridCustomize ? `${gridDrag.dragOverIdx===fullIdx?'drag-over':''}` : ''}>
-                <Renderer t={t} lang={lang} currentSite={entityId} data={widgetData}/>
+                <Renderer t={t} lang={lang} currentSite={entityId} data={widgetData} onNavigateSite={onNavigateSite}/>
                 {gridCustomize && (
                   <div className="chromeless-customize-bar">
                     <span style={{fontSize:10,color:'var(--text-tertiary)',marginRight:4}}>{manifest.label[lang]}</span>
@@ -7002,7 +7042,7 @@ const WidgetGrid = React.memo(function WidgetGrid({visibleWidgets, entityId, t, 
                 </div>
               </div>
               <div className="widget-panel-body">
-                <Renderer t={t} lang={lang} currentSite={entityId} data={widgetData}/>
+                <Renderer t={t} lang={lang} currentSite={entityId} data={widgetData} onNavigateSite={onNavigateSite}/>
               </div>
             </div>
           );
@@ -15519,12 +15559,18 @@ function App() {
       {/* Toast notifications */}
       <div className="toast-container">
         {toasts.map(toast => (
-          <div key={toast.id} className="toast critical">
+          <div key={toast.id} className="toast critical" style={{cursor:'pointer'}}
+            onClick={function() {
+              var match = EntityStore.getAll().find(function(e) { return e.name === toast.dev; });
+              if (match) setFocusedEntityId(match.id);
+              setCurrentApp('configuration'); navigateWithLoader('configuration');
+            }}>
             <div className="alarm-dot" style={{background:'var(--error)',width:8,height:8,borderRadius:'50%',flexShrink:0}}/>
-            <div>
+            <div style={{flex:1}}>
               <div style={{fontWeight:500}}>{toast.msg}</div>
-              <div style={{fontSize:11,color:'var(--text-tertiary)'}}>{toast.dev}</div>
+              <div style={{fontSize:11,color:'var(--brand)',textDecoration:'underline',textDecorationStyle:'dotted'}}>{toast.dev}</div>
             </div>
+            <RightOutlined style={{fontSize:9,color:'var(--text-tertiary)'}}/>
           </div>
         ))}
       </div>
