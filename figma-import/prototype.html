@@ -6269,29 +6269,6 @@ function TimelineScrubber({ entityId, lang, embedded, onTimeChange }) {
   }
   function onMouseLeave() { setHoverPct(null); }
 
-  // Tooltip content with contextual color
-  var hoverTip = React.useMemo(() => {
-    if (hoverPct == null) return null;
-    var d = pctToDate(hoverPct);
-    var h = d.getHours();
-    var main = dayjs(d).format('ddd D MMM HH:mm');
-    var isForecast = hoverPct > NOW_PCT;
-    var isNight = h < 6 || h > 21;
-    // Determine dominant energy at this hour
-    var bandIdx = Math.min(Math.floor((hoverPct / 100) * bandData.length), bandData.length - 1);
-    var b = bandData[bandIdx] || {};
-    var sub, color;
-    if (isForecast) { sub = 'forecast'; color = 'var(--brand)'; }
-    else if (isNight) { sub = 'night'; color = 'var(--text-tertiary)'; }
-    else if (b.gridExport > 0.3) { sub = 'exporting'; color = 'var(--success)'; }
-    else if (b.solar > 0.4) { sub = 'solar'; color = 'var(--solar)'; }
-    else if (b.wind > 0.3) { sub = 'wind'; color = 'var(--wind)'; }
-    else if (b.gridImport > 0.4) { sub = 'grid import'; color = 'var(--error)'; }
-    else if (b.ev > 0.1) { sub = 'EV charging'; color = 'var(--ev)'; }
-    else { sub = 'daytime'; color = 'var(--text-secondary)'; }
-    return { main: main, sub: sub, color: color };
-  }, [hoverPct, zoomIdx, bandData]);
-
   // Energy band data — mini bar chart with stacked layers
   var bandData = React.useMemo(() => {
     var site = EntityStore.get(entityId);
@@ -6324,6 +6301,29 @@ function TimelineScrubber({ entityId, lang, embedded, onTimeChange }) {
     }
     return bands;
   }, [entityId, zoomIdx]);
+
+  // Tooltip content with contextual color
+  var hoverTip = React.useMemo(() => {
+    if (hoverPct == null) return null;
+    var d = pctToDate(hoverPct);
+    var h = d.getHours();
+    var main = dayjs(d).format('ddd D MMM HH:mm');
+    var isForecast = hoverPct > NOW_PCT;
+    var isNight = h < 6 || h > 21;
+    // Determine dominant energy at this hour
+    var bandIdx = Math.min(Math.floor((hoverPct / 100) * bandData.length), bandData.length - 1);
+    var b = bandData[bandIdx] || {};
+    var sub, color;
+    if (isForecast) { sub = 'forecast'; color = 'var(--brand)'; }
+    else if (isNight) { sub = 'night'; color = 'var(--text-tertiary)'; }
+    else if (b.gridExport > 0.3) { sub = 'exporting'; color = 'var(--success)'; }
+    else if (b.solar > 0.4) { sub = 'solar'; color = 'var(--solar)'; }
+    else if (b.wind > 0.3) { sub = 'wind'; color = 'var(--wind)'; }
+    else if (b.gridImport > 0.4) { sub = 'grid import'; color = 'var(--error)'; }
+    else if (b.ev > 0.1) { sub = 'EV charging'; color = 'var(--ev)'; }
+    else { sub = 'daytime'; color = 'var(--text-secondary)'; }
+    return { main: main, sub: sub, color: color };
+  }, [hoverPct, zoomIdx, bandData]);
 
   // Equipment downtime markers (seeded per entity)
   var downtimeMarkers = React.useMemo(() => {
