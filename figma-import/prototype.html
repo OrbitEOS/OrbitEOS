@@ -903,13 +903,12 @@
     .kiosk-active .dashboard-tree-toggle { display:none !important; }
     .kiosk-active .toast-container { display:none !important; }
     .kiosk-active.kiosk-alarms-on .toast-container { display:flex !important; }
-    /* Kiosk idle: fade all overlay controls until mouse moves */
+    /* Kiosk idle: fade control buttons until mouse moves; site name always visible */
     .kiosk-active .flow-ambient-toggle,
-    .kiosk-active .flow-nav-arrow,
-    .kiosk-active .kiosk-site-header { opacity:0; transition:opacity 0.6s ease; pointer-events:none; }
+    .kiosk-active .flow-nav-arrow { opacity:0; transition:opacity 0.6s ease; pointer-events:none; }
     .kiosk-active.kiosk-mouse-active .flow-ambient-toggle,
-    .kiosk-active.kiosk-mouse-active .flow-nav-arrow,
-    .kiosk-active.kiosk-mouse-active .kiosk-site-header { opacity:1; pointer-events:auto; transition:opacity 0.3s ease; }
+    .kiosk-active.kiosk-mouse-active .flow-nav-arrow { opacity:1; pointer-events:auto; transition:opacity 0.3s ease; }
+    .kiosk-active .kiosk-site-header { opacity:0.85; transition:opacity 0.3s ease; }
     /* ─── Tree Animated Status Icons ─── */
     .tree-status-icon { width:12px; height:12px; flex-shrink:0; display:inline-flex; align-items:center; justify-content:center; }
     .tree-status-icon svg { width:10px; height:10px; }
@@ -1059,7 +1058,7 @@
 
 <script type="text/babel">
 // ─── Version ───
-const ORBITEOS_VERSION = '0.7.0.8';
+const ORBITEOS_VERSION = '0.7.0.9';
 const { useState, useEffect, useRef, useCallback, useMemo } = React;
 const { ConfigProvider, theme: antTheme, Button, Table, Tag, Badge, Switch, Select, Input, Tabs, Segmented,
   Progress, Slider, Form, InputNumber, Tooltip, Dropdown, Space, Modal, Drawer, Menu } = antd;
@@ -1080,7 +1079,7 @@ const { DashboardOutlined, ThunderboltOutlined, ClusterOutlined, ApiOutlined, Ap
   TagOutlined, UserOutlined, AuditOutlined, FileSearchOutlined, ClockCircleOutlined,
   ThunderboltFilled, ExpandOutlined, CompressOutlined, CopyOutlined, ReloadOutlined,
   SendOutlined, ScheduleOutlined, SafetyOutlined, RightOutlined, MenuOutlined, CloseOutlined, LeftOutlined,
-  StopOutlined, RollbackOutlined, SortAscendingOutlined, FolderOutlined, FolderOpenOutlined, QuestionCircleOutlined, PlayCircleOutlined, PauseCircleOutlined } = icons;
+  StopOutlined, RollbackOutlined, SortAscendingOutlined, FolderOutlined, FolderOpenOutlined, QuestionCircleOutlined, CaretRightOutlined, PauseOutlined } = icons;
 
 // Icon lookup for nav items
 const NAV_ICONS = {
@@ -6155,9 +6154,9 @@ const WidgetEnergyFlow = React.memo(function WidgetEnergyFlow({t, lang, currentS
             {React.createElement(isKiosk ? CompressOutlined : ExpandOutlined)}
           </div>
           {isKiosk && <Tooltip title={autoCycle ? (lang==='nl'?'Pauzeer':'Pause auto-cycle') : (lang==='nl'?'Auto-cyclus':'Auto-cycle sites')} placement="left">
-            <div className="flow-ambient-toggle" style={{position:'static',color:autoCycle?'var(--brand)':'var(--text-tertiary)',background:autoCycle?'var(--brand-bg)':'undefined'}}
+            <div className="flow-ambient-toggle" style={{position:'static',color:autoCycle?'var(--brand)':'var(--text-tertiary)',background:autoCycle?'var(--brand-bg)':'transparent'}}
               onClick={function(){setAutoCycle(!autoCycle);}}>
-              {React.createElement(autoCycle ? PauseCircleOutlined : PlayCircleOutlined)}
+              {React.createElement(autoCycle ? PauseOutlined : CaretRightOutlined)}
             </div>
           </Tooltip>}
         </div>
