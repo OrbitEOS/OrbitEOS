@@ -868,10 +868,8 @@
     .tl-wrap.tl-embedded { position:absolute; bottom:2px; left:10px; right:10px; z-index:5; }
     .tl-track { flex:1; height:22px; position:relative; border-radius:5px; cursor:pointer;
       background:var(--bg-elevated); border:1px solid var(--border); touch-action:pan-x; }
-    .tl-layers, .tl-forecast-zone, .tl-downtime { overflow:hidden; border-radius:5px; }
-    .tl-layers { position:absolute; inset:0; display:flex; pointer-events:none; border-radius:5px; overflow:hidden; }
-    .tl-band { flex:1; display:flex; flex-direction:column; justify-content:flex-end; gap:0; }
-    .tl-band-fill { width:100%; min-height:0; transition:height 0.1s ease; }
+    .tl-forecast-zone, .tl-downtime { overflow:hidden; border-radius:5px; }
+    .tl-svg { position:absolute; inset:0; pointer-events:none; border-radius:5px; overflow:hidden; }
     .tl-forecast-zone { position:absolute; top:0; bottom:0; right:0;
       background:repeating-linear-gradient(135deg,transparent,transparent 3px,color-mix(in srgb,var(--brand) 8%,transparent) 3px,color-mix(in srgb,var(--brand) 8%,transparent) 6px);
       border-left:1px dashed var(--brand); pointer-events:none; }
@@ -1061,7 +1059,7 @@
 
 <script type="text/babel">
 // ─── Version ───
-const ORBITEOS_VERSION = '0.7.0.12';
+const ORBITEOS_VERSION = '0.7.0.14';
 const { useState, useEffect, useRef, useCallback, useMemo } = React;
 const { ConfigProvider, theme: antTheme, Button, Table, Tag, Badge, Switch, Select, Input, Tabs, Segmented,
   Progress, Slider, Form, InputNumber, Tooltip, Dropdown, Space, Modal, Drawer, Menu, message } = antd;
@@ -6269,7 +6267,7 @@ function TimelineScrubber({ entityId, lang, embedded, onTimeChange }) {
   }
   function onMouseLeave() { setHoverPct(null); }
 
-  // Energy band data — mini bar chart with stacked layers
+  // Energy data points for smooth SVG area chart
   var bandData = React.useMemo(() => {
     var site = EntityStore.get(entityId);
     var ef = site?.state?.energyFlow || {};
@@ -6279,9 +6277,10 @@ function TimelineScrubber({ entityId, lang, embedded, onTimeChange }) {
     var hasBattery = (ef.essSoc != null && ef.essSoc > 0);
     var hasWind = !!ef.windActive;
     var hasEv = (ef.evPower > 0);
-    var bands = [];
-    for (var i = 0; i < zoom.bands; i++) {
-      var d = pctToDate((i / zoom.bands) * 100);
+    var pts = [];
+    var N = zoom.bands;
+    for (var i = 0; i <= N; i++) {
+      var d = pctToDate((i / N) * 100);
       var h = d.getHours();
       var m = d.getMonth();
       var rng = SeededRNG(hashStr((entityId||'') + zoom.key + i));
@@ -6292,15 +6291,65 @@ function TimelineScrubber({ entityId, lang, embedded, onTimeChange }) {
       var gen = solar + wind;
       var gridImport = Math.max(0, load - gen);
       var gridExport = Math.max(0, gen - load);
-      var batt = hasBattery ? cap * 0.1 * n * (h >= 17 && h <= 21 ? 1 : h >= 1 && h <= 5 ? -0.5 : 0) : 0;
       var ev = hasEv && h >= 8 && h <= 18 ? load * 0.15 * n : 0;
-      var maxVal = Math.max(load, gen, 1);
-      bands.push({ solar: solar/maxVal, wind: wind/maxVal, gridImport: gridImport/maxVal,
-        gridExport: gridExport/maxVal, ev: ev/maxVal, batt: Math.abs(batt)/maxVal,
+      var maxVal = Math.max(cap * 1.2, 1);
+      pts.push({ x: i / N, solar: solar/maxVal, wind: wind/maxVal, load: load/maxVal,
+        gridImport: gridImport/maxVal, gridExport: gridExport/maxVal, ev: ev/maxVal,
         isNight: h < 6 || h > 21 });
     }
-    return bands;
+    return pts;
   }, [entityId, zoomIdx]);
+
+  // Build smooth SVG paths from data points
+  var svgPaths = React.useMemo(() => {
+    if (!bandData.length) return null;
+    var W = 1000, H = 100; // viewBox coords
+    // Smooth path builder using cardinal spline approximation
+    function areaPath(pts, key, maxH) {
+      if (!pts.length) return '';
+      var coords = pts.map(function(p) { return { x: p.x * W, y: H - Math.min(p[key] || 0, 1) * H * maxH }; });
+      var d = 'M0,' + H;
+      for (var i = 0; i < coords.length; i++) {
+        if (i === 0) { d += ' L' + coords[i].x + ',' + coords[i].y; }
+        else {
+          // Smooth bezier between points
+          var prev = coords[i-1], cur = coords[i];
+          var cpx = (prev.x + cur.x) / 2;
+          d += ' C' + cpx + ',' + prev.y + ' ' + cpx + ',' + cur.y + ' ' + cur.x + ',' + cur.y;
+        }
+      }
+      d += ' L' + W + ',' + H + ' Z';
+      return d;
+    }
+    function linePath(pts, key, maxH) {
+      if (!pts.length) return '';
+      var coords = pts.map(function(p) { return { x: p.x * W, y: H - Math.min(p[key] || 0, 1) * H * maxH }; });
+      var d = 'M' + coords[0].x + ',' + coords[0].y;
+      for (var i = 1; i < coords.length; i++) {
+        var prev = coords[i-1], cur = coords[i];
+        var cpx = (prev.x + cur.x) / 2;
+        d += ' C' + cpx + ',' + prev.y + ' ' + cpx + ',' + cur.y + ' ' + cur.x + ',' + cur.y;
+      }
+      return d;
+    }
+    // Day/night background bands
+    var nightRects = [];
+    var inNight = false, nightStart = 0;
+    bandData.forEach(function(p, i) {
+      if (p.isNight && !inNight) { inNight = true; nightStart = p.x * W; }
+      if (!p.isNight && inNight) { inNight = false; nightRects.push({x:nightStart, w:p.x*W - nightStart}); }
+    });
+    if (inNight) nightRects.push({x:nightStart, w:W - nightStart});
+
+    return { W:W, H:H,
+      solar: areaPath(bandData, 'solar', 0.85),
+      wind: areaPath(bandData, 'wind', 0.65),
+      gridImport: areaPath(bandData, 'gridImport', 0.5),
+      gridExport: areaPath(bandData, 'gridExport', 0.7),
+      ev: areaPath(bandData, 'ev', 0.4),
+      loadLine: linePath(bandData, 'load', 0.85),
+      nightRects: nightRects };
+  }, [bandData]);
 
   // Tooltip content with contextual color
   var hoverTip = React.useMemo(() => {
@@ -6359,24 +6408,22 @@ function TimelineScrubber({ entityId, lang, embedded, onTimeChange }) {
         React.createElement('span', {className:'tl-tip-sub', style:{color:hoverTip.color}},
           React.createElement('span', {style:{display:'inline-block',width:6,height:6,borderRadius:'50%',background:hoverTip.color,marginRight:3}}),
           hoverTip.sub)),
-      // Energy mini-bars
-      React.createElement('div', {className:'tl-layers'},
-        bandData.map((b, i) => {
-          // Single dominant color — smooth continuous area
-          var total = b.solar + b.wind + b.gridImport + b.gridExport + b.ev;
-          var fillH = Math.round(Math.min(total, 1) * 90); // max 90% height
-          var color, op;
-          if (b.gridExport > b.solar && b.gridExport > b.gridImport) { color = 'var(--success)'; op = 0.55; }
-          else if (b.solar > b.wind && b.solar > b.gridImport) { color = 'var(--solar)'; op = 0.55; }
-          else if (b.wind > b.solar && b.wind > b.gridImport) { color = 'var(--wind)'; op = 0.55; }
-          else if (b.gridImport > 0.1) { color = 'var(--error)'; op = 0.35; }
-          else if (b.ev > 0.05) { color = 'var(--ev)'; op = 0.45; }
-          else { color = 'var(--text-tertiary)'; op = 0.15; }
-          if (b.isNight) { op *= 0.35; fillH = Math.max(fillH, 8); }
-          return React.createElement('div', {key:i, className:'tl-band'},
-            React.createElement('div', {className:'tl-band-fill', style:{height:fillH+'%', background:color, opacity:op}})
-          );
-        })
+      // Smooth SVG energy area chart
+      svgPaths && React.createElement('svg', {className:'tl-svg', viewBox:'0 0 '+svgPaths.W+' '+svgPaths.H, preserveAspectRatio:'none'},
+        // Night shading
+        svgPaths.nightRects.map((r, i) => React.createElement('rect', {key:'n'+i, x:r.x, y:0, width:r.w, height:svgPaths.H, fill:'var(--text-primary)', opacity:0.06})),
+        // Solar area (amber, bottom layer)
+        React.createElement('path', {d:svgPaths.solar, fill:'var(--solar)', opacity:0.4}),
+        // Wind area (cyan, layered)
+        React.createElement('path', {d:svgPaths.wind, fill:'var(--wind)', opacity:0.35}),
+        // Grid export (green, surplus)
+        React.createElement('path', {d:svgPaths.gridExport, fill:'var(--success)', opacity:0.35}),
+        // Grid import (red, deficit)
+        React.createElement('path', {d:svgPaths.gridImport, fill:'var(--error)', opacity:0.2}),
+        // EV charging (purple)
+        React.createElement('path', {d:svgPaths.ev, fill:'var(--ev)', opacity:0.3}),
+        // Consumption baseline (dashed line from SJP)
+        React.createElement('path', {d:svgPaths.loadLine, fill:'none', stroke:'var(--text-tertiary)', strokeWidth:1, strokeDasharray:'3,2', opacity:0.5})
       ),
       // Downtime markers (red hatched)
       downtimeMarkers,
