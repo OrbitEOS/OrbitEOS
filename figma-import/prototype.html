@@ -883,6 +883,9 @@
       transform:translateX(-50%); z-index:2; pointer-events:none; }
     .tl-now-dot { position:absolute; top:-1px; left:50%; transform:translateX(-50%); width:4px; height:4px;
       border-radius:50%; background:var(--success); animation:tlPulse 2s ease-in-out infinite; }
+    .tl-now-label { position:absolute; bottom:-11px; left:50%; transform:translateX(-50%);
+      font-size:7px; font-weight:700; color:var(--success); letter-spacing:0.5px;
+      text-transform:uppercase; white-space:nowrap; pointer-events:auto; }
     .tl-downtime { position:absolute; top:0; bottom:0; z-index:1; pointer-events:none;
       background:repeating-linear-gradient(90deg,var(--error) 0 2px,transparent 2px 5px); opacity:0.35; }
     .tl-tip { position:absolute; bottom:100%; left:50%; transform:translateX(-50%); margin-bottom:4px;
@@ -6209,10 +6212,10 @@ function StatCard({label, value, trend, trendDir, color}) {
 // embedded=true positions absolute inside parent; false = inline block
 function TimelineScrubber({ entityId, lang, embedded, onTimeChange }) {
   const ZOOM_LEVELS = [
-    { key:'day', label:{en:'1D',nl:'1D'}, historyDays:1, forecastDays:0.5, bands:48 },
-    { key:'week', label:{en:'1W',nl:'1W'}, historyDays:7, forecastDays:2, bands:54 },
-    { key:'month', label:{en:'1M',nl:'1M'}, historyDays:30, forecastDays:7, bands:74 },
-    { key:'quarter', label:{en:'3M',nl:'3M'}, historyDays:90, forecastDays:14, bands:52 },
+    { key:'day', label:{en:'1D',nl:'1D'}, historyDays:1, forecastDays:1, bands:48 },
+    { key:'week', label:{en:'1W',nl:'1W'}, historyDays:7, forecastDays:7, bands:56 },
+    { key:'month', label:{en:'1M',nl:'1M'}, historyDays:30, forecastDays:30, bands:60 },
+    { key:'quarter', label:{en:'3M',nl:'3M'}, historyDays:90, forecastDays:90, bands:60 },
   ];
   const [zoomIdx, setZoomIdx] = useState(2); // default: month
   const zoom = ZOOM_LEVELS[zoomIdx];
@@ -6456,18 +6459,15 @@ function TimelineScrubber({ entityId, lang, embedded, onTimeChange }) {
       downtimeMarkers,
       // Forecast zone
       React.createElement('div', {className:'tl-forecast-zone', style:{left:NOW_PCT+'%'}}),
-      // Now marker
+      // Now marker with NOW label
       React.createElement('div', {className:'tl-now', style:{left:NOW_PCT+'%'}},
-        React.createElement('div', {className:'tl-now-dot'})),
+        React.createElement('div', {className:'tl-now-dot'}),
+        React.createElement('div', {className:'tl-now-label', onClick:goLive, style:{cursor:'pointer'}}, 'NOW')),
       // Thumb
       React.createElement('div', {className:'tl-thumb', style:{left:thumbPct+'%'}})
     ),
-    // Live button or date label
-    timeMode !== 'live'
-      ? React.createElement('div', {style:{display:'flex',flexDirection:'column',alignItems:'center',gap:1}},
-          React.createElement('span', {className:'tl-label'}, dateLabel),
-          React.createElement('button', {className:'tl-live-btn', onClick:goLive}, 'LIVE'))
-      : React.createElement('button', {className:'tl-live-btn', onClick:goLive, style:{animation:'none',opacity:0.8}}, 'LIVE')
+    // LIVE button only when scrubbing away from now
+    timeMode !== 'live' && React.createElement('button', {className:'tl-live-btn', onClick:goLive}, 'LIVE')
   );
 }
 
