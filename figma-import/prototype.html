@@ -6300,6 +6300,7 @@ const WidgetEnergyFlow = React.memo(function WidgetEnergyFlow({t, lang, currentS
   React.useEffect(() => { return TimeModel.subscribe(s => setTimeState(s)); }, []);
   const ef = timeState.mode === 'live' ? liveEf : MockAPI.getEnergyFlowStateAt(currentSite, timeState.time);
   const [ambientOn, setAmbientOn] = React.useState(() => { const v = localStorage.getItem('orbiteos-flow-ambient'); return v !== null ? v === 'true' : true; });
+  const [showTimeline, setShowTimeline] = React.useState(() => { const v = localStorage.getItem('orbiteos-flow-timeline'); return v !== null ? v === 'true' : true; });
   const [isKiosk, setIsKiosk] = React.useState(false);
   const [autoCycle, setAutoCycle] = React.useState(false);
   const touchRef = React.useRef(null);
@@ -6412,6 +6413,12 @@ const WidgetEnergyFlow = React.memo(function WidgetEnergyFlow({t, lang, currentS
               {React.createElement(ambientOn ? EyeOutlined : EyeInvisibleOutlined)}
             </div>
           </Tooltip>
+          <Tooltip title={showTimeline ? (lang==='nl'?'Tijdlijn verbergen':'Hide timeline') : (lang==='nl'?'Tijdlijn tonen':'Show timeline')} placement="left">
+            <div className="flow-ambient-toggle" style={{position:'static',color:showTimeline?'var(--brand)':'var(--text-tertiary)',background:showTimeline?'var(--brand-bg)':'transparent'}}
+              onClick={function(){ var next = !showTimeline; setShowTimeline(next); localStorage.setItem('orbiteos-flow-timeline', next); }}>
+              {React.createElement(HistoryOutlined)}
+            </div>
+          </Tooltip>
           <div className="flow-ambient-toggle" style={{position:'static'}} onClick={toggleKiosk}>
             {React.createElement(isKiosk ? CompressOutlined : ExpandOutlined)}
           </div>
@@ -6520,7 +6527,7 @@ const WidgetEnergyFlow = React.memo(function WidgetEnergyFlow({t, lang, currentS
           </div>
         </div>
         {/* Timeline Scrubber */}
-        <TimelineScrubber siteId={currentSite} lang={lang} isKiosk={isKiosk}/>
+        {showTimeline && <TimelineScrubber siteId={currentSite} lang={lang} isKiosk={isKiosk}/>}
         {/* Mode badge when not live */}
         {!TimeModel.isLive() && (() => {
           var isFc = TimeModel.isForecast();
