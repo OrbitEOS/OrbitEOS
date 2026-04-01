@@ -1083,7 +1083,7 @@
 
 <script type="text/babel">
 // ─── Version ───
-const ORBITEOS_VERSION = '0.7.0.14';
+const ORBITEOS_VERSION = '0.7.0.15';
 const { useState, useEffect, useRef, useCallback, useMemo } = React;
 const { ConfigProvider, theme: antTheme, Button, Table, Tag, Badge, Switch, Select, Input, Tabs, Segmented,
   Progress, Slider, Form, InputNumber, Tooltip, Dropdown, Space, Modal, Drawer, Menu, message } = antd;
@@ -6293,14 +6293,14 @@ function TimelineScrubber({ entityId, lang, embedded, onTimeChange }) {
 
   // Energy data points for smooth SVG area chart
   var bandData = React.useMemo(() => {
-    var site = EntityStore.get(entityId);
-    var ef = site?.state?.energyFlow || {};
-    var profCode = site?.properties?.consumptionProfile || 'E1A';
+    var site = EntityStore.get(entityId) || EntityStore.getByType('site')[0] || {};
+    var ef = MockAPI.getEnergyFlowState(entityId);
+    var profCode = site.properties?.consumptionProfile || 'E1A';
     var prof = SJP_PROFILES[profCode] || SJP_PROFILES.E1A;
-    var cap = parseFloat(site?.properties?.capacity) || 18;
-    var hasBattery = (ef.essSoc != null && ef.essSoc > 0);
-    var hasWind = !!ef.windActive;
-    var hasEv = (ef.evPower > 0);
+    var cap = parseFloat(site.properties?.capacity) || 18;
+    var hasBattery = ef.essSoc > 0;
+    var hasWind = ef.windActive;
+    var hasEv = ef.evPower > 0;
     var pts = [];
     var N = zoom.bands;
     for (var i = 0; i <= N; i++) {
