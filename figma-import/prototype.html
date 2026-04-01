@@ -863,7 +863,7 @@
       .flow-nav-right { right:4px; }
     }
     /* ─── Timeline Scrubber ─── */
-    .timeline-scrubber { position:absolute; bottom:4px; left:40px; right:40px; z-index:5; height:44px;
+    .timeline-scrubber { position:absolute; bottom:32px; left:40px; right:40px; z-index:5; height:36px;
       display:flex; align-items:center; gap:6px; transition:opacity 0.3s ease; }
     .timeline-track { flex:1; height:28px; position:relative; border-radius:6px; cursor:pointer;
       background:var(--bg-elevated); border:1px solid var(--border); overflow:hidden; touch-action:pan-x; }
@@ -885,6 +885,11 @@
     .timeline-event { position:absolute; top:2px; width:4px; height:4px; border-radius:50%; z-index:1;
       transform:translateX(-50%); pointer-events:none; }
     .timeline-label { font-size:10px; color:var(--text-tertiary); white-space:nowrap; user-select:none; }
+    .timeline-hover-tip { position:absolute; bottom:100%; left:50%; transform:translateX(-50%); margin-bottom:4px;
+      background:var(--bg-card); border:1px solid var(--border); border-radius:4px; padding:2px 8px;
+      font-size:10px; color:var(--text-primary); white-space:nowrap; pointer-events:none;
+      box-shadow:0 2px 8px rgba(0,0,0,0.2); opacity:0; transition:opacity 0.15s; z-index:10; }
+    .timeline-track:hover .timeline-hover-tip { opacity:1; }
     .timeline-live-btn { font-size:11px; padding:2px 8px; border-radius:4px; cursor:pointer; font-weight:600;
       background:var(--success); color:#fff; border:none; animation:timelineNowPulse 2s ease-in-out infinite; }
     .timeline-mode-badge { position:absolute; top:8px; left:50%; transform:translateX(-50%); z-index:5;
@@ -4902,10 +4907,10 @@ const MockAPI = {
   // Inferred entity status — derived from energy flow + device health + alarms + peak demand
   getSiteStatus: (entityId) => {
     const entity = EntityStore.get(entityId);
-    const ef = MockAPI.getEnergyFlowState(entityId);
+    const ef = MockAPI.getEnergyFlowState(entityId) || {};
     const dh = MockAPI.getDeviceHealth(entityId);
-    const totalGen = ef.solarPower + ef.windPower;
-    const totalLoad = ef.buildingPower + ef.evPower;
+    const totalGen = (parseFloat(ef.solarPower) || 0) + (parseFloat(ef.windPower) || 0);
+    const totalLoad = (parseFloat(ef.buildingPower) || 0) + (parseFloat(ef.evPower) || 0);
     const selfSufficiency = totalLoad > 0 ? Math.min(100, Math.round((totalGen / totalLoad) * 100)) : 0;
     const alarms = entity?.alarms || [];
     const criticalAlarms = alarms.filter(a => a.sev === 'critical' && a.status === 'active').length;
@@ -6199,7 +6204,16 @@ function TimelineScrubber({ siteId, lang, isKiosk }) {
   // Double-click to go live
   function onDoubleClick() { setThumbPct(NOW_PCT); TimeModel.goLive(); setTimeMode('live'); }
 
-  // Format label
+  // Hover tooltip position + date
+  const [hoverPct, setHoverPct] = useState(null);
+  function onMouseMove(e) {
+    if (dragRef.current) return;
+    if (!trackRef.current) return;
+    var rect = trackRef.current.getBoundingClientRect();
+    setHoverPct(Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100)));
+  }
+  function onMouseLeave() { if (!dragRef.current) setHoverPct(null); }
+  const hoverDate = hoverPct != null ? dayjs(pctToDate(hoverPct)).format('ddd D MMM HH:mm') : '';
   const currentDate = pctToDate(thumbPct);
   const dateLabel = dayjs(currentDate).format('ddd D MMM HH:mm');
 
@@ -6220,11 +6234,12 @@ function TimelineScrubber({ siteId, lang, isKiosk }) {
   });
 
   return React.createElement('div', {className:'timeline-scrubber'},
-    // Date label
-    React.createElement('span', {className:'timeline-label'}, dateLabel),
     // Track
     React.createElement('div', {ref:trackRef, className:'timeline-track',
-      onMouseDown:onMouseDown, onTouchStart:onTouchStart, onTouchMove:onTouchMove, onTouchEnd:onTouchEnd, onDoubleClick:onDoubleClick},
+      onMouseDown:onMouseDown, onMouseMove:onMouseMove, onMouseLeave:onMouseLeave,
+      onTouchStart:onTouchStart, onTouchMove:onTouchMove, onTouchEnd:onTouchEnd, onDoubleClick:onDoubleClick},
+      // Hover tooltip
+      hoverPct != null && React.createElement('div', {className:'timeline-hover-tip', style:{left:hoverPct+'%'}}, hoverDate),
       // Day/night bands
       React.createElement('div', {className:'timeline-daynight'}, dayNightBands),
       // Filled progress
@@ -6239,10 +6254,13 @@ function TimelineScrubber({ siteId, lang, isKiosk }) {
       // Thumb
       React.createElement('div', {className:'timeline-thumb', style:{left:thumbPct+'%'}})
     ),
-    // Live button (when not live)
-    timeMode !== 'live' && React.createElement('button', {className:'timeline-live-btn',
-      onClick:function() { setThumbPct(NOW_PCT); TimeModel.goLive(); setTimeMode('live'); }},
-      'LIVE')
+    // Current time label + Live button (when not live)
+    timeMode !== 'live' ? React.createElement('div', {style:{display:'flex',alignItems:'center',gap:4}},
+      React.createElement('span', {className:'timeline-label'}, dateLabel),
+      React.createElement('button', {className:'timeline-live-btn',
+        onClick:function() { setThumbPct(NOW_PCT); TimeModel.goLive(); setTimeMode('live'); }},
+        'LIVE')
+    ) : React.createElement('span', {className:'timeline-label'}, 'LIVE')
   );
 }
 
