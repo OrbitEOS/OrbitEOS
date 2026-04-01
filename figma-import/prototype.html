@@ -903,6 +903,13 @@
     .kiosk-active .dashboard-tree-toggle { display:none !important; }
     .kiosk-active .toast-container { display:none !important; }
     .kiosk-active.kiosk-alarms-on .toast-container { display:flex !important; }
+    /* Kiosk idle: fade all overlay controls until mouse moves */
+    .kiosk-active .flow-ambient-toggle,
+    .kiosk-active .flow-nav-arrow,
+    .kiosk-active .kiosk-site-header { opacity:0; transition:opacity 0.6s ease; pointer-events:none; }
+    .kiosk-active.kiosk-mouse-active .flow-ambient-toggle,
+    .kiosk-active.kiosk-mouse-active .flow-nav-arrow,
+    .kiosk-active.kiosk-mouse-active .kiosk-site-header { opacity:1; pointer-events:auto; transition:opacity 0.3s ease; }
     /* ─── Tree Animated Status Icons ─── */
     .tree-status-icon { width:12px; height:12px; flex-shrink:0; display:inline-flex; align-items:center; justify-content:center; }
     .tree-status-icon svg { width:10px; height:10px; }
@@ -1073,7 +1080,7 @@ const { DashboardOutlined, ThunderboltOutlined, ClusterOutlined, ApiOutlined, Ap
   TagOutlined, UserOutlined, AuditOutlined, FileSearchOutlined, ClockCircleOutlined,
   ThunderboltFilled, ExpandOutlined, CompressOutlined, CopyOutlined, ReloadOutlined,
   SendOutlined, ScheduleOutlined, SafetyOutlined, RightOutlined, MenuOutlined, CloseOutlined, LeftOutlined,
-  StopOutlined, RollbackOutlined, SortAscendingOutlined, FolderOutlined, FolderOpenOutlined, QuestionCircleOutlined } = icons;
+  StopOutlined, RollbackOutlined, SortAscendingOutlined, FolderOutlined, FolderOpenOutlined, QuestionCircleOutlined, PlayCircleOutlined, PauseCircleOutlined } = icons;
 
 // Icon lookup for nav items
 const NAV_ICONS = {
@@ -4851,6 +4858,7 @@ const MockAPI = {
     tourPrev:   { keys: '← / ↑',          label: {en:'Tour Previous Step',nl:'Tour Vorige Stap'} },
     tourSkip:   { keys: 'Escape',          label: {en:'Skip Tour',nl:'Tour Overslaan'} },
     fullscreen: { keys: 'Click ⤢',        label: {en:'Toggle Fullscreen',nl:'Volledig Scherm'} },
+    autoCycle:  { keys: 'Click ▶',       label: {en:'Auto-cycle Sites (Kiosk)',nl:'Auto-cyclus Locaties (Kiosk)'} },
   }),
 
   // Kiosk mode config
@@ -4858,6 +4866,8 @@ const MockAPI = {
     showAlarmPopups: false,       // alarm toast popups in fullscreen
     showSiteName: true,           // site name at top center
     showStatusIcon: true,         // animated status icon next to site name
+    autoCycleInterval: 5000,      // ms between auto-cycle (0 = disabled)
+    idleTimeout: 3000,            // ms before controls fade
   }),
 
   getDashboardTreeConfig: () => ({
@@ -6030,6 +6040,7 @@ const WidgetEnergyFlow = React.memo(function WidgetEnergyFlow({t, lang, currentS
   const { energyFlow: ef, status, costSaved } = data;
   const [ambientOn, setAmbientOn] = React.useState(() => { const v = localStorage.getItem('orbiteos-flow-ambient'); return v !== null ? v === 'true' : true; });
   const [isKiosk, setIsKiosk] = React.useState(false);
+  const [autoCycle, setAutoCycle] = React.useState(false);
   const touchRef = React.useRef(null);
   const { solarActive, windActive, consumptionActive, gridExporting, gridImporting, essSoc } = ef;
 
@@ -6074,6 +6085,34 @@ const WidgetEnergyFlow = React.memo(function WidgetEnergyFlow({t, lang, currentS
     return function() { document.removeEventListener('fullscreenchange', onFsChange); document.removeEventListener('webkitfullscreenchange', onFsChange); };
   }, []);
 
+  // Auto-cycle sites in kiosk mode
+  React.useEffect(function() {
+    if (!isKiosk || !autoCycle || !onNavigateSite || !kioskConfig.autoCycleInterval) return;
+    var iv = setInterval(function() { onNavigateSite(1); }, kioskConfig.autoCycleInterval);
+    return function() { clearInterval(iv); };
+  }, [isKiosk, autoCycle, onNavigateSite, kioskConfig.autoCycleInterval]);
+
+  // Kiosk idle detection: show controls on mouse move, fade after 3s
+  React.useEffect(function() {
+    if (!isKiosk) return;
+    var timer = null;
+    function onMove() {
+      document.body.classList.add('kiosk-mouse-active');
+      clearTimeout(timer);
+      timer = setTimeout(function() { document.body.classList.remove('kiosk-mouse-active'); }, kioskConfig.idleTimeout || 3000);
+    }
+    // Show on initial enter
+    onMove();
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('touchstart', onMove);
+    return function() {
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('touchstart', onMove);
+      clearTimeout(timer);
+      document.body.classList.remove('kiosk-mouse-active');
+    };
+  }, [isKiosk]);
+
   // Kiosk keyboard: left/right arrows navigate sites
   React.useEffect(function() {
     if (!isKiosk || !onNavigateSite) return;
@@ -6115,6 +6154,12 @@ const WidgetEnergyFlow = React.memo(function WidgetEnergyFlow({t, lang, currentS
           <div className="flow-ambient-toggle" style={{position:'static'}} onClick={toggleKiosk}>
             {React.createElement(isKiosk ? CompressOutlined : ExpandOutlined)}
           </div>
+          {isKiosk && <Tooltip title={autoCycle ? (lang==='nl'?'Pauzeer':'Pause auto-cycle') : (lang==='nl'?'Auto-cyclus':'Auto-cycle sites')} placement="left">
+            <div className="flow-ambient-toggle" style={{position:'static',color:autoCycle?'var(--brand)':'var(--text-tertiary)',background:autoCycle?'var(--brand-bg)':'undefined'}}
+              onClick={function(){setAutoCycle(!autoCycle);}}>
+              {React.createElement(autoCycle ? PauseCircleOutlined : PlayCircleOutlined)}
+            </div>
+          </Tooltip>}
         </div>
         {/* Kiosk site name + status icon */}
         {isKiosk && kioskConfig.showSiteName && (function() {
@@ -6124,7 +6169,7 @@ const WidgetEnergyFlow = React.memo(function WidgetEnergyFlow({t, lang, currentS
             ? TREE_STATUS_ICONS[siteStatus.treeIcon] : null;
           var animClass = siteStatus && siteStatus.treeIcon && TREE_ICON_ANIM[siteStatus.treeIcon]
             ? TREE_ICON_ANIM[siteStatus.treeIcon] : '';
-          return React.createElement('div', {style:{position:'absolute',top:14,left:'50%',transform:'translateX(-50%)',zIndex:4,
+          return React.createElement('div', {className:'kiosk-site-header', style:{position:'absolute',top:14,left:'50%',transform:'translateX(-50%)',zIndex:4,
             display:'flex',alignItems:'center',gap:8,whiteSpace:'nowrap',
             textShadow:'0 0 16px var(--bg-primary), 0 0 32px var(--bg-primary)'}},
             iconFn ? React.createElement('span', {className:'tree-status-icon '+animClass, style:{width:16,height:16}},
