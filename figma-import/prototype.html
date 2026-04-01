@@ -862,46 +862,50 @@
       .flow-nav-left { left:4px; }
       .flow-nav-right { right:4px; }
     }
-    /* ─── Timeline Scrubber ─── */
-    .timeline-scrubber { position:absolute; bottom:2px; left:10px; right:10px; z-index:5; height:26px;
-      display:flex; align-items:center; gap:4; transition:opacity 0.3s ease; }
-    .timeline-track { flex:1; height:18px; position:relative; border-radius:4px; cursor:pointer;
+    /* ─── Timeline Scrubber (reusable) ─── */
+    .tl-wrap { display:flex; align-items:center; gap:4px; height:32px; transition:opacity 0.3s ease; }
+    .tl-wrap.tl-embedded { position:absolute; bottom:2px; left:10px; right:10px; z-index:5; }
+    .tl-track { flex:1; height:22px; position:relative; border-radius:5px; cursor:pointer;
       background:var(--bg-elevated); border:1px solid var(--border); overflow:hidden; touch-action:pan-x; }
-    .timeline-energy-hue { position:absolute; inset:0; display:flex; pointer-events:none; border-radius:4px; overflow:hidden; }
-    .timeline-energy-band { flex:1; opacity:0.5; }
-    .timeline-daynight { position:absolute; inset:0; display:flex; pointer-events:none; }
-    .timeline-daynight-band { flex:1; }
-    .timeline-forecast-zone { position:absolute; top:0; bottom:0; right:0;
+    .tl-layers { position:absolute; inset:0; display:flex; pointer-events:none; border-radius:5px; overflow:hidden; }
+    .tl-band { flex:1; display:flex; flex-direction:column; justify-content:flex-end; }
+    .tl-band-fill { width:100%; border-radius:1px 1px 0 0; min-height:1px; }
+    .tl-forecast-zone { position:absolute; top:0; bottom:0; right:0;
       background:repeating-linear-gradient(135deg,transparent,transparent 3px,color-mix(in srgb,var(--brand) 8%,transparent) 3px,color-mix(in srgb,var(--brand) 8%,transparent) 6px);
       border-left:1px dashed var(--brand); pointer-events:none; }
-    .timeline-filled { position:absolute; top:0; bottom:0; left:0; background:color-mix(in srgb,var(--brand) 12%,transparent); pointer-events:none; }
-    .timeline-thumb { position:absolute; top:50%; transform:translate(-50%,-50%); width:10px; height:16px;
-      background:var(--brand); border-radius:3px; cursor:grab; z-index:2; border:1.5px solid var(--bg-card);
-      box-shadow:0 1px 4px rgba(0,0,0,0.3); transition:box-shadow 0.2s; }
-    .timeline-thumb:hover { box-shadow:0 2px 8px rgba(0,0,0,0.4); }
-    .timeline-thumb:active { cursor:grabbing; }
-    .timeline-now-marker { position:absolute; top:0; bottom:0; width:2px; background:var(--success);
-      transform:translateX(-50%); z-index:1; pointer-events:none; }
-    .timeline-now-dot { position:absolute; top:-2px; left:50%; transform:translateX(-50%); width:5px; height:5px;
-      border-radius:50%; background:var(--success); animation:timelineNowPulse 2s ease-in-out infinite; }
-    .timeline-label { font-size:10px; color:var(--text-tertiary); white-space:nowrap; user-select:none; }
-    .timeline-hover-tip { position:absolute; bottom:100%; left:50%; transform:translateX(-50%); margin-bottom:4px;
-      background:var(--bg-card); border:1px solid var(--border); border-radius:4px; padding:2px 8px;
+    .tl-thumb { position:absolute; top:50%; transform:translate(-50%,-50%); width:10px; height:18px;
+      background:var(--brand); border-radius:3px; cursor:grab; z-index:3; border:1.5px solid var(--bg-card);
+      box-shadow:0 1px 4px rgba(0,0,0,0.3); }
+    .tl-thumb:active { cursor:grabbing; box-shadow:0 2px 8px rgba(0,0,0,0.5); }
+    .tl-now { position:absolute; top:0; bottom:0; width:2px; background:var(--success);
+      transform:translateX(-50%); z-index:2; pointer-events:none; }
+    .tl-now-dot { position:absolute; top:-2px; left:50%; transform:translateX(-50%); width:5px; height:5px;
+      border-radius:50%; background:var(--success); animation:tlPulse 2s ease-in-out infinite; }
+    .tl-downtime { position:absolute; top:0; bottom:0; z-index:1; pointer-events:none;
+      background:repeating-linear-gradient(90deg,var(--error) 0 2px,transparent 2px 5px); opacity:0.35; }
+    .tl-tip { position:absolute; bottom:100%; left:50%; transform:translateX(-50%); margin-bottom:4px;
+      background:var(--bg-card); border:1px solid var(--border); border-radius:4px; padding:3px 8px;
       font-size:10px; color:var(--text-primary); white-space:nowrap; pointer-events:none;
-      box-shadow:0 2px 8px rgba(0,0,0,0.2); opacity:0; transition:opacity 0.15s; z-index:10; }
-    .timeline-track:hover .timeline-hover-tip { opacity:1; }
-    .timeline-live-btn { font-size:11px; padding:2px 8px; border-radius:4px; cursor:pointer; font-weight:600;
-      background:var(--success); color:#fff; border:none; animation:timelineNowPulse 2s ease-in-out infinite; }
-    .timeline-mode-badge { position:absolute; top:8px; z-index:5;
+      box-shadow:0 2px 8px rgba(0,0,0,0.25); opacity:0; transition:opacity 0.15s; z-index:10;
+      display:flex; flex-direction:column; align-items:center; gap:1px; }
+    .tl-track:hover .tl-tip { opacity:1; }
+    .tl-tip-sub { font-size:9px; color:var(--text-tertiary); }
+    .tl-label { font-size:10px; color:var(--text-tertiary); white-space:nowrap; user-select:none; }
+    .tl-btn { font-size:10px; padding:1px 6px; border-radius:3px; cursor:pointer; border:1px solid var(--border);
+      background:var(--bg-elevated); color:var(--text-secondary); line-height:1.4; }
+    .tl-btn:hover { background:var(--bg-card); color:var(--text-primary); }
+    .tl-btn.active { background:var(--brand-bg); color:var(--brand); border-color:var(--brand); font-weight:600; }
+    .tl-live-btn { font-size:10px; padding:1px 8px; border-radius:3px; cursor:pointer; font-weight:600;
+      background:var(--success); color:#fff; border:none; animation:tlPulse 2s ease-in-out infinite; }
+    .tl-mode-badge { position:absolute; top:8px; z-index:5;
       font-size:10px; font-weight:600; padding:3px 10px; border-radius:10px; pointer-events:none;
       letter-spacing:0.3px; display:flex; align-items:center; gap:5px; }
-    .timeline-mode-badge.historical { left:12px; }
-    .timeline-mode-badge.forecast { right:12px; }
-    @keyframes timelineNowPulse { 0%,100%{opacity:1} 50%{opacity:0.6} }
-    .kiosk-active .timeline-scrubber { bottom:4px; left:20px; right:20px; height:30px; }
-    .kiosk-active .flow-ambient-toggle,
-    .kiosk-active .timeline-scrubber { opacity:0; transition:opacity 0.6s ease; pointer-events:none; }
-    .kiosk-active.kiosk-mouse-active .timeline-scrubber { opacity:1; pointer-events:auto; transition:opacity 0.3s ease; }
+    .tl-mode-badge.historical { left:12px; }
+    .tl-mode-badge.forecast { right:12px; }
+    @keyframes tlPulse { 0%,100%{opacity:1} 50%{opacity:0.6} }
+    .kiosk-active .tl-wrap { bottom:4px; left:20px; right:20px; height:36px; }
+    .kiosk-active .tl-wrap { opacity:0; transition:opacity 0.6s ease; pointer-events:none; }
+    .kiosk-active.kiosk-mouse-active .tl-wrap { opacity:1; pointer-events:auto; transition:opacity 0.3s ease; }
     /* ─── Kiosk / Fullscreen Mode ─── */
     .kiosk-active .sidebar-wrap, .kiosk-active .sidebar-rail,
     .kiosk-active .header { display:none !important; }
@@ -4890,8 +4894,16 @@ const MockAPI = {
 
   // ─── Energy Flow (entity-aware — aggregates from descendants) ───
   getEnergyFlowState: (entityId) => {
-    return EntityStore.getAggregatedEnergyFlow(entityId || 'dg-maasland') ||
-      EntityStore.getAggregatedEnergyFlow('dg-maasland');
+    var raw = EntityStore.getAggregatedEnergyFlow(entityId || 'dg-maasland') ||
+      EntityStore.getAggregatedEnergyFlow('dg-maasland') || {};
+    // Ensure all numeric fields are safe (never NaN/undefined)
+    return { solarActive:!!raw.solarActive, windActive:!!raw.windActive, consumptionActive:!!raw.consumptionActive,
+      gridExporting:!!raw.gridExporting, gridImporting:!!raw.gridImporting,
+      essSoc: parseFloat(raw.essSoc) || 0,
+      solarPower: parseFloat(raw.solarPower) || 0, windPower: parseFloat(raw.windPower) || 0,
+      buildingPower: parseFloat(raw.buildingPower) || 0, evPower: parseFloat(raw.evPower) || 0,
+      gridPower: parseFloat(raw.gridPower) || 0, batteryPower: parseFloat(raw.batteryPower) || 0,
+      batteryMode: raw.batteryMode || 'None', footerText: raw.footerText || '' };
   },
 
   // Device health — computed from EntityStore device states (entity-aware)
@@ -6153,143 +6165,184 @@ function StatCard({label, value, trend, trendDir, color}) {
 // All widgets follow the same interface: ({t, lang, currentSite, data}) => JSX
 // `data` is provided by the widget's own dataProvider in WidgetRegistry — widgets never fetch their own data.
 
-// ─── Timeline Scrubber Component ───
-function TimelineScrubber({ siteId, lang, isKiosk }) {
+// ─── TimelineScrubber — reusable across dashboard, maps, alarms ───
+// Props: { entityId, lang, embedded?, onTimeChange? }
+// embedded=true positions absolute inside parent; false = inline block
+function TimelineScrubber({ entityId, lang, embedded, onTimeChange }) {
+  const ZOOM_LEVELS = [
+    { key:'day', label:{en:'1D',nl:'1D'}, historyDays:1, forecastDays:0.5, bands:48 },
+    { key:'week', label:{en:'1W',nl:'1W'}, historyDays:7, forecastDays:2, bands:54 },
+    { key:'month', label:{en:'1M',nl:'1M'}, historyDays:30, forecastDays:7, bands:74 },
+    { key:'quarter', label:{en:'3M',nl:'3M'}, historyDays:90, forecastDays:14, bands:52 },
+  ];
+  const [zoomIdx, setZoomIdx] = useState(2); // default: month
+  const zoom = ZOOM_LEVELS[zoomIdx];
+  const TOTAL_DAYS = zoom.historyDays + zoom.forecastDays;
+  const NOW_PCT = (zoom.historyDays / TOTAL_DAYS) * 100;
+
   const [timeMode, setTimeMode] = useState('live');
-  const [thumbPct, setThumbPct] = useState(80); // 0-100, 80% = "now"
+  const [thumbPct, setThumbPct] = useState(NOW_PCT);
+  const [hoverPct, setHoverPct] = useState(null);
   const trackRef = useRef(null);
   const dragRef = useRef(false);
-  const HISTORY_DAYS = 30;
-  const FORECAST_DAYS = 7;
-  const TOTAL_DAYS = HISTORY_DAYS + FORECAST_DAYS;
-  const NOW_PCT = (HISTORY_DAYS / TOTAL_DAYS) * 100; // ~81%
 
-  const rI = useCallback((label) => resolveI18n(label, lang), [lang]);
+  // Snap thumb to NOW when zoom changes
+  useEffect(() => { setThumbPct(NOW_PCT); }, [zoomIdx]);
 
-  // Convert percentage to date
   function pctToDate(pct) {
-    const daysFromStart = (pct / 100) * TOTAL_DAYS;
-    const msOffset = (daysFromStart - HISTORY_DAYS) * 86400000;
-    return new Date(Date.now() + msOffset);
+    return new Date(Date.now() + ((pct / 100) * TOTAL_DAYS - zoom.historyDays) * 86400000);
   }
 
-  function handleTrackInteraction(clientX) {
+  function handleTrack(clientX) {
     if (!trackRef.current) return;
-    const rect = trackRef.current.getBoundingClientRect();
-    const pct = Math.max(0, Math.min(100, ((clientX - rect.left) / rect.width) * 100));
+    var rect = trackRef.current.getBoundingClientRect();
+    var pct = Math.max(0, Math.min(100, ((clientX - rect.left) / rect.width) * 100));
     setThumbPct(pct);
-    const date = pctToDate(pct);
-    if (Math.abs(pct - NOW_PCT) < 2) {
-      TimeModel.goLive();
-      setTimeMode('live');
+    var date = pctToDate(pct);
+    if (Math.abs(pct - NOW_PCT) < 1.5) {
+      TimeModel.goLive(); setTimeMode('live');
     } else {
       TimeModel.setTime(date);
       setTimeMode(pct > NOW_PCT ? 'forecast' : 'historical');
     }
+    if (onTimeChange) onTimeChange(date, pct > NOW_PCT ? 'forecast' : pct < NOW_PCT ? 'historical' : 'live');
   }
 
-  // Mouse drag
-  function onMouseDown(e) { dragRef.current = true; handleTrackInteraction(e.clientX); }
+  // Mouse
+  function onMouseDown(e) { dragRef.current = true; handleTrack(e.clientX); }
   useEffect(() => {
-    function onMove(e) { if (dragRef.current) handleTrackInteraction(e.clientX); }
-    function onUp() { dragRef.current = false; }
-    document.addEventListener('mousemove', onMove);
-    document.addEventListener('mouseup', onUp);
-    return () => { document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp); };
-  }, []);
+    function mv(e) { if (dragRef.current) handleTrack(e.clientX); }
+    function up() { dragRef.current = false; }
+    document.addEventListener('mousemove', mv); document.addEventListener('mouseup', up);
+    return () => { document.removeEventListener('mousemove', mv); document.removeEventListener('mouseup', up); };
+  }, [zoomIdx]);
 
-  // Touch drag
-  function onTouchStart(e) { dragRef.current = true; handleTrackInteraction(e.touches[0].clientX); }
-  function onTouchMove(e) { if (dragRef.current) { e.preventDefault(); handleTrackInteraction(e.touches[0].clientX); } }
+  // Touch
+  function onTouchStart(e) { dragRef.current = true; handleTrack(e.touches[0].clientX); }
+  function onTouchMove(e) { if (dragRef.current) { e.preventDefault(); handleTrack(e.touches[0].clientX); } }
   function onTouchEnd() { dragRef.current = false; }
 
-  // Double-click to go live
-  function onDoubleClick() { setThumbPct(NOW_PCT); TimeModel.goLive(); setTimeMode('live'); }
+  function goLive() { setThumbPct(NOW_PCT); TimeModel.goLive(); setTimeMode('live'); }
 
-  // Hover tooltip position + date
-  const [hoverPct, setHoverPct] = useState(null);
+  // Hover
   function onMouseMove(e) {
     if (dragRef.current) return;
     if (!trackRef.current) return;
-    var rect = trackRef.current.getBoundingClientRect();
-    setHoverPct(Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100)));
+    var r = trackRef.current.getBoundingClientRect();
+    setHoverPct(Math.max(0, Math.min(100, ((e.clientX - r.left) / r.width) * 100)));
   }
   function onMouseLeave() { if (!dragRef.current) setHoverPct(null); }
-  const hoverDate = React.useMemo(() => {
-    if (hoverPct == null) return '';
+
+  // Tooltip content
+  var hoverTip = React.useMemo(() => {
+    if (hoverPct == null) return null;
     var d = pctToDate(hoverPct);
     var h = d.getHours();
-    var label = dayjs(d).format('ddd D MMM HH:mm');
-    var hint = h < 6 || h > 21 ? ' \u{1F319}' : h >= 10 && h <= 16 ? ' \u2600' : '';
-    if (hoverPct > NOW_PCT) hint += ' (forecast)';
-    return label + hint;
-  }, [hoverPct]);
-  const currentDate = pctToDate(thumbPct);
-  const dateLabel = dayjs(currentDate).format('ddd D MMM HH:mm');
+    var main = dayjs(d).format('ddd D MMM HH:mm');
+    var sub = hoverPct > NOW_PCT ? 'forecast' : h < 6 || h > 21 ? 'night' : 'daytime';
+    return { main: main, sub: sub };
+  }, [hoverPct, zoomIdx]);
 
-  // Energy hue bands — show solar(amber), wind(cyan), grid-import(red), grid-export(green), EV(purple) as background shading
-  const BAND_COUNT = 48; // 48 bands across full timeline
-  const energyBands = React.useMemo(() => {
-    const site = typeof EntityStore !== 'undefined' ? EntityStore.get(siteId) : null;
-    const ef = site?.state?.energyFlow || {};
-    const profCode = site?.properties?.consumptionProfile || 'E1A';
-    const prof = SJP_PROFILES[profCode] || SJP_PROFILES.E1A;
-    const cap = parseFloat(site?.properties?.capacity) || 18;
-    const bands = [];
-    for (var i = 0; i < BAND_COUNT; i++) {
-      var bandDate = pctToDate((i / BAND_COUNT) * 100);
-      var h = bandDate.getHours();
-      var m = bandDate.getMonth();
-      var rng = SeededRNG(hashStr((siteId||'') + 'band' + i));
-      var noise = 0.85 + rng.next() * 0.3;
-      var sjpLoad = prof.hourlyShape[h] * prof.seasonalFactor[m] * cap * noise;
-      var solar = (ef.solarActive && h >= 6 && h <= 20) ? Math.sin((h - 6) / 14 * Math.PI) * cap * 0.8 * noise : 0;
-      var wind = ef.windActive ? cap * 0.15 * (0.3 + rng.next() * 0.7) : 0;
+  // Energy band data — mini bar chart with stacked layers
+  var bandData = React.useMemo(() => {
+    var site = EntityStore.get(entityId);
+    var ef = site?.state?.energyFlow || {};
+    var profCode = site?.properties?.consumptionProfile || 'E1A';
+    var prof = SJP_PROFILES[profCode] || SJP_PROFILES.E1A;
+    var cap = parseFloat(site?.properties?.capacity) || 18;
+    var hasBattery = (ef.essSoc != null && ef.essSoc > 0);
+    var hasWind = !!ef.windActive;
+    var hasEv = (ef.evPower > 0);
+    var bands = [];
+    for (var i = 0; i < zoom.bands; i++) {
+      var d = pctToDate((i / zoom.bands) * 100);
+      var h = d.getHours();
+      var m = d.getMonth();
+      var rng = SeededRNG(hashStr((entityId||'') + zoom.key + i));
+      var n = 0.85 + rng.next() * 0.3;
+      var load = prof.hourlyShape[h] * prof.seasonalFactor[m] * cap * n;
+      var solar = (ef.solarActive && h >= 6 && h <= 20) ? Math.sin((h - 6) / 14 * Math.PI) * cap * 0.8 * n : 0;
+      var wind = hasWind ? cap * 0.15 * (0.3 + rng.next() * 0.7) : 0;
       var gen = solar + wind;
-      var isExporting = gen > sjpLoad;
-      var ev = ef.evPower > 0 ? sjpLoad * 0.15 : 0;
-      // Blend: dominant source gets the color
-      var color;
-      if (h < 6 || h > 21) color = 'var(--text-primary)'; // night: dark
-      else if (solar > wind && solar > sjpLoad * 0.3) color = 'var(--solar)'; // solar dominant
-      else if (wind > solar) color = 'var(--wind)'; // wind dominant
-      else color = 'transparent';
-      // Overlay: grid import/export
-      if (isExporting) color = 'var(--success)'; // green = exporting
-      else if (gen < sjpLoad * 0.3 && h >= 6) color = 'var(--error)'; // red = heavy import
-      // EV charging hours
-      if (ev > 0 && h >= 8 && h <= 18) color = 'var(--ev)'; // only mid-band if EV dominant
-      var opacity = h < 6 || h > 21 ? 0.15 : 0.35;
-      bands.push(React.createElement('div', {key:i, className:'timeline-energy-band',
-        style:{background:color, opacity:opacity}}));
+      var gridImport = Math.max(0, load - gen);
+      var gridExport = Math.max(0, gen - load);
+      var batt = hasBattery ? cap * 0.1 * n * (h >= 17 && h <= 21 ? 1 : h >= 1 && h <= 5 ? -0.5 : 0) : 0;
+      var ev = hasEv && h >= 8 && h <= 18 ? load * 0.15 * n : 0;
+      var maxVal = Math.max(load, gen, 1);
+      bands.push({ solar: solar/maxVal, wind: wind/maxVal, gridImport: gridImport/maxVal,
+        gridExport: gridExport/maxVal, ev: ev/maxVal, batt: Math.abs(batt)/maxVal,
+        isNight: h < 6 || h > 21 });
     }
     return bands;
-  }, [siteId]);
+  }, [entityId, zoomIdx]);
 
-  return React.createElement('div', {className:'timeline-scrubber'},
-    // Track
-    React.createElement('div', {ref:trackRef, className:'timeline-track',
-      onMouseDown:onMouseDown, onMouseMove:onMouseMove, onMouseLeave:onMouseLeave,
-      onTouchStart:onTouchStart, onTouchMove:onTouchMove, onTouchEnd:onTouchEnd, onDoubleClick:onDoubleClick},
-      // Hover tooltip
-      hoverPct != null && React.createElement('div', {className:'timeline-hover-tip', style:{left:hoverPct+'%'}}, hoverDate),
-      // Energy hue shading
-      React.createElement('div', {className:'timeline-energy-hue'}, energyBands),
-      // Forecast zone
-      React.createElement('div', {className:'timeline-forecast-zone', style:{left:NOW_PCT+'%'}}),
-      // Now marker
-      React.createElement('div', {className:'timeline-now-marker', style:{left:NOW_PCT+'%'}},
-        React.createElement('div', {className:'timeline-now-dot'})),
-      // Thumb
-      React.createElement('div', {className:'timeline-thumb', style:{left:thumbPct+'%'}})
+  // Equipment downtime markers (seeded per entity)
+  var downtimeMarkers = React.useMemo(() => {
+    var rng = SeededRNG(hashStr((entityId||'') + 'downtime'));
+    var markers = [];
+    for (var i = 0; i < 4; i++) {
+      if (rng.next() > 0.4) {
+        var startPct = rng.next() * NOW_PCT * 0.9;
+        var widthPct = 0.5 + rng.next() * 2;
+        markers.push(React.createElement('div', {key:i, className:'tl-downtime',
+          style:{left:startPct+'%', width:widthPct+'%'}}));
+      }
+    }
+    return markers;
+  }, [entityId, zoomIdx]);
+
+  var dateLabel = dayjs(pctToDate(thumbPct)).format('ddd D MMM HH:mm');
+
+  return React.createElement('div', {className:'tl-wrap' + (embedded ? ' tl-embedded' : '')},
+    // Zoom buttons
+    React.createElement('div', {style:{display:'flex',flexDirection:'column',gap:1}},
+      ZOOM_LEVELS.map((z, zi) => React.createElement('button', {key:z.key,
+        className:'tl-btn' + (zi === zoomIdx ? ' active' : ''),
+        onClick:() => setZoomIdx(zi)}, resolveI18n(z.label, lang)))
     ),
-    // Current time label + Live button (when not live)
-    timeMode !== 'live' ? React.createElement('div', {style:{display:'flex',alignItems:'center',gap:4}},
-      React.createElement('span', {className:'timeline-label'}, dateLabel),
-      React.createElement('button', {className:'timeline-live-btn',
-        onClick:function() { setThumbPct(NOW_PCT); TimeModel.goLive(); setTimeMode('live'); }},
-        'LIVE')
-    ) : React.createElement('span', {className:'timeline-label'}, 'LIVE')
+    // Track
+    React.createElement('div', {ref:trackRef, className:'tl-track',
+      onMouseDown:onMouseDown, onMouseMove:onMouseMove, onMouseLeave:onMouseLeave,
+      onTouchStart:onTouchStart, onTouchMove:onTouchMove, onTouchEnd:onTouchEnd, onDoubleClick:goLive},
+      // Hover tooltip
+      hoverTip && React.createElement('div', {className:'tl-tip', style:{left:hoverPct+'%'}},
+        React.createElement('span', null, hoverTip.main),
+        React.createElement('span', {className:'tl-tip-sub'}, hoverTip.sub)),
+      // Energy mini-bars
+      React.createElement('div', {className:'tl-layers'},
+        bandData.map((b, i) => {
+          var solarH = Math.round(b.solar * 100);
+          var windH = Math.round(b.wind * 100);
+          var impH = Math.round(b.gridImport * 100);
+          var expH = Math.round(b.gridExport * 100);
+          var evH = Math.round(b.ev * 100);
+          var nightOp = b.isNight ? 0.2 : 1;
+          // Stacked: grid-import(red) + solar(amber) + wind(cyan) + export(green) + ev(purple)
+          return React.createElement('div', {key:i, className:'tl-band', style:{opacity:nightOp}},
+            expH > 2 && React.createElement('div', {className:'tl-band-fill', style:{height:expH+'%', background:'var(--success)', opacity:0.5}}),
+            evH > 2 && React.createElement('div', {className:'tl-band-fill', style:{height:evH+'%', background:'var(--ev)', opacity:0.5}}),
+            windH > 2 && React.createElement('div', {className:'tl-band-fill', style:{height:windH+'%', background:'var(--wind)', opacity:0.6}}),
+            solarH > 2 && React.createElement('div', {className:'tl-band-fill', style:{height:solarH+'%', background:'var(--solar)', opacity:0.6}}),
+            impH > 5 && React.createElement('div', {className:'tl-band-fill', style:{height:Math.min(impH,60)+'%', background:'var(--error)', opacity:0.3}})
+          );
+        })
+      ),
+      // Downtime markers (red hatched)
+      downtimeMarkers,
+      // Forecast zone
+      React.createElement('div', {className:'tl-forecast-zone', style:{left:NOW_PCT+'%'}}),
+      // Now marker
+      React.createElement('div', {className:'tl-now', style:{left:NOW_PCT+'%'}},
+        React.createElement('div', {className:'tl-now-dot'})),
+      // Thumb
+      React.createElement('div', {className:'tl-thumb', style:{left:thumbPct+'%'}})
+    ),
+    // Live button or date label
+    timeMode !== 'live'
+      ? React.createElement('div', {style:{display:'flex',flexDirection:'column',alignItems:'center',gap:1}},
+          React.createElement('span', {className:'tl-label'}, dateLabel),
+          React.createElement('button', {className:'tl-live-btn', onClick:goLive}, 'LIVE'))
+      : React.createElement('button', {className:'tl-live-btn', onClick:goLive, style:{animation:'none',opacity:0.8}}, 'LIVE')
   );
 }
 
@@ -6527,12 +6580,12 @@ const WidgetEnergyFlow = React.memo(function WidgetEnergyFlow({t, lang, currentS
           </div>
         </div>
         {/* Timeline Scrubber */}
-        {showTimeline && <TimelineScrubber siteId={currentSite} lang={lang} isKiosk={isKiosk}/>}
+        {showTimeline && <TimelineScrubber entityId={currentSite} lang={lang} embedded={true}/>}
         {/* Mode badge when not live */}
         {!TimeModel.isLive() && (() => {
           var isFc = TimeModel.isForecast();
           var dt = dayjs(TimeModel.now()).format('ddd D MMM HH:mm');
-          return React.createElement('div', {className:'timeline-mode-badge ' + (isFc ? 'forecast' : 'historical'), style:{
+          return React.createElement('div', {className:'tl-mode-badge ' + (isFc ? 'forecast' : 'historical'), style:{
             background:isFc?'var(--brand-bg)':'var(--warning-bg)',
             color:isFc?'var(--brand)':'var(--warning)',
             border:'1px solid '+(isFc?'var(--brand)':'var(--warning)')
