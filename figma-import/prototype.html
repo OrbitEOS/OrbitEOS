@@ -6038,30 +6038,40 @@ const WidgetEnergyFlow = React.memo(function WidgetEnergyFlow({t, lang, currentS
 
   // Fullscreen / Kiosk toggle
   const toggleKiosk = React.useCallback(function() {
-    if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen().then(function() {
-        document.body.classList.add('kiosk-active');
-        if (kioskConfig.showAlarmPopups) document.body.classList.add('kiosk-alarms-on');
-        setIsKiosk(true);
-      }).catch(function() {});
+    if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+      var el = document.documentElement;
+      var req = el.requestFullscreen || el.webkitRequestFullscreen;
+      if (req) {
+        req.call(el).then(function() {
+          document.body.classList.add('kiosk-active');
+          if (kioskConfig.showAlarmPopups) document.body.classList.add('kiosk-alarms-on');
+          setIsKiosk(true);
+        }).catch(function() {
+          // Fallback: enter kiosk mode even if fullscreen API fails
+          document.body.classList.add('kiosk-active');
+          setIsKiosk(true);
+        });
+      }
     } else {
-      document.exitFullscreen().then(function() {
-        document.body.classList.remove('kiosk-active', 'kiosk-alarms-on');
-        setIsKiosk(false);
-      }).catch(function() {});
+      // Exit fullscreen — always clean up classes even if exitFullscreen fails
+      document.body.classList.remove('kiosk-active'); document.body.classList.remove('kiosk-alarms-on');
+      setIsKiosk(false);
+      try { document.exitFullscreen(); } catch(e) {}
     }
   }, [kioskConfig]);
 
   // Sync state when user exits fullscreen via Escape
   React.useEffect(function() {
     function onFsChange() {
-      if (!document.fullscreenElement) {
-        document.body.classList.remove('kiosk-active', 'kiosk-alarms-on');
+      if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+        document.body.classList.remove('kiosk-active');
+        document.body.classList.remove('kiosk-alarms-on');
         setIsKiosk(false);
       }
     }
     document.addEventListener('fullscreenchange', onFsChange);
-    return function() { document.removeEventListener('fullscreenchange', onFsChange); };
+    document.addEventListener('webkitfullscreenchange', onFsChange);
+    return function() { document.removeEventListener('fullscreenchange', onFsChange); document.removeEventListener('webkitfullscreenchange', onFsChange); };
   }, []);
 
   // Kiosk keyboard: left/right arrows navigate sites
