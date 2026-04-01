@@ -1050,7 +1050,7 @@
 
 <script type="text/babel">
 // ─── Version ───
-const ORBITEOS_VERSION = '0.7.0.5';
+const ORBITEOS_VERSION = '0.7.0.6';
 const { useState, useEffect, useRef, useCallback, useMemo } = React;
 const { ConfigProvider, theme: antTheme, Button, Table, Tag, Badge, Switch, Select, Input, Tabs, Segmented,
   Progress, Slider, Form, InputNumber, Tooltip, Dropdown, Space, Modal, Drawer, Menu } = antd;
@@ -4818,8 +4818,23 @@ const ALARM_MESSAGES = {
 // To migrate to production: swap these with real API calls (fetch/WebSocket) + Zustand actions.
 const MockAPI = {
   // ─── Dashboard Config ───
-  // Site navigation — ordered list for prev/next cycling
-  getSiteList: () => EntityStore.getByType('site').map(function(s) { return { id: s.id, name: s.name }; }),
+  // Status category mapping — shared by tree filter and site navigation
+  getStatusCategory: function(entityId) {
+    try {
+      var status = MockAPI.getSiteStatus(entityId);
+      var lv = status.level;
+      if (lv === 'island' || lv === 'peak' || lv === 'optimal') return 'success';
+      if (lv === 'importing' || lv === 'normal' || lv === 'attention' || lv === 'alarm-warning') return 'warning';
+      return 'error';
+    } catch(e) { return null; }
+  },
+
+  // Site navigation — ordered list, optionally filtered by status category
+  getSiteList: function(statusFilter) {
+    var sites = EntityStore.getByType('site').map(function(s) { return { id: s.id, name: s.name }; });
+    if (!statusFilter) return sites;
+    return sites.filter(function(s) { return MockAPI.getStatusCategory(s.id) === statusFilter; });
+  },
 
   getDashboardTreeConfig: () => ({
     maxEntityType: 'site',        // show tree nodes down to this level
@@ -5460,14 +5475,11 @@ function EntityTreeNode({ entity, focusedEntityId, setFocusedEntityId, depth, ex
     try { return MockAPI.getSiteStatus(entity.id); } catch(e) { return null; }
   }, [showStatus, entity.id]);
 
-  // Map status levels to filter categories
+  // Map status levels to filter categories (shared logic in MockAPI)
   const statusCategory = useMemo(function() {
-    if (!status) return null;
-    var lv = status.level;
-    if (lv === 'island' || lv === 'peak' || lv === 'optimal') return 'success';
-    if (lv === 'importing' || lv === 'normal' || lv === 'attention' || lv === 'alarm-warning') return 'warning';
-    return 'error';
-  }, [status]);
+    if (!showStatus) return null;
+    return MockAPI.getStatusCategory(entity.id);
+  }, [showStatus, entity.id]);
 
   // Filter: if filter is set, only show this node if it or a descendant matches
   if (statusFilter && !atLeaf && !hasChildren) {
@@ -6823,14 +6835,17 @@ function DashboardPage({t, lang, currentSite, focusedEntityId, setFocusedEntityI
   const rootEntities = EntityStore.getByType('platform');
   const treeVisible = treePinned || treeHovered;
 
-  // Site navigation — prev/next cycling for energy flow swipe
-  const siteList = useMemo(function() { return MockAPI.getSiteList(); }, []);
+  // Site navigation — follows the tree filter so prev/next only cycles filtered sites
+  const filteredSiteList = useMemo(function() {
+    return MockAPI.getSiteList(treeStatusFilter);
+  }, [treeStatusFilter]);
   const navigateSite = useCallback(function(direction) {
-    var currentIdx = siteList.findIndex(function(s) { return s.id === focusedEntityId; });
+    if (filteredSiteList.length === 0) return;
+    var currentIdx = filteredSiteList.findIndex(function(s) { return s.id === focusedEntityId; });
     if (currentIdx < 0) currentIdx = 0;
-    var nextIdx = (currentIdx + direction + siteList.length) % siteList.length;
-    setFocusedEntityId(siteList[nextIdx].id);
-  }, [focusedEntityId, siteList, setFocusedEntityId]);
+    var nextIdx = (currentIdx + direction + filteredSiteList.length) % filteredSiteList.length;
+    setFocusedEntityId(filteredSiteList[nextIdx].id);
+  }, [focusedEntityId, filteredSiteList, setFocusedEntityId]);
 
   const onTreeMouseEnter = useCallback(() => {
     if (treePinned) return;
