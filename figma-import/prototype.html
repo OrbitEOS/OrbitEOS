@@ -428,8 +428,8 @@
       letter-spacing: 0.08em; text-shadow: 0 0 6px color-mix(in srgb, var(--bg-primary) 90%, transparent), 0 0 12px color-mix(in srgb, var(--bg-primary) 60%, transparent); }
     .flow-battery-power { font-size: 11px; font-weight: 500; color: var(--text-secondary); margin-top: 8px;
       text-shadow: 0 0 6px color-mix(in srgb, var(--bg-primary) 90%, transparent), 0 0 12px color-mix(in srgb, var(--bg-primary) 60%, transparent); }
-    .flow-footer { position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%); z-index: 3;
-      display: flex; align-items: center; gap: 6px; padding: 5px 14px;
+    .flow-footer { position: absolute; top: 8px; left: 50%; transform: translateX(-50%); z-index: 3;
+      display: flex; align-items: center; gap: 6px; padding: 4px 12px;
       background: color-mix(in srgb, var(--bg-primary) 35%, transparent); backdrop-filter: blur(16px);
       border-radius: 9999px; border: 1px solid var(--border); white-space: nowrap; }
     .flow-live-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--brand); animation: live-pulse 2s ease-in-out infinite; }
@@ -863,27 +863,27 @@
       .flow-nav-right { right:4px; }
     }
     /* ─── Timeline Scrubber ─── */
-    .timeline-scrubber { position:absolute; bottom:32px; left:40px; right:40px; z-index:5; height:36px;
-      display:flex; align-items:center; gap:6px; transition:opacity 0.3s ease; }
-    .timeline-track { flex:1; height:28px; position:relative; border-radius:6px; cursor:pointer;
+    .timeline-scrubber { position:absolute; bottom:2px; left:10px; right:10px; z-index:5; height:26px;
+      display:flex; align-items:center; gap:4; transition:opacity 0.3s ease; }
+    .timeline-track { flex:1; height:18px; position:relative; border-radius:4px; cursor:pointer;
       background:var(--bg-elevated); border:1px solid var(--border); overflow:hidden; touch-action:pan-x; }
+    .timeline-energy-hue { position:absolute; inset:0; display:flex; pointer-events:none; border-radius:4px; overflow:hidden; }
+    .timeline-energy-band { flex:1; opacity:0.5; }
     .timeline-daynight { position:absolute; inset:0; display:flex; pointer-events:none; }
     .timeline-daynight-band { flex:1; }
     .timeline-forecast-zone { position:absolute; top:0; bottom:0; right:0;
       background:repeating-linear-gradient(135deg,transparent,transparent 3px,color-mix(in srgb,var(--brand) 8%,transparent) 3px,color-mix(in srgb,var(--brand) 8%,transparent) 6px);
       border-left:1px dashed var(--brand); pointer-events:none; }
     .timeline-filled { position:absolute; top:0; bottom:0; left:0; background:color-mix(in srgb,var(--brand) 12%,transparent); pointer-events:none; }
-    .timeline-thumb { position:absolute; top:50%; transform:translate(-50%,-50%); width:14px; height:22px;
-      background:var(--brand); border-radius:4px; cursor:grab; z-index:2; border:2px solid var(--bg-card);
+    .timeline-thumb { position:absolute; top:50%; transform:translate(-50%,-50%); width:10px; height:16px;
+      background:var(--brand); border-radius:3px; cursor:grab; z-index:2; border:1.5px solid var(--bg-card);
       box-shadow:0 1px 4px rgba(0,0,0,0.3); transition:box-shadow 0.2s; }
     .timeline-thumb:hover { box-shadow:0 2px 8px rgba(0,0,0,0.4); }
     .timeline-thumb:active { cursor:grabbing; }
     .timeline-now-marker { position:absolute; top:0; bottom:0; width:2px; background:var(--success);
       transform:translateX(-50%); z-index:1; pointer-events:none; }
-    .timeline-now-dot { position:absolute; top:-3px; left:50%; transform:translateX(-50%); width:6px; height:6px;
+    .timeline-now-dot { position:absolute; top:-2px; left:50%; transform:translateX(-50%); width:5px; height:5px;
       border-radius:50%; background:var(--success); animation:timelineNowPulse 2s ease-in-out infinite; }
-    .timeline-event { position:absolute; top:2px; width:4px; height:4px; border-radius:50%; z-index:1;
-      transform:translateX(-50%); pointer-events:none; }
     .timeline-label { font-size:10px; color:var(--text-tertiary); white-space:nowrap; user-select:none; }
     .timeline-hover-tip { position:absolute; bottom:100%; left:50%; transform:translateX(-50%); margin-bottom:4px;
       background:var(--bg-card); border:1px solid var(--border); border-radius:4px; padding:2px 8px;
@@ -896,7 +896,7 @@
       font-size:10px; font-weight:700; padding:2px 10px; border-radius:10px; pointer-events:none;
       text-transform:uppercase; letter-spacing:0.5px; }
     @keyframes timelineNowPulse { 0%,100%{opacity:1} 50%{opacity:0.6} }
-    .kiosk-active .timeline-scrubber { bottom:8px; left:50px; right:50px; height:48px; }
+    .kiosk-active .timeline-scrubber { bottom:4px; left:20px; right:20px; height:30px; }
     .kiosk-active .flow-ambient-toggle,
     .kiosk-active .timeline-scrubber { opacity:0; transition:opacity 0.6s ease; pointer-events:none; }
     .kiosk-active.kiosk-mouse-active .timeline-scrubber { opacity:1; pointer-events:auto; transition:opacity 0.3s ease; }
@@ -6213,25 +6213,56 @@ function TimelineScrubber({ siteId, lang, isKiosk }) {
     setHoverPct(Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100)));
   }
   function onMouseLeave() { if (!dragRef.current) setHoverPct(null); }
-  const hoverDate = hoverPct != null ? dayjs(pctToDate(hoverPct)).format('ddd D MMM HH:mm') : '';
+  const hoverDate = React.useMemo(() => {
+    if (hoverPct == null) return '';
+    var d = pctToDate(hoverPct);
+    var h = d.getHours();
+    var label = dayjs(d).format('ddd D MMM HH:mm');
+    var hint = h < 6 || h > 21 ? ' \u{1F319}' : h >= 10 && h <= 16 ? ' \u2600' : '';
+    if (hoverPct > NOW_PCT) hint += ' (forecast)';
+    return label + hint;
+  }, [hoverPct]);
   const currentDate = pctToDate(thumbPct);
   const dateLabel = dayjs(currentDate).format('ddd D MMM HH:mm');
 
-  // Day/night bands (simplified: 24 bands)
-  const dayNightBands = Array.from({length:24}, (_, h) => {
-    const isNight = h < 7 || h > 20;
-    return React.createElement('div', {key:h, className:'timeline-daynight-band',
-      style:{background: isNight ? 'color-mix(in srgb, var(--text-primary) 4%, transparent)' : 'transparent'}});
-  });
-
-  // Event markers
-  const events = MockAPI.getTimelineEvents(siteId, pctToDate(0), pctToDate(100));
-  const eventMarkers = events.map((ev, i) => {
-    const evDate = new Date(ev.timestamp);
-    const evPct = ((evDate.getTime() - pctToDate(0).getTime()) / (TOTAL_DAYS * 86400000)) * 100;
-    const colors = {peak:'var(--error)',threshold:'var(--warning)',curtailment:'var(--info)',alarm:'var(--error)'};
-    return React.createElement('div', {key:i, className:'timeline-event', style:{left:evPct+'%', background:colors[ev.type]||'var(--text-tertiary)'}});
-  });
+  // Energy hue bands — show solar(amber), wind(cyan), grid-import(red), grid-export(green), EV(purple) as background shading
+  const BAND_COUNT = 48; // 48 bands across full timeline
+  const energyBands = React.useMemo(() => {
+    const site = typeof EntityStore !== 'undefined' ? EntityStore.get(siteId) : null;
+    const ef = site?.state?.energyFlow || {};
+    const profCode = site?.properties?.consumptionProfile || 'E1A';
+    const prof = SJP_PROFILES[profCode] || SJP_PROFILES.E1A;
+    const cap = parseFloat(site?.properties?.capacity) || 18;
+    const bands = [];
+    for (var i = 0; i < BAND_COUNT; i++) {
+      var bandDate = pctToDate((i / BAND_COUNT) * 100);
+      var h = bandDate.getHours();
+      var m = bandDate.getMonth();
+      var rng = SeededRNG(hashStr((siteId||'') + 'band' + i));
+      var noise = 0.85 + rng.next() * 0.3;
+      var sjpLoad = prof.hourlyShape[h] * prof.seasonalFactor[m] * cap * noise;
+      var solar = (ef.solarActive && h >= 6 && h <= 20) ? Math.sin((h - 6) / 14 * Math.PI) * cap * 0.8 * noise : 0;
+      var wind = ef.windActive ? cap * 0.15 * (0.3 + rng.next() * 0.7) : 0;
+      var gen = solar + wind;
+      var isExporting = gen > sjpLoad;
+      var ev = ef.evPower > 0 ? sjpLoad * 0.15 : 0;
+      // Blend: dominant source gets the color
+      var color;
+      if (h < 6 || h > 21) color = 'var(--text-primary)'; // night: dark
+      else if (solar > wind && solar > sjpLoad * 0.3) color = 'var(--solar)'; // solar dominant
+      else if (wind > solar) color = 'var(--wind)'; // wind dominant
+      else color = 'transparent';
+      // Overlay: grid import/export
+      if (isExporting) color = 'var(--success)'; // green = exporting
+      else if (gen < sjpLoad * 0.3 && h >= 6) color = 'var(--error)'; // red = heavy import
+      // EV charging hours
+      if (ev > 0 && h >= 8 && h <= 18) color = 'var(--ev)'; // only mid-band if EV dominant
+      var opacity = h < 6 || h > 21 ? 0.15 : 0.35;
+      bands.push(React.createElement('div', {key:i, className:'timeline-energy-band',
+        style:{background:color, opacity:opacity}}));
+    }
+    return bands;
+  }, [siteId]);
 
   return React.createElement('div', {className:'timeline-scrubber'},
     // Track
@@ -6240,17 +6271,13 @@ function TimelineScrubber({ siteId, lang, isKiosk }) {
       onTouchStart:onTouchStart, onTouchMove:onTouchMove, onTouchEnd:onTouchEnd, onDoubleClick:onDoubleClick},
       // Hover tooltip
       hoverPct != null && React.createElement('div', {className:'timeline-hover-tip', style:{left:hoverPct+'%'}}, hoverDate),
-      // Day/night bands
-      React.createElement('div', {className:'timeline-daynight'}, dayNightBands),
-      // Filled progress
-      React.createElement('div', {className:'timeline-filled', style:{width:thumbPct+'%'}}),
+      // Energy hue shading
+      React.createElement('div', {className:'timeline-energy-hue'}, energyBands),
       // Forecast zone
       React.createElement('div', {className:'timeline-forecast-zone', style:{left:NOW_PCT+'%'}}),
       // Now marker
       React.createElement('div', {className:'timeline-now-marker', style:{left:NOW_PCT+'%'}},
         React.createElement('div', {className:'timeline-now-dot'})),
-      // Event markers
-      eventMarkers,
       // Thumb
       React.createElement('div', {className:'timeline-thumb', style:{left:thumbPct+'%'}})
     ),
