@@ -1050,7 +1050,7 @@
 
 <script type="text/babel">
 // ─── Version ───
-const ORBITEOS_VERSION = '0.7.0.6';
+const ORBITEOS_VERSION = '0.7.0.7';
 const { useState, useEffect, useRef, useCallback, useMemo } = React;
 const { ConfigProvider, theme: antTheme, Button, Table, Tag, Badge, Switch, Select, Input, Tabs, Segmented,
   Progress, Slider, Form, InputNumber, Tooltip, Dropdown, Space, Modal, Drawer, Menu } = antd;
@@ -2293,7 +2293,7 @@ const TourStore = (() => {
   const PK = 'orbiteos-tour-progress';
 
   function _notify() { _listeners.forEach(fn => fn({..._state})); }
-  function _loadCompleted() { try { return JSON.parse(localStorage.getItem(CK)) || []; } catch { return []; } }
+  function _loadCompleted() { try { return JSON.parse(localStorage.getItem(CK)) || []; } catch(e) { return []; } }
   function _saveCompleted(a) { localStorage.setItem(CK, JSON.stringify(a)); }
 
   function register(tour) { _tours.set(tour.id, tour); }
@@ -2338,9 +2338,10 @@ const TourStore = (() => {
   function getState() { return _state; }
   function getCurrentStep() {
     if (!_state.active) return null;
-    return _tours.get(_state.tourId)?.steps[_state.stepIndex] || null;
+    var tour = _tours.get(_state.tourId);
+    return tour && tour.steps ? tour.steps[_state.stepIndex] || null : null;
   }
-  function getSavedProgress() { try { return JSON.parse(localStorage.getItem(PK)); } catch { return null; } }
+  function getSavedProgress() { try { return JSON.parse(localStorage.getItem(PK)); } catch(e) { return null; } }
   function subscribe(fn) { _listeners.add(fn); return () => _listeners.delete(fn); }
 
   return { register, getTour, getAllTours, start, next, prev, skip, complete,
@@ -2349,7 +2350,10 @@ const TourStore = (() => {
 
 function useTourStore() {
   const [state, setState] = useState(TourStore.getState());
-  useEffect(() => TourStore.subscribe(setState), []);
+  useEffect(function() {
+    var unsub = TourStore.subscribe(function(s) { setState(s); });
+    return unsub;
+  }, []);
   return state;
 }
 
@@ -4836,6 +4840,17 @@ const MockAPI = {
     return sites.filter(function(s) { return MockAPI.getStatusCategory(s.id) === statusFilter; });
   },
 
+  // Keyboard shortcuts — configurable per user profile
+  getKeyboardShortcuts: () => ({
+    search:     { keys: 'Cmd+K / Ctrl+K', label: {en:'Quick Search',nl:'Snel Zoeken'} },
+    kioskPrev:  { keys: '←',              label: {en:'Previous Site (Kiosk)',nl:'Vorige Locatie (Kiosk)'} },
+    kioskNext:  { keys: '→',              label: {en:'Next Site (Kiosk)',nl:'Volgende Locatie (Kiosk)'} },
+    tourNext:   { keys: '→ / ↓',          label: {en:'Tour Next Step',nl:'Tour Volgende Stap'} },
+    tourPrev:   { keys: '← / ↑',          label: {en:'Tour Previous Step',nl:'Tour Vorige Stap'} },
+    tourSkip:   { keys: 'Escape',          label: {en:'Skip Tour',nl:'Tour Overslaan'} },
+    fullscreen: { keys: 'Click ⤢',        label: {en:'Toggle Fullscreen',nl:'Volledig Scherm'} },
+  }),
+
   getDashboardTreeConfig: () => ({
     maxEntityType: 'site',        // show tree nodes down to this level
     defaultPinned: true,          // tree pinned by default on desktop
@@ -5852,6 +5867,7 @@ function Header({ page, t, lang, setLang, themeId, setThemeId, themeMode, setThe
     batteryMgmt:t.batteryMgmt, evCharging:t.evCharging, configuration:t.configuration };
   const [bellRing, setBellRing] = useState(false);
   const [spotlightOpen, setSpotlightOpen] = useState(false);
+  const [showShortcuts, setShowShortcuts] = useState(false);
   useEffect(() => { if(alarmCount>0){setBellRing(true); setTimeout(()=>setBellRing(false),600);} }, [alarmCount]);
 
   // Ctrl+K / Cmd+K shortcut
@@ -5890,13 +5906,22 @@ function Header({ page, t, lang, setLang, themeId, setThemeId, themeMode, setThe
         </button>
         <SpotlightSearch open={spotlightOpen} onClose={() => setSpotlightOpen(false)} lang={lang} t={t} navigateToEntity={navigateToEntity}/>
         <Dropdown trigger={['click']} menu={{
-          items: TourStore.getAllTours().map(tour => ({
-            key: tour.id,
-            label: React.createElement('span',{style:{display:'flex',alignItems:'center',gap:6}},
-              resolveI18n(tour.label, lang),
-              TourStore.isCompleted(tour.id) && React.createElement(CheckCircleFilled, {style:{color:'var(--success)',fontSize:11}})),
-          })),
-          onClick: ({ key }) => TourStore.start(key),
+          items: [
+            { key:'_shortcuts', icon: React.createElement(KeyOutlined,{style:{fontSize:12}}),
+              label: resolveI18n({en:'Keyboard Shortcuts',nl:'Sneltoetsen'}, lang) },
+            { type:'divider' },
+            ...TourStore.getAllTours().map(tour => ({
+              key: tour.id,
+              icon: React.createElement(BookOutlined,{style:{fontSize:12}}),
+              label: React.createElement('span',{style:{display:'flex',alignItems:'center',gap:6}},
+                resolveI18n(tour.label, lang),
+                TourStore.isCompleted(tour.id) && React.createElement(CheckCircleFilled, {style:{color:'var(--success)',fontSize:11}})),
+            })),
+          ],
+          onClick: ({ key }) => {
+            if (key === '_shortcuts') setShowShortcuts(true);
+            else TourStore.start(key);
+          },
         }}>
           <button className="header-btn" style={{position:'relative',padding:'4px 8px',fontSize:14,color:'var(--text-tertiary)'}}>
             <QuestionCircleOutlined/>
@@ -5958,6 +5983,19 @@ function Header({ page, t, lang, setLang, themeId, setThemeId, themeMode, setThe
         {/* User Profile */}
         <HeaderUserProfile lang={lang} setPage={setPage} setCurrentApp={setCurrentApp}/>
       </div>
+      {/* Keyboard Shortcuts Modal */}
+      <Modal open={showShortcuts} onCancel={() => setShowShortcuts(false)} footer={null}
+        title={resolveI18n({en:'Keyboard Shortcuts',nl:'Sneltoetsen'}, lang)} width={400}>
+        <div style={{display:'flex',flexDirection:'column',gap:8}}>
+          {Object.entries(MockAPI.getKeyboardShortcuts()).map(function(entry) {
+            var key = entry[0], sc = entry[1];
+            return React.createElement('div', {key:key, style:{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'6px 0',borderBottom:'1px solid var(--border)'}},
+              React.createElement('span', {style:{fontSize:13,color:'var(--text-primary)'}}, resolveI18n(sc.label, lang)),
+              React.createElement(Tag, {style:{fontFamily:'monospace',fontSize:11}}, sc.keys)
+            );
+          })}
+        </div>
+      </Modal>
     </div>
   );
 }
@@ -6012,6 +6050,17 @@ const WidgetEnergyFlow = React.memo(function WidgetEnergyFlow({t, lang, currentS
     document.addEventListener('fullscreenchange', onFsChange);
     return function() { document.removeEventListener('fullscreenchange', onFsChange); };
   }, []);
+
+  // Kiosk keyboard: left/right arrows navigate sites
+  React.useEffect(function() {
+    if (!isKiosk || !onNavigateSite) return;
+    function onKey(e) {
+      if (e.key === 'ArrowLeft') { e.preventDefault(); onNavigateSite(-1); }
+      else if (e.key === 'ArrowRight') { e.preventDefault(); onNavigateSite(1); }
+    }
+    document.addEventListener('keydown', onKey);
+    return function() { document.removeEventListener('keydown', onKey); };
+  }, [isKiosk, onNavigateSite]);
 
   // Swipe support for touch
   var onTouchStart = function(e) { touchRef.current = e.touches[0].clientX; };
@@ -8277,32 +8326,29 @@ function TourOverlay({ lang, navigateWithLoader, setCurrentApp, page }) {
     return React.createElement('div', { key: i, className: 'tour-dot' + (i === stepIndex ? ' active' : '') });
   }) : null;
 
-  // Center card (welcome / farewell) — Ant Modal with v5 API
+  // Center card (welcome / farewell) — pure portal, no Ant Modal dependency
   if (isCenter) {
-    return React.createElement(Modal, {
-      open: true,
-      centered: true,
-      footer: null,
-      closable: true,
-      width: 420,
-      zIndex: 10002,
-      styles: { mask: { background: 'rgba(0,0,0,0.55)' } },
-      onCancel: function() { TourStore.skip(); },
-    },
-      React.createElement('div', { style: { textAlign: 'center', padding: '8px 0' } },
-        React.createElement('div', { style: { fontSize: 36, marginBottom: 12 } }, stepIndex === 0 ? '👋' : '🎉'),
-        React.createElement('div', { style: { fontSize: 20, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 8 } },
-          rI(step.title)),
-        React.createElement('div', { style: { fontSize: 14, color: 'var(--text-secondary)', lineHeight: '1.6', marginBottom: 20, whiteSpace: 'pre-line' } },
-          rI(step.body)),
-        React.createElement(Space, { size: 8, wrap: true, style: { justifyContent: 'center' } },
-          stepIndex > 0 ? React.createElement(Button, { onClick: function() { TourStore.prev(); } }, rI({en:'Back',nl:'Terug'})) : null,
-          React.createElement(Button, { onClick: function() { TourStore.skip(); } }, rI({en:'Skip tour',nl:'Tour overslaan'})),
-          React.createElement(Button, { type: 'primary', onClick: function() { TourStore.next(); } },
-            isLast ? rI({en:'Done',nl:'Klaar'}) : rI({en:'Start Tour',nl:'Start Tour'}))
-        ),
-        React.createElement('div', { style: { marginTop: 16, display: 'flex', justifyContent: 'center', gap: 3 } }, dots)
-      )
+    return ReactDOM.createPortal(
+      React.createElement('div', null,
+        React.createElement('div', { style: {
+          position:'fixed',inset:0,zIndex:10000,background:'rgba(0,0,0,0.55)'
+        }, onClick: function() { TourStore.skip(); } }),
+        React.createElement('div', { className:'tour-center', style: {zIndex:10002} },
+          React.createElement('div', { style: { fontSize: 36, marginBottom: 12 } }, stepIndex === 0 ? '👋' : '🎉'),
+          React.createElement('div', { style: { fontSize: 20, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 8 } },
+            rI(step.title)),
+          React.createElement('div', { style: { fontSize: 14, color: 'var(--text-secondary)', lineHeight: '1.6', marginBottom: 20, whiteSpace: 'pre-line' } },
+            rI(step.body)),
+          React.createElement('div', { style: { display:'flex', gap:8, justifyContent:'center', flexWrap:'wrap' } },
+            stepIndex > 0 ? React.createElement(Button, { onClick: function() { TourStore.prev(); } }, rI({en:'Back',nl:'Terug'})) : null,
+            React.createElement(Button, { onClick: function() { TourStore.skip(); } }, rI({en:'Skip tour',nl:'Tour overslaan'})),
+            React.createElement(Button, { type: 'primary', onClick: function() { TourStore.next(); } },
+              isLast ? rI({en:'Done',nl:'Klaar'}) : rI({en:'Start Tour',nl:'Start Tour'}))
+          ),
+          React.createElement('div', { style: { marginTop: 16, display: 'flex', justifyContent: 'center', gap: 3 } }, dots)
+        )
+      ),
+      document.body
     );
   }
 
