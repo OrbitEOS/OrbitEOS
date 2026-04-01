@@ -6208,30 +6208,49 @@ function TimelineScrubber({ entityId, lang, embedded, onTimeChange }) {
     if (onTimeChange) onTimeChange(date, pct > NOW_PCT ? 'forecast' : pct < NOW_PCT ? 'historical' : 'live');
   }
 
-  // Mouse
-  function onMouseDown(e) { dragRef.current = true; handleTrack(e.clientX); }
-  useEffect(() => {
-    function mv(e) { if (dragRef.current) handleTrack(e.clientX); }
-    function up() { dragRef.current = false; }
-    document.addEventListener('mousemove', mv); document.addEventListener('mouseup', up);
-    return () => { document.removeEventListener('mousemove', mv); document.removeEventListener('mouseup', up); };
-  }, [zoomIdx]);
+  // Drag state: only start dragging after mousedown + mousemove (not on click alone)
+  var startXRef = useRef(null);
+  function onMouseDown(e) {
+    e.preventDefault();
+    startXRef.current = e.clientX;
+    dragRef.current = false; // not dragging yet — wait for movement
+    // Single click: jump thumb to position
+    handleTrack(e.clientX);
+    // Start listening for drag
+    function mv(ev) {
+      if (!dragRef.current && Math.abs(ev.clientX - startXRef.current) > 3) {
+        dragRef.current = true; // crossed threshold — now dragging
+      }
+      if (dragRef.current) {
+        handleTrack(ev.clientX);
+        setHoverPct(null); // hide tooltip while dragging
+      }
+    }
+    function up() {
+      dragRef.current = false;
+      startXRef.current = null;
+      document.removeEventListener('mousemove', mv);
+      document.removeEventListener('mouseup', up);
+    }
+    document.addEventListener('mousemove', mv);
+    document.addEventListener('mouseup', up);
+  }
 
   // Touch
-  function onTouchStart(e) { dragRef.current = true; handleTrack(e.touches[0].clientX); }
+  function onTouchStart(e) { handleTrack(e.touches[0].clientX); dragRef.current = true; }
   function onTouchMove(e) { if (dragRef.current) { e.preventDefault(); handleTrack(e.touches[0].clientX); } }
   function onTouchEnd() { dragRef.current = false; }
 
   function goLive() { setThumbPct(NOW_PCT); TimeModel.goLive(); setTimeMode('live'); }
 
-  // Hover
+  // Hover — only when NOT dragging
   function onMouseMove(e) {
-    if (dragRef.current) return;
+    if (dragRef.current || startXRef.current != null) return;
     if (!trackRef.current) return;
     var r = trackRef.current.getBoundingClientRect();
     setHoverPct(Math.max(0, Math.min(100, ((e.clientX - r.left) / r.width) * 100)));
   }
-  function onMouseLeave() { if (!dragRef.current) setHoverPct(null); }
+  function onMouseLeave() { setHoverPct(null); }
 
   // Tooltip content
   var hoverTip = React.useMemo(() => {
