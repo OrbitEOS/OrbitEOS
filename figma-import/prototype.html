@@ -846,34 +846,6 @@
     @keyframes spotFadeIn { from { opacity:0; } to { opacity:1; } }
     @keyframes spotScaleIn { from { transform:scale(0.98); opacity:0; } to { transform:scale(1); opacity:1; } }
 
-    /* ─── Product Tour ─── */
-    .tour-backdrop { position:fixed; inset:0; z-index:10000; }
-    .tour-spotlight { position:fixed; z-index:10001; border-radius:8px; pointer-events:none;
-      transition: all 0.35s cubic-bezier(0.4,0,0.2,1); }
-    [data-theme="dark"] .tour-spotlight { box-shadow:0 0 0 9999px rgba(0,0,0,0.6), 0 0 32px rgba(45,212,191,0.12); }
-    [data-theme="light"] .tour-spotlight { box-shadow:0 0 0 9999px rgba(0,0,0,0.35); }
-    .tour-tooltip { position:fixed; z-index:10002; width:340px; max-width:90vw;
-      background:var(--bg-card); border:1px solid var(--border); border-radius:12px;
-      padding:20px; box-shadow:0 16px 48px rgba(0,0,0,0.3); animation:tourIn 0.25s ease; }
-    .tour-tooltip-title { font-size:15px; font-weight:600; color:var(--text-primary); margin-bottom:6px; }
-    .tour-tooltip-body { font-size:13px; color:var(--text-secondary); line-height:1.6; margin-bottom:16px; }
-    .tour-tooltip-footer { display:flex; align-items:center; justify-content:space-between; gap:8px; }
-    .tour-tooltip-progress { display:flex; align-items:center; gap:3px; }
-    .tour-dot { width:6px; height:6px; border-radius:50%; background:var(--border-active); transition:all 0.2s; }
-    .tour-dot.active { background:var(--brand); width:18px; border-radius:3px; }
-    .tour-tooltip-actions { display:flex; gap:6px; align-items:center; }
-    .tour-step-text { font-size:11px; color:var(--text-tertiary); white-space:nowrap; display:none; }
-    .tour-center { position:fixed; z-index:10002; top:50%; left:50%; transform:translate(-50%,-50%);
-      width:420px; max-width:90vw; background:var(--bg-card); border:1px solid var(--border);
-      border-radius:16px; padding:32px; text-align:center; box-shadow:0 24px 64px rgba(0,0,0,0.4); animation:tourIn 0.3s ease; }
-    .tour-center-title { font-size:20px; font-weight:700; color:var(--text-primary); margin-bottom:10px; }
-    .tour-center-body { font-size:14px; color:var(--text-secondary); line-height:1.6; margin-bottom:24px; }
-    .tour-help-pulse { position:absolute; top:-1px; right:-1px; width:7px; height:7px;
-      border-radius:50%; background:var(--brand); animation:tourPulse 2s infinite; }
-    .tour-modal-wrap { z-index:10002 !important; }
-    .tour-modal-wrap .ant-modal-mask { z-index:10000 !important; background:rgba(0,0,0,0.55) !important; }
-    .tour-modal-wrap .ant-modal-wrap { z-index:10002 !important; }
-    .tour-modal-wrap .ant-modal-content { background:var(--bg-card); border:1px solid var(--border); }
     /* ─── Flow Gallery Nav Arrows ─── */
     .flow-nav-arrow { position:absolute; top:50%; transform:translateY(-50%); z-index:4;
       width:28px; height:48px; display:flex; align-items:center; justify-content:center;
@@ -918,21 +890,6 @@
     @keyframes treePulseIcon { 0%,100%{opacity:0.7;transform:scale(0.9)} 50%{opacity:1;transform:scale(1.1)} }
     @keyframes treeSpinIcon { to{transform:rotate(360deg)} }
     @keyframes treeFlashIcon { 0%,100%{opacity:0.5} 50%{opacity:1} }
-    @keyframes tourPulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.4;transform:scale(1.6)} }
-    @keyframes tourIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
-    @media (max-width: 768px) {
-      .tour-tooltip { width:280px; padding:16px; }
-      .tour-tooltip-title { font-size:14px; }
-      .tour-tooltip-body { font-size:12px; }
-      .tour-tooltip-progress { display:none; }
-      .tour-step-text { display:block; }
-      .tour-center { width:340px; padding:24px; }
-    }
-    @media (max-width: 480px) {
-      .tour-tooltip { width:calc(100vw - 32px); position:fixed !important; bottom:16px !important;
-        left:16px !important; top:auto !important; right:auto !important; }
-      .tour-center { width:calc(100vw - 32px); }
-    }
 
     /* ─── Configuration Page ─── */
     .config-page { display:flex; gap:0; height:calc(100vh - var(--header-h) - 48px); align-items:stretch; overflow:hidden; }
@@ -2292,132 +2249,6 @@ function useLoaderStore() {
   return state;
 }
 
-// ─── TourStore ───
-const TourStore = (() => {
-  const _tours = new Map();
-  const _listeners = new Set();
-  let _state = { active: false, tourId: null, stepIndex: 0 };
-  const CK = 'orbiteos-tours-completed';
-  const PK = 'orbiteos-tour-progress';
-
-  function _notify() { _listeners.forEach(fn => fn({..._state})); }
-  function _loadCompleted() { try { return JSON.parse(localStorage.getItem(CK)) || []; } catch(e) { return []; } }
-  function _saveCompleted(a) { localStorage.setItem(CK, JSON.stringify(a)); }
-
-  function register(tour) { _tours.set(tour.id, tour); }
-  function getTour(id) { return _tours.get(id); }
-  function getAllTours() { return Array.from(_tours.values()); }
-
-  function start(tourId, stepIndex = 0) {
-    if (!_tours.has(tourId)) return;
-    _state = { active: true, tourId, stepIndex };
-    localStorage.setItem(PK, JSON.stringify({ tourId, stepIndex }));
-    _notify();
-  }
-  function next() {
-    if (!_state.active) return;
-    const tour = _tours.get(_state.tourId);
-    if (_state.stepIndex < tour.steps.length - 1) {
-      _state = { ..._state, stepIndex: _state.stepIndex + 1 };
-      localStorage.setItem(PK, JSON.stringify({ tourId: _state.tourId, stepIndex: _state.stepIndex }));
-      _notify();
-    } else complete();
-  }
-  function prev() {
-    if (!_state.active || _state.stepIndex === 0) return;
-    _state = { ..._state, stepIndex: _state.stepIndex - 1 };
-    localStorage.setItem(PK, JSON.stringify({ tourId: _state.tourId, stepIndex: _state.stepIndex }));
-    _notify();
-  }
-  function skip() {
-    _state = { active: false, tourId: null, stepIndex: 0 };
-    localStorage.removeItem(PK);
-    _notify();
-  }
-  function complete() {
-    const c = _loadCompleted();
-    if (_state.tourId && !c.includes(_state.tourId)) { c.push(_state.tourId); _saveCompleted(c); }
-    _state = { active: false, tourId: null, stepIndex: 0 };
-    localStorage.removeItem(PK);
-    _notify();
-  }
-  function isCompleted(id) { return _loadCompleted().includes(id); }
-  function resetAll() { localStorage.removeItem(CK); localStorage.removeItem(PK); }
-  function getState() { return _state; }
-  function getCurrentStep() {
-    if (!_state.active) return null;
-    var tour = _tours.get(_state.tourId);
-    return tour && tour.steps ? tour.steps[_state.stepIndex] || null : null;
-  }
-  function getSavedProgress() { try { return JSON.parse(localStorage.getItem(PK)); } catch(e) { return null; } }
-  function subscribe(fn) { _listeners.add(fn); return () => _listeners.delete(fn); }
-
-  return { register, getTour, getAllTours, start, next, prev, skip, complete,
-    isCompleted, resetAll, getState, getCurrentStep, getSavedProgress, subscribe };
-})();
-
-function useTourStore() {
-  const [state, setState] = useState(TourStore.getState());
-  useEffect(function() {
-    var unsub = TourStore.subscribe(function(s) { setState(s); });
-    return unsub;
-  }, []);
-  return state;
-}
-
-// ─── Tour Definitions ───
-TourStore.register({
-  id: 'welcome',
-  label: { en: 'Welcome Tour', nl: 'Welkomstour' },
-  steps: [
-    { id:'w-1', target:null, placement:'center',
-      title:{en:'Welcome to OrbitEOS',nl:'Welkom bij OrbitEOS'},
-      body:{en:'Let us show you around the platform. This tour covers the main apps and key features.\nUse arrow keys or click Next to continue.',
-           nl:'Laat ons u rondleiden door het platform. Deze tour behandelt de hoofd-apps en belangrijke functies.\nGebruik pijltjestoetsen of klik Volgende.'} },
-    { id:'w-2', target:'.sidebar-rail', placement:'right', page:'dashboard', appId:'dashboard',
-      title:{en:'Navigation Rail',nl:'Navigatiebalk'},
-      body:{en:'Switch between apps using the sidebar. Each app has its own set of pages and tools.',
-           nl:'Schakel tussen apps via de zijbalk. Elke app heeft eigen pagina\'s en tools.'} },
-    { id:'w-3', target:'.widget-header', placement:'bottom', page:'dashboard', appId:'dashboard',
-      title:{en:'Energy Dashboard',nl:'Energie Dashboard'},
-      body:{en:'Real-time energy monitoring with live flow visualization, KPI cards, and portfolio analytics. Drag widgets to customize your layout.',
-           nl:'Realtime energiemonitoring met live flow, KPI-kaarten en portfolio-analyses. Sleep widgets om uw lay-out aan te passen.'} },
-    { id:'w-4', target:'.header-right', placement:'bottom',
-      title:{en:'Header Controls',nl:'Koptekst Besturing'},
-      body:{en:'Quick search (Cmd+K), language toggle, theme selector, dark/light mode, and alarm notifications.',
-           nl:'Snel zoeken (Cmd+K), taalwissel, thema-keuze, donker/licht modus en alarmmeldingen.'} },
-    { id:'w-5', target:'.config-tree-panel', placement:'right', page:'configuration', appId:'configuration',
-      waitForSelector:'.config-tree-panel',
-      title:{en:'Configuration — Entity Tree',nl:'Configuratie — Entiteitenboom'},
-      body:{en:'Your full entity hierarchy: platforms, accounts, sites, device groups, devices, and sensors. Click any node to view and edit.',
-           nl:'Uw volledige entiteitenhierarchie. Klik op een knooppunt om te bekijken en bewerken.'} },
-    { id:'w-6', target:'.config-detail-panel', placement:'left', page:'configuration', appId:'configuration',
-      waitForSelector:'.config-detail-panel',
-      title:{en:'Detail Panel',nl:'Detailpaneel'},
-      body:{en:'View properties, state, alarms, events, and access rules for any entity. Use the tabs to navigate between sections.',
-           nl:'Bekijk eigenschappen, status, alarmen, events en toegangsregels voor elke entiteit.'} },
-    { id:'w-7', target:'.content', placement:'top', page:'alerts', appId:'alarms',
-      title:{en:'Alarm Management',nl:'Alarmbeheer'},
-      body:{en:'Monitor active alerts across all entities. Filter by severity, acknowledge, and configure alert rules.',
-           nl:'Monitor actieve meldingen over alle entiteiten. Filter op ernst en configureer meldingsregels.'} },
-    { id:'w-8', target:'.content', placement:'top', page:'siteMap', appId:'map',
-      title:{en:'Site Map',nl:'Locatiekaart'},
-      body:{en:'Geographic overview of all sites with live status indicators. Click a site marker to drill down.',
-           nl:'Geografisch overzicht van alle locaties met live statusindicatoren.'} },
-    { id:'w-9', target:'.content', placement:'top', page:'marketplace', appId:'marketplace',
-      title:{en:'Marketplace',nl:'Marktplaats'},
-      body:{en:'Browse and install domain plugins, integrations, and extensions to expand the platform.',
-           nl:'Blader en installeer domein-plugins, integraties en extensies.'} },
-    { id:'w-10', target:'.content', placement:'top', page:'entityTemplates', appId:'developerStudio',
-      title:{en:'Developer Studio',nl:'Developer Studio'},
-      body:{en:'Define entity templates, manage properties, create flow automations, and configure API access.',
-           nl:'Definieer entiteit-templates, beheer eigenschappen, maak flow-automaties en configureer API-toegang.'} },
-    { id:'w-11', target:null, placement:'center',
-      title:{en:'You\'re all set!',nl:'U bent klaar!'},
-      body:{en:'Explore OrbitEOS at your own pace. Replay this tour anytime from the help menu (?) in the header.\n\nHappy monitoring!',
-           nl:'Verken OrbitEOS op uw eigen tempo. Herstart deze tour via het help-menu (?) in de koptekst.\n\nVeel succes!'} },
-  ]
-});
 
 // ─── Seed: Apps ───
 const APP_SEEDS = [
@@ -4853,9 +4684,6 @@ const MockAPI = {
     search:     { keys: 'Cmd+K / Ctrl+K', label: {en:'Quick Search',nl:'Snel Zoeken'} },
     kioskPrev:  { keys: '←',              label: {en:'Previous Site (Kiosk)',nl:'Vorige Locatie (Kiosk)'} },
     kioskNext:  { keys: '→',              label: {en:'Next Site (Kiosk)',nl:'Volgende Locatie (Kiosk)'} },
-    tourNext:   { keys: '→ / ↓',          label: {en:'Tour Next Step',nl:'Tour Volgende Stap'} },
-    tourPrev:   { keys: '← / ↑',          label: {en:'Tour Previous Step',nl:'Tour Vorige Stap'} },
-    tourSkip:   { keys: 'Escape',          label: {en:'Skip Tour',nl:'Tour Overslaan'} },
     fullscreen: { keys: 'Click ⤢',        label: {en:'Toggle Fullscreen',nl:'Volledig Scherm'} },
     autoCycle:  { keys: 'Click ▶',       label: {en:'Auto-cycle Sites (Kiosk)',nl:'Auto-cyclus Locaties (Kiosk)'} },
   }),
@@ -5923,29 +5751,12 @@ function Header({ page, t, lang, setLang, themeId, setThemeId, themeMode, setThe
           <SearchOutlined/><span className="spotlight-kbd" style={{marginLeft:4}}>⌘K</span>
         </button>
         <SpotlightSearch open={spotlightOpen} onClose={() => setSpotlightOpen(false)} lang={lang} t={t} navigateToEntity={navigateToEntity}/>
-        <Dropdown trigger={['click']} menu={{
-          items: [
-            { key:'_shortcuts', icon: React.createElement(KeyOutlined,{style:{fontSize:12}}),
-              label: resolveI18n({en:'Keyboard Shortcuts',nl:'Sneltoetsen'}, lang) },
-            { type:'divider' },
-            ...TourStore.getAllTours().map(tour => ({
-              key: tour.id,
-              icon: React.createElement(BookOutlined,{style:{fontSize:12}}),
-              label: React.createElement('span',{style:{display:'flex',alignItems:'center',gap:6}},
-                resolveI18n(tour.label, lang),
-                TourStore.isCompleted(tour.id) && React.createElement(CheckCircleFilled, {style:{color:'var(--success)',fontSize:11}})),
-            })),
-          ],
-          onClick: ({ key }) => {
-            if (key === '_shortcuts') setShowShortcuts(true);
-            else TourStore.start(key);
-          },
-        }}>
-          <button className="header-btn" style={{position:'relative',padding:'4px 8px',fontSize:14,color:'var(--text-tertiary)'}}>
+        <Tooltip title={resolveI18n({en:'Keyboard Shortcuts',nl:'Sneltoetsen'}, lang)}>
+          <button className="header-btn" style={{padding:'4px 8px',fontSize:14,color:'var(--text-tertiary)'}}
+            onClick={() => setShowShortcuts(true)}>
             <QuestionCircleOutlined/>
-            {!TourStore.isCompleted('welcome') && <span className="tour-help-pulse"/>}
           </button>
-        </Dropdown>
+        </Tooltip>
         <button className="lang-toggle" onClick={()=>setLang(lang==='en'?'nl':'en')}>
           <GlobalOutlined style={{marginRight:4}}/>{lang==='en'?'EN':'NL'}
         </button>
@@ -8279,199 +8090,6 @@ function ConfigNavList({ entity, selectedId, onSelect, expandedNodes, onToggle, 
   );
 }
 
-// ─── Product Tour Overlay ───
-function TourOverlay({ lang, navigateWithLoader, setCurrentApp, page }) {
-  const tourState = useTourStore();
-  const [rect, setRect] = useState(null);
-  const [tipPos, setTipPos] = useState(null);
-  const [navigating, setNavigating] = useState(false);
-  const prevStepRef = useRef(null);
-  const pageRef = useRef(page);
-  pageRef.current = page;
-
-  const active = tourState.active;
-  const tour = active ? TourStore.getTour(tourState.tourId) : null;
-  const step = active ? TourStore.getCurrentStep() : null;
-  const stepIndex = tourState.stepIndex;
-  const totalSteps = tour ? tour.steps.length : 0;
-  const isLast = stepIndex === totalSteps - 1;
-  const stepId = step ? step.id : null;
-  const isCenter = step && (!step.target || step.placement === 'center');
-
-  const rI = useCallback((label) => {
-    if (!label) return '';
-    if (typeof label === 'string') return label;
-    return label[lang] || label.en || label[Object.keys(label)[0]] || '';
-  }, [lang]);
-
-  // Position tooltip relative to target rect
-  function positionTooltip(targetRect, placement) {
-    if (!targetRect) return null;
-    const GAP = 14;
-    const TW = Math.min(340, window.innerWidth - 32);
-    const TH = 180;
-    let top, left;
-    switch (placement) {
-      case 'right':  top = targetRect.top + targetRect.height / 2 - TH / 2; left = targetRect.right + GAP; break;
-      case 'left':   top = targetRect.top + targetRect.height / 2 - TH / 2; left = targetRect.left - TW - GAP; break;
-      case 'bottom': top = targetRect.bottom + GAP; left = targetRect.left + targetRect.width / 2 - TW / 2; break;
-      case 'top':    top = targetRect.top - TH - GAP; left = targetRect.left + targetRect.width / 2 - TW / 2; break;
-      default:       top = targetRect.bottom + GAP; left = targetRect.left;
-    }
-    left = Math.max(16, Math.min(window.innerWidth - TW - 16, left));
-    top = Math.max(16, Math.min(window.innerHeight - TH - 16, top));
-    return { top, left };
-  }
-
-  function findAndPosition(s) {
-    if (!s || !s.target) { setRect(null); setTipPos(null); return; }
-    const el = document.querySelector(s.target);
-    if (!el) { setRect(null); setTipPos(null); return; }
-    const r = el.getBoundingClientRect();
-    if (r.width === 0 && r.height === 0) { setRect(null); setTipPos(null); return; }
-    const pad = s.spotlightPadding || 8;
-    const sr = { top: r.top - pad, left: r.left - pad, width: r.width + pad * 2, height: r.height + pad * 2 };
-    setRect(sr);
-    setTipPos(positionTooltip(sr, s.placement || 'bottom'));
-  }
-
-  // Handle step changes
-  useEffect(() => {
-    if (!active || !step) { setRect(null); setTipPos(null); setNavigating(false); return; }
-    if (prevStepRef.current === stepId) return;
-    prevStepRef.current = stepId;
-
-    // Center steps need no target
-    if (!step.target || step.placement === 'center') {
-      setRect(null); setTipPos(null); setNavigating(false);
-      return;
-    }
-
-    // Navigate if needed
-    const needsNav = step.page && step.page !== pageRef.current;
-    if (needsNav || step.appId) {
-      setNavigating(true); setRect(null); setTipPos(null);
-      if (step.appId) setCurrentApp(step.appId);
-      if (step.page) navigateWithLoader(step.page);
-    }
-
-    // Poll for target
-    const selector = step.waitForSelector || step.target;
-    const t0 = Date.now();
-    const minDelay = needsNav ? 500 : 100;
-    const poll = setInterval(() => {
-      const elapsed = Date.now() - t0;
-      if (elapsed < minDelay) return;
-      if (selector) {
-        const el = document.querySelector(selector);
-        if (el && el.getBoundingClientRect().width > 0) {
-          clearInterval(poll);
-          setNavigating(false);
-          findAndPosition(step);
-          return;
-        }
-      }
-      if (elapsed > 3000) { clearInterval(poll); setNavigating(false); findAndPosition(step); }
-    }, 100);
-    return () => clearInterval(poll);
-  }, [active, stepId]);
-
-  // Reposition on resize
-  useEffect(() => {
-    if (!active || !step || !step.target || step.placement === 'center') return;
-    const h = () => findAndPosition(step);
-    window.addEventListener('resize', h);
-    window.addEventListener('scroll', h, true);
-    return () => { window.removeEventListener('resize', h); window.removeEventListener('scroll', h, true); };
-  }, [active, stepId]);
-
-  // Keyboard
-  useEffect(() => {
-    if (!active) return;
-    const h = (e) => {
-      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { e.preventDefault(); TourStore.next(); }
-      else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault(); TourStore.prev(); }
-      else if (e.key === 'Escape') TourStore.skip();
-    };
-    document.addEventListener('keydown', h);
-    return () => document.removeEventListener('keydown', h);
-  }, [active]);
-
-  if (!active || !step) return null;
-
-  // Progress dots
-  const dots = tour ? tour.steps.map(function(_, i) {
-    return React.createElement('div', { key: i, className: 'tour-dot' + (i === stepIndex ? ' active' : '') });
-  }) : null;
-
-  // Center card (welcome / farewell) — pure portal, no Ant Modal dependency
-  if (isCenter) {
-    return ReactDOM.createPortal(
-      React.createElement('div', null,
-        React.createElement('div', { style: {
-          position:'fixed',inset:0,zIndex:10000,background:'rgba(0,0,0,0.55)'
-        }, onClick: function() { TourStore.skip(); } }),
-        React.createElement('div', { className:'tour-center', style: {zIndex:10002} },
-          React.createElement('div', { style: { fontSize: 36, marginBottom: 12 } }, stepIndex === 0 ? '👋' : '🎉'),
-          React.createElement('div', { style: { fontSize: 20, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 8 } },
-            rI(step.title)),
-          React.createElement('div', { style: { fontSize: 14, color: 'var(--text-secondary)', lineHeight: '1.6', marginBottom: 20, whiteSpace: 'pre-line' } },
-            rI(step.body)),
-          React.createElement('div', { style: { display:'flex', gap:8, justifyContent:'center', flexWrap:'wrap' } },
-            stepIndex > 0 ? React.createElement(Button, { onClick: function() { TourStore.prev(); } }, rI({en:'Back',nl:'Terug'})) : null,
-            React.createElement(Button, { onClick: function() { TourStore.skip(); } }, rI({en:'Skip tour',nl:'Tour overslaan'})),
-            React.createElement(Button, { type: 'primary', onClick: function() { TourStore.next(); } },
-              isLast ? rI({en:'Done',nl:'Klaar'}) : rI({en:'Start Tour',nl:'Start Tour'}))
-          ),
-          React.createElement('div', { style: { marginTop: 16, display: 'flex', justifyContent: 'center', gap: 3 } }, dots)
-        )
-      ),
-      document.body
-    );
-  }
-
-  // Navigating — show loading backdrop
-  if (navigating) {
-    return ReactDOM.createPortal(
-      React.createElement('div', { className: 'tour-backdrop', style: { background: 'rgba(0,0,0,0.3)' } }),
-      document.body
-    );
-  }
-
-  // Targeted step with spotlight + tooltip
-  var spotlightEl = rect ? React.createElement('div', {
-    className: 'tour-spotlight',
-    style: { top: rect.top, left: rect.left, width: rect.width, height: rect.height }
-  }) : null;
-
-  var tooltipEl = tipPos ? React.createElement('div', {
-    className: 'tour-tooltip',
-    style: { top: tipPos.top, left: tipPos.left },
-    key: stepId
-  },
-    React.createElement('div', { className: 'tour-tooltip-title' }, rI(step.title)),
-    React.createElement('div', { className: 'tour-tooltip-body', style: { whiteSpace: 'pre-line' } }, rI(step.body)),
-    React.createElement('div', { className: 'tour-tooltip-footer' },
-      React.createElement('div', { className: 'tour-tooltip-progress' }, dots),
-      React.createElement('span', { className: 'tour-step-text' }, (stepIndex + 1) + ' / ' + totalSteps),
-      React.createElement(Space, { size: 4 },
-        React.createElement(Button, { size: 'small', onClick: function() { TourStore.skip(); } }, rI({en:'Skip',nl:'Overslaan'})),
-        stepIndex > 0 ? React.createElement(Button, { size: 'small', onClick: function() { TourStore.prev(); } }, rI({en:'Back',nl:'Terug'})) : null,
-        React.createElement(Button, { size: 'small', type: 'primary', onClick: function() { TourStore.next(); } },
-          isLast ? rI({en:'Done',nl:'Klaar'}) : rI({en:'Next →',nl:'Volgende →'}))
-      )
-    )
-  ) : null;
-
-  return ReactDOM.createPortal(
-    React.createElement('div', null,
-      React.createElement('div', { className: 'tour-backdrop', onClick: function() { TourStore.skip(); } }),
-      spotlightEl,
-      tooltipEl
-    ),
-    document.body
-  );
-}
 
 // ─── Shared Primitives ───
 function resolveI18n(label, lang) {
@@ -15498,20 +15116,6 @@ function App() {
   const [dsRoute, setDsRoute] = useState(null); // { entityType?, typeKey?, propGroup? }
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
-  // Auto-trigger welcome tour after first login
-  useEffect(() => {
-    if (page === 'dashboard' && prevPageRef.current === 'login') {
-      if (!TourStore.isCompleted('welcome')) {
-        const timer = setTimeout(() => TourStore.start('welcome'), 3000);
-        return () => clearTimeout(timer);
-      }
-      const progress = TourStore.getSavedProgress();
-      if (progress) {
-        const timer = setTimeout(() => TourStore.start(progress.tourId, progress.stepIndex), 3000);
-        return () => clearTimeout(timer);
-      }
-    }
-  }, [page]);
 
   const t = T[lang];
 
@@ -15709,7 +15313,6 @@ function App() {
             {pages[page] || <DashboardPage {...sp}/>}
           </div>
           <OrbitLoaderOverlay onDone={onLoadingDone}/>
-          <TourOverlay lang={lang} navigateWithLoader={navigateWithLoader} setCurrentApp={setCurrentApp} page={page}/>
         </div>
       </div>
       {/* Toast notifications */}
