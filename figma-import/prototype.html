@@ -1034,7 +1034,7 @@
 
 <script type="text/babel">
 // ─── Version ───
-const ORBITEOS_VERSION = '0.7.0';
+const ORBITEOS_VERSION = '0.7.0.1';
 const { useState, useEffect, useRef, useCallback, useMemo } = React;
 const { ConfigProvider, theme: antTheme, Button, Table, Tag, Badge, Switch, Select, Input, Tabs, Segmented,
   Progress, Slider, Form, InputNumber, Tooltip, Dropdown, Space, Modal, Drawer, Menu } = antd;
@@ -4884,14 +4884,29 @@ const MockAPI = {
     const batteryLow = ef.essSoc > 0 && ef.essSoc < 20;
     const peakCritical = peakPct > 90;
 
-    // Priority 1: Critical alarms or site in maintenance → error
-    if (criticalAlarms > 0 || siteStatus === 'maintenance' || siteStatus === 'fault') {
-      const maint = siteStatus === 'maintenance';
+    // Priority 1a: Site offline or in maintenance → hard error
+    if (siteStatus === 'maintenance' || siteStatus === 'fault' || siteStatus === 'offline') {
       energyStatus = {level:'critical', color:'var(--error)', icon:'CloseCircleFilled', treeIcon:'alert',
-        label:{en: maint ? 'Maintenance' : criticalAlarms + ' Critical Alert' + (criticalAlarms>1?'s':''),
-               nl: maint ? 'Onderhoud' : criticalAlarms + ' Kritieke Melding'},
-        desc:{en: maint ? 'Site in maintenance mode' : 'Immediate attention required',
-              nl: maint ? 'Locatie in onderhoudsmodus' : 'Onmiddellijke aandacht vereist'},
+        label:{en: siteStatus === 'maintenance' ? 'Maintenance' : 'Offline',
+               nl: siteStatus === 'maintenance' ? 'Onderhoud' : 'Offline'},
+        desc:{en: 'Site ' + siteStatus + ' — no active control',
+              nl: 'Locatie ' + siteStatus + ' — geen actieve aansturing'},
+        selfSufficiency};
+    // Priority 1b: Critical alarms but energy may be fine → warning with alarm context
+    } else if (criticalAlarms > 0 && (ef.gridExporting || selfSufficiency >= 70)) {
+      energyStatus = {level:'alarm-warning', color:'var(--warning)', icon:'ExclamationCircleFilled', treeIcon:'warning',
+        label:{en: criticalAlarms + ' Alert — Energy OK',
+               nl: criticalAlarms + ' Melding — Energie OK'},
+        desc:{en: 'Device alert active, but energy flow is healthy (' + selfSufficiency + '% self-sufficient)',
+              nl: 'Apparaatmelding actief, maar energiestroom is gezond (' + selfSufficiency + '% zelfvoorzienend)'},
+        selfSufficiency};
+    // Priority 1c: Critical alarms AND poor energy → error
+    } else if (criticalAlarms > 0) {
+      energyStatus = {level:'critical', color:'var(--error)', icon:'CloseCircleFilled', treeIcon:'alert',
+        label:{en: criticalAlarms + ' Critical Alert' + (criticalAlarms>1?'s':''),
+               nl: criticalAlarms + ' Kritieke Melding'},
+        desc:{en: 'Immediate attention — ' + selfSufficiency + '% self-sufficient',
+              nl: 'Onmiddellijke aandacht — ' + selfSufficiency + '% zelfvoorzienend'},
         selfSufficiency};
     // Priority 2: Grid-dependent (no generation, heavy import)
     } else if (ef.gridImporting && totalGen === 0) {
@@ -5431,8 +5446,8 @@ function EntityTreeNode({ entity, focusedEntityId, setFocusedEntityId, depth, ex
     if (!status) return null;
     var lv = status.level;
     if (lv === 'island' || lv === 'peak' || lv === 'optimal') return 'success';
-    if (lv === 'importing' || lv === 'normal') return 'warning';
-    return 'error'; // grid-heavy, grid-dependent
+    if (lv === 'importing' || lv === 'normal' || lv === 'attention' || lv === 'alarm-warning') return 'warning';
+    return 'error';
   }, [status]);
 
   // Filter: if filter is set, only show this node if it or a descendant matches
