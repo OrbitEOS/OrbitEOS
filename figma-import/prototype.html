@@ -1062,7 +1062,7 @@
 const ORBITEOS_VERSION = '0.7.0.10';
 const { useState, useEffect, useRef, useCallback, useMemo } = React;
 const { ConfigProvider, theme: antTheme, Button, Table, Tag, Badge, Switch, Select, Input, Tabs, Segmented,
-  Progress, Slider, Form, InputNumber, Tooltip, Dropdown, Space, Modal, Drawer, Menu } = antd;
+  Progress, Slider, Form, InputNumber, Tooltip, Dropdown, Space, Modal, Drawer, Menu, message } = antd;
 const icons = window.icons;
 const { DashboardOutlined, ThunderboltOutlined, ClusterOutlined, ApiOutlined, ApartmentOutlined,
   LineChartOutlined, DollarOutlined, DatabaseOutlined, CarOutlined, SettingOutlined, BellOutlined,
@@ -1078,7 +1078,7 @@ const { DashboardOutlined, ThunderboltOutlined, ClusterOutlined, ApiOutlined, Ap
   FunctionOutlined, FilterOutlined, PieChartOutlined, SwapOutlined, BankOutlined, CloudOutlined,
   ExclamationCircleOutlined, SearchOutlined, PlusOutlined, EditOutlined, DeleteOutlined,
   TagOutlined, UserOutlined, AuditOutlined, FileSearchOutlined, ClockCircleOutlined,
-  ThunderboltFilled, ExpandOutlined, CompressOutlined, CopyOutlined, ReloadOutlined,
+  ThunderboltFilled, ExpandOutlined, CompressOutlined, CopyOutlined, LinkOutlined, ReloadOutlined,
   SendOutlined, ScheduleOutlined, SafetyOutlined, RightOutlined, MenuOutlined, CloseOutlined, LeftOutlined,
   StopOutlined, RollbackOutlined, SortAscendingOutlined, FolderOutlined, FolderOpenOutlined, QuestionCircleOutlined, CaretRightOutlined, PauseOutlined } = icons;
 
@@ -6070,6 +6070,21 @@ function Header({ page, t, lang, setLang, themeId, setThemeId, themeMode, setThe
           <SearchOutlined/><span className="spotlight-kbd" style={{marginLeft:4}}>⌘K</span>
         </button>
         <SpotlightSearch open={spotlightOpen} onClose={() => setSpotlightOpen(false)} lang={lang} t={t} navigateToEntity={navigateToEntity}/>
+        <Tooltip title={resolveI18n({en:'Copy link to share',nl:'Kopieer link om te delen'}, lang)}>
+          <button className="header-btn" style={{padding:'4px 8px',fontSize:14,color:'var(--text-tertiary)'}}
+            onClick={() => {
+              var url = window.location.href;
+              navigator.clipboard.writeText(url).then(() => {
+                message.success(resolveI18n({en:'Link copied!',nl:'Link gekopieerd!'}, lang));
+              }).catch(() => {
+                var inp = document.createElement('input'); inp.value = url; document.body.appendChild(inp);
+                inp.select(); document.execCommand('copy'); document.body.removeChild(inp);
+                message.success(resolveI18n({en:'Link copied!',nl:'Link gekopieerd!'}, lang));
+              });
+            }}>
+            <LinkOutlined/>
+          </button>
+        </Tooltip>
         <Tooltip title={resolveI18n({en:'Keyboard Shortcuts',nl:'Sneltoetsen'}, lang)}>
           <button className="header-btn" style={{padding:'4px 8px',fontSize:14,color:'var(--text-tertiary)'}}
             onClick={() => setShowShortcuts(true)}>
@@ -7706,7 +7721,7 @@ const EnergyAmbientHues = React.memo(function EnergyAmbientHues({ef}) {
 });
 
 // Format number to 1 decimal place — standardised across all dashboard widgets
-function fmt(n) { return Number(n).toFixed(1); }
+function fmt(n) { var v = Number(n); return isNaN(v) ? '0.0' : v.toFixed(1); }
 
 // Theme-aware color reader — pulls from CSS custom properties
 function getFlowColors() {
@@ -9360,7 +9375,7 @@ function OverviewMicroFrontend({ entity, lang, onEdit }) {
       case '_lastCommand': return '2 min ago';
       default: {
         const val = getNestedValue(entity, kpi.key);
-        if (val == null) return '\u2014';
+        if (val == null || (typeof val === 'number' && isNaN(val))) return '\u2014';
         if (kpi.suffix === true && entity.properties?.unit) return `${val}`;
         return val;
       }
@@ -15858,7 +15873,7 @@ function App() {
       const pageKey = routeMap[parts[0]] || parts[0];
       if (pageKey !== pageRef2.current) setPage(pageKey);
 
-      if (parts[0] === 'configuration' && parts[1]) setFocusedEntityId(parts[1]);
+      if (parts[1] && (parts[0] === 'configuration' || parts[0] === 'dashboard')) setFocusedEntityId(parts[1]);
       if (parts[0] === 'entity-studio') {
         if (parts[1] === 'props' && parts[2]) setDsRoute({ propGroup: parts[2] });
         else if (parts[1] && parts[2]) setDsRoute({ entityType: parts[1], typeKey: parts[2] });
@@ -15875,6 +15890,18 @@ function App() {
     }
     return function() { window.removeEventListener('hashchange', handleHash); window.removeEventListener('popstate', handleHash); };
   }, []); // empty deps — never recreates
+
+  // Sync hash when entity or page changes (for shareable URLs)
+  useEffect(() => {
+    if (page === 'login') return;
+    var hashPage = Object.entries({ dashboard:'dashboard',fleet:'fleet',devices:'devices',alerts:'alerts',
+      configuration:'configuration',entityTemplates:'entity-studio',marketplace:'marketplace' })
+      .find(([k]) => k === page);
+    var slug = hashPage ? hashPage[1] : page;
+    if ((page === 'dashboard' || page === 'configuration') && focusedEntityId) {
+      updateHash('/' + slug + '/' + focusedEntityId);
+    }
+  }, [focusedEntityId, page]);
 
   // Persist preferences
   useEffect(() => { localStorage.setItem('orbiteos-lang', lang); }, [lang]);
