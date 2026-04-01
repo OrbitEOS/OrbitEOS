@@ -1034,7 +1034,7 @@
 
 <script type="text/babel">
 // ─── Version ───
-const ORBITEOS_VERSION = '0.7.0.1';
+const ORBITEOS_VERSION = '0.7.0.2';
 const { useState, useEffect, useRef, useCallback, useMemo } = React;
 const { ConfigProvider, theme: antTheme, Button, Table, Tag, Badge, Switch, Select, Input, Tabs, Segmented,
   Progress, Slider, Form, InputNumber, Tooltip, Dropdown, Space, Modal, Drawer, Menu } = antd;
@@ -5473,7 +5473,9 @@ function EntityTreeNode({ entity, focusedEntityId, setFocusedEntityId, depth, ex
       status.selfSufficiency != null ? React.createElement('div', { style: { marginTop: 2, opacity: 0.7 } },
         '⚡ ' + status.selfSufficiency + '% self-sufficient') : null,
       status.alarmCount > 0 ? React.createElement('div', { style: { marginTop: 2, opacity: 0.7 } },
-        '🔔 ' + status.alarmCount + ' active alarm' + (status.alarmCount > 1 ? 's' : '')) : null
+        '🔔 ' + status.alarmCount + ' active alarm' + (status.alarmCount > 1 ? 's' : '')) : null,
+      React.createElement('div', { style: { marginTop: 4, color: 'var(--brand)', fontWeight: 500, fontSize: 10 } },
+        'Click entity → Configuration for details')
     ),
   }, useAnimatedIcons && status.treeIcon && TREE_STATUS_ICONS[status.treeIcon]
     ? React.createElement('span', {
@@ -8969,15 +8971,56 @@ function OverviewMicroFrontend({ entity, lang, onEdit }) {
       )
     ),
 
-    // Recent Alarms (aggregated, scales to 1000s — only shows top 4)
+    // Critical Alarms — prominent section with details
+    (function() {
+      var criticals = recentAlarms.filter(function(a) { return a.sev === 'critical' && a.status === 'active'; });
+      if (criticals.length === 0) return null;
+      return React.createElement('div', {className:'ov-activity', style:{marginBottom:8}},
+        React.createElement('div', {className:'mfe-section-title', style:{color:'var(--error)'}},
+          React.createElement(ExclamationCircleFilled, {style:{marginRight:4}}),
+          resolveI18n({en:'Critical Alerts',nl:'Kritieke Meldingen'}, lang),
+          React.createElement(Tag, {color:'error',style:{marginLeft:6,fontSize:10}}, criticals.length)
+        ),
+        criticals.map(function(a, i) {
+          return React.createElement('div', {key:'c'+i, style:{
+            display:'flex',alignItems:'flex-start',gap:10,padding:'8px 10px',marginBottom:4,
+            background:'var(--error-bg)',borderRadius:6,border:'1px solid color-mix(in srgb, var(--error) 20%, transparent)',
+            cursor:'pointer',transition:'all 0.15s'},
+            onClick: function() { if (onEdit) onEdit({action:'viewAlarm', alarm:a}); },
+            onMouseEnter: function(e){e.currentTarget.style.borderColor='var(--error)';},
+            onMouseLeave: function(e){e.currentTarget.style.borderColor='color-mix(in srgb, var(--error) 20%, transparent)';},
+          },
+            React.createElement('div', {style:{width:6,height:6,borderRadius:'50%',background:'var(--error)',marginTop:5,flexShrink:0,animation:'treePulseIcon 1.5s ease-in-out infinite'}}),
+            React.createElement('div', {style:{flex:1,minWidth:0}},
+              React.createElement('div', {style:{fontSize:12,fontWeight:600,color:'var(--text-primary)'}}, a.msg),
+              React.createElement('div', {style:{fontSize:10,color:'var(--text-tertiary)',marginTop:2}},
+                (a.dev || a.entityName || '') + (a.time ? ' · ' + a.time : ''))
+            ),
+            React.createElement(RightOutlined, {style:{fontSize:9,color:'var(--text-tertiary)',marginTop:4}})
+          );
+        })
+      );
+    })(),
+
+    // Recent Alarms (all severities — top 6)
     recentAlarms.length > 0 && React.createElement('div', {className:'ov-activity'},
       React.createElement('div', {className:'mfe-section-title'}, resolveI18n({en:'Recent Alarms',nl:'Recente Alarmen'}, lang)),
-      recentAlarms.map((a, i) => React.createElement('div', {key:i, style:{display:'flex',alignItems:'center',gap:8,padding:'4px 0',fontSize:11}},
-        React.createElement('span', {className:`status-dot ${a.sev==='critical'?'error':a.sev==='warning'?'warning':'info'}`}, a.sev),
-        React.createElement('span', {style:{flex:1,color:'var(--text-primary)'}}, a.msg),
-        a.entityName && React.createElement('span', {style:{fontSize:10,color:'var(--text-tertiary)',marginRight:8}}, a.entityName),
-        React.createElement('span', {style:{fontSize:10,color:'var(--text-tertiary)'}}, a.time)
-      ))
+      recentAlarms.slice(0, 6).map(function(a, i) {
+        return React.createElement('div', {key:i, style:{
+          display:'flex',alignItems:'center',gap:8,padding:'5px 0',fontSize:11,
+          cursor:'pointer',borderRadius:4,transition:'background 0.1s'},
+          onClick: function() { if (onEdit) onEdit({action:'viewAlarm', alarm:a}); },
+          onMouseEnter: function(e){e.currentTarget.style.background='var(--bg-card-hover)';},
+          onMouseLeave: function(e){e.currentTarget.style.background='transparent';},
+        },
+          React.createElement('span', {style:{width:5,height:5,borderRadius:'50%',flexShrink:0,
+            background: a.sev==='critical'?'var(--error)':a.sev==='warning'?'var(--warning)':'var(--info)'}}),
+          React.createElement('span', {style:{flex:1,color:'var(--text-primary)'}}, a.msg),
+          a.dev && React.createElement('span', {style:{fontSize:10,color:'var(--text-tertiary)',marginRight:4}}, a.dev),
+          React.createElement('span', {style:{fontSize:10,color:'var(--text-tertiary)'}}, a.time),
+          React.createElement(RightOutlined, {style:{fontSize:8,color:'var(--text-tertiary)',marginLeft:4}})
+        );
+      })
     )
   );
 }
@@ -10719,6 +10762,7 @@ function ConfigurationPage({ t, lang, navigateWithLoader, focusedEntityId, setFo
   const [, setConfigTick] = useState(0);
   const rerenderConfig = () => setConfigTick(t => t+1);
   const [editModalState, setEditModalState] = useState({ visible:false, mode:'edit', entityType:null, entityId:null, parentId:null });
+  const [alarmDetail, setAlarmDetail] = useState(null); // { alarm, entity }
   const openEditModal = (entity) => setEditModalState({ visible:true, mode:'edit', entityType:entity.entityType, entityId:entity.id, parentId:null });
   const openCreateModal = (childType, parentId) => setEditModalState({ visible:true, mode:'create', entityType:childType, entityId:null, parentId });
   const closeEditModal = () => setEditModalState({ visible:false, mode:'edit', entityType:null, entityId:null, parentId:null });
@@ -10800,11 +10844,17 @@ function ConfigurationPage({ t, lang, navigateWithLoader, focusedEntityId, setFo
     }
 
     // 2. Auto-generate from template
-    if (key === 'overview') return <BaseOverviewMFE entity={selectedEntity} lang={lang} onEdit={() => openEditModal(selectedEntity)}/>;
+    if (key === 'overview') return <BaseOverviewMFE entity={selectedEntity} lang={lang} onEdit={function(action) {
+      if (action && action.action === 'viewAlarm') { setAlarmDetail({ alarm: action.alarm, entity: selectedEntity }); }
+      else { openEditModal(selectedEntity); }
+    }}/>;
     if (tabDef.type === 'children') return <BaseListMFE parentId={selectedEntityId} childType={tabDef.child_type || tabDef.childType} lang={lang} onNavigate={handleSelect} onAdd={handleAdd}/>;
 
     // 3. Fallback to old renderTabContent for anything not in registry or template
-    if (key === 'overview') return <OverviewMicroFrontend entity={selectedEntity} lang={lang} onEdit={() => openEditModal(selectedEntity)}/>;
+    if (key === 'overview') return <OverviewMicroFrontend entity={selectedEntity} lang={lang} onEdit={function(action) {
+      if (action && action.action === 'viewAlarm') { setAlarmDetail({ alarm: action.alarm, entity: selectedEntity }); }
+      else { openEditModal(selectedEntity); }
+    }}/>;
     if (tabDef.type === 'children') return <EntityListTab parentId={selectedEntityId} childType={tabDef.childType} t={t} lang={lang} onNavigate={handleSelect} onAdd={handleAdd}/>;
     if (key === 'users') return <UsersTab entityId={selectedEntityId} t={t} lang={lang} onOpenModal={onOpenModal}/>;
     if (key === 'roles') return <RolesTab entityId={selectedEntityId} t={t} lang={lang} onOpenModal={onOpenModal}/>;
@@ -10955,6 +11005,46 @@ function ConfigurationPage({ t, lang, navigateWithLoader, focusedEntityId, setFo
       <EntityEditModal visible={editModalState.visible} mode={editModalState.mode} entityType={editModalState.entityType}
         entityId={editModalState.entityId} parentId={editModalState.parentId} lang={lang}
         onSave={handleModalSave} onCancel={closeEditModal}/>
+
+      {/* Alarm Detail Drawer */}
+      <Drawer open={!!alarmDetail} onClose={function(){setAlarmDetail(null);}} width={420}
+        title={alarmDetail ? React.createElement('div',{style:{display:'flex',alignItems:'center',gap:8}},
+          React.createElement('span',{style:{width:8,height:8,borderRadius:'50%',flexShrink:0,
+            background:alarmDetail.alarm.sev==='critical'?'var(--error)':alarmDetail.alarm.sev==='warning'?'var(--warning)':'var(--info)'}}),
+          resolveI18n({en:'Alarm Detail',nl:'Alarm Detail'}, lang)
+        ) : null}>
+        {alarmDetail && React.createElement('div',{style:{display:'flex',flexDirection:'column',gap:16}},
+          // Severity badge + ID
+          React.createElement('div',{style:{display:'flex',alignItems:'center',gap:8}},
+            React.createElement(Tag, {color: alarmDetail.alarm.sev==='critical'?'error':alarmDetail.alarm.sev==='warning'?'warning':'blue'},
+              alarmDetail.alarm.sev.toUpperCase()),
+            React.createElement('span',{style:{fontSize:11,color:'var(--text-tertiary)'}}, alarmDetail.alarm.id || 'N/A')
+          ),
+          // Message
+          React.createElement('div',{style:{fontSize:15,fontWeight:600,color:'var(--text-primary)',lineHeight:1.4}}, alarmDetail.alarm.msg),
+          // Details grid
+          React.createElement('div',{style:{display:'grid',gridTemplateColumns:'auto 1fr',gap:'8px 16px',fontSize:12}},
+            React.createElement('span',{style:{color:'var(--text-tertiary)',fontWeight:500}}, resolveI18n({en:'Device',nl:'Apparaat'}, lang)),
+            React.createElement('span',{style:{color:'var(--text-primary)'}}, alarmDetail.alarm.dev || alarmDetail.alarm.entityName || '—'),
+            React.createElement('span',{style:{color:'var(--text-tertiary)',fontWeight:500}}, resolveI18n({en:'Entity',nl:'Entiteit'}, lang)),
+            React.createElement('span',{style:{color:'var(--text-primary)'}}, alarmDetail.entity.name),
+            React.createElement('span',{style:{color:'var(--text-tertiary)',fontWeight:500}}, resolveI18n({en:'Time',nl:'Tijd'}, lang)),
+            React.createElement('span',{style:{color:'var(--text-primary)'}}, alarmDetail.alarm.time || '—'),
+            React.createElement('span',{style:{color:'var(--text-tertiary)',fontWeight:500}}, resolveI18n({en:'Status',nl:'Status'}, lang)),
+            React.createElement(Tag, {color: alarmDetail.alarm.status==='active'?'error':'default'}, alarmDetail.alarm.status || 'active'),
+            React.createElement('span',{style:{color:'var(--text-tertiary)',fontWeight:500}}, resolveI18n({en:'Entity Type',nl:'Entiteitstype'}, lang)),
+            React.createElement('span',{style:{color:'var(--text-primary)'}}, alarmDetail.entity.entityType)
+          ),
+          // Action buttons
+          React.createElement(Space, {style:{marginTop:8}},
+            React.createElement(Button, {type:'primary', onClick:function(){
+              setAlarmDetail(null); setActiveTab('alarms');
+            }}, resolveI18n({en:'View All Alarms',nl:'Alle Alarmen'}, lang)),
+            React.createElement(Button, {onClick:function(){setAlarmDetail(null);}},
+              resolveI18n({en:'Close',nl:'Sluiten'}, lang))
+          )
+        )}
+      </Drawer>
     </div>
   );
 }
@@ -15148,7 +15238,7 @@ function App() {
 
   function updateHash(path) {
     if (window.location.hash !== '#' + path) {
-      window.location.hash = path;
+      history.pushState(null, '', '#' + path);
     }
   }
 
@@ -15216,11 +15306,12 @@ function App() {
     };
 
     window.addEventListener('hashchange', handleHash);
+    window.addEventListener('popstate', handleHash);
     // Only parse initial hash if not on login (avoids flicker)
     if (window.location.hash && window.location.hash !== '#' && window.location.hash !== '#/login') {
       handleHash();
     }
-    return () => window.removeEventListener('hashchange', handleHash);
+    return function() { window.removeEventListener('hashchange', handleHash); window.removeEventListener('popstate', handleHash); };
   }, []); // empty deps — never recreates
 
   // Persist preferences
