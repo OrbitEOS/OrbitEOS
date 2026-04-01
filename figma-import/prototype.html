@@ -874,6 +874,22 @@
     .tour-modal-wrap .ant-modal-mask { z-index:10000 !important; background:rgba(0,0,0,0.55) !important; }
     .tour-modal-wrap .ant-modal-wrap { z-index:10002 !important; }
     .tour-modal-wrap .ant-modal-content { background:var(--bg-card); border:1px solid var(--border); }
+    /* ─── Flow Gallery Nav Arrows ─── */
+    .flow-nav-arrow { position:absolute; top:50%; transform:translateY(-50%); z-index:4;
+      width:28px; height:48px; display:flex; align-items:center; justify-content:center;
+      cursor:pointer; border-radius:8px; font-size:12px;
+      color:var(--text-tertiary); background:color-mix(in srgb, var(--bg-card) 60%, transparent);
+      border:1px solid var(--border); opacity:0; transition:opacity 0.4s ease, background 0.2s ease;
+      pointer-events:auto; backdrop-filter:blur(4px); }
+    .flow-hub:hover .flow-nav-arrow { opacity:0.7; }
+    .flow-nav-arrow:hover { opacity:1 !important; background:var(--bg-card); color:var(--brand); }
+    .flow-nav-left { left:10px; }
+    .flow-nav-right { right:10px; }
+    @media (max-width: 1024px) {
+      .flow-nav-arrow { opacity:0.5; } /* always visible on touch */
+      .flow-nav-left { left:4px; }
+      .flow-nav-right { right:4px; }
+    }
     /* ─── Kiosk / Fullscreen Mode ─── */
     .kiosk-active .sidebar-wrap, .kiosk-active .sidebar-rail,
     .kiosk-active .header { display:none !important; }
@@ -1034,7 +1050,7 @@
 
 <script type="text/babel">
 // ─── Version ───
-const ORBITEOS_VERSION = '0.7.0.4';
+const ORBITEOS_VERSION = '0.7.0.5';
 const { useState, useEffect, useRef, useCallback, useMemo } = React;
 const { ConfigProvider, theme: antTheme, Button, Table, Tag, Badge, Switch, Select, Input, Tabs, Segmented,
   Progress, Slider, Form, InputNumber, Tooltip, Dropdown, Space, Modal, Drawer, Menu } = antd;
@@ -6022,14 +6038,12 @@ const WidgetEnergyFlow = React.memo(function WidgetEnergyFlow({t, lang, currentS
           textShadow:'0 0 12px var(--bg-primary)'}}>
           {siteName}
         </div>}
-        {/* Prev/Next site arrows */}
-        {onNavigateSite && <div className="flow-ambient-toggle" style={{position:'absolute',left:12,top:'50%',transform:'translateY(-50%)',opacity:0.5}}
-          onClick={function(){onNavigateSite(-1);}}>
-          <LeftOutlined style={{fontSize:11}}/>
+        {/* Prev/Next site arrows — appear on hover, fade on leave */}
+        {onNavigateSite && <div className="flow-nav-arrow flow-nav-left" onClick={function(){onNavigateSite(-1);}}>
+          <LeftOutlined/>
         </div>}
-        {onNavigateSite && <div className="flow-ambient-toggle" style={{position:'absolute',right:12,top:'50%',transform:'translateY(-50%)',opacity:0.5}}
-          onClick={function(){onNavigateSite(1);}}>
-          <RightOutlined style={{fontSize:11}}/>
+        {onNavigateSite && <div className="flow-nav-arrow flow-nav-right" onClick={function(){onNavigateSite(1);}}>
+          <RightOutlined/>
         </div>}
         {ambientOn && <EnergyAmbientHues ef={ef}/>}
         <FlowCanvasLayer ef={ef}/>
@@ -9326,12 +9340,12 @@ function EntityList({ columns, dataSource, rowKey='id', title, lang='en',
   defaultSortKey, defaultSortOrder='ascend', pageSize=30, lazyLoad=false,
   onRowClick, rowActions, addButton, inlineAdd, selectable=false,
   selectedKeys, onSelectionChange, emptyText, emptyIcon,
-  headerExtra, expandable, size='small', className, style }) {
+  headerExtra, expandable, size='small', className, style, initialFilters }) {
 
   const [search, setSearch] = useState('');
   const [sortKey, setSortKey] = useState(defaultSortKey || null);
   const [sortOrder, setSortOrder] = useState(defaultSortOrder);
-  const [filters, setFilters] = useState({});
+  const [filters, setFilters] = useState(initialFilters || {});
   const [visibleCols, setVisibleCols] = useState(() => columns.filter(c => !c.hidden).map(c => c.key));
   const [expanded, setExpanded] = useState(expandable?.expandedRowKeys || []);
   const [adding, setAdding] = useState(false);
@@ -10170,7 +10184,7 @@ function EventsTab({ entity, lang }) {
 }
 
 // ─── Tab Content: Alarms ───
-function AlarmsTab({ entity, lang }) {
+function AlarmsTab({ entity, lang, severityFilter }) {
   const alarms = EntityStore.getAggregatedAlarms(entity.id);
   const alarmCols = [
     { key:'sev', label:{en:'Severity',nl:'Ernst'}, filterable:true,
@@ -10182,10 +10196,12 @@ function AlarmsTab({ entity, lang }) {
     { key:'time', label:{en:'Time',nl:'Tijd'}, sortable:true,
       render:(_,r) => React.createElement('span',{style:{color:'var(--text-tertiary)',fontSize:11}},r.time) },
   ];
+  var initFilters = severityFilter ? { sev: severityFilter } : undefined;
   return (
     <div className="config-tab-content">
       <EntityList columns={alarmCols} dataSource={alarms} lang={lang} rowKey={r => r.id || `${r.msg}-${r.entityId}-${r.time}`}
         title={{en:`Alarms (${alarms.length})`,nl:`Alarmen (${alarms.length})`}}
+        initialFilters={initFilters}
         emptyIcon={React.createElement(AlertOutlined)} emptyText={{en:'No active alarms',nl:'Geen actieve alarmen'}}/>
     </div>
   );
@@ -10819,6 +10835,7 @@ function ConfigurationPage({ t, lang, navigateWithLoader, focusedEntityId, setFo
   const rerenderConfig = () => setConfigTick(t => t+1);
   const [editModalState, setEditModalState] = useState({ visible:false, mode:'edit', entityType:null, entityId:null, parentId:null });
   const [alarmDetail, setAlarmDetail] = useState(null); // { alarm, entity }
+  const [alarmSeverityFilter, setAlarmSeverityFilter] = useState(null); // pre-filter for alarms tab
   const openEditModal = (entity) => setEditModalState({ visible:true, mode:'edit', entityType:entity.entityType, entityId:entity.id, parentId:null });
   const openCreateModal = (childType, parentId) => setEditModalState({ visible:true, mode:'create', entityType:childType, entityId:null, parentId });
   const closeEditModal = () => setEditModalState({ visible:false, mode:'edit', entityType:null, entityId:null, parentId:null });
@@ -10933,7 +10950,7 @@ function ConfigurationPage({ t, lang, navigateWithLoader, focusedEntityId, setFo
     if (key === 'roles') return <RolesTab entityId={selectedEntityId} t={t} lang={lang} onOpenModal={onOpenModal}/>;
     if (key === 'privileges') return <PrivilegesTab entityId={selectedEntityId} t={t} lang={lang}/>;
     if (key === 'events') return <EventsTab entity={selectedEntity} lang={lang}/>;
-    if (key === 'alarms') return <AlarmsTab entity={selectedEntity} lang={lang}/>;
+    if (key === 'alarms') return <AlarmsTab entity={selectedEntity} lang={lang} severityFilter={alarmSeverityFilter}/>;
     if (key === 'auditLog') return <AuditLogTab entity={selectedEntity} lang={lang}/>;
     if (key === 'tags') return <TagsTab entity={selectedEntity} lang={lang}/>;
     if (key === 'commands') return <CommandsTab entity={selectedEntity} lang={lang}/>;
@@ -11055,7 +11072,7 @@ function ConfigurationPage({ t, lang, navigateWithLoader, focusedEntityId, setFo
 
               {/* Tabs */}
               <div className="config-detail-body">
-                <Tabs activeKey={activeTab} onChange={setActiveTab} style={{padding:'0 20px'}}
+                <Tabs activeKey={activeTab} onChange={function(k) { setActiveTab(k); if (k !== 'alarms') setAlarmSeverityFilter(null); }} style={{padding:'0 20px'}}
                   items={tabs.map(tab => ({
                     key: tab.key,
                     label: tab.label[lang] || tab.label.en,
@@ -11123,7 +11140,7 @@ function ConfigurationPage({ t, lang, navigateWithLoader, focusedEntityId, setFo
           // Action buttons
           React.createElement(Space, {style:{marginTop:8}},
             React.createElement(Button, {type:'primary', onClick:function(){
-              setAlarmDetail(null); setActiveTab('alarms');
+              setAlarmSeverityFilter(alarmDetail.alarm.sev); setAlarmDetail(null); setActiveTab('alarms');
             }}, resolveI18n({en:'View All Alarms',nl:'Alle Alarmen'}, lang)),
             React.createElement(Button, {onClick:function(){setAlarmDetail(null);}},
               resolveI18n({en:'Close',nl:'Sluiten'}, lang))
