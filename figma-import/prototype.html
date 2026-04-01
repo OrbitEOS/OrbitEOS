@@ -7599,9 +7599,9 @@ function FlowCanvasLayer({ef}) {
       const ch = parent.clientHeight;
       cssW.current = cw;
       cssH.current = ch;
-      // Switch to vertical paths if container is roughly square or taller than wide
+      // Switch to vertical paths only when CSS layout is actually stacked (≤768px)
       const wasVertical = isVertical;
-      isVertical = ch > cw * 0.7;
+      isVertical = window.innerWidth <= 768;
       if (wasVertical !== isVertical) { particles = buildParticles(); }
       canvas.width = cw * dpr;
       canvas.height = ch * dpr;
