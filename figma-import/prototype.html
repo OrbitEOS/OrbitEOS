@@ -1034,7 +1034,7 @@
 
 <script type="text/babel">
 // ─── Version ───
-const ORBITEOS_VERSION = '0.7.0.2';
+const ORBITEOS_VERSION = '0.7.0.3';
 const { useState, useEffect, useRef, useCallback, useMemo } = React;
 const { ConfigProvider, theme: antTheme, Button, Table, Tag, Badge, Switch, Select, Input, Tabs, Segmented,
   Progress, Slider, Form, InputNumber, Tooltip, Dropdown, Space, Modal, Drawer, Menu } = antd;
@@ -5473,9 +5473,7 @@ function EntityTreeNode({ entity, focusedEntityId, setFocusedEntityId, depth, ex
       status.selfSufficiency != null ? React.createElement('div', { style: { marginTop: 2, opacity: 0.7 } },
         '⚡ ' + status.selfSufficiency + '% self-sufficient') : null,
       status.alarmCount > 0 ? React.createElement('div', { style: { marginTop: 2, opacity: 0.7 } },
-        '🔔 ' + status.alarmCount + ' active alarm' + (status.alarmCount > 1 ? 's' : '')) : null,
-      React.createElement('div', { style: { marginTop: 4, color: 'var(--brand)', fontWeight: 500, fontSize: 10 } },
-        'Click entity → Configuration for details')
+        '🔔 ' + status.alarmCount + ' active alarm' + (status.alarmCount > 1 ? 's' : '')) : null
     ),
   }, useAnimatedIcons && status.treeIcon && TREE_STATUS_ICONS[status.treeIcon]
     ? React.createElement('span', {
@@ -6753,6 +6751,7 @@ function DashboardPage({t, lang, currentSite, focusedEntityId, setFocusedEntityI
   const [treeHovered, setTreeHovered] = useState(false);
   const treeHoverTimer = useRef(null);
   const [treeStatusFilter, setTreeStatusFilter] = useState(null); // null = all, or status level string
+  const [treeAnimations, setTreeAnimations] = useState(treeConfig.animationsEnabled);
   const [treeExpandedNodes, setTreeExpandedNodes] = useState(() => {
     const expanded = new Set();
     (treeConfig.autoExpandTypes || []).forEach(type => {
@@ -6824,8 +6823,18 @@ function DashboardPage({t, lang, currentSite, focusedEntityId, setFocusedEntityI
               <span style={{fontSize:10,fontWeight:600,textTransform:'uppercase',color:'var(--text-tertiary)',letterSpacing:'0.04em',whiteSpace:'nowrap'}}>
                 <ApartmentOutlined style={{marginRight:5,fontSize:11}}/>{lang==='nl'?'Entiteiten':'Entities'}
               </span>
-              {isMobile && <div style={{cursor:'pointer',fontSize:10,color:'var(--text-tertiary)',padding:2}}
-                onClick={() => setTreePinned(false)}><CloseOutlined style={{fontSize:9}}/></div>}
+              <div style={{display:'flex',gap:4,alignItems:'center'}}>
+                <Tooltip title={treeAnimations ? (lang==='nl'?'Animaties uit':'Animations off') : (lang==='nl'?'Animaties aan':'Animations on')}>
+                  <div style={{width:18,height:18,borderRadius:4,display:'flex',alignItems:'center',justifyContent:'center',
+                    cursor:'pointer',fontSize:10,color:treeAnimations?'var(--brand)':'var(--text-tertiary)',
+                    background:treeAnimations?'var(--brand-bg)':'transparent',transition:'all 0.15s'}}
+                    onClick={() => setTreeAnimations(!treeAnimations)}>
+                    <ThunderboltOutlined style={{fontSize:9}}/>
+                  </div>
+                </Tooltip>
+                {isMobile && <div style={{cursor:'pointer',fontSize:10,color:'var(--text-tertiary)',padding:2}}
+                  onClick={() => setTreePinned(false)}><CloseOutlined style={{fontSize:9}}/></div>}
+              </div>
             </div>
             <div style={{display:'flex',gap:4,marginTop:5,alignItems:'center'}}>
               {[
@@ -6856,7 +6865,7 @@ function DashboardPage({t, lang, currentSite, focusedEntityId, setFocusedEntityI
                 setFocusedEntityId={setFocusedEntityId} depth={0}
                 expandedNodes={treeExpandedNodes} toggleExpand={toggleTreeExpand}
                 maxEntityType={treeConfig.maxEntityType} showStatus={true} lang={lang}
-                statusFilter={treeStatusFilter} treeConfig={treeConfig}/>
+                statusFilter={treeStatusFilter} treeConfig={{...treeConfig, animationsEnabled: treeAnimations}}/>
             ))}
           </div>
         </div>
@@ -8993,8 +9002,12 @@ function OverviewMicroFrontend({ entity, lang, onEdit }) {
             React.createElement('div', {style:{width:6,height:6,borderRadius:'50%',background:'var(--error)',marginTop:5,flexShrink:0,animation:'treePulseIcon 1.5s ease-in-out infinite'}}),
             React.createElement('div', {style:{flex:1,minWidth:0}},
               React.createElement('div', {style:{fontSize:12,fontWeight:600,color:'var(--text-primary)'}}, a.msg),
-              React.createElement('div', {style:{fontSize:10,color:'var(--text-tertiary)',marginTop:2}},
-                (a.dev || a.entityName || '') + (a.time ? ' · ' + a.time : ''))
+              React.createElement('div', {style:{fontSize:10,marginTop:2,display:'flex',alignItems:'center',gap:4,flexWrap:'wrap'}},
+                (a.dev || a.entityName) ? React.createElement('span', {
+                  style:{color:'var(--brand)',cursor:'pointer',textDecoration:'underline',textDecorationStyle:'dotted'},
+                  onClick: function(e) { e.stopPropagation(); if (onEdit) onEdit({action:'navigateToDevice', deviceName: a.dev || a.entityName}); }
+                }, a.dev || a.entityName) : null,
+                a.time ? React.createElement('span',{style:{color:'var(--text-tertiary)'}}, ' · ' + a.time) : null)
             ),
             React.createElement(RightOutlined, {style:{fontSize:9,color:'var(--text-tertiary)',marginTop:4}})
           );
@@ -9016,7 +9029,10 @@ function OverviewMicroFrontend({ entity, lang, onEdit }) {
           React.createElement('span', {style:{width:5,height:5,borderRadius:'50%',flexShrink:0,
             background: a.sev==='critical'?'var(--error)':a.sev==='warning'?'var(--warning)':'var(--info)'}}),
           React.createElement('span', {style:{flex:1,color:'var(--text-primary)'}}, a.msg),
-          a.dev && React.createElement('span', {style:{fontSize:10,color:'var(--text-tertiary)',marginRight:4}}, a.dev),
+          a.dev && React.createElement('span', {
+            style:{fontSize:10,color:'var(--brand)',cursor:'pointer',textDecoration:'underline',textDecorationStyle:'dotted',marginRight:4},
+            onClick: function(e) { e.stopPropagation(); if (onEdit) onEdit({action:'navigateToDevice', deviceName: a.dev}); }
+          }, a.dev),
           React.createElement('span', {style:{fontSize:10,color:'var(--text-tertiary)'}}, a.time),
           React.createElement(RightOutlined, {style:{fontSize:8,color:'var(--text-tertiary)',marginLeft:4}})
         );
@@ -10846,6 +10862,15 @@ function ConfigurationPage({ t, lang, navigateWithLoader, focusedEntityId, setFo
     // 2. Auto-generate from template
     if (key === 'overview') return <BaseOverviewMFE entity={selectedEntity} lang={lang} onEdit={function(action) {
       if (action && action.action === 'viewAlarm') { setAlarmDetail({ alarm: action.alarm, entity: selectedEntity }); }
+      else if (action && action.action === 'navigateToDevice') {
+        var match = EntityStore.getAll().find(function(e) { return e.name === action.deviceName; });
+        if (match) {
+          // Expand path to device and select it
+          var path = EntityStore.getPath(match.id);
+          setExpandedNodes(function(prev) { var next = new Set(prev); path.forEach(function(e) { next.add(e.id); }); return next; });
+          handleSelect(match.id);
+        }
+      }
       else { openEditModal(selectedEntity); }
     }}/>;
     if (tabDef.type === 'children') return <BaseListMFE parentId={selectedEntityId} childType={tabDef.child_type || tabDef.childType} lang={lang} onNavigate={handleSelect} onAdd={handleAdd}/>;
@@ -10853,6 +10878,14 @@ function ConfigurationPage({ t, lang, navigateWithLoader, focusedEntityId, setFo
     // 3. Fallback to old renderTabContent for anything not in registry or template
     if (key === 'overview') return <OverviewMicroFrontend entity={selectedEntity} lang={lang} onEdit={function(action) {
       if (action && action.action === 'viewAlarm') { setAlarmDetail({ alarm: action.alarm, entity: selectedEntity }); }
+      else if (action && action.action === 'navigateToDevice') {
+        var match = EntityStore.getAll().find(function(e) { return e.name === action.deviceName; });
+        if (match) {
+          var path = EntityStore.getPath(match.id);
+          setExpandedNodes(function(prev) { var next = new Set(prev); path.forEach(function(e) { next.add(e.id); }); return next; });
+          handleSelect(match.id);
+        }
+      }
       else { openEditModal(selectedEntity); }
     }}/>;
     if (tabDef.type === 'children') return <EntityListTab parentId={selectedEntityId} childType={tabDef.childType} t={t} lang={lang} onNavigate={handleSelect} onAdd={handleAdd}/>;
@@ -11025,7 +11058,19 @@ function ConfigurationPage({ t, lang, navigateWithLoader, focusedEntityId, setFo
           // Details grid
           React.createElement('div',{style:{display:'grid',gridTemplateColumns:'auto 1fr',gap:'8px 16px',fontSize:12}},
             React.createElement('span',{style:{color:'var(--text-tertiary)',fontWeight:500}}, resolveI18n({en:'Device',nl:'Apparaat'}, lang)),
-            React.createElement('span',{style:{color:'var(--text-primary)'}}, alarmDetail.alarm.dev || alarmDetail.alarm.entityName || '—'),
+            React.createElement('span',{style:{color:'var(--brand)',cursor:'pointer',textDecoration:'underline',textDecorationStyle:'dotted'},
+              onClick: function() {
+                var devName = alarmDetail.alarm.dev || alarmDetail.alarm.entityName;
+                if (!devName) return;
+                var match = EntityStore.getAll().find(function(e) { return e.name === devName; });
+                if (match) {
+                  var path = EntityStore.getPath(match.id);
+                  setExpandedNodes(function(prev) { var next = new Set(prev); path.forEach(function(e) { next.add(e.id); }); return next; });
+                  handleSelect(match.id);
+                  setAlarmDetail(null);
+                }
+              }
+            }, alarmDetail.alarm.dev || alarmDetail.alarm.entityName || '—'),
             React.createElement('span',{style:{color:'var(--text-tertiary)',fontWeight:500}}, resolveI18n({en:'Entity',nl:'Entiteit'}, lang)),
             React.createElement('span',{style:{color:'var(--text-primary)'}}, alarmDetail.entity.name),
             React.createElement('span',{style:{color:'var(--text-tertiary)',fontWeight:500}}, resolveI18n({en:'Time',nl:'Tijd'}, lang)),
