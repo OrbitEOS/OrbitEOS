@@ -885,6 +885,15 @@
     .kiosk-active .page-enter { height:100vh !important; }
     .kiosk-active .dashboard-tree-panel { display:none !important; }
     .kiosk-active .dashboard-tree-toggle { display:none !important; }
+    /* ─── Tree Animated Status Icons ─── */
+    .tree-status-icon { width:12px; height:12px; flex-shrink:0; display:inline-flex; align-items:center; justify-content:center; }
+    .tree-status-icon svg { width:10px; height:10px; }
+    .tree-icon-pulse svg { animation: treePulseIcon 2s ease-in-out infinite; }
+    .tree-icon-spin svg { animation: treeSpinIcon 3s linear infinite; }
+    .tree-icon-flash svg { animation: treeFlashIcon 1.5s ease-in-out infinite; }
+    @keyframes treePulseIcon { 0%,100%{opacity:0.7;transform:scale(0.9)} 50%{opacity:1;transform:scale(1.1)} }
+    @keyframes treeSpinIcon { to{transform:rotate(360deg)} }
+    @keyframes treeFlashIcon { 0%,100%{opacity:0.5} 50%{opacity:1} }
     @keyframes tourPulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.4;transform:scale(1.6)} }
     @keyframes tourIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
     @media (max-width: 768px) {
@@ -1025,7 +1034,7 @@
 
 <script type="text/babel">
 // ─── Version ───
-const ORBITEOS_VERSION = '0.6.3';
+const ORBITEOS_VERSION = '0.7.0';
 const { useState, useEffect, useRef, useCallback, useMemo } = React;
 const { ConfigProvider, theme: antTheme, Button, Table, Tag, Badge, Switch, Select, Input, Tabs, Segmented,
   Progress, Slider, Form, InputNumber, Tooltip, Dropdown, Space, Modal, Drawer, Menu } = antd;
@@ -4798,6 +4807,8 @@ const MockAPI = {
     defaultPinned: true,          // tree pinned by default on desktop
     treeWidth: 240,               // panel width in px
     autoExpandTypes: ['platform','account','subAccount','site'], // auto-expand these types
+    showAnimatedIcons: true,      // animated status icons in tree (vs plain dots)
+    animationsEnabled: true,      // master toggle for tree animations
   }),
   // ─── Core Entities (from EntityStore) ───
   getAccounts: () => ACCOUNTS,
@@ -4840,14 +4851,21 @@ const MockAPI = {
     return { total, online, offline, error, offlineDevices, errorDevices };
   },
 
-  // Inferred entity status — automatically derived from energy flow data + device health
+  // Inferred entity status — derived from energy flow + device health + alarms + peak demand
   getSiteStatus: (entityId) => {
+    const entity = EntityStore.get(entityId);
     const ef = MockAPI.getEnergyFlowState(entityId);
     const dh = MockAPI.getDeviceHealth(entityId);
     const totalGen = ef.solarPower + ef.windPower;
     const totalLoad = ef.buildingPower + ef.evPower;
     const selfSufficiency = totalLoad > 0 ? Math.min(100, Math.round((totalGen / totalLoad) * 100)) : 0;
+    const alarms = entity?.alarms || [];
+    const criticalAlarms = alarms.filter(a => a.sev === 'critical' && a.status === 'active').length;
+    const warningAlarms = alarms.filter(a => a.sev === 'warning' && a.status === 'active').length;
+    const peakPct = entity?.state?.peakShaving?.demandPct || 0;
+    const siteStatus = entity?.state?.status;
 
+    // Device health
     let deviceStatus = null;
     if (dh.offline > 0 || dh.error > 0) {
       const issues = [...dh.offlineDevices.map(d => d + ' offline'), ...dh.errorDevices.map(d => d + ' error')];
@@ -4856,49 +4874,80 @@ const MockAPI = {
         level: ratio > 0.3 ? 'critical' : 'warning',
         color: ratio > 0.3 ? 'var(--error)' : 'var(--warning)',
         icon: ratio > 0.3 ? 'CloseCircleFilled' : 'ExclamationCircleFilled',
-        label:{en:`${dh.offline+dh.error} Device Issue${(dh.offline+dh.error)>1?'s':''}`,nl:`${dh.offline+dh.error} Apparaatprobleem`},
+        label:{en:`${dh.offline+dh.error} device issue${(dh.offline+dh.error)>1?'s':''}`,nl:`${dh.offline+dh.error} apparaatprobleem`},
         desc:{en:issues.join(', '),nl:issues.join(', ')},
       };
     }
 
+    // Composite scoring: worst-wins across energy, devices, alarms, peak demand
     let energyStatus;
-    if (ef.gridPower === 0 && !ef.gridImporting && !ef.gridExporting && totalGen > 0) {
-      energyStatus = {level:'island', color:'var(--success)', icon:'CheckCircleFilled',
+    const batteryLow = ef.essSoc > 0 && ef.essSoc < 20;
+    const peakCritical = peakPct > 90;
+
+    // Priority 1: Critical alarms or site in maintenance → error
+    if (criticalAlarms > 0 || siteStatus === 'maintenance' || siteStatus === 'fault') {
+      const maint = siteStatus === 'maintenance';
+      energyStatus = {level:'critical', color:'var(--error)', icon:'CloseCircleFilled', treeIcon:'alert',
+        label:{en: maint ? 'Maintenance' : criticalAlarms + ' Critical Alert' + (criticalAlarms>1?'s':''),
+               nl: maint ? 'Onderhoud' : criticalAlarms + ' Kritieke Melding'},
+        desc:{en: maint ? 'Site in maintenance mode' : 'Immediate attention required',
+              nl: maint ? 'Locatie in onderhoudsmodus' : 'Onmiddellijke aandacht vereist'},
+        selfSufficiency};
+    // Priority 2: Grid-dependent (no generation, heavy import)
+    } else if (ef.gridImporting && totalGen === 0) {
+      energyStatus = {level:'grid-dependent', color:'var(--error)', icon:'WarningFilled', treeIcon:'grid',
+        label:{en:'Grid Dependent',nl:'Netafhankelijk'},
+        desc:{en:`No generation, importing ${fmt(ef.gridPower)} kW${batteryLow ? ', battery '+ef.essSoc+'%':''}`,
+              nl:`Geen opwekking, importeert ${fmt(ef.gridPower)} kW`},
+        selfSufficiency:0};
+    // Priority 3: Heavy grid import or peak danger
+    } else if ((ef.gridImporting && ef.gridPower > totalGen * 2) || peakCritical || batteryLow) {
+      energyStatus = {level:'grid-heavy', color:'var(--error)', icon:'WarningFilled', treeIcon:'grid',
+        label:{en: peakCritical ? 'Peak Demand '+peakPct+'%' : 'High Grid Import',
+               nl: peakCritical ? 'Piekvraag '+peakPct+'%' : 'Hoge Netimport'},
+        desc:{en:`${fmt(ef.gridPower)} kW import${batteryLow?', battery low '+ef.essSoc+'%':''}${peakCritical?', near contract limit':''}`,
+              nl:`${fmt(ef.gridPower)} kW import${batteryLow?', batterij laag':''}${peakCritical?', bijna contractlimiet':''}`},
+        selfSufficiency};
+    // Priority 4: Moderate import with some generation
+    } else if (ef.gridImporting && totalGen > 0) {
+      energyStatus = {level:'importing', color:'var(--warning)', icon:'ExclamationCircleFilled', treeIcon:'partial',
+        label:{en:'Partial Import',nl:'Deels Import'},
+        desc:{en:`Gen ${fmt(totalGen)} kW, import ${fmt(ef.gridPower)} kW, ${selfSufficiency}% self-sufficient`,
+              nl:`Opwek ${fmt(totalGen)} kW, import ${fmt(ef.gridPower)} kW, ${selfSufficiency}% zelfvoorzienend`},
+        selfSufficiency};
+    // Priority 5: Warning alarms (no energy issue but device warnings)
+    } else if (warningAlarms > 1 || (deviceStatus && deviceStatus.level === 'warning')) {
+      energyStatus = {level:'attention', color:'var(--warning)', icon:'ExclamationCircleFilled', treeIcon:'warning',
+        label:{en: warningAlarms + ' Warning' + (warningAlarms>1?'s':''),nl: warningAlarms + ' Waarschuwing'},
+        desc:{en: deviceStatus ? deviceStatus.desc.en : 'Non-critical issues detected',
+              nl: deviceStatus ? deviceStatus.desc.nl : 'Niet-kritieke problemen gedetecteerd'},
+        selfSufficiency};
+    // Priority 6: Island mode (off-grid, full self-sufficiency)
+    } else if (ef.gridPower === 0 && !ef.gridImporting && !ef.gridExporting && totalGen > 0) {
+      energyStatus = {level:'island', color:'var(--success)', icon:'CheckCircleFilled', treeIcon:'island',
         label:{en:'Island Mode',nl:'Eilandmodus'},
         desc:{en:'Off-grid, fully self-sufficient',nl:'Autonoom, volledig zelfvoorzienend'},
         selfSufficiency:100};
+    // Priority 7: Peak production (exporting, high battery)
     } else if (ef.gridExporting && ef.essSoc > 80) {
-      energyStatus = {level:'peak', color:'var(--success)', icon:'CheckCircleFilled',
+      energyStatus = {level:'peak', color:'var(--success)', icon:'CheckCircleFilled', treeIcon:'solar',
         label:{en:'Peak Production',nl:'Piekproductie'},
         desc:{en:`Exporting ${fmt(ef.gridPower)} kW, battery ${ef.essSoc}%`,nl:`Exporteert ${fmt(ef.gridPower)} kW, batterij ${ef.essSoc}%`},
         selfSufficiency};
-    } else if (ef.gridExporting || selfSufficiency >= 90) {
-      energyStatus = {level:'optimal', color:'var(--success)', icon:'CheckCircleFilled',
+    // Priority 8: Optimal
+    } else if (ef.gridExporting || selfSufficiency >= 80) {
+      energyStatus = {level:'optimal', color:'var(--success)', icon:'CheckCircleFilled', treeIcon:'optimal',
         label:{en:'Optimal',nl:'Optimaal'},
-        desc:{en:'Self-sufficient, exporting surplus',nl:'Zelfvoorzienend, exporteert overschot'},
+        desc:{en:`${selfSufficiency}% self-sufficient, exporting surplus`,nl:`${selfSufficiency}% zelfvoorzienend, exporteert overschot`},
         selfSufficiency};
-    } else if (ef.gridImporting && totalGen > 0 && ef.gridPower <= totalGen * 2) {
-      energyStatus = {level:'importing', color:'var(--warning)', icon:'WarningFilled',
-        label:{en:'Importing',nl:'Importeert'},
-        desc:{en:`Solar low, importing ${fmt(ef.gridPower)} kW`,nl:`Zon laag, importeert ${fmt(ef.gridPower)} kW`},
-        selfSufficiency};
-    } else if (ef.gridImporting && (ef.gridPower > totalGen * 2 || ef.essSoc < 30)) {
-      energyStatus = {level:'grid-heavy', color:'var(--error)', icon:'WarningFilled',
-        label:{en:'High Grid Import',nl:'Hoge Netimport'},
-        desc:{en:`Importing ${fmt(ef.gridPower)} kW, battery ${ef.essSoc}%`,nl:`Importeert ${fmt(ef.gridPower)} kW, batterij ${ef.essSoc}%`},
-        selfSufficiency};
-    } else if (ef.gridImporting && totalGen === 0) {
-      energyStatus = {level:'grid-dependent', color:'var(--error)', icon:'WarningFilled',
-        label:{en:'Grid Dependent',nl:'Netafhankelijk'},
-        desc:{en:`No generation, importing ${fmt(ef.gridPower)} kW`,nl:`Geen opwekking, importeert ${fmt(ef.gridPower)} kW`},
-        selfSufficiency:0};
+    // Default: Normal
     } else {
-      energyStatus = {level:'normal', color:'var(--info)', icon:'InfoCircleFilled',
+      energyStatus = {level:'normal', color:'var(--info)', icon:'InfoCircleFilled', treeIcon:'normal',
         label:{en:'Normal',nl:'Normaal'}, desc:{en:'System operating normally',nl:'Systeem functioneert normaal'},
         selfSufficiency};
     }
 
-    return { ...energyStatus, deviceIssue: !!deviceStatus, deviceStatus };
+    return { ...energyStatus, deviceIssue: !!deviceStatus, deviceStatus, alarmCount: criticalAlarms + warningAlarms, peakPct };
   },
 
   // ─── Fleet (from EntityStore) ───
@@ -5345,7 +5394,22 @@ function resolveIcon(name) { return ICON_MAP[name] || DashboardOutlined; }
 // ─── App Definitions (served from NavigationStore) ───
 
 // ─── Entity Tree Node (recursive) ───
-function EntityTreeNode({ entity, focusedEntityId, setFocusedEntityId, depth, expandedNodes, toggleExpand, maxEntityType, showStatus, lang, statusFilter }) {
+// Mini SVG icons for tree status — keyed by treeIcon from getSiteStatus
+const TREE_STATUS_ICONS = {
+  solar:   function(c) { return React.createElement('svg',{viewBox:'0 0 16 16',fill:c}, React.createElement('circle',{cx:8,cy:8,r:3}), React.createElement('g',{stroke:c,strokeWidth:1.5,fill:'none'}, [0,45,90,135,180,225,270,315].map(function(a,i){var r=Math.PI*a/180;return React.createElement('line',{key:i,x1:8+5*Math.cos(r),y1:8+5*Math.sin(r),x2:8+7*Math.cos(r),y2:8+7*Math.sin(r)})}))); },
+  grid:    function(c) { return React.createElement('svg',{viewBox:'0 0 16 16',fill:'none',stroke:c,strokeWidth:1.5}, React.createElement('path',{d:'M8 2v12M2 8h12M4 4l8 8M12 4l-8 8'})); },
+  alert:   function(c) { return React.createElement('svg',{viewBox:'0 0 16 16',fill:c}, React.createElement('path',{d:'M8 1L1 14h14L8 1zm0 4v4m0 2v1'})); },
+  island:  function(c) { return React.createElement('svg',{viewBox:'0 0 16 16',fill:c}, React.createElement('circle',{cx:8,cy:8,r:6,fill:'none',stroke:c,strokeWidth:1.5}), React.createElement('path',{d:'M5 8l2 2 4-4',stroke:c,strokeWidth:1.5,fill:'none'})); },
+  optimal: function(c) { return React.createElement('svg',{viewBox:'0 0 16 16',fill:c}, React.createElement('circle',{cx:8,cy:8,r:6,fill:'none',stroke:c,strokeWidth:1.5}), React.createElement('circle',{cx:8,cy:8,r:2})); },
+  partial: function(c) { return React.createElement('svg',{viewBox:'0 0 16 16',fill:'none',stroke:c,strokeWidth:1.5}, React.createElement('circle',{cx:8,cy:8,r:6}), React.createElement('path',{d:'M8 2v6l4 2'})); },
+  warning: function(c) { return React.createElement('svg',{viewBox:'0 0 16 16',fill:c}, React.createElement('path',{d:'M8 1L1 14h14L8 1z',fill:'none',stroke:c,strokeWidth:1.5}), React.createElement('circle',{cx:8,cy:11,r:0.8}), React.createElement('line',{x1:8,y1:5,x2:8,y2:9,stroke:c,strokeWidth:1.5})); },
+  normal:  function(c) { return React.createElement('svg',{viewBox:'0 0 16 16',fill:c}, React.createElement('circle',{cx:8,cy:8,r:6,fill:'none',stroke:c,strokeWidth:1.5}), React.createElement('circle',{cx:8,cy:6,r:0.8}), React.createElement('line',{x1:8,y1:8,x2:8,y2:12,stroke:c,strokeWidth:1.5})); },
+};
+
+// Animation class mapping per treeIcon
+var TREE_ICON_ANIM = { solar:'tree-icon-pulse', grid:'tree-icon-flash', alert:'tree-icon-flash', island:'tree-icon-pulse', partial:'tree-icon-spin' };
+
+function EntityTreeNode({ entity, focusedEntityId, setFocusedEntityId, depth, expandedNodes, toggleExpand, maxEntityType, showStatus, lang, statusFilter, treeConfig }) {
   // Stop rendering children beyond maxEntityType
   const STOP_TYPES = { site: true, deviceGroup: true, device: true, sensor: true, actuator: true };
   const atLeaf = maxEntityType && STOP_TYPES[entity.entityType] && entity.entityType !== maxEntityType
@@ -5380,19 +5444,31 @@ function EntityTreeNode({ entity, focusedEntityId, setFocusedEntityId, depth, ex
     if (statusCategory !== statusFilter) return null;
   }
 
-  const statusDot = status ? React.createElement(Tooltip, {
+  var useAnimatedIcons = treeConfig && treeConfig.showAnimatedIcons;
+  var animEnabled = treeConfig && treeConfig.animationsEnabled;
+
+  var statusIndicator = status ? React.createElement(Tooltip, {
     placement: 'right',
+    mouseEnterDelay: 0.3,
     title: React.createElement('div', { style: { fontSize: 11 } },
       React.createElement('div', { style: { fontWeight: 600, marginBottom: 2 } },
         typeof status.label === 'object' ? (status.label[lang || 'en'] || status.label.en) : status.label),
       React.createElement('div', { style: { opacity: 0.8 } },
         typeof status.desc === 'object' ? (status.desc[lang || 'en'] || status.desc.en) : status.desc),
       status.selfSufficiency != null ? React.createElement('div', { style: { marginTop: 2, opacity: 0.7 } },
-        '⚡ ' + status.selfSufficiency + '% self-sufficient') : null
+        '⚡ ' + status.selfSufficiency + '% self-sufficient') : null,
+      status.alarmCount > 0 ? React.createElement('div', { style: { marginTop: 2, opacity: 0.7 } },
+        '🔔 ' + status.alarmCount + ' active alarm' + (status.alarmCount > 1 ? 's' : '')) : null
     ),
-  }, React.createElement('span', {
-    style: { width: 6, height: 6, borderRadius: '50%', background: status.color, flexShrink: 0, display: 'inline-block' }
-  })) : null;
+  }, useAnimatedIcons && status.treeIcon && TREE_STATUS_ICONS[status.treeIcon]
+    ? React.createElement('span', {
+        className: 'tree-status-icon' + (animEnabled && TREE_ICON_ANIM[status.treeIcon] ? ' ' + TREE_ICON_ANIM[status.treeIcon] : '')
+      }, TREE_STATUS_ICONS[status.treeIcon](status.color))
+    : React.createElement('span', {
+        style: { width: 6, height: 6, borderRadius: '50%', background: status.color, flexShrink: 0, display: 'inline-block',
+          animation: animEnabled ? 'treePulseIcon 2s ease-in-out infinite' : 'none' }
+      })
+  ) : null;
 
   return (
     <div style={{marginLeft: depth > 0 ? 14 : 0}}>
@@ -5402,7 +5478,7 @@ function EntityTreeNode({ entity, focusedEntityId, setFocusedEntityId, depth, ex
           style={{cursor: hasChildren?'pointer':'default', opacity: hasChildren?1:0.3}}>
           {hasChildren ? (isExpanded ? '▾' : '▸') : '·'}
         </span>
-        {statusDot}
+        {statusIndicator}
         <EntityTypeIcon type={entity.entityType} style={{fontSize:13, color: isActive?'var(--brand)':'var(--text-tertiary)'}}/>
         <span className="tree-name">{entity.name}</span>
         {childCount > 0 && <span className="tree-badge">{childCount}</span>}
@@ -5411,7 +5487,7 @@ function EntityTreeNode({ entity, focusedEntityId, setFocusedEntityId, depth, ex
         <EntityTreeNode key={child.id} entity={child} focusedEntityId={focusedEntityId}
           setFocusedEntityId={setFocusedEntityId} depth={depth+1}
           expandedNodes={expandedNodes} toggleExpand={toggleExpand} maxEntityType={maxEntityType}
-          showStatus={showStatus} lang={lang} statusFilter={statusFilter}/>
+          showStatus={showStatus} lang={lang} statusFilter={statusFilter} treeConfig={treeConfig}/>
       ))}
     </div>
   );
@@ -6763,7 +6839,7 @@ function DashboardPage({t, lang, currentSite, focusedEntityId, setFocusedEntityI
                 setFocusedEntityId={setFocusedEntityId} depth={0}
                 expandedNodes={treeExpandedNodes} toggleExpand={toggleTreeExpand}
                 maxEntityType={treeConfig.maxEntityType} showStatus={true} lang={lang}
-                statusFilter={treeStatusFilter}/>
+                statusFilter={treeStatusFilter} treeConfig={treeConfig}/>
             ))}
           </div>
         </div>
