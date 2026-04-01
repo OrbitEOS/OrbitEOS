@@ -870,8 +870,8 @@
       background:var(--bg-elevated); border:1px solid var(--border); touch-action:pan-x; }
     .tl-layers, .tl-forecast-zone, .tl-downtime { overflow:hidden; border-radius:5px; }
     .tl-layers { position:absolute; inset:0; display:flex; pointer-events:none; border-radius:5px; overflow:hidden; }
-    .tl-band { flex:1; display:flex; flex-direction:column; justify-content:flex-end; }
-    .tl-band-fill { width:100%; border-radius:1px 1px 0 0; min-height:1px; }
+    .tl-band { flex:1; display:flex; flex-direction:column; justify-content:flex-end; gap:0; }
+    .tl-band-fill { width:100%; min-height:0; transition:height 0.1s ease; }
     .tl-forecast-zone { position:absolute; top:0; bottom:0; right:0;
       background:repeating-linear-gradient(135deg,transparent,transparent 3px,color-mix(in srgb,var(--brand) 8%,transparent) 3px,color-mix(in srgb,var(--brand) 8%,transparent) 6px);
       border-left:1px dashed var(--brand); pointer-events:none; }
@@ -6269,15 +6269,28 @@ function TimelineScrubber({ entityId, lang, embedded, onTimeChange }) {
   }
   function onMouseLeave() { setHoverPct(null); }
 
-  // Tooltip content
+  // Tooltip content with contextual color
   var hoverTip = React.useMemo(() => {
     if (hoverPct == null) return null;
     var d = pctToDate(hoverPct);
     var h = d.getHours();
     var main = dayjs(d).format('ddd D MMM HH:mm');
-    var sub = hoverPct > NOW_PCT ? 'forecast' : h < 6 || h > 21 ? 'night' : 'daytime';
-    return { main: main, sub: sub };
-  }, [hoverPct, zoomIdx]);
+    var isForecast = hoverPct > NOW_PCT;
+    var isNight = h < 6 || h > 21;
+    // Determine dominant energy at this hour
+    var bandIdx = Math.min(Math.floor((hoverPct / 100) * bandData.length), bandData.length - 1);
+    var b = bandData[bandIdx] || {};
+    var sub, color;
+    if (isForecast) { sub = 'forecast'; color = 'var(--brand)'; }
+    else if (isNight) { sub = 'night'; color = 'var(--text-tertiary)'; }
+    else if (b.gridExport > 0.3) { sub = 'exporting'; color = 'var(--success)'; }
+    else if (b.solar > 0.4) { sub = 'solar'; color = 'var(--solar)'; }
+    else if (b.wind > 0.3) { sub = 'wind'; color = 'var(--wind)'; }
+    else if (b.gridImport > 0.4) { sub = 'grid import'; color = 'var(--error)'; }
+    else if (b.ev > 0.1) { sub = 'EV charging'; color = 'var(--ev)'; }
+    else { sub = 'daytime'; color = 'var(--text-secondary)'; }
+    return { main: main, sub: sub, color: color };
+  }, [hoverPct, zoomIdx, bandData]);
 
   // Energy band data — mini bar chart with stacked layers
   var bandData = React.useMemo(() => {
@@ -6341,25 +6354,27 @@ function TimelineScrubber({ entityId, lang, embedded, onTimeChange }) {
       onMouseDown:onMouseDown, onMouseMove:onMouseMove, onMouseLeave:onMouseLeave,
       onTouchStart:onTouchStart, onTouchMove:onTouchMove, onTouchEnd:onTouchEnd, onDoubleClick:goLive},
       // Hover tooltip
-      hoverTip && React.createElement('div', {className:'tl-tip', style:{left:hoverPct+'%'}},
+      hoverTip && React.createElement('div', {className:'tl-tip', style:{left:hoverPct+'%', borderColor:hoverTip.color}},
         React.createElement('span', null, hoverTip.main),
-        React.createElement('span', {className:'tl-tip-sub'}, hoverTip.sub)),
+        React.createElement('span', {className:'tl-tip-sub', style:{color:hoverTip.color}},
+          React.createElement('span', {style:{display:'inline-block',width:6,height:6,borderRadius:'50%',background:hoverTip.color,marginRight:3}}),
+          hoverTip.sub)),
       // Energy mini-bars
       React.createElement('div', {className:'tl-layers'},
         bandData.map((b, i) => {
-          var solarH = Math.round(b.solar * 100);
-          var windH = Math.round(b.wind * 100);
-          var impH = Math.round(b.gridImport * 100);
-          var expH = Math.round(b.gridExport * 100);
-          var evH = Math.round(b.ev * 100);
-          var nightOp = b.isNight ? 0.2 : 1;
-          // Stacked: grid-import(red) + solar(amber) + wind(cyan) + export(green) + ev(purple)
-          return React.createElement('div', {key:i, className:'tl-band', style:{opacity:nightOp}},
-            expH > 2 && React.createElement('div', {className:'tl-band-fill', style:{height:expH+'%', background:'var(--success)', opacity:0.5}}),
-            evH > 2 && React.createElement('div', {className:'tl-band-fill', style:{height:evH+'%', background:'var(--ev)', opacity:0.5}}),
-            windH > 2 && React.createElement('div', {className:'tl-band-fill', style:{height:windH+'%', background:'var(--wind)', opacity:0.6}}),
-            solarH > 2 && React.createElement('div', {className:'tl-band-fill', style:{height:solarH+'%', background:'var(--solar)', opacity:0.6}}),
-            impH > 5 && React.createElement('div', {className:'tl-band-fill', style:{height:Math.min(impH,60)+'%', background:'var(--error)', opacity:0.3}})
+          // Single dominant color — smooth continuous area
+          var total = b.solar + b.wind + b.gridImport + b.gridExport + b.ev;
+          var fillH = Math.round(Math.min(total, 1) * 90); // max 90% height
+          var color, op;
+          if (b.gridExport > b.solar && b.gridExport > b.gridImport) { color = 'var(--success)'; op = 0.55; }
+          else if (b.solar > b.wind && b.solar > b.gridImport) { color = 'var(--solar)'; op = 0.55; }
+          else if (b.wind > b.solar && b.wind > b.gridImport) { color = 'var(--wind)'; op = 0.55; }
+          else if (b.gridImport > 0.1) { color = 'var(--error)'; op = 0.35; }
+          else if (b.ev > 0.05) { color = 'var(--ev)'; op = 0.45; }
+          else { color = 'var(--text-tertiary)'; op = 0.15; }
+          if (b.isNight) { op *= 0.35; fillH = Math.max(fillH, 8); }
+          return React.createElement('div', {key:i, className:'tl-band'},
+            React.createElement('div', {className:'tl-band-fill', style:{height:fillH+'%', background:color, opacity:op}})
           );
         })
       ),
@@ -6621,12 +6636,20 @@ const WidgetEnergyFlow = React.memo(function WidgetEnergyFlow({t, lang, currentS
         {!TimeModel.isLive() && (() => {
           var isFc = TimeModel.isForecast();
           var dt = dayjs(TimeModel.now()).format('ddd D MMM HH:mm');
-          return React.createElement('div', {className:'tl-mode-badge ' + (isFc ? 'forecast' : 'historical'), style:{
-            background:isFc?'var(--brand-bg)':'var(--warning-bg)',
-            color:isFc?'var(--brand)':'var(--warning)',
-            border:'1px solid '+(isFc?'var(--brand)':'var(--warning)')
+          var h = TimeModel.now().getHours();
+          // Contextual color from energy state at virtual time
+          var ctxColor, ctxBg, ctxLabel;
+          if (isFc) { ctxColor = 'var(--brand)'; ctxBg = 'var(--brand-bg)'; ctxLabel = resolveI18n({en:'Forecast',nl:'Prognose'},lang); }
+          else if (ef.gridExporting) { ctxColor = 'var(--success)'; ctxBg = 'var(--success-bg,color-mix(in srgb,var(--success) 12%,var(--bg-card)))'; ctxLabel = resolveI18n({en:'Exporting',nl:'Exporteren'},lang); }
+          else if (ef.solarActive && ef.solarPower > 2) { ctxColor = 'var(--solar)'; ctxBg = 'color-mix(in srgb,var(--solar) 12%,var(--bg-card))'; ctxLabel = resolveI18n({en:'Solar Active',nl:'Zon Actief'},lang); }
+          else if (h < 6 || h > 21) { ctxColor = 'var(--text-tertiary)'; ctxBg = 'var(--bg-elevated)'; ctxLabel = resolveI18n({en:'Night',nl:'Nacht'},lang); }
+          else if (ef.gridImporting) { ctxColor = 'var(--error)'; ctxBg = 'color-mix(in srgb,var(--error) 10%,var(--bg-card))'; ctxLabel = resolveI18n({en:'Importing',nl:'Importeren'},lang); }
+          else { ctxColor = 'var(--warning)'; ctxBg = 'var(--warning-bg)'; ctxLabel = resolveI18n({en:'Historical',nl:'Historisch'},lang); }
+          return React.createElement('div', {className:'tl-mode-badge historical', style:{
+            background:ctxBg, color:ctxColor, border:'1px solid '+ctxColor
           }},
-            React.createElement('span', {style:{textTransform:'uppercase'}}, isFc ? resolveI18n({en:'Forecast',nl:'Prognose'},lang) : resolveI18n({en:'Historical',nl:'Historisch'},lang)),
+            React.createElement('span', {style:{display:'inline-block',width:7,height:7,borderRadius:'50%',background:ctxColor,flexShrink:0}}),
+            React.createElement('span', {style:{textTransform:'uppercase',fontWeight:600}}, ctxLabel),
             React.createElement('span', {style:{fontWeight:400,opacity:0.85}}, dt)
           );
         })()}
