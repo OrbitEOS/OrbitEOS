@@ -901,6 +901,8 @@
     .kiosk-active .page-enter { height:100vh !important; }
     .kiosk-active .dashboard-tree-panel { display:none !important; }
     .kiosk-active .dashboard-tree-toggle { display:none !important; }
+    .kiosk-active .toast-container { display:none !important; }
+    .kiosk-active.kiosk-alarms-on .toast-container { display:flex !important; }
     /* ─── Tree Animated Status Icons ─── */
     .tree-status-icon { width:12px; height:12px; flex-shrink:0; display:inline-flex; align-items:center; justify-content:center; }
     .tree-status-icon svg { width:10px; height:10px; }
@@ -1050,7 +1052,7 @@
 
 <script type="text/babel">
 // ─── Version ───
-const ORBITEOS_VERSION = '0.7.0.7';
+const ORBITEOS_VERSION = '0.7.0.8';
 const { useState, useEffect, useRef, useCallback, useMemo } = React;
 const { ConfigProvider, theme: antTheme, Button, Table, Tag, Badge, Switch, Select, Input, Tabs, Segmented,
   Progress, Slider, Form, InputNumber, Tooltip, Dropdown, Space, Modal, Drawer, Menu } = antd;
@@ -4851,6 +4853,13 @@ const MockAPI = {
     fullscreen: { keys: 'Click ⤢',        label: {en:'Toggle Fullscreen',nl:'Volledig Scherm'} },
   }),
 
+  // Kiosk mode config
+  getKioskConfig: () => ({
+    showAlarmPopups: false,       // alarm toast popups in fullscreen
+    showSiteName: true,           // site name at top center
+    showStatusIcon: true,         // animated status icon next to site name
+  }),
+
   getDashboardTreeConfig: () => ({
     maxEntityType: 'site',        // show tree nodes down to this level
     defaultPinned: true,          // tree pinned by default on desktop
@@ -6024,26 +6033,30 @@ const WidgetEnergyFlow = React.memo(function WidgetEnergyFlow({t, lang, currentS
   const touchRef = React.useRef(null);
   const { solarActive, windActive, consumptionActive, gridExporting, gridImporting, essSoc } = ef;
 
+  // Kiosk config from MockAPI
+  const kioskConfig = React.useMemo(function() { return MockAPI.getKioskConfig(); }, []);
+
   // Fullscreen / Kiosk toggle
   const toggleKiosk = React.useCallback(function() {
     if (!document.fullscreenElement) {
       document.documentElement.requestFullscreen().then(function() {
         document.body.classList.add('kiosk-active');
+        if (kioskConfig.showAlarmPopups) document.body.classList.add('kiosk-alarms-on');
         setIsKiosk(true);
       }).catch(function() {});
     } else {
       document.exitFullscreen().then(function() {
-        document.body.classList.remove('kiosk-active');
+        document.body.classList.remove('kiosk-active', 'kiosk-alarms-on');
         setIsKiosk(false);
       }).catch(function() {});
     }
-  }, []);
+  }, [kioskConfig]);
 
   // Sync state when user exits fullscreen via Escape
   React.useEffect(function() {
     function onFsChange() {
       if (!document.fullscreenElement) {
-        document.body.classList.remove('kiosk-active');
+        document.body.classList.remove('kiosk-active', 'kiosk-alarms-on');
         setIsKiosk(false);
       }
     }
@@ -6093,12 +6106,23 @@ const WidgetEnergyFlow = React.memo(function WidgetEnergyFlow({t, lang, currentS
             {React.createElement(isKiosk ? CompressOutlined : ExpandOutlined)}
           </div>
         </div>
-        {/* Kiosk site name */}
-        {isKiosk && <div style={{position:'absolute',top:12,left:'50%',transform:'translateX(-50%)',zIndex:4,
-          fontSize:13,fontWeight:600,color:'var(--text-primary)',opacity:0.7,whiteSpace:'nowrap',
-          textShadow:'0 0 12px var(--bg-primary)'}}>
-          {siteName}
-        </div>}
+        {/* Kiosk site name + status icon */}
+        {isKiosk && kioskConfig.showSiteName && (function() {
+          var siteStatus = null;
+          try { siteStatus = MockAPI.getSiteStatus(currentSite); } catch(e) {}
+          var iconFn = kioskConfig.showStatusIcon && siteStatus && siteStatus.treeIcon && TREE_STATUS_ICONS[siteStatus.treeIcon]
+            ? TREE_STATUS_ICONS[siteStatus.treeIcon] : null;
+          var animClass = siteStatus && siteStatus.treeIcon && TREE_ICON_ANIM[siteStatus.treeIcon]
+            ? TREE_ICON_ANIM[siteStatus.treeIcon] : '';
+          return React.createElement('div', {style:{position:'absolute',top:14,left:'50%',transform:'translateX(-50%)',zIndex:4,
+            display:'flex',alignItems:'center',gap:8,whiteSpace:'nowrap',
+            textShadow:'0 0 16px var(--bg-primary), 0 0 32px var(--bg-primary)'}},
+            iconFn ? React.createElement('span', {className:'tree-status-icon '+animClass, style:{width:16,height:16}},
+              iconFn(siteStatus.color)) : (siteStatus ? React.createElement('span',{style:{width:8,height:8,borderRadius:'50%',
+              background:siteStatus.color,flexShrink:0}}) : null),
+            React.createElement('span',{style:{fontSize:16,fontWeight:600,color:'var(--text-primary)',opacity:0.8}}, siteName)
+          );
+        })()}
         {/* Prev/Next site arrows — appear on hover, fade on leave */}
         {onNavigateSite && <div className="flow-nav-arrow flow-nav-left" onClick={function(){onNavigateSite(-1);}}>
           <LeftOutlined/>
