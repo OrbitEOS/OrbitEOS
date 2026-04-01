@@ -1083,7 +1083,7 @@
 
 <script type="text/babel">
 // ─── Version ───
-const ORBITEOS_VERSION = '0.7.0.15';
+const ORBITEOS_VERSION = '0.7.0.16';
 const { useState, useEffect, useRef, useCallback, useMemo } = React;
 const { ConfigProvider, theme: antTheme, Button, Table, Tag, Badge, Switch, Select, Input, Tabs, Segmented,
   Progress, Slider, Form, InputNumber, Tooltip, Dropdown, Space, Modal, Drawer, Menu, message } = antd;
@@ -6301,8 +6301,9 @@ function TimelineScrubber({ entityId, lang, embedded, onTimeChange }) {
     var hasBattery = ef.essSoc > 0;
     var hasWind = ef.windActive;
     var hasEv = ef.evPower > 0;
-    var pts = [];
+    var raw = [];
     var N = zoom.bands;
+    var peakVal = 0.01;
     for (var i = 0; i <= N; i++) {
       var d = pctToDate((i / N) * 100);
       var h = d.getHours();
@@ -6316,12 +6317,14 @@ function TimelineScrubber({ entityId, lang, embedded, onTimeChange }) {
       var gridImport = Math.max(0, load - gen);
       var gridExport = Math.max(0, gen - load);
       var ev = hasEv && h >= 8 && h <= 18 ? load * 0.15 * n : 0;
-      var maxVal = Math.max(cap * 1.2, 1);
-      pts.push({ x: i / N, solar: solar/maxVal, wind: wind/maxVal, load: load/maxVal,
-        gridImport: gridImport/maxVal, gridExport: gridExport/maxVal, ev: ev/maxVal,
-        isNight: h < 6 || h > 21 });
+      raw.push({ x: i / N, solar:solar, wind:wind, load:load, gridImport:gridImport, gridExport:gridExport, ev:ev, isNight: h < 6 || h > 21 });
+      peakVal = Math.max(peakVal, solar, wind, load, gridImport, gridExport);
     }
-    return pts;
+    // Normalize against actual peak so curves fill the track height
+    return raw.map(function(p) {
+      return { x:p.x, solar:p.solar/peakVal, wind:p.wind/peakVal, load:p.load/peakVal,
+        gridImport:p.gridImport/peakVal, gridExport:p.gridExport/peakVal, ev:p.ev/peakVal, isNight:p.isNight };
+    });
   }, [entityId, zoomIdx]);
 
   // Build smooth SVG paths from data points
