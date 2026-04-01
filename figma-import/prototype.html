@@ -6083,8 +6083,8 @@ const WidgetEnergyFlow = React.memo(function WidgetEnergyFlow({t, lang, currentS
         boxShadow: ambientOn ? ('0 0 24px ' + status.color + '25, 0 0 48px ' + status.color + '10') : 'none',
         background: ambientOn ? 'var(--bg-secondary)' : 'var(--bg-card)',
         ...(isKiosk ? {maxHeight:'none',minHeight:'100vh',aspectRatio:'auto',borderRadius:0,border:'none'} : {})}}>
-        <div style={{position:'absolute',top:10,right:12,zIndex:4,display:'flex',gap:6}}>
-          <Tooltip title={ambientOn ? 'Standard view' : 'Ambient view'} placement="left">
+        <div style={{position:'absolute',top:8,right:8,zIndex:5,display:'flex',flexDirection:'column',gap:4}}>
+          <Tooltip title={ambientOn ? (lang==='nl'?'Standaard weergave':'Standard view') : (lang==='nl'?'Sfeerweergave':'Ambient view')} placement="left">
             <div className="flow-ambient-toggle" style={{position:'static'}} onClick={() => { const next = !ambientOn; setAmbientOn(next); localStorage.setItem('orbiteos-flow-ambient', next); }}>
               {React.createElement(ambientOn ? EyeOutlined : EyeInvisibleOutlined)}
             </div>
