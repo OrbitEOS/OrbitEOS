@@ -1,0 +1,265 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="900" viewBox="0 0 1440 900" fill="none">
+  <defs><style>text { font-family: Inter, -apple-system, sans-serif; }</style></defs>
+  <rect width="1440" height="900" fill="#f9fafb"/>
+
+  <!-- SIDEBAR -->
+  <g id="Ant.Layout.Sider">
+    <rect width="240" height="900" fill="#fafafa"/>
+    <rect x="239" width="1" height="900" fill="#e5e7eb"/>
+    <rect x="20" y="16" width="24" height="24" rx="6" fill="#1a5fff"/>
+    <path d="M28 22l4 6h-8l4-6z" fill="white" opacity="0.9"/>
+    <text x="52" y="33" font-size="15" font-weight="600" fill="#111827">OrbitEOS</text>
+    <rect x="0" y="56" width="240" height="1" fill="#e5e7eb"/>
+    <rect x="12" y="68" width="216" height="36" rx="6" fill="#f9fafb" stroke="#e5e7eb" stroke-width="1"/>
+    <text x="28" y="90" font-size="12" fill="#6b7280">De Groot Agri · Maasland</text>
+    <text x="56" y="142" font-size="13" fill="#6b7280">Dashboard</text>
+    <text x="56" y="182" font-size="13" fill="#6b7280">Energy Flow</text>
+    <text x="56" y="224" font-size="13" fill="#6b7280">Fleet</text>
+    <text x="56" y="268" font-size="13" fill="#6b7280">Devices</text>
+    <text x="56" y="312" font-size="13" fill="#6b7280">Alerts</text>
+    <text x="56" y="356" font-size="13" fill="#6b7280">Marketplace</text>
+    <text x="56" y="400" font-size="13" fill="#6b7280">Configuration</text>
+    <rect x="12" y="418" width="216" height="36" rx="6" fill="#eaf5ff"/>
+    <rect x="0" y="422" width="3" height="28" rx="1" fill="#1a5fff"/>
+    <text x="56" y="442" font-size="13" font-weight="500" fill="#1a5fff">EV Charging</text>
+    <rect x="0" y="840" width="240" height="1" fill="#e5e7eb"/>
+    <circle cx="36" cy="872" r="16" fill="#e5e7eb"/>
+    <text x="60" y="870" font-size="13" font-weight="500" fill="#111827">Deepak S.</text>
+    <text x="60" y="885" font-size="11" fill="#9ca3af">Admin</text>
+  </g>
+
+  <!-- HEADER -->
+  <g id="Ant.Layout.Header">
+    <rect x="240" y="0" width="1200" height="56" fill="white"/>
+    <rect x="240" y="55" width="1200" height="1" fill="#e5e7eb"/>
+    <text x="264" y="24" font-size="13" fill="#9ca3af">Devices /</text>
+    <text x="324" y="24" font-size="13" font-weight="500" fill="#111827">EV Charging</text>
+    <text x="264" y="42" font-size="11" fill="#9ca3af">OCPP 1.6J charger status, schedules, and sessions</text>
+    <rect x="1302" y="12" width="114" height="32" rx="6" fill="#1a5fff"/>
+    <text x="1359" y="33" font-size="13" font-weight="500" fill="white" text-anchor="middle">+ Add Charger</text>
+  </g>
+
+  <!-- CONTENT -->
+  <g id="Ant.Layout.Content" transform="translate(240, 56)">
+    <rect width="1200" height="844" fill="#f9fafb"/>
+
+    <!-- CHARGER STATUS CARDS -->
+    <g id="Ant.Card.Chargers" transform="translate(24, 16)">
+      <!-- Charger 1 -->
+      <rect width="275" height="180" rx="8" fill="white" stroke="#22c55e" stroke-width="2"/>
+      <rect x="0" y="0" width="275" height="4" rx="2" fill="#22c55e"/>
+      <text x="20" y="32" font-size="13" font-weight="600" fill="#111827">Alfen Eve Single S-line</text>
+      <text x="20" y="48" font-size="11" fill="#9ca3af">OCPP ID: ALFEN-001</text>
+      <rect x="200" y="18" width="56" height="22" rx="11" fill="#def6e7"/>
+      <text x="212" y="33" font-size="10" fill="#22c55e">Charging</text>
+
+      <text x="20" y="76" font-size="11" fill="#9ca3af">POWER</text>
+      <text x="20" y="96" font-size="20" font-weight="700" fill="#22c55e">7.4 kW</text>
+      <text x="140" y="76" font-size="11" fill="#9ca3af">SESSION</text>
+      <text x="140" y="96" font-size="20" font-weight="700" fill="#111827">18.2 kWh</text>
+
+      <text x="20" y="124" font-size="11" fill="#9ca3af">Vehicle:</text>
+      <text x="68" y="124" font-size="11" fill="#111827">Tesla Model 3 (AB-123-CD)</text>
+      <text x="20" y="142" font-size="11" fill="#9ca3af">Started:</text>
+      <text x="68" y="142" font-size="11" fill="#111827">08:30 — ETA full: 14:20</text>
+
+      <rect x="20" y="156" width="235" height="6" rx="3" fill="#f3f4f6"/>
+      <rect x="20" y="156" width="160" height="6" rx="3" fill="#22c55e"/>
+      <text x="165" y="170" font-size="9" fill="#22c55e">68%</text>
+    </g>
+
+    <!-- Charger 2 -->
+    <g transform="translate(323, 16)">
+      <rect width="275" height="180" rx="8" fill="white" stroke="#3b82f6" stroke-width="2"/>
+      <rect x="0" y="0" width="275" height="4" rx="2" fill="#3b82f6"/>
+      <text x="20" y="32" font-size="13" font-weight="600" fill="#111827">Alfen Eve Single S-line</text>
+      <text x="20" y="48" font-size="11" fill="#9ca3af">OCPP ID: ALFEN-002</text>
+      <rect x="200" y="18" width="56" height="22" rx="11" fill="#eff6ff"/>
+      <text x="212" y="33" font-size="10" fill="#3b82f6">Scheduled</text>
+
+      <text x="20" y="76" font-size="11" fill="#9ca3af">POWER</text>
+      <text x="20" y="96" font-size="20" font-weight="700" fill="#6b7280">0 kW</text>
+      <text x="140" y="76" font-size="11" fill="#9ca3af">NEXT START</text>
+      <text x="140" y="96" font-size="20" font-weight="700" fill="#3b82f6">02:00</text>
+
+      <text x="20" y="124" font-size="11" fill="#9ca3af">Vehicle:</text>
+      <text x="68" y="124" font-size="11" fill="#111827">VW ID.4 (EF-456-GH)</text>
+      <text x="20" y="142" font-size="11" fill="#9ca3af">Schedule:</text>
+      <text x="72" y="142" font-size="11" fill="#3b82f6">Smart charge 02:00-06:00 (cheap tariff)</text>
+
+      <rect x="20" y="156" width="235" height="6" rx="3" fill="#f3f4f6"/>
+      <rect x="20" y="156" width="94" height="6" rx="3" fill="#3b82f6"/>
+      <text x="80" y="170" font-size="9" fill="#3b82f6">40%</text>
+    </g>
+
+    <!-- Charger 3 -->
+    <g transform="translate(622, 16)">
+      <rect width="275" height="180" rx="8" fill="white" stroke="#e5e7eb" stroke-width="1"/>
+      <text x="20" y="32" font-size="13" font-weight="600" fill="#111827">ABB Terra AC W22-T-0</text>
+      <text x="20" y="48" font-size="11" fill="#9ca3af">OCPP ID: ABB-001</text>
+      <rect x="188" y="18" width="68" height="22" rx="11" fill="#f3f4f6"/>
+      <text x="200" y="33" font-size="10" fill="#9ca3af">Available</text>
+
+      <text x="20" y="80" font-size="11" fill="#9ca3af">STATUS</text>
+      <text x="20" y="100" font-size="16" font-weight="600" fill="#6b7280">Ready to charge</text>
+      <text x="20" y="124" font-size="11" fill="#9ca3af">Last session:</text>
+      <text x="90" y="124" font-size="11" fill="#6b7280">Yesterday, 12.8 kWh</text>
+      <text x="20" y="142" font-size="11" fill="#9ca3af">Total sessions:</text>
+      <text x="104" y="142" font-size="11" fill="#111827">342</text>
+    </g>
+
+    <!-- Charger 4 -->
+    <g transform="translate(921, 16)">
+      <rect width="275" height="180" rx="8" fill="white" stroke="#ef4444" stroke-width="2"/>
+      <rect x="0" y="0" width="275" height="4" rx="2" fill="#ef4444"/>
+      <text x="20" y="32" font-size="13" font-weight="600" fill="#111827">ABB Terra AC W22-T-0</text>
+      <text x="20" y="48" font-size="11" fill="#9ca3af">OCPP ID: ABB-002</text>
+      <rect x="210" y="18" width="46" height="22" rx="11" fill="#fef2f2"/>
+      <text x="222" y="33" font-size="10" fill="#ef4444">Fault</text>
+
+      <text x="20" y="80" font-size="11" fill="#ef4444">ERROR</text>
+      <text x="20" y="100" font-size="14" font-weight="600" fill="#ef4444">Ground fault detected</text>
+      <text x="20" y="124" font-size="11" fill="#9ca3af">Since:</text>
+      <text x="56" y="124" font-size="11" fill="#ef4444">2 hours ago</text>
+      <text x="20" y="142" font-size="11" fill="#9ca3af">OCPP error:</text>
+      <text x="90" y="142" font-size="11" fill="#ef4444">GroundFailure</text>
+
+      <rect x="20" y="156" width="100" height="28" rx="6" fill="#fef2f2" stroke="#ef4444" stroke-width="1"/>
+      <text x="70" y="174" font-size="11" font-weight="500" fill="#ef4444" text-anchor="middle">Reset</text>
+    </g>
+
+    <!-- SMART CHARGE SCHEDULE -->
+    <g id="Ant.Card.SmartSchedule" transform="translate(24, 212)">
+      <rect width="564" height="300" rx="8" fill="white" stroke="#f3f4f6" stroke-width="1"/>
+      <text x="20" y="32" font-size="14" font-weight="600" fill="#111827">Smart Charge Schedule</text>
+      <text x="20" y="50" font-size="11" fill="#9ca3af">Load-balanced charging with tariff optimization</text>
+
+      <!-- Timeline -->
+      <g transform="translate(20, 70)">
+        <!-- Time axis -->
+        <text x="0" y="12" font-size="9" fill="#9ca3af">00</text>
+        <text x="44" y="12" font-size="9" fill="#9ca3af">02</text>
+        <text x="88" y="12" font-size="9" fill="#9ca3af">04</text>
+        <text x="132" y="12" font-size="9" fill="#9ca3af">06</text>
+        <text x="176" y="12" font-size="9" fill="#9ca3af">08</text>
+        <text x="220" y="12" font-size="9" fill="#9ca3af">10</text>
+        <text x="264" y="12" font-size="9" fill="#9ca3af">12</text>
+        <text x="308" y="12" font-size="9" fill="#9ca3af">14</text>
+        <text x="352" y="12" font-size="9" fill="#9ca3af">16</text>
+        <text x="396" y="12" font-size="9" fill="#9ca3af">18</text>
+        <text x="440" y="12" font-size="9" fill="#9ca3af">20</text>
+        <text x="484" y="12" font-size="9" fill="#9ca3af">22</text>
+
+        <!-- ALFEN-001 -->
+        <text x="0" y="38" font-size="11" font-weight="500" fill="#111827">ALFEN-001</text>
+        <rect x="0" y="44" width="524" height="24" rx="4" fill="#f3f4f6"/>
+        <rect x="176" y="44" width="180" height="24" rx="4" fill="#22c55e" opacity="0.7"/>
+        <text x="266" y="60" font-size="9" fill="white" text-anchor="middle">7.4 kW</text>
+
+        <!-- ALFEN-002 -->
+        <text x="0" y="88" font-size="11" font-weight="500" fill="#111827">ALFEN-002</text>
+        <rect x="0" y="94" width="524" height="24" rx="4" fill="#f3f4f6"/>
+        <rect x="44" y="94" width="88" height="24" rx="4" fill="#3b82f6" opacity="0.7"/>
+        <text x="88" y="110" font-size="9" fill="white" text-anchor="middle">7.4 kW</text>
+
+        <!-- ABB-001 -->
+        <text x="0" y="138" font-size="11" font-weight="500" fill="#111827">ABB-001</text>
+        <rect x="0" y="144" width="524" height="24" rx="4" fill="#f3f4f6"/>
+        <text x="262" y="160" font-size="9" fill="#9ca3af" text-anchor="middle">No schedule</text>
+
+        <!-- ABB-002 -->
+        <text x="0" y="188" font-size="11" font-weight="500" fill="#111827">ABB-002</text>
+        <rect x="0" y="194" width="524" height="24" rx="4" fill="#fef2f2"/>
+        <text x="262" y="210" font-size="9" fill="#ef4444" text-anchor="middle">Fault — offline</text>
+      </g>
+    </g>
+
+    <!-- SESSION HISTORY TABLE -->
+    <g id="Ant.Table.Sessions" transform="translate(608, 212)">
+      <rect width="568" height="300" rx="8" fill="white" stroke="#f3f4f6" stroke-width="1"/>
+      <text x="20" y="32" font-size="14" font-weight="600" fill="#111827">Recent Sessions</text>
+
+      <rect x="0" y="48" width="568" height="36" fill="#fafafa"/>
+      <text x="20" y="71" font-size="11" fill="#9ca3af" font-weight="600">CHARGER</text>
+      <text x="120" y="71" font-size="11" fill="#9ca3af" font-weight="600">VEHICLE</text>
+      <text x="260" y="71" font-size="11" fill="#9ca3af" font-weight="600">ENERGY</text>
+      <text x="340" y="71" font-size="11" fill="#9ca3af" font-weight="600">DURATION</text>
+      <text x="440" y="71" font-size="11" fill="#9ca3af" font-weight="600">COST</text>
+
+      <text x="20" y="108" font-size="12" fill="#111827">ALFEN-001</text>
+      <text x="120" y="108" font-size="12" fill="#6b7280">Tesla M3</text>
+      <text x="260" y="108" font-size="12" fill="#111827">18.2 kWh</text>
+      <text x="340" y="108" font-size="12" fill="#6b7280">2h 30m</text>
+      <text x="440" y="108" font-size="12" fill="#111827">€2.58</text>
+      <rect x="510" y="96" width="36" height="20" rx="4" fill="#def6e7"/>
+      <text x="528" y="110" font-size="10" fill="#22c55e" text-anchor="middle">Live</text>
+      <rect x="0" y="120" width="568" height="1" fill="#f3f4f6"/>
+
+      <text x="20" y="148" font-size="12" fill="#111827">ABB-001</text>
+      <text x="120" y="148" font-size="12" fill="#6b7280">VW ID.4</text>
+      <text x="260" y="148" font-size="12" fill="#111827">32.4 kWh</text>
+      <text x="340" y="148" font-size="12" fill="#6b7280">4h 15m</text>
+      <text x="440" y="148" font-size="12" fill="#111827">€4.21</text>
+      <rect x="0" y="160" width="568" height="1" fill="#f3f4f6"/>
+
+      <text x="20" y="188" font-size="12" fill="#111827">ALFEN-002</text>
+      <text x="120" y="188" font-size="12" fill="#6b7280">BMW iX3</text>
+      <text x="260" y="188" font-size="12" fill="#111827">28.6 kWh</text>
+      <text x="340" y="188" font-size="12" fill="#6b7280">3h 50m</text>
+      <text x="440" y="188" font-size="12" fill="#111827">€1.72</text>
+      <rect x="0" y="200" width="568" height="1" fill="#f3f4f6"/>
+
+      <text x="20" y="228" font-size="12" fill="#111827">ALFEN-001</text>
+      <text x="120" y="228" font-size="12" fill="#6b7280">Tesla M3</text>
+      <text x="260" y="228" font-size="12" fill="#111827">42.1 kWh</text>
+      <text x="340" y="228" font-size="12" fill="#6b7280">5h 40m</text>
+      <text x="440" y="228" font-size="12" fill="#111827">€5.46</text>
+      <rect x="0" y="240" width="568" height="1" fill="#f3f4f6"/>
+
+      <text x="20" y="284" font-size="12" fill="#1a5fff">View all sessions →</text>
+    </g>
+
+    <!-- LOAD BALANCING -->
+    <g id="Ant.Card.LoadBalance" transform="translate(24, 528)">
+      <rect width="1152" height="120" rx="8" fill="white" stroke="#f3f4f6" stroke-width="1"/>
+      <text x="20" y="28" font-size="13" font-weight="600" fill="#111827">Load Balancing</text>
+
+      <text x="20" y="56" font-size="11" fill="#9ca3af">TOTAL EV LOAD</text>
+      <text x="20" y="76" font-size="20" font-weight="700" fill="#111827">7.4 kW</text>
+      <text x="110" y="76" font-size="12" fill="#9ca3af">of 22 kW max</text>
+
+      <text x="260" y="56" font-size="11" fill="#9ca3af">SITE HEADROOM</text>
+      <text x="260" y="76" font-size="20" font-weight="700" fill="#22c55e">14.6 kW</text>
+
+      <text x="440" y="56" font-size="11" fill="#9ca3af">LOAD BALANCE MODE</text>
+      <rect x="440" y="64" width="120" height="28" rx="6" fill="#eff6ff"/>
+      <text x="500" y="83" font-size="12" font-weight="500" fill="#1a5fff" text-anchor="middle">Dynamic (FIFO)</text>
+
+      <!-- Progress bar -->
+      <text x="620" y="56" font-size="11" fill="#9ca3af">CAPACITY USAGE</text>
+      <rect x="620" y="66" width="400" height="12" rx="6" fill="#f3f4f6"/>
+      <rect x="620" y="66" width="134" height="12" rx="6" fill="#22c55e"/>
+      <text x="1030" y="76" font-size="11" fill="#6b7280">34%</text>
+
+      <text x="620" y="100" font-size="11" fill="#6b7280">Smart scheduling active — prioritizing cheap tariff windows (EPEX SPOT)</text>
+    </g>
+
+    <!-- MONTHLY STATS -->
+    <g id="Ant.Card.MonthlyEV" transform="translate(24, 664)">
+      <rect width="370" height="100" rx="8" fill="white" stroke="#f3f4f6" stroke-width="1"/>
+      <text x="20" y="28" font-size="11" fill="#9ca3af">SESSIONS THIS MONTH</text>
+      <text x="20" y="52" font-size="22" font-weight="700" fill="#111827">68</text>
+      <text x="20" y="74" font-size="11" fill="#22c55e">+12% vs last month</text>
+
+      <rect x="400" y="0" width="370" height="100" rx="8" fill="white" stroke="#f3f4f6" stroke-width="1"/>
+      <text x="420" y="28" font-size="11" fill="#9ca3af">ENERGY DELIVERED</text>
+      <text x="420" y="52" font-size="22" font-weight="700" fill="#111827">1,842 kWh</text>
+      <text x="420" y="74" font-size="11" fill="#22c55e">82% from solar/battery</text>
+
+      <rect x="790" y="0" width="362" height="100" rx="8" fill="white" stroke="#f3f4f6" stroke-width="1"/>
+      <text x="810" y="28" font-size="11" fill="#9ca3af">CHARGING COST</text>
+      <text x="810" y="52" font-size="22" font-weight="700" fill="#111827">€184.20</text>
+      <text x="810" y="74" font-size="11" fill="#22c55e">Saved €312 vs grid-only</text>
+    </g>
+  </g>
+</svg>

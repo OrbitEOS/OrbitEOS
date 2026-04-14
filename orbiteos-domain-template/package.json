@@ -1,0 +1,23 @@
+{
+  "name": "orbiteos-domain-template",
+  "private": true,
+  "workspaces": [
+    "packages/domain-shared",
+    "packages/domain-api",
+    "packages/domain-mcp",
+    "packages/domain-web"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces",
+    "dev": "tsx scripts/dev.ts",
+    "register": "tsx scripts/register.ts",
+    "clean": "rm -rf packages/*/dist"
+  },
+  "devDependencies": {
+    "tsx": "^4.7.0",
+    "typescript": "^5.6.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

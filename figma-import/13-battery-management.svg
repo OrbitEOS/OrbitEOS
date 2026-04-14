@@ -1,0 +1,264 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="900" viewBox="0 0 1440 900" fill="none">
+  <defs><style>text { font-family: Inter, -apple-system, sans-serif; }</style></defs>
+  <rect width="1440" height="900" fill="#f9fafb"/>
+
+  <!-- SIDEBAR -->
+  <g id="Ant.Layout.Sider">
+    <rect width="240" height="900" fill="#fafafa"/>
+    <rect x="239" width="1" height="900" fill="#e5e7eb"/>
+    <rect x="20" y="16" width="24" height="24" rx="6" fill="#1a5fff"/>
+    <path d="M28 22l4 6h-8l4-6z" fill="white" opacity="0.9"/>
+    <text x="52" y="33" font-size="15" font-weight="600" fill="#111827">OrbitEOS</text>
+    <rect x="0" y="56" width="240" height="1" fill="#e5e7eb"/>
+    <rect x="12" y="68" width="216" height="36" rx="6" fill="#f9fafb" stroke="#e5e7eb" stroke-width="1"/>
+    <text x="28" y="90" font-size="12" fill="#6b7280">De Groot Agri · Maasland</text>
+    <text x="56" y="142" font-size="13" fill="#6b7280">Dashboard</text>
+    <text x="56" y="182" font-size="13" fill="#6b7280">Energy Flow</text>
+    <text x="56" y="224" font-size="13" fill="#6b7280">Fleet</text>
+    <text x="56" y="268" font-size="13" fill="#6b7280">Devices</text>
+    <text x="56" y="312" font-size="13" fill="#6b7280">Alerts</text>
+    <text x="56" y="356" font-size="13" fill="#6b7280">Marketplace</text>
+    <text x="56" y="400" font-size="13" fill="#6b7280">Configuration</text>
+    <rect x="12" y="418" width="216" height="36" rx="6" fill="#eaf5ff"/>
+    <rect x="0" y="422" width="3" height="28" rx="1" fill="#1a5fff"/>
+    <text x="56" y="442" font-size="13" font-weight="500" fill="#1a5fff">Battery Mgmt</text>
+    <rect x="0" y="840" width="240" height="1" fill="#e5e7eb"/>
+    <circle cx="36" cy="872" r="16" fill="#e5e7eb"/>
+    <text x="60" y="870" font-size="13" font-weight="500" fill="#111827">Deepak S.</text>
+    <text x="60" y="885" font-size="11" fill="#9ca3af">Admin</text>
+  </g>
+
+  <!-- HEADER -->
+  <g id="Ant.Layout.Header">
+    <rect x="240" y="0" width="1200" height="56" fill="white"/>
+    <rect x="240" y="55" width="1200" height="1" fill="#e5e7eb"/>
+    <text x="264" y="24" font-size="13" fill="#9ca3af">Devices /</text>
+    <text x="324" y="24" font-size="13" font-weight="500" fill="#111827">Battery Management</text>
+    <text x="264" y="42" font-size="11" fill="#9ca3af">Monitor battery health, SoC, and degradation</text>
+  </g>
+
+  <!-- CONTENT -->
+  <g id="Ant.Layout.Content" transform="translate(240, 56)">
+    <rect width="1200" height="844" fill="#f9fafb"/>
+
+    <!-- BATTERY OVERVIEW CARDS -->
+    <g id="Ant.Card.BatteryOverview" transform="translate(24, 16)">
+      <!-- Battery 1: BYD HVS -->
+      <rect width="370" height="200" rx="8" fill="white" stroke="#f3f4f6" stroke-width="1"/>
+      <text x="20" y="28" font-size="14" font-weight="600" fill="#111827">BYD HVS 10.2</text>
+      <text x="20" y="46" font-size="11" fill="#9ca3af">Serial: BYD-HVS-NL-0042</text>
+      <rect x="280" y="14" width="70" height="22" rx="11" fill="#def6e7"/>
+      <text x="292" y="29" font-size="11" fill="#22c55e">Charging</text>
+
+      <!-- SoC visual -->
+      <rect x="20" y="64" width="330" height="24" rx="12" fill="#f3f4f6"/>
+      <rect x="20" y="64" width="237" height="24" rx="12" fill="#22c55e"/>
+      <text x="185" y="81" font-size="11" font-weight="600" fill="white" text-anchor="middle">72%</text>
+
+      <text x="20" y="112" font-size="11" fill="#9ca3af">SoH</text>
+      <text x="20" y="130" font-size="18" font-weight="700" fill="#111827">96.2%</text>
+
+      <text x="120" y="112" font-size="11" fill="#9ca3af">Cycles</text>
+      <text x="120" y="130" font-size="18" font-weight="700" fill="#111827">842</text>
+
+      <text x="220" y="112" font-size="11" fill="#9ca3af">Temp</text>
+      <text x="220" y="130" font-size="18" font-weight="700" fill="#111827">28°C</text>
+
+      <text x="20" y="158" font-size="11" fill="#9ca3af">Power:</text>
+      <text x="66" y="158" font-size="11" font-weight="500" fill="#22c55e">+3.2 kW (charging)</text>
+      <text x="20" y="178" font-size="11" fill="#9ca3af">Capacity:</text>
+      <text x="80" y="178" font-size="11" fill="#111827">10.2 kWh (9.8 kWh usable)</text>
+    </g>
+
+    <!-- Battery 2 -->
+    <g transform="translate(418, 16)">
+      <rect width="370" height="200" rx="8" fill="white" stroke="#f3f4f6" stroke-width="1"/>
+      <text x="20" y="28" font-size="14" font-weight="600" fill="#111827">Huawei LUNA2000</text>
+      <text x="20" y="46" font-size="11" fill="#9ca3af">Serial: HW-LUNA-NL-0018</text>
+      <rect x="280" y="14" width="54" height="22" rx="11" fill="#fefce8"/>
+      <text x="292" y="29" font-size="11" fill="#f59e0b">Idle</text>
+
+      <rect x="20" y="64" width="330" height="24" rx="12" fill="#f3f4f6"/>
+      <rect x="20" y="64" width="148" height="24" rx="12" fill="#f59e0b"/>
+      <text x="94" y="81" font-size="11" font-weight="600" fill="white" text-anchor="middle">45%</text>
+
+      <text x="20" y="112" font-size="11" fill="#9ca3af">SoH</text>
+      <text x="20" y="130" font-size="18" font-weight="700" fill="#111827">91.8%</text>
+
+      <text x="120" y="112" font-size="11" fill="#9ca3af">Cycles</text>
+      <text x="120" y="130" font-size="18" font-weight="700" fill="#111827">1,204</text>
+
+      <text x="220" y="112" font-size="11" fill="#9ca3af">Temp</text>
+      <text x="220" y="130" font-size="18" font-weight="700" fill="#111827">31°C</text>
+
+      <text x="20" y="158" font-size="11" fill="#9ca3af">Power:</text>
+      <text x="66" y="158" font-size="11" fill="#6b7280">0 kW (idle)</text>
+      <text x="20" y="178" font-size="11" fill="#9ca3af">Capacity:</text>
+      <text x="80" y="178" font-size="11" fill="#111827">15 kWh (13.8 kWh usable)</text>
+    </g>
+
+    <!-- Combined Stats -->
+    <g transform="translate(812, 16)">
+      <rect width="364" height="200" rx="8" fill="white" stroke="#1a5fff" stroke-width="1"/>
+      <rect x="0" y="0" width="364" height="4" rx="2" fill="#1a5fff"/>
+      <text x="20" y="32" font-size="14" font-weight="600" fill="#111827">Combined Fleet</text>
+
+      <text x="20" y="62" font-size="11" fill="#9ca3af">TOTAL CAPACITY</text>
+      <text x="20" y="84" font-size="22" font-weight="700" fill="#111827">25.2 kWh</text>
+
+      <text x="200" y="62" font-size="11" fill="#9ca3af">AVAILABLE NOW</text>
+      <text x="200" y="84" font-size="22" font-weight="700" fill="#22c55e">14.4 kWh</text>
+
+      <text x="20" y="116" font-size="11" fill="#9ca3af">AVG SoH</text>
+      <text x="20" y="136" font-size="18" font-weight="700" fill="#111827">94.0%</text>
+
+      <text x="140" y="116" font-size="11" fill="#9ca3af">THROUGHPUT (MTD)</text>
+      <text x="140" y="136" font-size="18" font-weight="700" fill="#111827">892 kWh</text>
+
+      <text x="20" y="168" font-size="11" fill="#9ca3af">Charge limits:</text>
+      <text x="100" y="168" font-size="11" fill="#111827">5-95% SoC  |  Max 5 kW charge  |  Max 10 kW discharge</text>
+      <text x="20" y="188" font-size="11" fill="#9ca3af">Est. replacement:</text>
+      <text x="120" y="188" font-size="11" fill="#22c55e">4+ years remaining (both units)</text>
+    </g>
+
+    <!-- DEGRADATION CHART -->
+    <g id="Ant.Card.Degradation" transform="translate(24, 232)">
+      <rect width="564" height="300" rx="8" fill="white" stroke="#f3f4f6" stroke-width="1"/>
+      <text x="20" y="32" font-size="14" font-weight="600" fill="#111827">SoH Degradation Trend</text>
+      <text x="20" y="50" font-size="11" fill="#9ca3af">12-month trend with forecast</text>
+
+      <!-- Y axis -->
+      <text x="20" y="86" font-size="10" fill="#9ca3af">100%</text>
+      <text x="20" y="136" font-size="10" fill="#9ca3af">95%</text>
+      <text x="20" y="186" font-size="10" fill="#9ca3af">90%</text>
+      <text x="20" y="236" font-size="10" fill="#9ca3af">85%</text>
+
+      <line x1="56" y1="82" x2="544" y2="82" stroke="#f3f4f6" stroke-width="1"/>
+      <line x1="56" y1="132" x2="544" y2="132" stroke="#f3f4f6" stroke-width="1"/>
+      <line x1="56" y1="182" x2="544" y2="182" stroke="#f3f4f6" stroke-width="1"/>
+      <line x1="56" y1="232" x2="544" y2="232" stroke="#f3f4f6" stroke-width="1"/>
+
+      <!-- BYD line (blue, slight decline) -->
+      <polyline points="56,86 96,88 136,90 176,92 216,94 256,96 296,98 336,100 376,102 416,104 456,108 496,112" fill="none" stroke="#1a5fff" stroke-width="2"/>
+      <!-- Forecast dashed -->
+      <polyline points="496,112 536,116" fill="none" stroke="#1a5fff" stroke-width="2" stroke-dasharray="4,4"/>
+
+      <!-- Huawei line (purple, steeper) -->
+      <polyline points="56,94 96,98 136,102 176,106 216,112 256,116 296,120 336,126 376,132 416,138 456,146 496,152" fill="none" stroke="#8b5cf6" stroke-width="2"/>
+      <polyline points="496,152 536,158" fill="none" stroke="#8b5cf6" stroke-width="2" stroke-dasharray="4,4"/>
+
+      <!-- Legend -->
+      <line x1="56" y1="276" x2="76" y2="276" stroke="#1a5fff" stroke-width="2"/>
+      <text x="82" y="280" font-size="10" fill="#6b7280">BYD HVS (96.2%)</text>
+      <line x1="200" y1="276" x2="220" y2="276" stroke="#8b5cf6" stroke-width="2"/>
+      <text x="226" y="280" font-size="10" fill="#6b7280">Huawei LUNA (91.8%)</text>
+
+      <!-- X axis -->
+      <text x="56" y="260" font-size="9" fill="#9ca3af">Apr</text>
+      <text x="136" y="260" font-size="9" fill="#9ca3af">Jun</text>
+      <text x="216" y="260" font-size="9" fill="#9ca3af">Aug</text>
+      <text x="296" y="260" font-size="9" fill="#9ca3af">Oct</text>
+      <text x="376" y="260" font-size="9" fill="#9ca3af">Dec</text>
+      <text x="456" y="260" font-size="9" fill="#9ca3af">Feb</text>
+      <text x="520" y="260" font-size="9" fill="#9ca3af" opacity="0.5">Apr</text>
+    </g>
+
+    <!-- CHARGE/DISCHARGE SETTINGS -->
+    <g id="Ant.Card.ChargeSettings" transform="translate(608, 232)">
+      <rect width="568" height="300" rx="8" fill="white" stroke="#f3f4f6" stroke-width="1"/>
+      <text x="20" y="32" font-size="14" font-weight="600" fill="#111827">Charge/Discharge Limits</text>
+
+      <!-- Min SoC -->
+      <text x="20" y="72" font-size="13" font-weight="500" fill="#111827">Minimum SoC</text>
+      <rect x="20" y="80" width="520" height="8" rx="4" fill="#f3f4f6"/>
+      <rect x="20" y="80" width="26" height="8" rx="4" fill="#ef4444"/>
+      <circle cx="46" cy="84" r="8" fill="white" stroke="#ef4444" stroke-width="2"/>
+      <text x="60" y="88" font-size="11" fill="#111827">5%</text>
+
+      <!-- Max SoC -->
+      <text x="20" y="120" font-size="13" font-weight="500" fill="#111827">Maximum SoC</text>
+      <rect x="20" y="128" width="520" height="8" rx="4" fill="#f3f4f6"/>
+      <rect x="20" y="128" width="494" height="8" rx="4" fill="#22c55e"/>
+      <circle cx="514" cy="132" r="8" fill="white" stroke="#22c55e" stroke-width="2"/>
+      <text x="528" y="136" font-size="11" fill="#111827">95%</text>
+
+      <!-- Max charge rate -->
+      <text x="20" y="168" font-size="13" font-weight="500" fill="#111827">Max Charge Rate</text>
+      <rect x="20" y="176" width="200" height="36" rx="6" fill="white" stroke="#e5e7eb" stroke-width="1"/>
+      <text x="36" y="199" font-size="13" fill="#111827">5.0</text>
+      <text x="230" y="199" font-size="13" fill="#9ca3af">kW</text>
+
+      <!-- Max discharge rate -->
+      <text x="290" y="168" font-size="13" font-weight="500" fill="#111827">Max Discharge Rate</text>
+      <rect x="290" y="176" width="200" height="36" rx="6" fill="white" stroke="#e5e7eb" stroke-width="1"/>
+      <text x="306" y="199" font-size="13" fill="#111827">10.0</text>
+      <text x="500" y="199" font-size="13" fill="#9ca3af">kW</text>
+
+      <!-- Emergency reserve -->
+      <text x="20" y="240" font-size="13" font-weight="500" fill="#111827">Emergency Reserve</text>
+      <rect x="20" y="248" width="200" height="36" rx="6" fill="white" stroke="#e5e7eb" stroke-width="1"/>
+      <text x="36" y="271" font-size="13" fill="#111827">20</text>
+      <text x="230" y="271" font-size="13" fill="#9ca3af">%</text>
+      <text x="260" y="271" font-size="11" fill="#6b7280">Reserved for backup power</text>
+    </g>
+
+    <!-- DAILY CHARGE PROFILE -->
+    <g id="Ant.Card.DailyProfile" transform="translate(24, 548)">
+      <rect width="1152" height="270" rx="8" fill="white" stroke="#f3f4f6" stroke-width="1"/>
+      <text x="20" y="32" font-size="14" font-weight="600" fill="#111827">Today's Charge/Discharge Profile</text>
+
+      <!-- Y axis -->
+      <text x="20" y="76" font-size="10" fill="#9ca3af">+10kW</text>
+      <text x="20" y="126" font-size="10" fill="#9ca3af">+5kW</text>
+      <text x="20" y="166" font-size="10" fill="#9ca3af">0</text>
+      <text x="20" y="206" font-size="10" fill="#9ca3af">-5kW</text>
+      <text x="20" y="246" font-size="10" fill="#9ca3af">-10kW</text>
+
+      <line x1="60" y1="162" x2="1132" y2="162" stroke="#e5e7eb" stroke-width="1"/>
+
+      <!-- Charge bars (above zero line) -->
+      <rect x="70" y="132" width="20" height="30" rx="1" fill="#22c55e" opacity="0.7"/>
+      <rect x="96" y="122" width="20" height="40" rx="1" fill="#22c55e" opacity="0.7"/>
+      <rect x="122" y="112" width="20" height="50" rx="1" fill="#22c55e" opacity="0.7"/>
+      <rect x="148" y="102" width="20" height="60" rx="1" fill="#22c55e" opacity="0.7"/>
+      <rect x="174" y="112" width="20" height="50" rx="1" fill="#22c55e" opacity="0.7"/>
+      <rect x="200" y="132" width="20" height="30" rx="1" fill="#22c55e" opacity="0.7"/>
+      <!-- Morning gap -->
+      <rect x="226" y="152" width="20" height="10" rx="1" fill="#22c55e" opacity="0.3"/>
+      <rect x="252" y="152" width="20" height="10" rx="1" fill="#22c55e" opacity="0.3"/>
+      <!-- Solar charge -->
+      <rect x="330" y="92" width="20" height="70" rx="1" fill="#f59e0b" opacity="0.7"/>
+      <rect x="356" y="82" width="20" height="80" rx="1" fill="#f59e0b" opacity="0.7"/>
+      <rect x="382" y="72" width="20" height="90" rx="1" fill="#f59e0b" opacity="0.8"/>
+      <rect x="408" y="82" width="20" height="80" rx="1" fill="#f59e0b" opacity="0.7"/>
+      <rect x="434" y="102" width="20" height="60" rx="1" fill="#f59e0b" opacity="0.7"/>
+      <!-- Current -->
+      <rect x="460" y="112" width="20" height="50" rx="1" fill="#1a5fff"/>
+
+      <!-- Discharge bars (below zero line) -->
+      <rect x="538" y="162" width="20" height="60" rx="1" fill="#ef4444" opacity="0.6"/>
+      <rect x="564" y="162" width="20" height="70" rx="1" fill="#ef4444" opacity="0.7"/>
+      <rect x="590" y="162" width="20" height="80" rx="1" fill="#ef4444" opacity="0.8"/>
+      <rect x="616" y="162" width="20" height="70" rx="1" fill="#ef4444" opacity="0.7"/>
+      <rect x="642" y="162" width="20" height="40" rx="1" fill="#ef4444" opacity="0.5"/>
+
+      <!-- X axis -->
+      <text x="70" y="260" font-size="9" fill="#9ca3af">00:00</text>
+      <text x="200" y="260" font-size="9" fill="#9ca3af">04:00</text>
+      <text x="330" y="260" font-size="9" fill="#9ca3af">08:00</text>
+      <text x="460" y="260" font-size="9" fill="#1a5fff" font-weight="500">Now</text>
+      <text x="590" y="260" font-size="9" fill="#9ca3af">16:00</text>
+      <text x="720" y="260" font-size="9" fill="#9ca3af">20:00</text>
+
+      <!-- Legend -->
+      <rect x="800" y="22" width="8" height="8" rx="2" fill="#22c55e"/>
+      <text x="814" y="30" font-size="10" fill="#6b7280">Grid charge</text>
+      <rect x="890" y="22" width="8" height="8" rx="2" fill="#f59e0b"/>
+      <text x="904" y="30" font-size="10" fill="#6b7280">Solar charge</text>
+      <rect x="980" y="22" width="8" height="8" rx="2" fill="#ef4444"/>
+      <text x="994" y="30" font-size="10" fill="#6b7280">Discharge</text>
+      <rect x="1060" y="22" width="8" height="8" rx="2" fill="#1a5fff"/>
+      <text x="1074" y="30" font-size="10" fill="#6b7280">Current</text>
+    </g>
+  </g>
+</svg>

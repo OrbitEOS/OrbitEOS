@@ -1,0 +1,245 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="900" viewBox="0 0 1440 900" fill="none">
+  <defs><style>text { font-family: Inter, -apple-system, sans-serif; }</style></defs>
+  <rect width="1440" height="900" fill="#f9fafb"/>
+
+  <!-- SIDEBAR -->
+  <g id="Ant.Layout.Sider">
+    <rect width="240" height="900" fill="#fafafa"/>
+    <rect x="239" width="1" height="900" fill="#e5e7eb"/>
+    <rect x="20" y="16" width="24" height="24" rx="6" fill="#1a5fff"/>
+    <path d="M28 22l4 6h-8l4-6z" fill="white" opacity="0.9"/>
+    <text x="52" y="33" font-size="15" font-weight="600" fill="#111827">OrbitEOS</text>
+    <rect x="0" y="56" width="240" height="1" fill="#e5e7eb"/>
+    <rect x="12" y="68" width="216" height="36" rx="6" fill="#f9fafb" stroke="#e5e7eb" stroke-width="1"/>
+    <text x="28" y="90" font-size="12" fill="#6b7280">De Groot Agri · Maasland</text>
+    <text x="56" y="142" font-size="13" fill="#6b7280">Dashboard</text>
+    <text x="56" y="182" font-size="13" fill="#6b7280">Energy Flow</text>
+    <text x="56" y="224" font-size="13" fill="#6b7280">Fleet</text>
+    <text x="56" y="268" font-size="13" fill="#6b7280">Devices</text>
+    <text x="56" y="312" font-size="13" fill="#6b7280">Alerts</text>
+    <text x="56" y="356" font-size="13" fill="#6b7280">Marketplace</text>
+    <text x="56" y="400" font-size="13" fill="#6b7280">Configuration</text>
+    <rect x="12" y="418" width="216" height="36" rx="6" fill="#eaf5ff"/>
+    <rect x="0" y="422" width="3" height="28" rx="1" fill="#1a5fff"/>
+    <text x="56" y="442" font-size="13" font-weight="500" fill="#1a5fff">IoT Fleet</text>
+    <rect x="0" y="840" width="240" height="1" fill="#e5e7eb"/>
+    <circle cx="36" cy="872" r="16" fill="#e5e7eb"/>
+    <text x="60" y="870" font-size="13" font-weight="500" fill="#111827">Deepak S.</text>
+    <text x="60" y="885" font-size="11" fill="#9ca3af">Admin</text>
+  </g>
+
+  <!-- HEADER -->
+  <g id="Ant.Layout.Header">
+    <rect x="240" y="0" width="1200" height="56" fill="white"/>
+    <rect x="240" y="55" width="1200" height="1" fill="#e5e7eb"/>
+    <text x="264" y="24" font-size="13" fill="#9ca3af">Platform /</text>
+    <text x="330" y="24" font-size="13" font-weight="500" fill="#111827">IoT Fleet Management</text>
+    <text x="264" y="42" font-size="11" fill="#9ca3af">Particle.io gateways, OTA updates, and connectivity</text>
+    <rect x="1260" y="12" width="150" height="32" rx="6" fill="#1a5fff"/>
+    <text x="1335" y="33" font-size="13" font-weight="500" fill="white" text-anchor="middle">+ Claim Device</text>
+  </g>
+
+  <!-- CONTENT -->
+  <g id="Ant.Layout.Content" transform="translate(240, 56)">
+    <rect width="1200" height="844" fill="#f9fafb"/>
+
+    <!-- FLEET STATS -->
+    <g transform="translate(24, 16)">
+      <rect width="225" height="90" rx="8" fill="white" stroke="#f3f4f6" stroke-width="1"/>
+      <text x="20" y="28" font-size="11" fill="#9ca3af">GATEWAYS</text>
+      <text x="20" y="52" font-size="22" font-weight="700" fill="#111827">4</text>
+      <text x="20" y="72" font-size="11" fill="#22c55e">All Spykebox TC6</text>
+
+      <rect x="245" y="0" width="225" height="90" rx="8" fill="white" stroke="#f3f4f6" stroke-width="1"/>
+      <text x="265" y="28" font-size="11" fill="#9ca3af">ONLINE</text>
+      <text x="265" y="52" font-size="22" font-weight="700" fill="#22c55e">3/4</text>
+      <text x="265" y="72" font-size="11" fill="#f59e0b">1 offline (Rotterdam)</text>
+
+      <rect x="490" y="0" width="225" height="90" rx="8" fill="white" stroke="#f3f4f6" stroke-width="1"/>
+      <text x="510" y="28" font-size="11" fill="#9ca3af">FIRMWARE</text>
+      <text x="510" y="52" font-size="22" font-weight="700" fill="#111827">v2.4.1</text>
+      <text x="510" y="72" font-size="11" fill="#3b82f6">1 update available</text>
+
+      <rect x="735" y="0" width="225" height="90" rx="8" fill="white" stroke="#f3f4f6" stroke-width="1"/>
+      <text x="755" y="28" font-size="11" fill="#9ca3af">DATA USAGE (MTD)</text>
+      <text x="755" y="52" font-size="22" font-weight="700" fill="#111827">2.4 GB</text>
+      <text x="755" y="72" font-size="11" fill="#6b7280">of 10 GB plan</text>
+
+      <rect x="980" y="0" width="172" height="90" rx="8" fill="white" stroke="#f3f4f6" stroke-width="1"/>
+      <text x="1000" y="28" font-size="11" fill="#9ca3af">UPTIME (30D)</text>
+      <text x="1000" y="52" font-size="22" font-weight="700" fill="#22c55e">99.2%</text>
+    </g>
+
+    <!-- DEVICE TABLE -->
+    <g id="Ant.Table.IoTDevices" transform="translate(24, 122)">
+      <rect width="1152" height="340" rx="8" fill="white" stroke="#f3f4f6" stroke-width="1"/>
+      <text x="20" y="32" font-size="14" font-weight="600" fill="#111827">Gateway Devices</text>
+
+      <rect x="0" y="48" width="1152" height="36" fill="#fafafa"/>
+      <text x="20" y="71" font-size="11" fill="#9ca3af" font-weight="600">DEVICE NAME</text>
+      <text x="200" y="71" font-size="11" fill="#9ca3af" font-weight="600">PARTICLE ID</text>
+      <text x="380" y="71" font-size="11" fill="#9ca3af" font-weight="600">SITE</text>
+      <text x="520" y="71" font-size="11" fill="#9ca3af" font-weight="600">FIRMWARE</text>
+      <text x="640" y="71" font-size="11" fill="#9ca3af" font-weight="600">SIGNAL</text>
+      <text x="740" y="71" font-size="11" fill="#9ca3af" font-weight="600">LAST SEEN</text>
+      <text x="880" y="71" font-size="11" fill="#9ca3af" font-weight="600">STATUS</text>
+      <text x="1000" y="71" font-size="11" fill="#9ca3af" font-weight="600">OTA</text>
+
+      <!-- Row 1 -->
+      <text x="20" y="108" font-size="13" font-weight="500" fill="#111827">Spykebox-Maasland</text>
+      <text x="200" y="108" font-size="12" fill="#6b7280" font-family="monospace">e00fce68...</text>
+      <text x="380" y="108" font-size="12" fill="#111827">De Groot Agri</text>
+      <text x="520" y="108" font-size="12" fill="#111827">v2.4.1</text>
+      <!-- Signal bars -->
+      <rect x="640" y="96" width="4" height="16" rx="1" fill="#22c55e"/>
+      <rect x="648" y="100" width="4" height="12" rx="1" fill="#22c55e"/>
+      <rect x="656" y="104" width="4" height="8" rx="1" fill="#22c55e"/>
+      <rect x="664" y="108" width="4" height="4" rx="1" fill="#22c55e"/>
+      <text x="676" y="112" font-size="10" fill="#6b7280">-62 dBm</text>
+      <text x="740" y="108" font-size="12" fill="#22c55e">Just now</text>
+      <rect x="880" y="95" width="50" height="20" rx="10" fill="#def6e7"/>
+      <text x="892" y="109" font-size="11" fill="#22c55e">Online</text>
+      <text x="1000" y="108" font-size="12" fill="#22c55e">Up to date</text>
+      <rect x="0" y="120" width="1152" height="1" fill="#f3f4f6"/>
+
+      <!-- Row 2 -->
+      <text x="20" y="148" font-size="13" font-weight="500" fill="#111827">Spykebox-Amersfoort</text>
+      <text x="200" y="148" font-size="12" fill="#6b7280" font-family="monospace">e00fce69...</text>
+      <text x="380" y="148" font-size="12" fill="#111827">Amersfoort Res.</text>
+      <text x="520" y="148" font-size="12" fill="#111827">v2.4.1</text>
+      <rect x="640" y="136" width="4" height="16" rx="1" fill="#22c55e"/>
+      <rect x="648" y="140" width="4" height="12" rx="1" fill="#22c55e"/>
+      <rect x="656" y="144" width="4" height="8" rx="1" fill="#22c55e"/>
+      <rect x="664" y="148" width="4" height="4" rx="1" fill="#e5e7eb"/>
+      <text x="676" y="152" font-size="10" fill="#6b7280">-78 dBm</text>
+      <text x="740" y="148" font-size="12" fill="#22c55e">2 min ago</text>
+      <rect x="880" y="135" width="50" height="20" rx="10" fill="#def6e7"/>
+      <text x="892" y="149" font-size="11" fill="#22c55e">Online</text>
+      <text x="1000" y="148" font-size="12" fill="#22c55e">Up to date</text>
+      <rect x="0" y="160" width="1152" height="1" fill="#f3f4f6"/>
+
+      <!-- Row 3 -->
+      <text x="20" y="188" font-size="13" font-weight="500" fill="#111827">Spykebox-Utrecht</text>
+      <text x="200" y="188" font-size="12" fill="#6b7280" font-family="monospace">e00fce70...</text>
+      <text x="380" y="188" font-size="12" fill="#111827">Utrecht Comm.</text>
+      <text x="520" y="188" font-size="12" fill="#111827">v2.3.8</text>
+      <rect x="640" y="176" width="4" height="16" rx="1" fill="#22c55e"/>
+      <rect x="648" y="180" width="4" height="12" rx="1" fill="#22c55e"/>
+      <rect x="656" y="184" width="4" height="8" rx="1" fill="#e5e7eb"/>
+      <rect x="664" y="188" width="4" height="4" rx="1" fill="#e5e7eb"/>
+      <text x="676" y="192" font-size="10" fill="#6b7280">-85 dBm</text>
+      <text x="740" y="188" font-size="12" fill="#22c55e">5 min ago</text>
+      <rect x="880" y="175" width="50" height="20" rx="10" fill="#def6e7"/>
+      <text x="892" y="189" font-size="11" fill="#22c55e">Online</text>
+      <rect x="1000" y="175" width="96" height="24" rx="6" fill="#eff6ff" stroke="#bfdbfe" stroke-width="1"/>
+      <text x="1048" y="191" font-size="11" font-weight="500" fill="#1a5fff" text-anchor="middle">Update →</text>
+      <rect x="0" y="200" width="1152" height="1" fill="#f3f4f6"/>
+
+      <!-- Row 4: Offline -->
+      <rect x="4" y="208" width="1144" height="40" rx="4" fill="#fef2f2" opacity="0.3"/>
+      <text x="20" y="232" font-size="13" font-weight="500" fill="#111827">Spykebox-Rotterdam</text>
+      <text x="200" y="232" font-size="12" fill="#6b7280" font-family="monospace">e00fce71...</text>
+      <text x="380" y="232" font-size="12" fill="#111827">Rotterdam Ind.</text>
+      <text x="520" y="232" font-size="12" fill="#111827">v2.4.1</text>
+      <rect x="640" y="220" width="4" height="16" rx="1" fill="#e5e7eb"/>
+      <rect x="648" y="224" width="4" height="12" rx="1" fill="#e5e7eb"/>
+      <rect x="656" y="228" width="4" height="8" rx="1" fill="#e5e7eb"/>
+      <rect x="664" y="232" width="4" height="4" rx="1" fill="#e5e7eb"/>
+      <text x="676" y="236" font-size="10" fill="#ef4444">No signal</text>
+      <text x="740" y="232" font-size="12" fill="#ef4444">2 hours ago</text>
+      <rect x="880" y="219" width="50" height="20" rx="10" fill="#fef2f2"/>
+      <text x="892" y="233" font-size="11" fill="#ef4444">Offline</text>
+      <text x="1000" y="232" font-size="12" fill="#9ca3af">—</text>
+
+      <text x="20" y="300" font-size="12" fill="#9ca3af">Showing 1-4 of 4 gateways</text>
+    </g>
+
+    <!-- OTA UPDATE PANEL -->
+    <g id="Ant.Card.OTAUpdate" transform="translate(24, 478)">
+      <rect width="564" height="220" rx="8" fill="white" stroke="#f3f4f6" stroke-width="1"/>
+      <text x="20" y="32" font-size="14" font-weight="600" fill="#111827">OTA Update Management</text>
+
+      <!-- Available update -->
+      <rect x="20" y="52" width="524" height="72" rx="8" fill="#eff6ff" stroke="#bfdbfe" stroke-width="1"/>
+      <text x="40" y="74" font-size="13" font-weight="500" fill="#111827">Firmware v2.4.2 Available</text>
+      <text x="40" y="92" font-size="11" fill="#6b7280">Bug fix: Modbus timeout handling improved, MQTT reconnect stability</text>
+      <text x="40" y="110" font-size="11" fill="#9ca3af">Released: Mar 22, 2026 | Size: 1.2 MB</text>
+      <rect x="420" y="66" width="104" height="32" rx="6" fill="#1a5fff"/>
+      <text x="472" y="87" font-size="12" font-weight="500" fill="white" text-anchor="middle">Deploy OTA</text>
+
+      <!-- Update history -->
+      <text x="20" y="152" font-size="12" font-weight="500" fill="#111827">Recent Updates</text>
+      <text x="20" y="174" font-size="11" fill="#6b7280">v2.4.1 — Mar 10 — 3/4 devices — </text>
+      <text x="260" y="174" font-size="11" fill="#22c55e">Success</text>
+      <text x="20" y="194" font-size="11" fill="#6b7280">v2.4.0 — Feb 28 — 4/4 devices — </text>
+      <text x="260" y="194" font-size="11" fill="#22c55e">Success</text>
+      <text x="20" y="214" font-size="11" fill="#6b7280">v2.3.8 — Feb 15 — 4/4 devices — </text>
+      <text x="260" y="214" font-size="11" fill="#22c55e">Success</text>
+    </g>
+
+    <!-- CONNECTIVITY CHART -->
+    <g id="Ant.Card.Connectivity" transform="translate(608, 478)">
+      <rect width="568" height="220" rx="8" fill="white" stroke="#f3f4f6" stroke-width="1"/>
+      <text x="20" y="32" font-size="14" font-weight="600" fill="#111827">Connectivity (7 Days)</text>
+
+      <!-- Simple uptime bars per device -->
+      <text x="20" y="68" font-size="11" fill="#111827">Maasland</text>
+      <rect x="140" y="58" width="400" height="14" rx="4" fill="#22c55e"/>
+      <text x="548" y="70" font-size="10" fill="#22c55e">100%</text>
+
+      <text x="20" y="96" font-size="11" fill="#111827">Amersfoort</text>
+      <rect x="140" y="86" width="400" height="14" rx="4" fill="#22c55e"/>
+      <text x="548" y="98" font-size="10" fill="#22c55e">100%</text>
+
+      <text x="20" y="124" font-size="11" fill="#111827">Utrecht</text>
+      <rect x="140" y="114" width="396" height="14" rx="4" fill="#22c55e"/>
+      <rect x="536" y="114" width="4" height="14" rx="1" fill="#f59e0b"/>
+      <text x="548" y="126" font-size="10" fill="#22c55e">99.1%</text>
+
+      <text x="20" y="152" font-size="11" fill="#111827">Rotterdam</text>
+      <rect x="140" y="142" width="380" height="14" rx="4" fill="#22c55e"/>
+      <rect x="520" y="142" width="20" height="14" rx="1" fill="#ef4444"/>
+      <text x="548" y="154" font-size="10" fill="#f59e0b">97.6%</text>
+
+      <!-- Day labels -->
+      <text x="140" y="184" font-size="9" fill="#9ca3af">Mon</text>
+      <text x="200" y="184" font-size="9" fill="#9ca3af">Tue</text>
+      <text x="260" y="184" font-size="9" fill="#9ca3af">Wed</text>
+      <text x="320" y="184" font-size="9" fill="#9ca3af">Thu</text>
+      <text x="380" y="184" font-size="9" fill="#9ca3af">Fri</text>
+      <text x="440" y="184" font-size="9" fill="#9ca3af">Sat</text>
+      <text x="500" y="184" font-size="9" fill="#9ca3af">Sun</text>
+
+      <text x="20" y="210" font-size="11" fill="#6b7280">Fleet avg uptime: 99.2% | Target SLA: 99.5%</text>
+    </g>
+
+    <!-- PARTICLE.IO INTEGRATION -->
+    <g id="Ant.Card.ParticleIO" transform="translate(24, 714)">
+      <rect width="1152" height="100" rx="8" fill="white" stroke="#f3f4f6" stroke-width="1"/>
+      <text x="20" y="28" font-size="13" font-weight="600" fill="#111827">Particle.io Integration</text>
+
+      <text x="20" y="56" font-size="11" fill="#9ca3af">Product:</text>
+      <text x="72" y="56" font-size="11" fill="#111827">OrbitEOS Gateway (Product ID: 14892)</text>
+
+      <text x="280" y="56" font-size="11" fill="#9ca3af">API status:</text>
+      <rect x="340" y="44" width="72" height="20" rx="10" fill="#def6e7"/>
+      <text x="352" y="58" font-size="11" fill="#22c55e">Connected</text>
+
+      <text x="440" y="56" font-size="11" fill="#9ca3af">Events/day:</text>
+      <text x="510" y="56" font-size="11" fill="#111827">~24,000</text>
+
+      <text x="600" y="56" font-size="11" fill="#9ca3af">Webhooks:</text>
+      <text x="660" y="56" font-size="11" fill="#22c55e">3 active</text>
+
+      <text x="20" y="82" font-size="11" fill="#9ca3af">Functions: </text>
+      <rect x="80" y="70" width="80" height="20" rx="4" fill="#f9fafb" stroke="#e5e7eb" stroke-width="1"/>
+      <text x="120" y="84" font-size="10" fill="#6b7280" text-anchor="middle">reboot</text>
+      <rect x="168" y="70" width="100" height="20" rx="4" fill="#f9fafb" stroke="#e5e7eb" stroke-width="1"/>
+      <text x="218" y="84" font-size="10" fill="#6b7280" text-anchor="middle">setConfig</text>
+      <rect x="276" y="70" width="90" height="20" rx="4" fill="#f9fafb" stroke="#e5e7eb" stroke-width="1"/>
+      <text x="321" y="84" font-size="10" fill="#6b7280" text-anchor="middle">diagMode</text>
+      <rect x="374" y="70" width="100" height="20" rx="4" fill="#f9fafb" stroke="#e5e7eb" stroke-width="1"/>
+      <text x="424" y="84" font-size="10" fill="#6b7280" text-anchor="middle">updateFW</text>
+    </g>
+  </g>
+</svg>

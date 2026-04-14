@@ -1,0 +1,75 @@
+{
+  "domain": {
+    "slug": "my-domain",
+    "name": "My Domain",
+    "version": "1.0.0",
+    "description": "Example domain for OrbitEOS platform",
+    "icon": "puzzle-piece",
+    "color": "#6366f1"
+  },
+  "categories": [
+    {
+      "slug": "my-domain-devices",
+      "name": "My Domain Devices",
+      "description": "Devices managed by this domain"
+    },
+    {
+      "slug": "my-domain-apps",
+      "name": "My Domain Apps",
+      "description": "Applications for this domain"
+    }
+  ],
+  "dld_types": [
+    {
+      "dld_type": "ExampleSensorDLD",
+      "dld_class": "sensor",
+      "display_name": "Example Sensor",
+      "description": "A generic sensor device with temperature and humidity readings",
+      "state_schema": {
+        "type": "object",
+        "properties": {
+          "temperature_c": { "type": "number" },
+          "humidity_pct": { "type": "number" },
+          "is_healthy": { "type": "boolean" }
+        }
+      },
+      "valid_actions": [
+        { "name": "calibrate", "description": "Recalibrate the sensor" },
+        { "name": "reset", "description": "Reset to factory defaults" }
+      ],
+      "sensors": [
+        { "key": "temperature_c", "name": "Temperature", "type": "number", "units": "C", "min": -40, "max": 85, "decimals": 1 },
+        { "key": "humidity_pct", "name": "Humidity", "type": "number", "units": "%", "min": 0, "max": 100, "decimals": 0 }
+      ],
+      "actuators": [
+        { "key": "set_interval", "name": "Set Report Interval", "type": "number", "units": "s", "min": 1, "max": 3600 }
+      ]
+    }
+  ],
+  "capabilities": [
+    { "key": "temperature_c", "name": "Temperature", "data_type": "sensor", "type": "number", "category": "environment", "units": "C", "min": -40, "max": 85, "decimals": 1 },
+    { "key": "humidity_pct", "name": "Humidity", "data_type": "sensor", "type": "number", "category": "environment", "units": "%", "min": 0, "max": 100, "decimals": 0 },
+    { "key": "set_interval", "name": "Set Report Interval", "data_type": "actuator", "type": "number", "category": "config", "units": "s", "min": 1, "max": 3600 }
+  ],
+  "apps": [
+    {
+      "slug": "my-domain-overview",
+      "name": "My Domain Overview",
+      "description": "Dashboard view for domain devices",
+      "category_slug": "my-domain-apps",
+      "is_core": false,
+      "ui_entry": "/apps/my-domain-overview",
+      "icon": "chart-bar",
+      "sidebar_section": "main"
+    },
+    {
+      "slug": "example-driver",
+      "name": "Example Device Driver",
+      "description": "Driver for the example sensor hardware",
+      "category_slug": "my-domain-devices",
+      "is_core": false,
+      "icon": "cpu",
+      "dld_type": "ExampleSensorDLD"
+    }
+  ]
+}

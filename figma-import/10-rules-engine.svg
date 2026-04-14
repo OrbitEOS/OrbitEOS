@@ -1,0 +1,199 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="900" viewBox="0 0 1440 900" fill="none">
+  <defs><style>text { font-family: Inter, -apple-system, sans-serif; }</style></defs>
+  <rect width="1440" height="900" fill="#f9fafb"/>
+
+  <!-- SIDEBAR -->
+  <g id="Ant.Layout.Sider">
+    <rect width="240" height="900" fill="#fafafa"/>
+    <rect x="239" width="1" height="900" fill="#e5e7eb"/>
+    <rect x="20" y="16" width="24" height="24" rx="6" fill="#1a5fff"/>
+    <path d="M28 22l4 6h-8l4-6z" fill="white" opacity="0.9"/>
+    <text x="52" y="33" font-size="15" font-weight="600" fill="#111827">OrbitEOS</text>
+    <rect x="0" y="56" width="240" height="1" fill="#e5e7eb"/>
+    <rect x="12" y="68" width="216" height="36" rx="6" fill="#f9fafb" stroke="#e5e7eb" stroke-width="1"/>
+    <text x="28" y="90" font-size="12" fill="#6b7280">De Groot Agri · Maasland</text>
+    <text x="56" y="142" font-size="13" fill="#6b7280">Dashboard</text>
+    <text x="56" y="182" font-size="13" fill="#6b7280">Energy Flow</text>
+    <text x="56" y="224" font-size="13" fill="#6b7280">Fleet</text>
+    <text x="56" y="268" font-size="13" fill="#6b7280">Devices</text>
+    <text x="56" y="312" font-size="13" fill="#6b7280">Alerts</text>
+    <text x="56" y="356" font-size="13" fill="#6b7280">Marketplace</text>
+    <text x="56" y="400" font-size="13" fill="#6b7280">Configuration</text>
+    <!-- Automation sub-menu -->
+    <rect x="12" y="418" width="216" height="36" rx="6" fill="#eaf5ff"/>
+    <rect x="0" y="422" width="3" height="28" rx="1" fill="#1a5fff"/>
+    <text x="56" y="442" font-size="13" font-weight="500" fill="#1a5fff">Rules Engine</text>
+    <rect x="0" y="840" width="240" height="1" fill="#e5e7eb"/>
+    <circle cx="36" cy="872" r="16" fill="#e5e7eb"/>
+    <text x="60" y="870" font-size="13" font-weight="500" fill="#111827">Deepak S.</text>
+    <text x="60" y="885" font-size="11" fill="#9ca3af">Admin</text>
+  </g>
+
+  <!-- HEADER -->
+  <g id="Ant.Layout.Header">
+    <rect x="240" y="0" width="1200" height="56" fill="white"/>
+    <rect x="240" y="55" width="1200" height="1" fill="#e5e7eb"/>
+    <text x="264" y="24" font-size="13" fill="#9ca3af">Automation /</text>
+    <text x="348" y="24" font-size="13" font-weight="500" fill="#111827">Rules Engine</text>
+    <text x="264" y="42" font-size="11" fill="#9ca3af">Configure energy optimization strategies</text>
+    <rect x="1302" y="12" width="114" height="32" rx="6" fill="#1a5fff"/>
+    <text x="1359" y="33" font-size="13" font-weight="500" fill="white" text-anchor="middle">+ New Rule</text>
+  </g>
+
+  <!-- CONTENT -->
+  <g id="Ant.Layout.Content" transform="translate(240, 56)">
+    <rect width="1200" height="844" fill="#f9fafb"/>
+
+    <!-- STRATEGY TABS -->
+    <g id="Ant.Segmented.Strategies" transform="translate(24, 16)">
+      <rect width="1152" height="40" rx="8" fill="white" stroke="#e5e7eb" stroke-width="1"/>
+      <rect x="4" y="4" width="186" height="32" rx="6" fill="#1a5fff"/>
+      <text x="97" y="25" font-size="12" font-weight="500" fill="white" text-anchor="middle">Self-consumption</text>
+      <text x="280" y="25" font-size="12" fill="#6b7280" text-anchor="middle">Peak Shaving</text>
+      <text x="450" y="25" font-size="12" fill="#6b7280" text-anchor="middle">Tariff Arbitrage</text>
+      <text x="620" y="25" font-size="12" fill="#6b7280" text-anchor="middle">Grid Congestion</text>
+      <text x="790" y="25" font-size="12" fill="#6b7280" text-anchor="middle">Feed-in Priority</text>
+      <text x="960" y="25" font-size="12" fill="#6b7280" text-anchor="middle">Emergency Backup</text>
+    </g>
+
+    <!-- ACTIVE RULE CARD -->
+    <g id="Ant.Card.ActiveRule" transform="translate(24, 72)">
+      <rect width="1152" height="160" rx="12" fill="white" stroke="#1a5fff" stroke-width="2"/>
+      <rect x="0" y="0" width="6" height="160" rx="3" fill="#1a5fff"/>
+
+      <text x="28" y="32" font-size="14" font-weight="600" fill="#111827">Self-consumption Optimizer</text>
+      <rect x="240" y="16" width="56" height="22" rx="11" fill="#def6e7"/>
+      <text x="252" y="31" font-size="11" fill="#22c55e">Active</text>
+
+      <text x="28" y="56" font-size="12" fill="#6b7280">Maximize use of locally generated energy before importing from grid</text>
+
+      <!-- WHEN → AND → THEN cards -->
+      <g transform="translate(28, 72)">
+        <rect width="340" height="72" rx="8" fill="#eff6ff" stroke="#bfdbfe" stroke-width="1"/>
+        <text x="12" y="20" font-size="10" font-weight="600" fill="#1a5fff">WHEN</text>
+        <text x="12" y="38" font-size="12" fill="#111827">Solar generation > 2 kW</text>
+        <text x="12" y="56" font-size="12" fill="#111827">Battery SoC &lt; 95%</text>
+      </g>
+      <g transform="translate(388, 72)">
+        <rect width="340" height="72" rx="8" fill="#fefce8" stroke="#fde68a" stroke-width="1"/>
+        <text x="12" y="20" font-size="10" font-weight="600" fill="#f59e0b">AND</text>
+        <text x="12" y="38" font-size="12" fill="#111827">Grid export price &lt; €0.08/kWh</text>
+        <text x="12" y="56" font-size="12" fill="#111827">No peak shaving event active</text>
+      </g>
+      <g transform="translate(748, 72)">
+        <rect width="376" height="72" rx="8" fill="#f0fdf4" stroke="#bbf7d0" stroke-width="1"/>
+        <text x="12" y="20" font-size="10" font-weight="600" fill="#22c55e">THEN</text>
+        <text x="12" y="38" font-size="12" fill="#111827">Charge battery at max rate</text>
+        <text x="12" y="56" font-size="12" fill="#111827">Reduce grid export to 0 kW</text>
+      </g>
+    </g>
+
+    <!-- RULES TABLE -->
+    <g id="Ant.Table.Rules" transform="translate(24, 252)">
+      <rect width="1152" height="440" rx="8" fill="white" stroke="#f3f4f6" stroke-width="1"/>
+
+      <!-- Table header -->
+      <rect x="0" y="0" width="1152" height="40" rx="8" fill="#fafafa"/>
+      <text x="20" y="25" font-size="11" fill="#9ca3af" font-weight="600">RULE NAME</text>
+      <text x="300" y="25" font-size="11" fill="#9ca3af" font-weight="600">STRATEGY</text>
+      <text x="460" y="25" font-size="11" fill="#9ca3af" font-weight="600">PRIORITY</text>
+      <text x="560" y="25" font-size="11" fill="#9ca3af" font-weight="600">EXECUTIONS (24H)</text>
+      <text x="720" y="25" font-size="11" fill="#9ca3af" font-weight="600">LAST TRIGGERED</text>
+      <text x="900" y="25" font-size="11" fill="#9ca3af" font-weight="600">STATUS</text>
+      <text x="1060" y="25" font-size="11" fill="#9ca3af" font-weight="600">ACTIONS</text>
+
+      <!-- Row 1 -->
+      <text x="20" y="68" font-size="13" font-weight="500" fill="#111827">Self-consumption Optimizer</text>
+      <rect x="300" y="55" width="110" height="22" rx="11" fill="#eff6ff"/>
+      <text x="312" y="70" font-size="10" fill="#3b82f6">Self-consumption</text>
+      <text x="460" y="68" font-size="13" fill="#111827">1 (Highest)</text>
+      <text x="560" y="68" font-size="13" fill="#111827">142</text>
+      <text x="720" y="68" font-size="12" fill="#6b7280">2 min ago</text>
+      <rect x="900" y="55" width="50" height="20" rx="10" fill="#def6e7"/>
+      <text x="912" y="69" font-size="11" fill="#22c55e">Active</text>
+      <text x="1070" y="68" font-size="16" fill="#9ca3af">···</text>
+      <rect x="0" y="85" width="1152" height="1" fill="#f3f4f6"/>
+
+      <!-- Row 2 -->
+      <text x="20" y="112" font-size="13" font-weight="500" fill="#111827">Peak Demand Limiter</text>
+      <rect x="300" y="99" width="92" height="22" rx="11" fill="#fefce8"/>
+      <text x="312" y="114" font-size="10" fill="#f59e0b">Peak Shaving</text>
+      <text x="460" y="112" font-size="13" fill="#111827">2</text>
+      <text x="560" y="112" font-size="13" fill="#111827">38</text>
+      <text x="720" y="112" font-size="12" fill="#6b7280">15 min ago</text>
+      <rect x="900" y="99" width="50" height="20" rx="10" fill="#def6e7"/>
+      <text x="912" y="113" font-size="11" fill="#22c55e">Active</text>
+      <text x="1070" y="112" font-size="16" fill="#9ca3af">···</text>
+      <rect x="0" y="129" width="1152" height="1" fill="#f3f4f6"/>
+
+      <!-- Row 3 -->
+      <text x="20" y="156" font-size="13" font-weight="500" fill="#111827">EPEX Day-ahead Scheduler</text>
+      <rect x="300" y="143" width="104" height="22" rx="11" fill="#f5f3ff"/>
+      <text x="312" y="158" font-size="10" fill="#8b5cf6">Tariff Arbitrage</text>
+      <text x="460" y="156" font-size="13" fill="#111827">3</text>
+      <text x="560" y="156" font-size="13" fill="#111827">24</text>
+      <text x="720" y="156" font-size="12" fill="#6b7280">1 hour ago</text>
+      <rect x="900" y="143" width="50" height="20" rx="10" fill="#def6e7"/>
+      <text x="912" y="157" font-size="11" fill="#22c55e">Active</text>
+      <text x="1070" y="156" font-size="16" fill="#9ca3af">···</text>
+      <rect x="0" y="173" width="1152" height="1" fill="#f3f4f6"/>
+
+      <!-- Row 4 -->
+      <text x="20" y="200" font-size="13" font-weight="500" fill="#111827">Grid Congestion Handler</text>
+      <rect x="300" y="187" width="112" height="22" rx="11" fill="#fef2f2"/>
+      <text x="312" y="202" font-size="10" fill="#ef4444">Grid Congestion</text>
+      <text x="460" y="200" font-size="13" fill="#111827">4</text>
+      <text x="560" y="200" font-size="13" fill="#111827">3</text>
+      <text x="720" y="200" font-size="12" fill="#6b7280">Yesterday</text>
+      <rect x="900" y="187" width="60" height="20" rx="10" fill="#fefce8"/>
+      <text x="912" y="201" font-size="11" fill="#f59e0b">Standby</text>
+      <text x="1070" y="200" font-size="16" fill="#9ca3af">···</text>
+      <rect x="0" y="217" width="1152" height="1" fill="#f3f4f6"/>
+
+      <!-- Row 5 -->
+      <text x="20" y="244" font-size="13" font-weight="500" fill="#111827">Feed-in Maximizer</text>
+      <rect x="300" y="231" width="92" height="22" rx="11" fill="#f0fdf4"/>
+      <text x="312" y="246" font-size="10" fill="#22c55e">Feed-in Priority</text>
+      <text x="460" y="244" font-size="13" fill="#111827">5</text>
+      <text x="560" y="244" font-size="13" fill="#111827">0</text>
+      <text x="720" y="244" font-size="12" fill="#6b7280">3 days ago</text>
+      <rect x="900" y="231" width="62" height="20" rx="10" fill="#f3f4f6"/>
+      <text x="912" y="245" font-size="11" fill="#9ca3af">Disabled</text>
+      <text x="1070" y="244" font-size="16" fill="#9ca3af">···</text>
+      <rect x="0" y="261" width="1152" height="1" fill="#f3f4f6"/>
+
+      <!-- Row 6 -->
+      <text x="20" y="288" font-size="13" font-weight="500" fill="#111827">Emergency Backup Reserve</text>
+      <rect x="300" y="275" width="118" height="22" rx="11" fill="#fef2f2"/>
+      <text x="312" y="290" font-size="10" fill="#ef4444">Emergency Backup</text>
+      <text x="460" y="288" font-size="13" fill="#111827">0 (Override)</text>
+      <text x="560" y="288" font-size="13" fill="#111827">1</text>
+      <text x="720" y="288" font-size="12" fill="#6b7280">5 days ago</text>
+      <rect x="900" y="275" width="50" height="20" rx="10" fill="#def6e7"/>
+      <text x="912" y="289" font-size="11" fill="#22c55e">Active</text>
+      <text x="1070" y="288" font-size="16" fill="#9ca3af">···</text>
+
+      <!-- Pagination -->
+      <text x="20" y="420" font-size="12" fill="#9ca3af">Showing 1-6 of 6 rules</text>
+    </g>
+
+    <!-- EXECUTION LOG MINI -->
+    <g id="Ant.Card.ExecutionLog" transform="translate(24, 710)">
+      <rect width="1152" height="110" rx="8" fill="white" stroke="#f3f4f6" stroke-width="1"/>
+      <text x="20" y="28" font-size="13" font-weight="600" fill="#111827">Recent Executions</text>
+      <text x="1080" y="28" font-size="12" fill="#1a5fff">View All →</text>
+
+      <text x="20" y="56" font-size="12" fill="#6b7280">14:32:01</text>
+      <text x="100" y="56" font-size="12" fill="#111827">Self-consumption Optimizer</text>
+      <text x="340" y="56" font-size="12" fill="#22c55e">✓ Battery charge started at 3.2 kW</text>
+
+      <text x="20" y="78" font-size="12" fill="#6b7280">14:31:45</text>
+      <text x="100" y="78" font-size="12" fill="#111827">Peak Demand Limiter</text>
+      <text x="340" y="78" font-size="12" fill="#f59e0b">⚠ Load approaching limit (38/40 kW)</text>
+
+      <text x="20" y="100" font-size="12" fill="#6b7280">14:30:12</text>
+      <text x="100" y="100" font-size="12" fill="#111827">Self-consumption Optimizer</text>
+      <text x="340" y="100" font-size="12" fill="#22c55e">✓ Grid export reduced to 0.1 kW</text>
+    </g>
+  </g>
+</svg>

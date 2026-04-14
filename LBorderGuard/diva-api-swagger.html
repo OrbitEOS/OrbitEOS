@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>DIVA Analytics API Docs</title>
+  <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5.11.0/swagger-ui.css" />
+  <style>
+    body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #fafafa; }
+    .header-section { background: white; text-align: center; padding-top: 20px; }
+    h1 { color: #333; margin: 0; }
+    
+    /* Tabs Layout */
+    .tabs { display: flex; justify-content: center; gap: 20px; border-bottom: 2px solid #ddd; padding-top: 15px; background: white; }
+    .tab-btn { 
+      background: none; 
+      border: none; 
+      padding: 12px 24px; 
+      font-size: 16px; 
+      cursor: pointer; 
+      color: #777; 
+      border-bottom: 3px solid transparent; 
+      margin-bottom: -2px; 
+      transition: color 0.2s; 
+    }
+    .tab-btn:hover { color: #333; }
+    .tab-btn.active { color: #007bff; border-bottom-color: #007bff; font-weight: 600; }
+    
+    .tab-content { display: none; padding: 30px 20px; max-width: 1200px; margin: 0 auto; box-sizing: border-box; }
+    .tab-content.active { display: block; }
+
+    /* Mermaid Card */
+    .mermaid-card { background: white; padding: 40px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+    #swagger-ui { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+
+    /* Swagger UI Simplification Overrides */
+    .swagger-ui .scheme-container { display: none !important; }
+    .swagger-ui .info { margin: 25px 0 !important; }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@9.4.3/dist/mermaid.min.js"></script>
+  <script>
+    mermaid.initialize({ startOnLoad: true, theme: 'default' });
+  </script>
+</head>
+<body>
+
+  <div class="header-section">
+    <h1>DIVA Analytics APIs</h1>
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab(event, 'tab-swagger')">API Swagger Reference</button>
+      <button class="tab-btn" onclick="switchTab(event, 'tab-mermaid')">Workflow Diagram</button>
+    </div>
+  </div>
+
+  <div id="tab-swagger" class="tab-content active">
+    <!-- Swagger UI Mount -->
+    <div id="swagger-ui"></div>
+  </div>
+
+  <div id="tab-mermaid" class="tab-content">
+    <div class="mermaid-card">
+      <div class="mermaid">
+        sequenceDiagram
+            participant C as Caller System
+            participant D as DIVA Analytics API
+            participant W as DIVA Workers
+            
+            note over C,D: Caller Auth (Bearer Token)
+            C->>D: POST /api/v1/alarms/ingest?mode=sync
+            
+            D->>D: Fan-out parallel requests
+            par Camera 1
+                D->>W: Fetch & Analyze CAM 1
+            and Camera N
+                D->>W: Fetch & Analyze CAM N
+            end
+            
+            D->>D: Collate Multi-Camera Results
+            
+            alt mode=sync
+                D-->>C: 200 OK (isRealAlarm: true/false)
+            else mode=async
+                D-->>C: 202 Accepted
+                Note over D, C: When analysis completes:
+                D->>C: POST {responseWebhook} (isRealAlarm result)
+            end
+      </div>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/swagger-ui-dist@5.11.0/swagger-ui-bundle.js" crossorigin></script>
+  <script src="https://unpkg.com/swagger-ui-dist@5.11.0/swagger-ui-standalone-preset.js" crossorigin></script>
+  <script src="https://unpkg.com/js-yaml@4.1.0/dist/js-yaml.min.js"></script>
+
+  <script>
+    function switchTab(evt, tabId) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+      document.getElementById(tabId).classList.add('active');
+      evt.currentTarget.classList.add('active');
+    }
+
+    const specYaml = `
+openapi: 3.0.0
+info:
+  title: DIVA Analytics Alarm API
+  version: 1.0.0
+  description: |
+    API for external systems to submit temporal events across multiple cameras to DIVA Analytics for conclusive positive/false alarm verification.
+security:
+  - callerAuthToken: []
+paths:
+  /alarms/ingest:
+    post:
+      summary: 1. Ingest Alarm Event (Sync/Async)
+      description: Evaluates a single temporal event completely in parallel across multiple cameras identically collated to a single timestamp to conclusively flag real alarms.
+      parameters:
+        - in: query
+          name: mode
+          schema:
+            type: string
+            enum: [sync, async]
+            default: sync
+          description: Define whether execution forces open HTTP blocking (sync) or delegates to webhook endpoints (async).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnalyzeRequest'
+      responses:
+        '200':
+          description: Synchronous collated completion. Returns the mapped result payload instantly.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatusResponse'
+        '202':
+          description: Asynchronously Accepted. Analysis sent to parallel fan-out background workers.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AsyncResponse'
+      callbacks:
+        divaCallback:
+          '{$request.body#/responseWebhook}':
+            post:
+              summary: Webhook Callback Target (Async Mode)
+              description: Drops the perfectly collated status output onto the caller URL when fully finalized.
+              security:
+                - divaAuthToken: []
+              requestBody:
+                required: true
+                content:
+                  application/json:
+                    schema:
+                      $ref: '#/components/schemas/StatusResponse'
+              responses:
+                '200':
+                  description: Confirmation received.
+
+  /alarms/{analyticsAlarmId}/status:
+    get:
+      summary: 2. Check Alarm Status
+      description: Polling endpoint to fetch tracking details corresponding to asynchronous background analyzing tasks.
+      parameters:
+        - in: path
+          name: analyticsAlarmId
+          required: true
+          schema:
+            type: string
+          example: "DIVA-GROUP-777"
+      responses:
+        '200':
+          description: Collated task completion block
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatusResponse'
+
+components:
+  securitySchemes:
+    callerAuthToken:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Standard Bearer Token used by the Caller System to authenticate when calling the DIVA API endpoints.
+    divaAuthToken:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Bearer Token dynamically populated from the \`webhookToken\` field in the Input Payload. Used by DIVA Analytics to authenticate against Caller System's webhook endpoint.
+  schemas:
+    AnalyzeRequest:
+      type: object
+      required:
+        - sourceAlarmId
+        - timestamp
+        - cameras
+      properties:
+        sourceAlarmId:
+          type: string
+          example: "ALM-GROUP-001"
+        timestamp:
+          type: integer
+          format: int64
+          example: 1774945800000
+        preRollMs:
+          type: integer
+          example: 5000
+        postRollMs:
+          type: integer
+          example: 5000
+        cameras:
+          type: array
+          items:
+            type: string
+          example: ["CAM-north-gate-01", "CAM-north-gate-02", "CAM-north-ptz-01"]
+        responseWebhook:
+          type: string
+          format: uri
+        webhookToken:
+          type: string
+          
+    AsyncResponse:
+      type: object
+      properties:
+        analyticsAlarmId:
+          type: string
+          example: "DIVA-GROUP-777"
+        status:
+          type: string
+          example: "pending"
+        links:
+          type: object
+          properties:
+            status:
+              type: string
+              example: "/api/v1/alarms/DIVA-GROUP-777/status"
+              
+    DetectionResult:
+      type: object
+      properties:
+        type:
+          type: string
+          example: "person"
+          enum: ["person", "vehicle", "unknown"]
+        confidence:
+          type: number
+          format: float
+          example: 0.96
+        cameraId:
+          type: string
+          example: "CAM-north-gate-01"
+        timestamp:
+          type: integer
+          format: int64
+          example: 1774945805000
+        boundingBox:
+          type: object
+          properties:
+            x:
+              type: integer
+              example: 120
+            y:
+              type: integer
+              example: 45
+            w:
+              type: integer
+              example: 60
+            h:
+              type: integer
+              example: 180
+              
+    StatusResponse:
+      type: object
+      properties:
+        analyticsAlarmId:
+          type: string
+          example: "DIVA-GROUP-777"
+        sourceAlarmId:
+          type: string
+          example: "ALM-GROUP-001"
+        status:
+          type: string
+          enum: ["pending", "processing", "completed", "failed"]
+          example: "completed"
+        isRealAlarm:
+          type: boolean
+          example: true
+        confidence:
+          type: number
+          format: float
+          example: 0.94
+        results:
+          type: object
+          description: Populated only when status is 'completed'.
+          properties:
+            detectedObjects:
+              type: array
+              items:
+                $ref: '#/components/schemas/DetectionResult'
+              example:
+                - type: "person"
+                  confidence: 0.94
+                  cameraId: "CAM-north-gate-01"
+                  timestamp: 1774945802000
+                  boundingBox:
+                    x: 120
+                    y: 45
+                    w: 60
+                    h: 180
+                - type: "vehicle"
+                  confidence: 0.88
+                  cameraId: "CAM-north-ptz-01"
+                  timestamp: 1774945804500
+                  boundingBox:
+                    x: 400
+                    y: 300
+                    w: 250
+                    h: 140
+            videoClipUrls:
+              type: object
+              additionalProperties:
+                type: string
+                format: uri
+              example:
+                "CAM-north-gate-01": "https://diva.local/clips/DIVA-777_CAM-north-gate-01.mp4"
+                "CAM-north-gate-02": "https://diva.local/clips/DIVA-777_CAM-north-gate-02.mp4"
+                "CAM-north-ptz-01": "https://diva.local/clips/DIVA-777_CAM-north-ptz-01.mp4"
+`;
+    
+    window.onload = () => {
+      const doc = jsyaml.load(specYaml);
+      window.ui = SwaggerUIBundle({
+        spec: doc,
+        dom_id: '#swagger-ui',
+        deepLinking: true,
+        supportedSubmitMethods: [], // Disables execution features completely
+        presets: [
+          SwaggerUIBundle.presets.apis,
+          SwaggerUIStandalonePreset
+        ],
+        layout: 'StandaloneLayout'
+      });
+    };
+  </script>
+</body>
+</html>
